@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>LeetCode 125. Valid Palindrome - 視覺化教學</title>
+  <style>
+    :root {
+      --primary: #007acc; --success: #2ecc71; --warning: #f39c12;
+      --danger: #e74c3c; --dark: #2c3e50; --bg: #f4f7f9;
+    }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--dark); }
+    .dashboard { max-width: 1200px; margin: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .full-width { grid-column: span 2; }
+    h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.25rem; }
+    
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .complexity-box { background: #eef2f7; padding: 15px; border-radius: 8px; border-left: 5px solid var(--primary); }
+    code { background: #eee; padding: 2px 5px; border-radius: 4px; font-family: monospace; }
+
+    /* 字符方塊視覺化 */
+    .visualizer-container { text-align: center; padding: 60px 0; overflow-x: auto; }
+    .box-container { display: flex; justify-content: center; min-height: 80px; align-items: center; }
+    .char-box {
+      width: 35px; height: 45px; line-height: 45px; margin: 0 3px;
+      border: 1px solid #dee2e6; border-radius: 6px; font-size: 1.1rem;
+      font-weight: bold; position: relative; transition: all 0.2s;
+      background: white;
+    }
+    .char-box.active-l { border: 3px solid var(--warning); background: #fff8e1; transform: translateY(-5px); }
+    .char-box.active-r { border: 3px solid var(--primary); background: #e3f2fd; transform: translateY(-5px); }
+    .char-box.skip { opacity: 0.3; background: #f0f0f0; }
+    .char-box.match { background: #e8f5e9; border-color: var(--success); }
+    .char-box.mismatch { background: #ffebee; border-color: var(--danger); animation: shake 0.4s; }
+    
+    /* 指針標籤 */
+    .ptr { position: absolute; left: 0; width: 100%; font-size: 0.75rem; font-weight: 900; }
+    .ptr-l { bottom: -30px; color: var(--warning); }
+    .ptr-r { top: -30px; color: var(--primary); }
+
+    .code-window { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 0.9rem; line-height: 1.5; }
+    .line { padding: 1px 8px; border-radius: 4px; border-left: 4px solid transparent; }
+    .line.active { background: #3e4451; border-left-color: var(--success); color: white; }
+
+    .table-wrapper { max-height: 300px; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th { background: #f8f9fa; position: sticky; top: 0; z-index: 10; }
+    th, td { padding: 10px; border: 1px solid #eee; text-align: center; }
+    tr.newest { background: #e8f5e9; font-weight: bold; }
+
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; align-items: center; }
+    input { padding: 10px 20px; border: 2px solid #ddd; border-radius: 25px; font-size: 1rem; width: 400px; outline: none; }
+    button { padding: 10px 25px; border: none; border-radius: 25px; cursor: pointer; background: var(--primary); color: white; font-weight: bold; }
+    button:disabled { background: #ccc; }
+
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <div class="card full-width">
+    <h2>題目：回文檢查 (Valid Palindrome)</h2>
+    <div class="info-grid">
+      <div>
+        <p>給定字串 <code>s</code>，移除所有非字母數字字符並轉小寫後，檢查其是否為回文。</p>
+        <p>範例：<code>"A man, a plan, a canal: Panama"</code> → <strong>true</strong></p>
+      </div>
+      <div class="complexity-box">
+        <strong>複雜度分析：</strong>
+        <ul>
+          <li><strong>時間複雜度：O(n)</strong><br>左右指針向中間靠攏，每個字元最多被檢查一次。</li>
+          <li><strong>空間複雜度：O(1)</strong><br>只使用了常數個指標變數，沒有額外的陣列開銷。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card full-width" style="background: transparent; box-shadow: none; padding: 0;">
+    <div class="controls">
+      <input type="text" id="inputStr" value="A man, a plan, a canal: Panama">
+      <button onclick="resetSim()">重置</button>
+      <button id="nextBtn" onclick="playStep()">下一步 (Step)</button>
+    </div>
+  </div>
+
+  <div class="card full-width">
+    <h2>雙指針動態模擬 (Two Pointers)</h2>
+    <div class="visualizer-container">
+      <div class="box-container" id="boxContainer"></div>
+      <div id="hintText" style="margin-top: 40px; font-weight: bold; font-size: 1.1rem; color: var(--primary);">準備就緒</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Python 邏輯追蹤</h2>
+    <div class="code-window" id="codeWindow">
+      <div class="line" id="l1">l, r = 0, len(s) - 1</div>
+      <div class="line" id="l2">while l < r:</div>
+      <div class="line" id="id-skip-l">&nbsp;&nbsp;if not s[l].isalnum():</div>
+      <div class="line" id="id-l-inc">&nbsp;&nbsp;&nbsp;&nbsp;l += 1</div>
+      <div class="line" id="id-skip-r">&nbsp;&nbsp;elif not s[r].isalnum():</div>
+      <div class="line" id="id-r-dec">&nbsp;&nbsp;&nbsp;&nbsp;r -= 1</div>
+      <div class="line" id="id-compare">&nbsp;&nbsp;elif s[l].lower() == s[r].lower():</div>
+      <div class="line" id="id-move-both">&nbsp;&nbsp;&nbsp;&nbsp;l += 1; r -= 1</div>
+      <div class="line" id="id-fail">&nbsp;&nbsp;else: return False</div>
+      <div class="line" id="l10">return True</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>步驟數據日誌</h2>
+    <div class="table-wrapper">
+      <table id="logTable">
+        <thead>
+          <tr>
+            <th>l (char)</th>
+            <th>r (char)</th>
+            <th>狀態描述</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let s = "", l = 0, r = 0, finished = false, subStep = "check_loop";
+
+function resetSim() {
+  s = document.getElementById('inputStr').value;
+  l = 0; r = s.length - 1; finished = false; subStep = "init";
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('logTable').querySelector('tbody').innerHTML = "";
+  renderBoxes();
+  clearHighlights();
+  updateHint("初始化指針：L 指向開頭，R 指向結尾");
+  highlightLine('l1');
+}
+
+function renderBoxes() {
+  const container = document.getElementById('boxContainer');
+  container.innerHTML = s.split('').map((char, idx) => `
+    <div class="char-box" id="b-${idx}">
+      <div class="ptr ptr-l" id="pl-${idx}"></div>
+      ${char}
+      <div class="ptr ptr-r" id="pr-${idx}"></div>
+    </div>
+  `).join('');
+}
+
+function isAlnum(char) { return /^[a-z0-9]$/i.test(char); }
+
+function playStep() {
+  if (finished) return;
+  clearHighlights();
+  updateVisuals();
+
+  if (l >= r) {
+    highlightLine('l10');
+    updateHint("指針相遇或交錯，所有字元比對成功！回傳 True");
+    finished = true;
+    document.getElementById('nextBtn').disabled = true;
+    return;
+  }
+
+  const charL = s[l];
+  const charR = s[r];
+
+  if (!isAlnum(charL)) {
+    highlightLine('id-skip-l');
+    highlightLine('id-l-inc');
+    updateHint(`s[${l}] '${charL}' 不是字母數字，跳過 L`);
+    document.getElementById(`b-${l}`).classList.add('skip');
+    addTableRow(l, r, `跳過左側: ${charL}`);
+    l++;
+    return;
+  }
+
+  if (!isAlnum(charR)) {
+    highlightLine('id-skip-r');
+    highlightLine('id-r-dec');
+    updateHint(`s[${r}] '${charR}' 不是字母數字，跳過 R`);
+    document.getElementById(`b-${r}`).classList.add('skip');
+    addTableRow(l, r, `跳過右側: ${charR}`);
+    r--;
+    return;
+  }
+
+  // 進入比對階段
+  highlightLine('id-compare');
+  if (charL.toLowerCase() === charR.toLowerCase()) {
+    highlightLine('id-move-both');
+    updateHint(`匹配成功！'${charL}' == '${charR}'，兩端縮小`);
+    document.getElementById(`b-${l}`).classList.add('match');
+    document.getElementById(`b-${r}`).classList.add('match');
+    addTableRow(l, r, "匹配成功");
+    l++; r--;
+  } else {
+    highlightLine('id-fail');
+    updateHint(`匹配失敗！'${charL}' != '${charR}'，回傳 False`);
+    document.getElementById(`b-${l}`).classList.add('mismatch');
+    document.getElementById(`b-${r}`).classList.add('mismatch');
+    addTableRow(l, r, "不匹配！❌");
+    finished = true;
+    document.getElementById('nextBtn').disabled = true;
+  }
+}
+
+function updateVisuals() {
+  document.querySelectorAll('.ptr').forEach(el => el.innerText = "");
+  document.querySelectorAll('.char-box').forEach(el => el.classList.remove('active-l', 'active-r'));
+  
+  if (document.getElementById(`pl-${l}`)) {
+    document.getElementById(`pl-${l}`).innerText = "L";
+    document.getElementById(`b-${l}`).classList.add('active-l');
+  }
+  if (document.getElementById(`pr-${r}`)) {
+    document.getElementById(`pr-${r}`).innerText = "R";
+    document.getElementById(`b-${r}`).classList.add('active-r');
+  }
+}
+
+function highlightLine(id) { document.getElementById(id).classList.add('active'); }
+function clearHighlights() { document.querySelectorAll('.line').forEach(el => el.classList.remove('active')); }
+
+function addTableRow(lIdx, rIdx, status) {
+  const tbody = document.getElementById('logTable').querySelector('tbody');
+  document.querySelectorAll('tr').forEach(tr => tr.classList.remove('newest'));
+  const row = `<tr class="newest">
+    <td>${lIdx} ('${s[lIdx]}')</td>
+    <td>${rIdx} ('${s[rIdx]}')</td>
+    <td>${status}</td>
+  </tr>`;
+  tbody.insertAdjacentHTML('afterbegin', row);
+}
+
+function updateHint(txt) { document.getElementById('hintText').innerText = txt; }
+
+resetSim();
+</script>
+
+</body>
+</html>

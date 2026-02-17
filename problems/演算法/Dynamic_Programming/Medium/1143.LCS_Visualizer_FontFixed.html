@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>LCS Visualizer Pro</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        .container { max-width: 1650px; margin: auto; display: grid; grid-template-columns: 380px 1fr 480px; gap: 15px; height: 95vh; }
+
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); margin-right: 5px; }
+
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        
+        /* LCS Grid 特殊排版 */
+        .lcs-grid-wrapper { overflow: auto; padding: 20px; background: var(--card); border-radius: 8px; border: 1px solid #333; display: flex; justify-content: center; }
+        .lcs-grid { display: grid; gap: 4px; position: relative; }
+        .cell {
+            width: 45px; height: 45px; border: 1px solid #30363d; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: bold; background: #0d1117; transition: all 0.2s;
+        }
+        .head-cell { background: #161b22; color: var(--accent); border-color: #444; }
+        .cell.active { border-color: var(--energy); background: var(--hl); box-shadow: 0 0 10px var(--energy); z-index: 5; }
+        .cell.match { background: var(--atlantic); color: #fff; border-color: #3fb950; }
+        .cell.source { border: 1px dashed var(--accent); opacity: 0.7; }
+        
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .ln { white-space: pre; padding: 0 15px 0 60px; position: relative; line-height: 1.7; font-size: 13px; }
+        .ln-num { position: absolute; left: 0; width: 45px; text-align: right; color: #484f58; padding-right: 15px; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:18px;">1143. Longest Common Subsequence</div>
+        <div style="display:flex; gap:12px;">
+            S1: <input type="text" id="s1" value="abcde" style="width:80px; background:#000; color:var(--accent); border:1px solid #444;">
+            S2: <input type="text" id="s2" value="ace" style="width:80px; background:#000; color:var(--accent); border:1px solid #444;">
+            <button class="btn" onclick="next()">下一步 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent)">📖 題目敘述</b><br>
+            給定兩字串 <code>text1</code> 和 <code>text2</code>，返回其最長公共子序列的長度。
+        </div>
+        <div class="info-card">
+            <b style="color:var(--atlantic)">🧠 狀態轉移方程</b><br>
+            若 <code>S1[i-1] == S2[j-1]</code>:<br>
+            <code style="color:var(--energy)">dp[i][j] = dp[i-1][j-1] + 1</code><br>
+            否則:<br>
+            <code style="color:var(--accent)">dp[i][j] = max(dp[i-1][j], dp[i][j-1])</code>
+        </div>
+        <div class="info-card">
+            <span class="tag">Time: O(M*N)</span><span class="tag">Space: O(M*N)</span>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="lcs-grid-wrapper">
+            <div id="grid" class="lcs-grid"></div>
+        </div>
+        <div class="viz-area" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            <div style="font-size:12px; color:var(--dim); letter-spacing: 2px;">CURRENT LCS LENGTH</div>
+            <div id="resVal" style="font-size:72px; font-weight:bold; color:var(--energy)">0</div>
+            <div id="log" style="color:var(--accent); font-size:14px; margin-top:10px; font-family: 'Consolas'; font-weight: bold;"></div>
+        </div>
+    </div>
+
+    <div class="editor">
+        <div id="codeView" style="padding:15px 0;"></div>
+    </div>
+</div>
+
+<script>
+const codeLines = [
+    "m, n = len(s1), len(s2)",
+    "dp = [[0] * (n + 1) for _ in range(m + 1)]",
+    "for i in range(1, m + 1):",
+    "    for j in range(1, n + 1):",
+    "        if s1[i-1] == s2[j-1]:",
+    "            dp[i][j] = dp[i-1][j-1] + 1",
+    "        else:",
+    "            dp[i][j] = max(dp[i-1][j], dp[i][j-1])",
+    "return dp[m][n]"
+];
+
+let it;
+function init() {
+    const s1 = document.getElementById('s1').value;
+    const s2 = document.getElementById('s2').value;
+    const m = s1.length, n = s2.length;
+    
+    const grid = document.getElementById('grid');
+    grid.style.gridTemplateColumns = `repeat(${n + 2}, 45px)`;
+    grid.innerHTML = '';
+
+    // 繪製表頭
+    for(let r=0; r < m+2; r++) {
+        for(let c=0; c < n+2; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            if (r === 0 && c > 1) { cell.innerText = s2[c-2]; cell.classList.add('head-cell'); }
+            else if (c === 0 && r > 1) { cell.innerText = s1[r-2]; cell.classList.add('head-cell'); }
+            else if (r >= 1 && c >= 1) {
+                cell.id = `cell-${r-1}-${c-1}`;
+                cell.innerText = '0';
+                if (r === 1 || c === 1) cell.style.color = '#484f58';
+            } else {
+                cell.style.border = 'none'; cell.style.background = 'transparent';
+            }
+            grid.appendChild(cell);
+        }
+    }
+
+    document.getElementById('codeView').innerHTML = codeLines.map((l, i) => {
+        const formatted = l.replace(/for|in|if|else|max|len|return/g, '<span class="kw">$&</span>');
+        return `<div class="ln" id="ln-${i}"><span class="ln-num">${i+1}</span>${formatted}</div>`;
+    }).join('');
+
+    it = lcsLogic(s1, s2);
+    document.getElementById('resVal').innerText = "0";
+    document.getElementById('log').innerText = "> 初始化 DP Table 為 0";
+}
+
+function* lcsLogic(s1, s2) {
+    const m = s1.length, n = s2.length;
+    const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            yield { ln: 4, i, j, m: `比對 S1[${i-1}]('${s1[i-1]}') 與 S2[${j-1}]('${s2[j-1]}')` };
+            if (s1[i-1] === s2[j-1]) {
+                dp[i][j] = dp[i-1][j-1] + 1;
+                yield { ln: 5, i, j, val: dp[i][j], match: true, m: `相同！取左上角 ${dp[i-1][j-1]} + 1` };
+            } else {
+                dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+                yield { ln: 7, i, j, val: dp[i][j], match: false, m: `不同，取上方或左方的最大值: ${dp[i][j]}` };
+            }
+        }
+    }
+    yield { ln: 8, res: dp[m][n], m: "完成比對！" };
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) return;
+    const { ln, i, j, val, match, res, m } = s.value;
+
+    document.querySelectorAll('.ln').forEach(e => e.classList.remove('ln-active'));
+    document.getElementById(`ln-${ln}`).classList.add('ln-active');
+    document.querySelectorAll('.cell').forEach(e => e.classList.remove('active', 'source'));
+
+    if (i !== undefined && j !== undefined) {
+        const current = document.getElementById(`cell-${i}-${j}`);
+        current.classList.add('active');
+        current.innerText = val;
+
+        if (match) {
+            current.classList.add('match');
+            document.getElementById(`cell-${i-1}-${j-1}`).classList.add('source');
+        } else {
+            document.getElementById(`cell-${i-1}-${j}`).classList.add('source');
+            document.getElementById(`cell-${i}-${j-1}`).classList.add('source');
+        }
+    }
+    if (res !== undefined) document.getElementById('resVal').innerText = res;
+    document.getElementById('log').innerText = `> ${m}`;
+}
+
+init();
+</script>
+</body>
+</html>

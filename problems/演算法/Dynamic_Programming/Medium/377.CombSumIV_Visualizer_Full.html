@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>➕ 377. Combination Sum IV - 可視化模擬器</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      padding: 2rem;
+      margin: 0;
+      color: #333;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    h2, h3 {
+      color: #007acc;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      margin: 0.3rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      background: #007acc;
+      color: white;
+    }
+    input {
+      padding: 6px;
+      font-size: 14px;
+      margin: 0.3rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      width: 100px;
+    }
+    .dp-bar {
+      display: flex;
+      gap: 6px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .dp-cell {
+      width: 48px;
+      height: 42px;
+      text-align: center;
+      line-height: 42px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #e0e0e0;
+    }
+    .highlight {
+      background: #4caf50;
+      color: #fff;
+      font-weight: bold;
+    }
+    .code-box {
+      background: #272822;
+      color: #f8f8f2;
+      padding: 1rem;
+      border-radius: 6px;
+      margin: 2rem 0;
+      font-family: monospace;
+    }
+    .code-line {
+      padding: 2px 0;
+    }
+    .highlight-line {
+      background-color: #444;
+    }
+    .combo-list {
+      margin-top: 8px;
+      font-size: 13px;
+      font-family: monospace;
+      background: #f1f8e9;
+      padding: 8px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>➕ 377. Combination Sum IV - 可視化模擬器</h2>
+
+    <hr>
+    <h3>📘 題目描述</h3>
+    <p>給定一組數字 <code>nums</code> 和一個目標 <code>target</code>，每個數字可以無限次使用，<br>
+    請回傳能組成該目標的「不同排列」組合總數。</p>
+    <p><code>dp[i] += dp[i - num]</code>：當 num 可以湊出 i 時，把所有來自 dp[i - num] 的組合都加上。</p>
+
+    <hr>
+    <h3>🧪 範例</h3>
+    <pre><code>輸入：nums = [1, 2, 3], target = 4
+輸出：7
+解釋：可組成的方式有：
+[1,1,1,1], [1,1,2], [1,2,1], [1,3], [2,1,1], [2,2], [3,1]</code></pre>
+
+    <hr>
+    <h3>⏳ 時間與空間複雜度</h3>
+    <ul>
+      <li><strong>時間複雜度：</strong> O(target × n)</li>
+      <li><strong>空間複雜度：</strong> O(target)</li>
+    </ul>
+
+    <hr>
+    <h3>▶️ 模擬器</h3>
+    <div style="margin-bottom: 1rem;">
+      <label>Nums: <input id="numsInput" value="1,2,3" /></label>
+      <label>Target: <input id="targetInput" value="4" /></label>
+      <button onclick="start()">🔃 開始</button>
+      <button onclick="step()">🧭 下一步</button>
+    </div>
+
+    <div class="dp-bar" id="dpBar"></div>
+    <div class="result" id="explanation" style="margin-top:1rem;"></div>
+    <div class="result" id="comboResult"></div>
+
+    <div class="code-box">
+      <div class="code-line">def combinationSum4(nums, target):</div>
+      <div class="code-line"> dp = [0] * (target + 1)</div>
+      <div class="code-line"> dp[0] = 1</div>
+      <div class="code-line"> for i in range(1, target + 1):</div>
+      <div class="code-line">  for num in nums:</div>
+      <div class="code-line">   if i - num >= 0:</div>
+      <div class="code-line">    dp[i] += dp[i - num]</div>
+      <div class="code-line"> return dp[target]</div>
+    </div>
+  </div>
+
+  <script>
+    let nums = [], target = 0, dp = [], i = 1, index = 0;
+    let combos = [];
+
+    function start() {
+      nums = document.getElementById("numsInput").value.split(",").map(Number);
+      target = parseInt(document.getElementById("targetInput").value);
+      dp = Array(target + 1).fill(0);
+      dp[0] = 1;
+      combos = Array(target + 1).fill(null).map(() => []);
+      combos[0] = [[]];
+      i = 1;
+      index = 0;
+      updateDP();
+      updateCode(-1);
+      document.getElementById("explanation").innerHTML = "";
+      document.getElementById("comboResult").innerHTML = "";
+    }
+
+    function step() {
+      if (i > target) {
+        updateCode(7);
+        document.getElementById("explanation").innerHTML = `<b>✅ 完成！dp[${target}] = ${dp[target]}</b>`;
+        document.getElementById("comboResult").innerHTML = "<b>所有組合：</b><div class='combo-list'>" +
+          combos[target].map(c => JSON.stringify(c)).join("<br>") + "</div>";
+        return;
+      }
+
+      updateCode(index < nums.length ? (i - nums[index] >= 0 ? 6 : 5) : 4);
+
+      if (index < nums.length) {
+        const num = nums[index];
+        if (i - num >= 0) {
+          dp[i] += dp[i - num];
+          for (const combo of combos[i - num]) {
+            combos[i].push([...combo, num]);
+          }
+          document.getElementById("explanation").innerHTML =
+            `dp[${i}] += dp[${i - num}] (${dp[i - num]}) → dp[${i}] = ${dp[i]}`;
+        } else {
+          document.getElementById("explanation").innerHTML =
+            `❌ 跳過 num=${num}，因為 ${i} - ${num} < 0`;
+        }
+        index++;
+      } else {
+        i++;
+        index = 0;
+      }
+
+      updateDP();
+    }
+
+    function updateDP() {
+      const bar = document.getElementById("dpBar");
+      bar.innerHTML = "";
+      for (let k = 0; k < dp.length; k++) {
+        const div = document.createElement("div");
+        div.className = "dp-cell" + (k === i ? " highlight" : "");
+        div.textContent = dp[k];
+        bar.appendChild(div);
+      }
+    }
+
+    function updateCode(line) {
+      const lines = document.querySelectorAll(".code-line");
+      lines.forEach((l, idx) => {
+        l.classList.toggle("highlight-line", idx === line);
+      });
+    }
+  </script>
+</body>
+</html>

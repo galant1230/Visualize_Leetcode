@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 70. 爬樓梯 - 演算法實驗室</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #8b949e;
+        }
+        body { 
+            background: #010409; color: var(--text); 
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0;
+        }
+        
+        .widget-card {
+            width: 1150px; height: 780px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            padding: 15px 25px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            background: #0d1117;
+        }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        input, button { 
+            background: var(--panel); color: var(--text); border: 1px solid var(--border); 
+            padding: 6px 12px; border-radius: 6px; font-size: 13px; outline: none;
+        }
+        button:hover { border-color: var(--blue); cursor: pointer; background: var(--highlight); }
+        .btn-reset { color: var(--red); border-color: var(--red); }
+
+        .content-grid { display: grid; grid-template-columns: 280px 1fr; flex: 1; overflow: hidden; }
+        
+        /* 側邊欄 */
+        .sidebar { padding: 20px; border-right: 1px solid var(--border); overflow-y: auto; background: rgba(0,0,0,0.1); }
+        .sidebar h3 { color: var(--blue); margin-top: 0; }
+        .complexity-info { margin-top: 20px; padding: 12px; border-radius: 8px; background: #010409; border: 1px solid var(--border); font-family: monospace; font-size: 13px; }
+
+        /* 工作區 */
+        .workspace { display: grid; grid-template-rows: 1fr 320px; overflow: hidden; }
+        
+        /* 程式碼編輯器 */
+        .editor-container { display: flex; flex-direction: column; background: #0d1117; }
+        .tabs { background: #010409; display: flex; border-bottom: 1px solid var(--border); }
+        .tab { padding: 10px 20px; font-size: 12px; color: var(--comment); border-right: 1px solid var(--border); cursor: pointer; font-family: 'Consolas', monospace; }
+        .tab.active { background: var(--panel); color: var(--text); border-top: 2px solid var(--orange); }
+        
+        .editor { 
+            padding: 20px; font-family: 'Fira Code', 'Consolas', monospace; 
+            font-size: 15px; line-height: 1.7; overflow-y: auto; flex: 1;
+        }
+        .line { display: block; padding-left: 50px; position: relative; opacity: 0.4; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 10px; color: #484f58; width: 30px; text-align: right; }
+
+        /* 高亮顏色 */
+        .kw { color: var(--purple); } .fn { color: var(--blue); } .num { color: var(--orange); } 
+        .op { color: #ff7b72; } .cmt { color: var(--comment); }
+
+        /* 底部視覺化區 */
+        .viz-section { 
+            border-top: 1px solid var(--border); background: #0d1117; 
+            padding: 20px; display: grid; grid-template-columns: 1fr 320px; gap: 20px;
+        }
+        .viz-main { display: flex; flex-direction: column; gap: 15px; justify-content: center; }
+        
+        /* 頂部 DP Array 格子 */
+        .array-monitor { display: flex; gap: 8px; background: #010409; padding: 12px; border-radius: 8px; border: 1px solid var(--border); justify-content: center; }
+        .cell { 
+            width: 55px; height: 55px; border: 1px solid var(--border); border-radius: 6px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: var(--panel); position: relative; transition: 0.3s;
+        }
+        .cell.active { border-color: var(--green); background: rgba(63, 185, 80, 0.1); transform: translateY(-3px); }
+        .cell .idx { font-size: 10px; color: var(--comment); position: absolute; top: 3px; }
+        .cell .val { font-weight: bold; color: var(--blue); font-size: 16px; }
+
+        /* 動態柱狀圖區 (下方) */
+        .viz-bars { display: flex; align-items: flex-end; gap: 12px; height: 120px; justify-content: center; padding-top: 20px; }
+        .bar-container { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .bar-val { font-family: monospace; font-size: 12px; color: var(--blue); font-weight: bold; opacity: 0; transition: 0.3s; }
+        .bar-val.show { opacity: 1; }
+        .bar { width: 35px; background: #21262d; border-radius: 4px 4px 0 0; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .bar.active { background: var(--blue); box-shadow: 0 0 15px var(--blue); }
+        
+        .terminal { font-family: monospace; font-size: 13px; background: #010409; padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="header">
+        <div style="font-weight: bold; color: var(--blue); font-size: 16px;">爬樓梯演算法模擬器</div>
+        <div class="controls">
+            <span>目標 N:</span>
+            <input type="number" id="inputN" value="6" min="2" max="10" style="width: 45px;" onchange="init()">
+            <button class="btn-reset" onclick="init()">重置系統</button>
+            <button onclick="prevStep()">上一步</button>
+            <button onclick="nextStep()" style="color: var(--green); border-color: var(--green); font-weight: bold;">下一步 (F10)</button>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="sidebar">
+            <h3>題目說明</h3>
+            <p>假設你正在爬樓梯，需要 <b>n</b> 階才能到達樓頂。</p>
+            <p>每次你可以爬 <b>1</b> 或 <b>2</b> 個台階。請問有多少種不同的方法可以爬到樓頂？</p>
+            <div id="compBox" class="complexity-info"></div>
+        </div>
+
+        <div class="workspace">
+            <div class="editor-container">
+                <div class="tabs">
+                    <div class="tab" onclick="changeAlgo('recursion')" id="t-recursion">1_recursion.py</div>
+                    <div class="tab" onclick="changeAlgo('topdown')" id="t-topdown">2_top_down.py</div>
+                    <div class="tab active" onclick="changeAlgo('bottomup')" id="t-bottomup">3_bottom_up.py</div>
+                    <div class="tab" onclick="changeAlgo('optimal')" id="t-optimal">4_optimal.py</div>
+                </div>
+                <div class="editor" id="codeEditor"></div>
+            </div>
+
+            <div class="viz-section">
+                <div class="viz-main">
+                    <div class="array-monitor" id="arrayMonitor"></div>
+                    <div class="viz-bars" id="vizBars"></div>
+                </div>
+                <div class="terminal">
+                    <div style="color: var(--green); margin-bottom: 5px;">> 執行日誌</div>
+                    <div id="logMsg" style="color: var(--text); height: 65px; line-height: 1.5;">系統就緒</div>
+                    <div style="color: var(--orange); border-top: 1px solid var(--border); padding-top: 10px; font-weight: bold;">結果: <span id="retVal">-</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let curStep = 0, n = 6, curAlgo = 'bottomup', steps = [];
+
+const repo = {
+    recursion: {
+        comp: "時間複雜度: O(2ⁿ)\n空間複雜度: O(n)",
+        code: [
+            `<span class="kw">def</span> <span class="fn">climbStairs</span>(n):`,
+            `    <span class="kw">if</span> n <span class="op">&lt;=</span> <span class="num">2</span>:`,
+            `        <span class="kw">return</span> n`,
+            `    <span class="kw">return</span> <span class="fn">climbStairs</span>(n<span class="op">-</span><span class="num">1</span>) <span class="op">+</span> <span class="fn">climbStairs</span>(n<span class="op">-</span><span class="num">2</span>)`
+        ],
+        gen: (n) => [
+            {l:1, msg:"呼叫 climbStairs("+n+"): 檢查基本條件", data:Array(n).fill('?')},
+            {l:4, msg:"遞迴拆解: 將問題分解為 f(n-1) 與 f(n-2)", data:Array(n).fill('?')},
+            {l:4, msg:"遞迴回溯中... 逐漸計算子問題結果", data:[1,2,3,5,8,13], res:13}
+        ]
+    },
+    bottomup: {
+        comp: "時間複雜度: O(n)\n空間複雜度: O(n)",
+        code: [
+            `<span class="kw">dp</span> <span class="op">=</span> [<span class="num">0</span>] <span class="op">*</span> (n <span class="op">+</span> <span class="num">1</span>)`,
+            `<span class="kw">dp</span>[<span class="num">1</span>], <span class="kw">dp</span>[<span class="num">2</span>] <span class="op">=</span> <span class="num">1</span>, <span class="num">2</span>`,
+            `<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">3</span>, n <span class="op">+</span> <span class="num">1</span>):`,
+            `    <span class="kw">dp</span>[i] <span class="op">=</span> <span class="kw">dp</span>[i<span class="op">-</span><span class="num">1</span>] <span class="op">+</span> <span class="kw">dp</span>[i<span class="op">-</span><span class="num">2</span>]`,
+            `<span class="kw">return</span> <span class="kw">dp</span>[n]`
+        ],
+        gen: (n) => {
+            let s = [{l:1, msg:"初始化大小為 n+1 的 dp 陣列", data:Array(n).fill(0)}];
+            s.push({l:2, msg:"設定基礎狀態: dp[1]=1, dp[2]=2", data:[1,2,...Array(n-2).fill(0)]});
+            let d = [1,2];
+            for(let i=3; i<=n; i++) {
+                d[i-1] = d[i-2] + d[i-3];
+                s.push({l:4, msg:`計算 dp[${i}] = dp[${i-1}](${d[i-2]}) + dp[${i-2}](${d[i-3]}) = ${d[i-1]}`, data:[...d, ...Array(n-i).fill(0)], active: i-1});
+            }
+            s.push({l:5, msg:"完成計算，回傳最後一個結果", data:[...d], res:d[n-1]});
+            return s;
+        }
+    },
+    topdown: {
+        comp: "時間複雜度: O(n)\n空間複雜度: O(n)",
+        code: [
+            `<span class="kw">memo</span> <span class="op">=</span> {}`,
+            `<span class="kw">def</span> <span class="fn">climb</span>(n):`,
+            `    <span class="kw">if</span> n <span class="kw">in</span> <span class="kw">memo</span>: <span class="kw">return</span> <span class="kw">memo</span>[n]`,
+            `    <span class="kw">memo</span>[n] <span class="op">=</span> <span class="fn">climb</span>(n<span class="op">-</span><span class="num">1</span>) <span class="op">+</span> <span class="fn">climb</span>(n<span class="op">-</span><span class="num">2</span>)`,
+            `    <span class="kw">return</span> <span class="kw">memo</span>[n]`
+        ],
+        gen: (n) => {
+            let s = [{l:1, msg:"初始化記憶化字典 memo", data:Array(n).fill('?')}];
+            let d = [1,2,3,5,8,13,21,34,55,89];
+            for(let i=3; i<=n; i++) s.push({l:4, msg:`計算並存入 memo[${i}]: ${d[i-1]}`, data:[...d.slice(0,i), ...Array(n-i).fill('?')]});
+            return s;
+        }
+    },
+    optimal: {
+        comp: "時間複雜度: O(n)\n空間複雜度: O(1)",
+        code: [
+            `a, b <span class="op">=</span> <span class="num">1</span>, <span class="num">2</span>`,
+            `<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">3</span>, n <span class="op">+</span> <span class="num">1</span>):`,
+            `    a, b <span class="op">=</span> b, a <span class="op">+</span> b`,
+            `<span class="kw">return</span> b`
+        ],
+        gen: (n) => {
+            let s = [{l:1, msg:"初始化滾動變數 a=1, b=2", data:['a:1','b:2',...Array(n-2).fill('-')]}];
+            let a=1, b=2;
+            for(let i=3; i<=n; i++) {
+                let t=a+b; a=b; b=t;
+                s.push({l:3, msg:`迭代 ${i}: 滾動變數更新 a=${a}, b=${b}`, data:[...Array(i-3).fill('-'), `a:${a}`, `b:${b}`, ...Array(n-i).fill('-')], active: i-1});
+            }
+            s.push({l:4, msg:"完成，回傳最後的結果 b", data:[...Array(n-1).fill('-'), `res:${b}`], res:b});
+            return s;
+        }
+    }
+};
+
+function changeAlgo(a) { curAlgo = a; init(); }
+function init() {
+    n = parseInt(document.getElementById('inputN').value);
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`t-${curAlgo}`).classList.add('active');
+    
+    const lines = repo[curAlgo].code;
+    document.getElementById('codeEditor').innerHTML = lines.map((l, i) => `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    document.getElementById('compBox').innerText = repo[curAlgo].comp;
+    
+    steps = repo[curAlgo].gen(n);
+    curStep = 0; update();
+}
+
+function update() {
+    const step = steps[curStep];
+    const lines = document.querySelectorAll('.line');
+    lines.forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    document.getElementById('logMsg').innerText = "> " + step.msg;
+    document.getElementById('retVal').innerText = step.res || '計算中...';
+    
+    // 更新陣列監視器
+    const monitor = document.getElementById('arrayMonitor');
+    monitor.innerHTML = '';
+    step.data.forEach((v, i) => {
+        const cell = document.createElement('div');
+        cell.className = `cell ${i === step.active ? 'active' : ''}`;
+        cell.innerHTML = `<span class="idx">[${i+1}]</span><span class="val">${v.toString().replace('a:','').replace('b:','').replace('res:','')}</span>`;
+        monitor.appendChild(cell);
+    });
+
+    // 更新柱狀圖與動態數字
+    const bars = document.getElementById('vizBars');
+    bars.innerHTML = '';
+    step.data.forEach((v, i) => {
+        const container = document.createElement('div');
+        container.className = 'bar-container';
+        
+        const rawVal = v.toString().split(':').pop();
+        const numVal = parseInt(rawVal) || 0;
+        
+        // 數字標籤
+        const valLabel = document.createElement('div');
+        valLabel.className = `bar-val ${numVal > 0 || v==='?' ? 'show' : ''}`;
+        valLabel.innerText = v === '?' ? '?' : numVal;
+        
+        // 柱子
+        const bar = document.createElement('div');
+        bar.className = `bar ${i === step.active ? 'active' : ''}`;
+        bar.style.height = v === '?' ? '30px' : `${Math.min(numVal * 5, 100)}px`;
+        
+        container.appendChild(valLabel);
+        container.appendChild(bar);
+        bars.appendChild(container);
+    });
+}
+
+function nextStep() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prevStep() { if(curStep > 0) { curStep--; update(); } }
+init();
+</script>
+</body>
+</html>

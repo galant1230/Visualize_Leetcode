@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Word Search Backtrack Debugger</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; font-family: 'Fira Code', monospace; }
+        .panel { background-color: #161b22; border: 1px solid #30363d; border-radius: 12px; }
+        .code-container { font-size: 14px; line-height: 22px; position: relative; }
+        .line-highlight {
+            position: absolute; width: 100%; height: 30px;
+            background-color: rgba(224, 175, 104, 0.2);
+            border-left: 4px solid #e0af68; z-index: 5; transition: top 0.2s ease;
+        }
+        .grid-cell { width: 50px; height: 50px; border: 1px solid #30363d; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; transition: all 0.3s; }
+        .cell-active { border: 3px solid #e0af68; background: rgba(224, 175, 104, 0.1); transform: scale(1.05); }
+        .cell-marker { background: #7aa2f7 !important; color: white; border-color: #7aa2f7; }
+        .cell-backtrack { background: #f7768e !important; color: white; animation: pulse 0.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        .log-container { height: 250px; overflow-y: auto; font-size: 12px; background: #010409; padding: 10px; border-radius: 8px; }
+        .log-entry { margin-bottom: 2px; border-left: 2px solid #444; padding-left: 8px; white-space: pre; }
+        .log-in { border-color: #7aa2f7; color: #7aa2f7; }
+        .log-back { border-color: #f7768e; color: #f7768e; }
+        .log-success { border-color: #9ece6a; color: #9ece6a; font-weight: bold; }
+        
+        /* 新增描述樣式 */
+        .desc-section { border-left: 4px solid #7aa2f7; background: #161b22; }
+        .complexity-card { background: #1c222b; border: 1px solid #30363d; }
+    </style>
+</head>
+<body class="p-8">
+    <div id="app" class="max-w-[1300px] mx-auto space-y-6">
+        
+        <section class="desc-section p-6 rounded-r-lg shadow-sm">
+            <h2 class="text-2xl font-bold text-white mb-4">LeetCode 79. Word Search</h2>
+            <div class="space-y-3 text-gray-300">
+                <p>給定一個 <code class="bg-gray-800 px-1 rounded">m x n</code> 的字元網格 <code class="bg-gray-800 px-1 rounded">board</code> 和一個字串 <code class="bg-gray-800 px-1 rounded">word</code>。如果 <code class="bg-gray-800 px-1 rounded">word</code> 存在於網格中，返回 <code class="text-green-400">true</code>；否則返回 <code class="text-red-400">false</code>。</p>
+                <p>單字必須按照字母順序，通過<strong>相鄰的單元格</strong>內的字母構成，其中「相鄰」單元格是水平或垂直相鄰的。同一個單元格內的字母<strong>不允許重複使用</strong>。</p>
+                <div class="bg-[#0d1117] p-4 rounded border border-gray-700 mt-4">
+                    <p class="text-sm font-bold text-blue-400">Example:</p>
+                    <p class="text-sm">Input: board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCCED"</p>
+                    <p class="text-sm text-green-400">Output: true</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-gray-800">
+
+        <div class="panel p-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-white">79. Word Search Visualizer</h1>
+                <p class="text-gray-400 text-xs">Target Word: <span class="text-yellow-500 font-bold">"ABCCED"</span></p>
+            </div>
+            <div class="flex gap-2">
+                <button @click="prev" :disabled="stepIdx === 0" class="px-4 py-2 bg-gray-700 rounded disabled:opacity-30 text-sm">上一步</button>
+                <button @click="next" :disabled="stepIdx >= history.length - 1" class="px-6 py-2 bg-blue-600 text-white rounded font-bold text-sm shadow-lg">下一步 (Step: {{stepIdx + 1}})</button>
+                <button @click="reset" class="px-4 py-2 bg-gray-800 rounded text-sm">重置</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-5 space-y-4">
+                <div class="panel p-6 flex flex-col items-center">
+                    <div class="grid grid-cols-4 gap-2 mb-6">
+                        <div v-for="(cell, idx) in flatBoard" :key="idx"
+                             :class="['grid-cell rounded', 
+                                     isCurrent(idx) ? 'cell-active' : '',
+                                     cell.val === '#' ? 'cell-marker' : '',
+                                     isBacktracking(idx) ? 'cell-backtrack' : '']">
+                            {{ cell.val }}
+                        </div>
+                    </div>
+                    
+                    <div class="w-full space-y-2">
+                        <div class="flex justify-between text-xs font-mono">
+                            <span class="text-gray-500">Coordinate: <span class="text-white">({{curr.x}}, {{curr.y}})</span></span>
+                            <span class="text-gray-500">Match Index: <span class="text-white">{{curr.idx}}</span></span>
+                        </div>
+                        <div class="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-yellow-500 transition-all duration-300" :style="{width: (curr.idx / 6 * 100) + '%'}"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel p-4">
+                    <h3 class="text-xs font-bold text-gray-500 mb-2 uppercase">Backtrack Trace Log</h3>
+                    <div class="log-container" ref="logBox">
+                        <div v-for="(log, i) in currentLogs" :key="i" 
+                             :class="['log-entry', log.type === 'in' ? 'log-in' : (log.type === 'back' ? 'log-back' : 'log-success')]">
+                            {{ getIndent(log.depth) }}{{ log.msg }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-7">
+                <div class="panel h-full flex flex-col overflow-hidden">
+                    <div class="bg-[#1c222b] px-4 py-2 border-b border-[#30363d] text-xs font-mono text-gray-400">
+                        word_search_dfs.py
+                    </div>
+                    <div class="code-container p-4">
+                        <div class="line-highlight" :style="{ top: (curr.line - 1) * 22 + 'px' }"></div>
+                        <pre><code class="language-python">def exist(board, word):
+    def dfs(x, y, idx):
+        # 1. 成功出口
+        if idx == len(word):
+            return True
+        
+        # 2. 邊界與匹配判斷
+        if not (0 <= x < m and 0 <= y < n) or \
+           board[x][y] != word[idx]:
+            return False
+        
+        # 3. 標記訪問
+        temp, board[x][y] = board[x][y], '#'
+        
+        # 4. 探索四個方向
+        found = (dfs(x+1, y, idx+1) or dfs(x-1, y, idx+1) or
+                 dfs(x, y+1, idx+1) or dfs(x, y-1, idx+1))
+        
+        # 5. 回溯 (Backtrack)
+        board[x][y] = temp
+        return found</code></pre>
+                    </div>
+                    <div class="p-4 bg-[#0d1117] border-t border-[#30363d] text-xs text-gray-400">
+                        <strong>Current State:</strong> {{ curr.stateDesc }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            <div class="complexity-card p-6 rounded-xl shadow-lg">
+                <h3 class="text-lg font-bold text-yellow-500 mb-2 flex items-center">
+                    <span class="mr-2">⏱️</span> 時間複雜度 (Time Complexity)
+                </h3>
+                <p class="text-2xl font-mono text-white mb-2">O(N · 3<sup>L</sup>)</p>
+                <ul class="text-sm text-gray-400 list-disc list-inside space-y-1">
+                    <li>N: 網格中的總單元格數 (m * n)。</li>
+                    <li>L: 目標單字的長度。</li>
+                    <li>我們對每個起點嘗試搜尋。在搜尋過程中，除了第一步有 4 個方向，後續因為不能回頭，最多只有 3 個新方向。</li>
+                </ul>
+            </div>
+
+            <div class="complexity-card p-6 rounded-xl shadow-lg">
+                <h3 class="text-lg font-bold text-blue-400 mb-2 flex items-center">
+                    <span class="mr-2">💾</span> 空間複雜度 (Space Complexity)
+                </h3>
+                <p class="text-2xl font-mono text-white mb-2">O(L)</p>
+                <ul class="text-sm text-gray-400 list-disc list-inside space-y-1">
+                    <li>遞迴呼叫的最大深度為單字的長度 L。</li>
+                    <li>這是遞迴系統棧 (Stack) 所佔用的額外空間。</li>
+                    <li>我們原地修改網格 (In-place) 作為標記，因此不需要額外的 m * n 空間。</li>
+                </ul>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, watch, nextTick } = Vue;
+        createApp({
+            setup() {
+                const stepIdx = ref(0);
+                const logBox = ref(null);
+                const rawBoard = [['A','B','C','E'],['S','F','C','S'],['A','D','E','E']];
+                
+                const steps = [
+                    {l:2, x:0, y:0, idx:0, d:0, b:[], t:'in', m:"Call DFS(0,0) for 'A'", s:"進入遞迴"},
+                    {l:8, x:0, y:0, idx:0, d:0, b:[], t:'in', m:"Check: (0,0) is 'A', Match!", s:"邊界與字元檢查通過"},
+                    {l:14, x:0, y:0, idx:0, d:0, b:[[0,0]], t:'in', m:"Mark (0,0) as '#'", s:"標記已訪問"},
+                    
+                    {l:17, x:0, y:1, idx:1, d:1, b:[[0,0]], t:'in', m:"→ Try Right (0,1) for 'B'", s:"嘗試向右探索"},
+                    {l:8, x:0, y:1, idx:1, d:1, b:[[0,0]], t:'in', m:"Check: (0,1) is 'B', Match!", s:"字元匹配成功"},
+                    {l:14, x:0, y:1, idx:1, d:1, b:[[0,0],[0,1]], t:'in', m:"Mark (0,1) as '#'", s:"標記已訪問"},
+
+                    {l:17, x:0, y:2, idx:2, d:2, b:[[0,0],[0,1]], t:'in', m:"→ Try Right (0,2) for 'C'", s:"嘗試向右探索"},
+                    {l:12, x:0, y:2, idx:2, d:2, b:[[0,0],[0,1],[0,2]], t:'in', m:"Mark (0,2) as '#'", s:"匹配成功，標記 (0,2)"},
+
+                    {l:17, x:0, y:3, idx:3, d:3, b:[[0,0],[0,1],[0,2]], t:'in', m:"→ Try Right (0,3) for 'C'", s:"嘗試向右探索"},
+                    {l:9, x:0, y:3, idx:3, d:3, b:[[0,0],[0,1],[0,2]], t:'back', m:"Check: (0,3) is 'E' != 'C'", s:"不匹配，準備回傳 False"},
+                    
+                    {l:17, x:1, y:2, idx:3, d:3, b:[[0,0],[0,1],[0,2]], t:'in', m:"↓ Try Down (1,2) for 'C'", s:"嘗試向下探索"},
+                    {l:12, x:1, y:2, idx:3, d:3, b:[[0,0],[0,1],[0,2],[1,2]], t:'in', m:"Mark (1,2) as '#'", s:"匹配成功，標記 (1,2)"},
+
+                    {l:17, x:2, y:2, idx:4, d:4, b:[[0,0],[0,1],[0,2],[1,2]], t:'in', m:"↓ Try Down (2,2) for 'E'", s:"嘗試向下探索"},
+                    {l:12, x:2, y:2, idx:4, d:4, b:[[0,0],[0,1],[0,2],[1,2],[2,2]], t:'in', m:"Mark (2,2) as '#'", s:"匹配成功，標記 (2,2)"},
+
+                    {l:17, x:2, y:1, idx:5, d:5, b:[[0,0],[0,1],[0,2],[1,2],[2,2]], t:'in', m:"← Try Left (2,1) for 'D'", s:"嘗試向左探索"},
+                    {l:12, x:2, y:1, idx:5, d:5, b:[[0,0],[0,1],[0,2],[1,2],[2,2],[2,1]], t:'in', m:"Mark (2,1) as '#'", s:"匹配成功，標記 (2,1)"},
+
+                    {l:4, x:2, y:1, idx:6, d:6, b:[[0,0],[0,1],[0,2],[1,2],[2,2],[2,1]], t:'success', m:"Success! idx == len(word)", s:"找到完整單字！"},
+
+                    {l:20, x:2, y:1, idx:5, d:5, b:[[0,0],[0,1],[0,2],[1,2],[2,2]], t:'back', m:"Backtrack: Unmark (2,1)", bt:true, s:"回溯：恢復 (2,1) 為 'D'"},
+                    {l:20, x:2, y:2, idx:4, d:4, b:[[0,0],[0,1],[0,2],[1,2]], t:'back', m:"Backtrack: Unmark (2,2)", bt:true, s:"回溯：恢復 (2,2) 為 'E'"}
+                ];
+
+                const history = ref(steps.map(s => {
+                    const board = rawBoard.map(r => [...r]);
+                    s.b.forEach(pos => board[pos[0]][pos[1]] = '#');
+                    return {
+                        line: s.l, x: s.x, y: s.y, idx: s.idx, depth: s.d,
+                        board, msg: s.m, type: s.t, isBt: s.bt || false,
+                        stateDesc: s.s
+                    };
+                }));
+
+                const curr = computed(() => history.value[stepIdx.value]);
+                const flatBoard = computed(() => curr.value.board.flat().map(v => ({val: v})));
+                const currentLogs = computed(() => history.value.slice(0, stepIdx.value + 1));
+
+                const isCurrent = (idx) => {
+                    const r = Math.floor(idx / 4);
+                    const c = idx % 4;
+                    return r === curr.value.x && c === curr.value.y;
+                };
+
+                const isBacktracking = (idx) => {
+                    if (!curr.value.isBt) return false;
+                    return isCurrent(idx);
+                };
+
+                const getIndent = (depth) => "  ".repeat(depth);
+
+                watch(stepIdx, () => {
+                    nextTick(() => {
+                        if (logBox.value) logBox.value.scrollTop = logBox.value.scrollHeight;
+                    });
+                });
+
+                return {
+                    stepIdx, curr, flatBoard, currentLogs, isCurrent, isBacktracking, logBox, history, getIndent,
+                    next: () => { if (stepIdx.value < history.value.length - 1) stepIdx.value++; },
+                    prev: () => { if (stepIdx.value > 0) stepIdx.value--; },
+                    reset: () => { stepIdx.value = 0; }
+                };
+            },
+            mounted() {
+                hljs.highlightAll();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

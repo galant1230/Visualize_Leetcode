@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 198. House Robber - 深度邏輯全解法</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #8b949e;
+        }
+        body { 
+            background: #010409; color: var(--text); 
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0;
+        }
+        .widget-card {
+            width: 1320px; height: 940px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        /* Header */
+        .header {
+            padding: 15px 25px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            background: #0d1117;
+        }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        input { background: #010409; color: var(--green); border: 1px solid var(--border); padding: 8px; border-radius: 6px; width: 160px; outline: none; }
+        button { background: var(--panel); color: var(--text); border: 1px solid var(--border); padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        button:hover { border-color: var(--blue); background: var(--highlight); }
+
+        .content-grid { display: grid; grid-template-columns: 400px 1fr; flex: 1; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { padding: 25px; border-right: 1px solid var(--border); overflow-y: auto; background: rgba(0,0,0,0.2); }
+        .sidebar h3 { color: var(--blue); margin-top: 0; font-size: 18px; border-left: 4px solid var(--blue); padding-left: 10px; }
+        .sidebar h4 { color: var(--orange); margin-bottom: 8px; font-size: 14px; margin-top: 20px; }
+        .section-box { margin-bottom: 15px; padding: 12px; background: #010409; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .dp-formula-box { border-left: 3px solid var(--orange); padding-left: 10px; margin: 10px 0; font-family: 'Consolas', monospace; color: var(--orange); }
+        
+        /* 範例 block 樣式 */
+        .example-block { background: #0d1117; border: 1px solid var(--blue); padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #e6edf3; }
+        .example-title { color: var(--blue); font-weight: bold; margin-bottom: 5px; font-family: sans-serif; }
+
+        /* Workspace */
+        .workspace { display: grid; grid-template-rows: 1fr 400px; overflow: hidden; }
+        .editor-container { display: flex; flex-direction: column; background: #0d1117; }
+        .tabs { background: #010409; display: flex; border-bottom: 1px solid var(--border); }
+        .tab { padding: 12px 18px; font-size: 12px; color: var(--comment); border-right: 1px solid var(--border); cursor: pointer; font-family: monospace; }
+        .tab.active { background: var(--panel); color: var(--text); border-top: 2px solid var(--green); }
+        
+        .editor { padding: 25px; font-family: 'Fira Code', monospace; font-size: 15px; line-height: 1.7; overflow-y: auto; flex: 1; }
+        .line { display: block; padding-left: 50px; position: relative; opacity: 0.3; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--green); }
+        .line::before { content: attr(data-ln); position: absolute; left: 10px; color: #484f58; width: 30px; text-align: right; }
+
+        .kw { color: var(--purple); } .fn { color: var(--blue); } .num { color: var(--orange); }
+
+        /* Visualization */
+        .viz-section { border-top: 1px solid var(--border); background: #0d1117; padding: 20px; display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+        .viz-main { display: flex; flex-direction: column; gap: 20px; }
+        .house-row { display: flex; gap: 10px; justify-content: center; }
+        .house { 
+            width: 55px; padding: 10px 0; border: 1px solid var(--border); border-radius: 8px; 
+            text-align: center; background: var(--panel); transition: 0.3s;
+        }
+        .house.active { border-color: var(--green); background: rgba(63, 185, 80, 0.1); transform: translateY(-5px); }
+        .house.prev-1 { border-color: var(--blue); border-style: dashed; }
+        .house.prev-2 { border-color: var(--purple); border-style: dotted; }
+        .house .m-val { font-weight: bold; color: var(--orange); font-size: 16px; }
+        
+        .viz-bars { display: flex; align-items: flex-end; gap: 12px; height: 120px; justify-content: center; }
+        .bar-container { display: flex; flex-direction: column; align-items: center; width: 50px; }
+        .bar-val { font-family: monospace; font-size: 12px; color: var(--blue); font-weight: bold; margin-bottom: 5px; }
+        .bar { width: 35px; background: #21262d; border-radius: 4px 4px 0 0; transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .bar.active { background: var(--green); box-shadow: 0 0 15px rgba(63, 185, 80, 0.5); }
+        
+        .terminal { font-family: monospace; font-size: 13px; background: #010409; padding: 18px; border-radius: 10px; border: 1px solid var(--border); overflow-y: auto; }
+        .log-item { margin-bottom: 6px; line-height: 1.6; }
+        .log-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+        .choice { padding: 4px 8px; border-radius: 4px; font-size: 12px; border: 1px solid transparent; }
+        .choice.win { background: rgba(63, 185, 80, 0.2); color: var(--green); border: 1px solid var(--green); }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="header">
+        <div style="font-weight: bold; color: var(--green); font-size: 18px;">House Robber 演算法模擬器</div>
+        <div class="controls">
+            <span>房屋金額:</span>
+            <input type="text" id="numsInput" value="2, 7, 9, 3, 1" onchange="init()">
+            <button onclick="init()">重置</button>
+            <button onclick="prevStep()">上一步</button>
+            <button onclick="nextStep()" style="color: var(--green); border-color: var(--green); font-weight: bold;">下一步 (F10)</button>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="sidebar">
+            <h3>核心分析</h3>
+            <div class="section-box">
+                <b>目標：</b>在不搶劫相鄰房屋的前提下，獲取最高總金額。
+            </div>
+
+            <h4>範例說明 (LeetCode 198)</h4>
+            <div class="example-block">
+                <div class="example-title">Example:</div>
+                Input: nums = [2,7,9,3,1]<br>
+                Output: 12<br>
+                Explanation: <br>
+                - Rob house 1 (money = 2)<br>
+                - Rob house 3 (money = 9)<br>
+                - Rob house 5 (money = 1)<br>
+                Total: 2 + 9 + 1 = 12.
+            </div>
+            
+            <h4>狀態轉移方程式</h4>
+            <div class="section-box">
+                <div class="dp-formula-box">
+                    dp[i] = max(dp[i-1], dp[i-2] + nums[i])
+                </div>
+                這表示在第 i 間房，我們取「放棄這間（維持上一間的結果）」與「搶這間（目前加上前前間的結果）」的最大值。
+            </div>
+
+            <h4>複雜度概覽</h4>
+            <div id="complexityBox" class="section-box">
+                時間: O(n)<br>空間: O(n)
+            </div>
+        </div>
+
+        <div class="workspace">
+            <div class="editor-container">
+                <div class="tabs">
+                    <div class="tab" onclick="changeAlgo('recursion')" id="t-recursion">1_recursion.py</div>
+                    <div class="tab" onclick="changeAlgo('topdown')" id="t-topdown">2_top_down.py</div>
+                    <div class="tab active" onclick="changeAlgo('bottomup')" id="t-bottomup">3_bottom_up.py</div>
+                    <div class="tab" onclick="changeAlgo('optimal')" id="t-optimal">4_optimal.py</div>
+                </div>
+                <div id="codeEditor" class="editor"></div>
+            </div>
+
+            <div class="viz-section">
+                <div class="viz-main">
+                    <div id="houseRow" class="house-row"></div>
+                    <div id="vizBars" class="viz-bars"></div>
+                </div>
+                <div class="terminal" id="terminal">
+                    <div style="color: var(--green); margin-bottom: 10px; font-weight: bold;">💡 執行日誌</div>
+                    <div id="logContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let curStep = 0, nums = [], steps = [], curAlgo = 'bottomup';
+
+const repo = {
+    recursion: {
+        complexity: "時間: O(2^n)<br>空間: O(n)",
+        code: [
+            `<span class="kw">def</span> <span class="fn">rob</span>(nums, i):`,
+            `    <span class="kw">if</span> i < <span class="num">0</span>: <span class="kw">return</span> <span class="num">0</span>`,
+            `    <span class="kw">return</span> <span class="fn">max</span>(<span class="fn">rob</span>(nums, i-1), <span class="fn">rob</span>(nums, i-2) + nums[i])`
+        ],
+        gen: (n) => {
+            let dp = getRobDP(nums);
+            return [
+                {l:1, msg: "🔍 暴力遞迴：嘗試所有可能的組合（搶或不搶）。", dp: Array(n).fill(0)},
+                {l:3, msg: `🔀 決策樹展開：<br>計算 max(不搶最後一間, 搶最後一間 + 前前間)。`, dp: Array(n).fill(0), active: n-1},
+                {l:3, msg: `🛑 暴力遞迴會導致大量的重疊子問題，效率非常低。`, dp: dp, res: dp[n-1]}
+            ];
+        }
+    },
+    topdown: {
+        complexity: "時間: O(n)<br>空間: O(n)",
+        code: [
+            `<span class="kw">memo</span> = {}`,
+            `<span class="kw">def</span> <span class="fn">rob</span>(i):`,
+            `    <span class="kw">if</span> i <span class="kw">in</span> <span class="kw">memo</span>: <span class="kw">return</span> <span class="kw">memo</span>[i]`,
+            `    <span class="kw">memo</span>[i] = <span class="fn">max</span>(<span class="fn">rob</span>(i-1), <span class="fn">rob</span>(i-2) + nums[i])`,
+            `    <span class="kw">return</span> <span class="kw">memo</span>[i]`
+        ],
+        gen: (n) => {
+            let dp = getRobDP(nums);
+            let s = [{l:1, msg: "🧠 記憶化搜尋：先查表，沒查到才計算。", dp: Array(n).fill(0)}];
+            for(let i=0; i<n; i++) {
+                s.push({
+                    l:4, 
+                    msg: `💾 填充 Memo：<br>將第 ${i} 間房的結果 ${dp[i]} 存入快取。`, 
+                    dp: [...dp.slice(0,i+1), ...Array(n-i-1).fill(0)], 
+                    active: i
+                });
+            }
+            return s;
+        }
+    },
+    bottomup: {
+        complexity: "時間: O(n)<br>空間: O(n)",
+        code: [
+            `<span class="kw">dp</span> = [<span class="num">0</span>] * (n)`,
+            `<span class="kw">dp</span>[<span class="num">0</span>], <span class="kw">dp</span>[<span class="num">1</span>] = nums[<span class="num">0</span>], <span class="fn">max</span>(nums[<span class="num">0</span>], nums[<span class="num">1</span>])`,
+            `<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">2</span>, n):`,
+            `    <span class="kw">dp</span>[i] = <span class="fn">max</span>(<span class="kw">dp</span>[i-1], <span class="kw">dp</span>[i-2] + nums[i])`,
+            `<span class="kw">return</span> <span class="kw">dp</span>[-<span class="num">1</span>]`
+        ],
+        gen: (n) => {
+            let dp = new Array(n).fill(0);
+            let s = [{l:1, msg:"🏗️ 自底向上：從第一間開始逐一填寫收益表。", dp:[...dp]}];
+            dp[0] = nums[0];
+            s.push({l:2, msg:`🏠 初始狀態 dp[0]：只有一間可搶，收益 $${dp[0]}。`, dp:[...dp], active:0});
+            if(n > 1) {
+                dp[1] = Math.max(nums[0], nums[1]);
+                s.push({l:2, msg:`🏠 初始狀態 dp[1]：前兩間取最大的收益 $${dp[1]}。`, dp:[...dp], active:1, p1:0});
+            }
+            for(let i=2; i<n; i++) {
+                let rob = dp[i-2] + nums[i];
+                let skip = dp[i-1];
+                dp[i] = Math.max(rob, skip);
+                s.push({
+                    l:4, msg: `🏠 決策第 ${i+1} 間房 ($${nums[i]}):`,
+                    compare: { rob: { val: rob, formula: `dp[${i-2}](${dp[i-2]}) + ${nums[i]}`, win: rob >= skip },
+                               skip: { val: skip, formula: `dp[${i-1}](${dp[i-1]})`, win: skip > rob } },
+                    dp:[...dp], active: i, p1: i-1, p2: i-2
+                });
+            }
+            s.push({l:5, msg: `🏁 計算完成！最大值保存在 dp 陣列末尾。`, dp:[...dp], res: dp[n-1]});
+            return s;
+        }
+    },
+    optimal: {
+        complexity: "時間: O(n)<br>空間: O(1)",
+        code: [
+            `prev2, prev1 = <span class="num">0</span>, <span class="num">0</span>`,
+            `<span class="kw">for</span> x <span class="kw">in</span> nums:`,
+            `    <span class="kw">cur</span> = <span class="fn">max</span>(prev1, prev2 + x)`,
+            `    prev2, prev1 = prev1, <span class="kw">cur</span>`,
+            `<span class="kw">return</span> prev1`
+        ],
+        gen: (n) => {
+            let s = [{l:1, msg:"✨ 空間優化：我們只需要前兩步的結果，不需要整個陣列。", dp:Array(n).fill(0)}];
+            let p2=0, p1=0, dp=[];
+            nums.forEach((x, i) => {
+                let cur = Math.max(p1, p2 + x);
+                let winRob = (p2+x) >= p1;
+                s.push({
+                    l:3, msg:`🔄 滾動更新變數 (i=${i}):`,
+                    compare: { rob: { val: p2+x, formula: `prev2(${p2}) + ${x}`, win: winRob },
+                               skip: { val: p1, formula: `prev1(${p1})`, win: !winRob } },
+                    dp:[...dp, cur, ...Array(n-i-1).fill(0)], active: i
+                });
+                p2 = p1; p1 = cur; dp.push(cur);
+            });
+            s.push({l:5, msg: "🏁 優化完成。最終結果即為最後一次迭代的 prev1。", dp: dp, res: p1});
+            return s;
+        }
+    }
+};
+
+function getRobDP(arr) {
+    if(arr.length === 0) return [];
+    let d = [arr[0]];
+    if(arr.length > 1) d[1] = Math.max(arr[0], arr[1]);
+    for(let i=2; i<arr.length; i++) d[i] = Math.max(d[i-1], d[i-2]+arr[i]);
+    return d;
+}
+
+function changeAlgo(a) { curAlgo = a; init(); }
+
+function init() {
+    nums = document.getElementById('numsInput').value.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+    if(nums.length === 0) nums = [0];
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`t-${curAlgo}`)?.classList.add('active');
+    document.getElementById('codeEditor').innerHTML = (repo[curAlgo] || repo.bottomup).code.map((l, i) => `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    document.getElementById('complexityBox').innerHTML = (repo[curAlgo] || repo.bottomup).complexity;
+    
+    steps = (repo[curAlgo] || repo.bottomup).gen(nums.length);
+    curStep = 0; update();
+}
+
+function update() {
+    const step = steps[curStep];
+    const lines = document.querySelectorAll('.line');
+    lines.forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    let logHTML = `<div class="log-item">${step.msg}</div>`;
+    if(step.compare) {
+        logHTML += `
+        <div class="log-compare">
+            <div class="choice ${step.compare.rob.win ? 'win' : ''}"><b>選項：搶</b><br>${step.compare.rob.formula} = ${step.compare.rob.val}</div>
+            <div class="choice ${step.compare.skip.win ? 'win' : ''}"><b>選項：不搶</b><br>${step.compare.skip.formula} = ${step.compare.skip.val}</div>
+        </div>`;
+    }
+    document.getElementById('logContent').innerHTML = logHTML;
+
+    const hRow = document.getElementById('houseRow');
+    hRow.innerHTML = nums.map((v, i) => {
+        let cls = 'house' + (i === step.active ? ' active' : '') + (i === step.p1 ? ' prev-1' : '') + (i === step.p2 ? ' prev-2' : '');
+        return `<div class="${cls}"><div class="m-val">${v}</div><div style="font-size:9px">房 ${i}</div></div>`;
+    }).join('');
+
+    const bRow = document.getElementById('vizBars');
+    bRow.innerHTML = '';
+    const maxVal = Math.max(...steps[steps.length-1].dp, 1);
+    step.dp.forEach((v, i) => {
+        const h = (v / maxVal) * 85 + (v > 0 ? 5 : 0);
+        bRow.innerHTML += `<div class="bar-container"><span class="bar-val">${v || ''}</span><div class="bar ${i === step.active ? 'active' : ''}" style="height:${h}%"></div><div style="font-size:9px">dp[${i}]</div></div>`;
+    });
+    
+    document.getElementById('retVal').innerText = step.res || (step.dp[step.active] || 0);
+}
+
+function nextStep() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prevStep() { if(curStep > 0) { curStep--; update(); } }
+
+init();
+</script>
+</body>
+</html>

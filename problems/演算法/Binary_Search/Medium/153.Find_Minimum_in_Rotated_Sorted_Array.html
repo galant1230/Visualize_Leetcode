@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Find Minimum in Rotated Sorted Array 視覺化教學</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --code-bg: #1e293b;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #334155;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: var(--text-main); padding: 20px; line-height: 1.6; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        
+        h1 { text-align: center; color: #0f172a; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #64748b; margin-bottom: 30px; }
+
+        /* 題目描述區塊 */
+        .desc-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 30px; }
+        .example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+        .example-item { background: white; padding: 10px; border-radius: 8px; border-left: 4px solid var(--primary); font-size: 0.9rem; }
+
+        /* 陣列視覺化 */
+        .viz-box { background: white; border: 2px solid #e2e8f0; border-radius: 12px; padding: 60px 20px 40px 20px; margin-bottom: 30px; position: relative; }
+        .array-row { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .element {
+            width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
+            background: white; border: 2px solid #cbd5e1; border-radius: 8px;
+            font-weight: 800; font-size: 1.2rem; transition: all 0.3s;
+            position: relative;
+        }
+        .active-range { background: #eff6ff; border-color: var(--primary); color: var(--primary); transform: translateY(-5px); }
+        
+        /* 指標樣式 */
+        .ptr { position: absolute; left: 50%; transform: translateX(-50%); font-size: 12px; padding: 2px 8px; border-radius: 4px; color: white; font-weight: bold; white-space: nowrap; }
+        .ptr-l { top: -35px; background: var(--success); }
+        .ptr-m { top: -65px; background: var(--warning); }
+        .ptr-r { top: -35px; background: var(--danger); }
+
+        /* 佈局 */
+        .grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 30px; }
+        
+        /* 程式碼面板 */
+        .code-panel { background: var(--code-bg); color: #e2e8f0; padding: 25px; border-radius: 12px; font-family: 'Consolas', monospace; font-size: 14px; line-height: 1.7; }
+        .line { display: block; border-left: 4px solid transparent; padding-left: 15px; white-space: pre; }
+        .active-line { background: #334155; border-left-color: #3b82f6; color: #fff; }
+        
+        /* 控制項 */
+        .controls { text-align: center; margin-bottom: 25px; background: #f8fafc; padding: 20px; border-radius: 12px; }
+        input { padding: 10px; border: 2px solid #cbd5e1; border-radius: 8px; width: 250px; font-family: monospace; }
+        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin: 0 5px; }
+        button:disabled { background: #cbd5e1; }
+
+        .keyword { color: #c678dd; }
+        .comment { color: #5c6370; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Find Minimum in Rotated Sorted Array</h1>
+    <p class="subtitle">LeetCode #153 · 二分搜尋法與分界點尋找</p>
+
+    <div class="desc-box">
+        <strong>題目要求：</strong> 在旋轉排序陣列中尋找最小值。必須達到 <strong>O(log n)</strong> 時間複雜度。
+        <div class="example-grid">
+            <div class="example-item">輸入: [4,5,6,7,0,1,2]<br>輸出: 0</div>
+            <div class="example-item">輸入: [3,4,5,1,2]<br>輸出: 1</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <input type="text" id="inputArr" value="4,5,6,7,0,1,2">
+        <button onclick="initSim()">初始化</button>
+        <button id="nextBtn" onclick="runStep()" disabled>下一步 (Step)</button>
+    </div>
+
+    <div class="viz-box">
+        <div class="array-row" id="array-container"></div>
+    </div>
+
+    <div class="grid">
+        <div class="code-panel">
+<span class="line" id="l1"><span class="keyword">def</span> findMin(nums):</span>
+<span class="line" id="l2">    l, r = 0, len(nums) - 1</span>
+<span class="line" id="l3">    <span class="keyword">while</span> l < r:</span>
+<span class="line" id="l4">        mid = (l + r) // 2</span>
+<span class="line" id="l5">        <span class="keyword">if</span> nums[mid] > nums[r]:</span>
+<span class="line" id="l6">            l = mid + 1  <span class="comment"># 最小值在右半部</span></span>
+<span class="line" id="l7">        <span class="keyword">else</span>:</span>
+<span class="line" id="l8">            r = mid      <span class="comment"># mid 可能是最小值</span></span>
+<span class="line" id="l9">    <span class="keyword">return</span> nums[l]</span>
+        </div>
+
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <div style="font-weight: bold; color: var(--primary); margin-bottom: 10px;">狀態監控</div>
+            <p>L 指標: <span id="v-l">0</span></p>
+            <p>R 指標: <span id="v-r">0</span></p>
+            <p>Mid 指標: <span id="v-m">-</span></p>
+            <hr>
+            <p id="v-msg" style="font-size: 0.9rem; color: #64748b;">準備開始模擬...</p>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <h3>⏱ 複雜度分析</h3>
+        <p><strong>時間複雜度：O(log n)</strong> - 因為每次比較都將搜尋範圍縮小一半。</p>
+        <p><strong>空間複雜度：O(1)</strong> - 僅使用常數個指標變數。</p>
+    </div>
+</div>
+
+<script>
+    let nums = [];
+    let l = 0, r = 0, mid = -1;
+    let phase = 0;
+
+    function initSim() {
+        nums = document.getElementById('inputArr').value.split(',').map(Number);
+        l = 0;
+        r = nums.length - 1;
+        mid = -1;
+        phase = 0;
+        document.getElementById('nextBtn').disabled = false;
+        updateUI(2, "初始化 L 與 R 指標到兩端。");
+    }
+
+    function runStep() {
+        if (l >= r) {
+            updateUI(9, `搜尋結束！L 與 R 重合，最小值為 ${nums[l]}`);
+            document.getElementById('nextBtn').disabled = true;
+            return;
+        }
+
+        if (phase === 0) {
+            updateUI(3, "檢查條件：l < r 是否成立？");
+            phase = 1;
+        } else if (phase === 1) {
+            mid = Math.floor((l + r) / 2);
+            updateUI(4, `計算中間點 mid = ${mid}，值為 ${nums[mid]}`);
+            phase = 2;
+        } else if (phase === 2) {
+            if (nums[mid] > nums[r]) {
+                updateUI(5, `判斷：${nums[mid]} > ${nums[r]} (Mid > Right)，說明最小值在右半部。`);
+                phase = 3;
+            } else {
+                updateUI(7, `判斷：${nums[mid]} <= ${nums[r]} (Mid <= Right)，說明右半部是遞增的，最小值在左半部（含 Mid）。`);
+                phase = 4;
+            }
+        } else if (phase === 3) {
+            l = mid + 1;
+            updateUI(6, "更新 l = mid + 1");
+            phase = 0;
+        } else if (phase === 4) {
+            r = mid;
+            updateUI(8, "更新 r = mid");
+            phase = 0;
+        }
+    }
+
+    function updateUI(lineNum, msg) {
+        document.getElementById('v-l').innerText = l;
+        document.getElementById('v-r').innerText = r;
+        document.getElementById('v-m').innerText = mid === -1 ? "-" : mid;
+        document.getElementById('v-msg').innerText = msg;
+
+        document.querySelectorAll('.line').forEach(ln => ln.classList.remove('active-line'));
+        document.getElementById('l' + lineNum).classList.add('active-line');
+
+        const container = document.getElementById('array-container');
+        container.innerHTML = '';
+        nums.forEach((val, i) => {
+            const el = document.createElement('div');
+            el.className = 'element';
+            if (i >= l && i <= r) el.classList.add('active-range');
+            el.innerText = val;
+            if (i === l) el.innerHTML += '<div class="ptr ptr-l">L</div>';
+            if (i === mid) el.innerHTML += '<div class="ptr ptr-m">M</div>';
+            if (i === r) el.innerHTML += '<div class="ptr ptr-r">R</div>';
+            container.appendChild(el);
+        });
+    }
+
+    initSim();
+</script>
+</body>
+</html>

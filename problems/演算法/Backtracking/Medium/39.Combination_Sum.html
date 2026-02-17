@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Combination Sum - Professional Backtracking Visualizer</title>
+    <style>
+        :root {
+            --bg-body: #f1f5f9; --card-header: #fffbeb; --header-border: #fde68a;
+            --editor-bg: #0d1117; --primary: #f59e0b; --node-purple: #2d1b36;
+            --node-border: #581c87; --success: #064e3b; --success-border: #10b981;
+            --fail: #450a0a; --fail-border: #ef4444; --text-gray: #94a3b8;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-body); margin: 0; padding: 25px; }
+        .dashboard { max-width: 1400px; margin: auto; display: flex; flex-direction: column; gap: 20px; }
+
+        /* 1. 頂部題目卡片 (對應圖四) */
+        .problem-header { background: var(--card-header); border: 1.5px solid var(--header-border); border-radius: 12px; padding: 20px; }
+        .problem-header h2 { margin: 0 0 12px 0; color: #92400e; font-size: 20px; }
+        .tag-row { display: flex; gap: 15px; }
+        .tag { background: white; padding: 8px 15px; border-radius: 8px; border: 1.5px solid var(--header-border); font-size: 14px; font-weight: bold; }
+
+        /* 2. 中間佈局 */
+        .main-layout { display: grid; grid-template-columns: 1fr 500px; gap: 20px; height: 650px; }
+
+        /* 樹狀圖區域 (對應圖一、圖三) */
+        .tree-container { background: #000; border-radius: 16px; position: relative; overflow: auto; padding: 40px; }
+        .node-div { position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 10; width: 60px; }
+        .circle {
+            width: 48px; height: 48px; border-radius: 50%; background: var(--node-purple);
+            border: 2px solid var(--node-border); display: flex; align-items: center; justify-content: center;
+            color: #e9d5ff; font-size: 13px; font-weight: bold; transition: 0.3s;
+        }
+        .circle.active { border-color: var(--primary); box-shadow: 0 0 20px var(--primary); transform: scale(1.15); color: white; }
+        .circle.match { background: var(--success); border-color: var(--success-border); color: #d1fae5; }
+        .circle.pruned { background: var(--fail); border-color: var(--fail-border); color: #fecaca; }
+        .circle.pruned::after { content: '✕'; position: absolute; color: var(--fail-border); font-size: 24px; font-weight: bold; }
+        
+        .node-label { color: var(--text-gray); font-size: 10px; margin-top: 5px; white-space: nowrap; }
+
+        .line-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .edge { stroke: rgba(255,255,255,0.15); stroke-width: 1.5; fill: none; }
+        .edge.active { stroke: var(--primary); stroke-width: 2.5; opacity: 1; }
+
+        /* 程式碼 IDE (對應圖二) */
+        .editor { background: var(--editor-bg); border-radius: 16px; display: flex; flex-direction: column; border: 1px solid #30363d; overflow: hidden; }
+        .code-view { flex: 1; padding: 15px 0; font-family: 'Fira Code', 'Consolas', monospace; font-size: 13.5px; line-height: 1.6; color: #c9d1d9; overflow-y: auto; }
+        .ln { display: flex; position: relative; padding-left: 55px; }
+        .ln-no { position: absolute; left: 0; width: 40px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; font-size: 12px; }
+        .ln-active { background: #21262d; border-left: 4px solid var(--primary); }
+        .indent-1 { padding-left: 4ch; } .indent-2 { padding-left: 8ch; } .indent-3 { padding-left: 12ch; }
+        .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #8b949e; } .num { color: #79c0ff; }
+
+        /* 3. 底部資訊卡片 (對應圖五) */
+        .footer-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .info-card { padding: 20px; border-radius: 12px; border-left: 6px solid; font-size: 14.5px; line-height: 1.6; }
+        .analysis { background: #f0fdf4; border-color: #22c55e; }
+        .logic { background: #eff6ff; border-color: #3b82f6; }
+
+        /* 按鈕控制 */
+        .controls { display: flex; gap: 15px; margin-top: 15px; }
+        button { padding: 12px 25px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .btn-step { background: #f59e0b; color: white; }
+        .btn-reset { background: #94a3b8; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="problem-header">
+        <h2>39. Combination Sum</h2>
+        <div style="margin-bottom: 12px; color: #78350f;">找出所有唯一組合，使數字之和等於目標值。數字可以<b>無限次重複選擇</b>。</div>
+        <div class="tag-row">
+            <div class="tag">Candidates: [2, 3, 6, 7]</div>
+            <div class="tag">Target: 7</div>
+            <div class="tag">Output: [[2, 2, 3], [7]]</div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="tree-container" id="tree-area">
+            <svg class="line-svg" id="svg-layer"></svg>
+            </div>
+        
+        <div class="editor">
+            <div style="padding:10px 20px; background:#161b22; color:#8b949e; font-size:12px; border-bottom:1px solid #30363d;">combination_sum.py</div>
+            <div class="code-view" id="code-area"></div>
+            <div style="padding: 20px; background: #161b22;">
+                <div style="color: #4fc1ff; font-family: monospace; font-size: 12px; margin-bottom: 10px;">// Monitor: Path=<span id="mon-path">[]</span> Rem=<span id="mon-rem">7</span></div>
+                <div class="controls">
+                    <button class="btn-step" onclick="goStep()">Next Step (執行一步) ▶</button>
+                    <button class="btn-reset" onclick="init()">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-cards">
+        <div class="info-card analysis">
+            <h4 style="margin:0 0 10px 0; color: #166534;">📊 複雜度分析</h4>
+            時間複雜度：<b>O(N ^ (T/M + 1))</b><br>
+            空間複雜度：<b>O(T/M)</b> (遞迴深度)
+        </div>
+        <div class="info-card logic">
+            <h4 style="margin:0 0 10px 0; color: #1e40af;">💡 關鍵邏輯</h4>
+            使用 <code>start</code> 參數來確保組合的「非遞減性」，這能有效避免產生重複組合（如避免同時出現 [2,3] 與 [3,2]）。
+        </div>
+    </div>
+</div>
+
+<script>
+const codeLines = [
+    { t: "def combinationSum(candidates, target):", i: 0 },
+    { t: "    res = []", i: 1 },
+    { t: "    def backtrack(remain, start, path):", i: 0 },
+    { t: "        if remain == 0:", i: 1 },
+    { t: "            res.append(list(path)) # 組合成功", i: 2 },
+    { t: "            return", i: 2 },
+    { t: "        if remain < 0:", i: 1 },
+    { t: "            return # 剪枝", i: 2 },
+    { t: "", i: 0 },
+    { t: "        for i in range(start, len(candidates)):", i: 1 },
+    { t: "            path.append(candidates[i])", i: 2 },
+    { t: "            backtrack(remain - candidates[i], i, path)", i: 2 },
+    { t: "            path.pop() # 回溯", i: 2 },
+    { t: "    backtrack(target, 0, [])", i: 1 },
+    { t: "    return res", i: 1 }
+];
+
+const nodes = [
+    { id: 'r', val: '7', x: 400, y: 50, path: [], rem: 7 },
+    { id: 'n2', pid: 'r', val: '5', x: 180, y: 160, path: [2], rem: 5 },
+    { id: 'n22', pid: 'n2', val: '3', x: 100, y: 280, path: [2,2], rem: 3 },
+    { id: 'n222', pid: 'n22', val: '1', x: 60, y: 400, path: [2,2,2], rem: 1 },
+    { id: 'n2222', pid: 'n222', val: '-1', x: 30, y: 520, path: [2,2,2,2], rem: -1, state: 'pruned' },
+    { id: 'n223', pid: 'n22', val: '0', x: 140, y: 400, path: [2,2,3], rem: 0, state: 'match' },
+    { id: 'n23', pid: 'n2', val: '2', x: 260, y: 280, path: [2,3], rem: 2 },
+    { id: 'n233', pid: 'n23', val: '-1', x: 260, y: 400, path: [2,3,3], rem: -1, state: 'pruned' },
+    { id: 'n3', pid: 'r', val: '4', x: 420, y: 160, path: [3], rem: 4 },
+    { id: 'n33', pid: 'n3', val: '1', x: 420, y: 280, path: [3,3], rem: 1 },
+    { id: 'n333', pid: 'n33', val: '-2', x: 420, y: 400, path: [3,3,3], rem: -2, state: 'pruned' },
+    { id: 'n7', pid: 'r', val: '0', x: 660, y: 160, path: [7], rem: 0, state: 'match' }
+];
+
+const trace = [
+    { ln: 14, nid: 'r' }, { ln: 10, nid: 'n2' }, { ln: 11, nid: 'n22' }, { ln: 11, nid: 'n222' },
+    { ln: 7, nid: 'n2222' }, { ln: 13, nid: 'n222' }, { ln: 11, nid: 'n223' }, { ln: 4, nid: 'n223' },
+    { ln: 13, nid: 'n22' }, { ln: 13, nid: 'n2' }, { ln: 11, nid: 'n23' }, { ln: 7, nid: 'n233' },
+    { ln: 13, nid: 'r' }, { ln: 11, nid: 'n7' }, { ln: 4, nid: 'n7' }
+];
+
+let cur = 0;
+
+function init() {
+    cur = 0;
+    const tree = document.getElementById('tree-area');
+    const svg = document.getElementById('svg-layer');
+    tree.querySelectorAll('.node-div').forEach(n => n.remove());
+    svg.innerHTML = '';
+
+    nodes.forEach(n => {
+        if (n.pid) {
+            const p = nodes.find(x => x.id === n.pid);
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", p.x); line.setAttribute("y1", p.y);
+            line.setAttribute("x2", n.x); line.setAttribute("y2", n.y);
+            line.setAttribute("class", "edge"); line.setAttribute("id", `edge-${n.id}`);
+            svg.appendChild(line);
+        }
+    });
+
+    nodes.forEach(n => {
+        const div = document.createElement('div');
+        div.className = 'node-div';
+        div.style.left = (n.x - 30) + 'px'; div.style.top = (n.y - 24) + 'px';
+        div.innerHTML = `<div class="circle" id="node-${n.id}">${n.val}</div><div class="node-label">(${n.path.join(',')})</div>`;
+        tree.appendChild(div);
+    });
+
+    document.getElementById('code-area').innerHTML = codeLines.map((l, i) => `
+        <div class="ln" id="ln-${i}"><div class="ln-no">${i+1}</div>
+        <div class="indent-${l.i}">${highlight(l.t)}</div></div>
+    `).join('');
+    render();
+}
+
+function highlight(t) {
+    return t.replace(/def |if |return |for |in |range/g, x => `<span class="kw">${x}</span>`)
+            .replace(/backtrack|append|list|pop/g, x => `<span class="fn">${x}</span>`)
+            .replace(/#.*/g, x => `<span class="cm">${x}</span>`)
+            .replace(/\b\d+\b/g, x => `<span class="num">${x}</span>`);
+}
+
+function goStep() { if (cur < trace.length - 1) { cur++; render(); } }
+
+function render() {
+    const s = trace[cur];
+    const n = nodes.find(x => x.id === s.nid);
+    document.querySelectorAll('.ln').forEach(l => l.classList.remove('ln-active'));
+    document.getElementById(`ln-${s.ln-1}`).classList.add('ln-active');
+    
+    document.getElementById('mon-path').innerText = JSON.stringify(n.path);
+    document.getElementById('mon-rem').innerText = n.rem;
+
+    document.querySelectorAll('.circle').forEach(c => c.classList.remove('active'));
+    const circle = document.getElementById(`node-${s.nid}`);
+    circle.classList.add('active');
+    if (n.state === 'match') circle.classList.add('match');
+    if (n.state === 'pruned') circle.classList.add('pruned');
+
+    document.querySelectorAll('.edge').forEach(e => e.classList.remove('active'));
+    let temp = n;
+    while(temp && temp.pid) {
+        document.getElementById(`edge-${temp.id}`).classList.add('active');
+        temp = nodes.find(x => x.id === temp.pid);
+    }
+}
+
+init();
+</script>
+</body>
+</html>

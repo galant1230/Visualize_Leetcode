@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Max Product Subarray - Full Visualizer</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --func: #d2a8ff; --num: #79c0ff;
+            --hl: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        .container { max-width: 1650px; margin: auto; display: grid; grid-template-columns: 350px 1fr 550px; gap: 15px; height: 95vh; }
+
+        /* 左側資訊 */
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 12px; border-radius: 8px; font-size: 13px; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 8px; margin-top: 5px; font-size: 12px; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); }
+
+        /* 中間視覺化 */
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .viz-area { background: var(--card); border-radius: 8px; padding: 30px 15px; border: 1px solid #333; position: relative; }
+        
+        .array-row { display: flex; gap: 8px; justify-content: center; align-items: center; margin: 25px 0; }
+        .node { width: 48px; height: 48px; border: 2px solid #30363d; border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; background: #0d1117; transition: 0.2s; }
+        .node.active { border-color: var(--accent); background: var(--hl); box-shadow: 0 0 10px var(--accent); }
+        .node.range { background: rgba(35, 134, 54, 0.15); border-color: #238636; }
+        .node .val { font-weight: bold; font-size: 18px; }
+        
+        /* 標籤顯示 */
+        .lbl { position: absolute; font-size: 10px; font-weight: bold; white-space: nowrap; }
+        .lbl-t { top: -25px; color: var(--accent); }
+        .lbl-b { bottom: -25px; color: var(--energy); }
+
+        /* 額外軌跡 */
+        .track-container { margin-top: 15px; border-top: 1px solid #333; padding-top: 15px; }
+        .track { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+        .track-node { width: 42px; height: 32px; border: 1px solid #444; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--dim); }
+        .track-node.fill { color: #fff; border-color: var(--energy); background: rgba(210, 153, 34, 0.1); }
+
+        /* 右側代碼 */
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .code-header { background: #161b22; padding: 10px 15px; border-bottom: 1px solid #30363d; font-size: 12px; display: flex; justify-content: space-between; }
+        .code-body { flex: 1; padding: 10px 0; line-height: 1.5; font-size: 12px; white-space: pre; overflow-x: auto; }
+        .ln { padding: 0 40px; position: relative; border-left: 4px solid transparent; }
+        .ln-active { background: var(--hl); border-left-color: var(--accent); }
+        .ln-num { position: absolute; left: 8px; color: #484f58; width: 22px; text-align: right; }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .kw { color: var(--keyword); } .fn { color: var(--func); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent);">LeetCode 152. Max Product Subarray</div>
+        <div style="display:flex; gap:10px;">
+            <select id="algo" onchange="init()">
+                <option value="brute">1. Brute Force (i, j Pointers)</option>
+                <option value="slide">2. Sliding Window (Negs Control)</option>
+                <option value="kadane">3. Kadane's (DP Track)</option>
+                <option value="preSuf">4. Prefix & Suffix (Double Track)</option>
+            </select>
+            <input type="text" id="nums" value="2, 3, -2, 4, -1" style="width:120px; background:#000; color:var(--accent); border:1px solid #444; padding:4px;">
+            <button class="btn" onclick="next()">下一步 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent)">💡 Example 1</b>
+            <div class="ex-box">Input: [2,3,-2,4] → Output: 6</div>
+        </div>
+        <div class="info-card">
+            <b style="color:var(--accent)">💡 Example 2</b>
+            <div class="ex-box">Input: [-2,0,-1] → Output: 0</div>
+        </div>
+        <div id="comp" class="info-card"></div>
+        <div class="info-card" style="border-top: 2px solid var(--energy);">
+            <b style="color:var(--energy)">🔍 關鍵變數監控</b>
+            <div id="monitor" style="font-family:monospace; font-size:12px; margin-top:8px;"></div>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area">
+            <div style="font-size:11px; color:var(--dim)">INPUT ARRAY / SLIDING WINDOW</div>
+            <div id="mainArr" class="array-row"></div>
+            
+            <div id="trackArea" style="display:none;" class="track-container">
+                <div id="trackLabel1" style="font-size:10px; color:var(--energy)">TRACK A</div>
+                <div id="track1" class="track"></div>
+                <div id="trackLabel2" style="font-size:10px; color:var(--danger); margin-top:10px;">TRACK B</div>
+                <div id="track2" class="track"></div>
+            </div>
+        </div>
+
+        <div class="viz-area" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            <div style="font-size:11px; color:var(--energy)">GLOBAL RESULT (RES)</div>
+            <div id="resVal" style="font-size:64px; font-weight:bold; color:var(--energy)">-</div>
+            <div id="log" style="color:var(--accent); font-size:13px; margin-top:10px; font-family: monospace;"></div>
+        </div>
+    </div>
+
+    <div class="editor">
+        <div class="code-header"><span id="fname" style="color:var(--accent)"></span><span>Python 3.11</span></div>
+        <div id="codeView" class="code-body"></div>
+    </div>
+</div>
+
+<script>
+const algos = {
+    brute: {
+        file: "brute_force.py", comp: "Time: O(n²) | Space: O(1)",
+        code: ["for i in range(len(nums)):", "    cur = nums[i]", "    res = max(res, cur)", "    for j in range(i + 1, len(nums)):", "        cur *= nums[j]", "        res = max(res, cur)"],
+        logic: function* (n) {
+            let res = n[0];
+            for(let i=0; i<n.length; i++){
+                let cur = n[i]; res = Math.max(res, cur);
+                yield {ln:0, i, j:i, res, v1:cur, m:`i 固定在 ${i}`};
+                for(let j=i+1; j<n.length; j++){
+                    cur *= n[j]; res = Math.max(res, cur);
+                    yield {ln:4, i, j, res, v1:cur, m:`j 延伸至 ${j}, 乘積: ${cur}`};
+                }
+            }
+        }
+    },
+    slide: {
+        file: "sliding_window.py", comp: "Time: O(n) | Space: O(n)",
+        code: ["for sub in A:", "    negs = sum(1 for i in sub if i < 0)", "    need = negs if negs % 2 == 0 else negs - 1", "    prod = 1; j = 0", "    for i in range(len(sub)):", "        prod *= sub[i]", "        if sub[i] < 0: negs_cnt += 1", "        while negs_cnt > need:", "            prod //= sub[j]; if sub[j] < 0: negs_cnt -= 1; j += 1", "        res = max(res, prod)"],
+        logic: function* (n) {
+            let res = Math.max(...n);
+            let segments = []; let temp = [];
+            for (let x of n) { if(x===0) { if(temp.length) segments.push(temp); temp=[]; } else temp.push(x); }
+            if(temp.length) segments.push(temp);
+
+            let globalIdxOffset = 0;
+            for (let sub of segments) {
+                while(globalIdxOffset < n.length && n[globalIdxOffset] === 0) globalIdxOffset++;
+                let totalNegs = sub.filter(x => x < 0).length;
+                let need = totalNegs % 2 === 0 ? totalNegs : totalNegs - 1;
+                let curNegs = 0, prod = 1, j = 0;
+                
+                yield {ln:0, m: `進入子段: [${sub.join(',')}]，目標負數數: ${need}`, res};
+                for (let i = 0; i < sub.length; i++) {
+                    prod *= sub[i];
+                    if (sub[i] < 0) curNegs++;
+                    
+                    let startIdx = globalIdxOffset + j;
+                    let endIdx = globalIdxOffset + i;
+
+                    yield {ln:5, i: endIdx, j: startIdx, res, v1: prod, v2: curNegs, m: `右界 i 移動，當前積: ${prod}`};
+
+                    while (curNegs > need) {
+                        prod /= sub[j];
+                        if (sub[j] < 0) curNegs--;
+                        j++;
+                        startIdx = globalIdxOffset + j;
+                        yield {ln:8, i: endIdx, j: startIdx, res, v1: prod, v2: curNegs, m: `負數過多，左界 j 縮進`};
+                    }
+                    res = Math.max(res, prod);
+                    yield {ln:9, i: endIdx, j: startIdx, res, v1: prod, v2: curNegs, m: `更新全局最大值: ${res}`};
+                }
+                globalIdxOffset += sub.length;
+            }
+        }
+    },
+    kadane: {
+        file: "kadane_dp.py", comp: "Time: O(n) | Space: O(1)",
+        code: ["for num in nums:", "    tmp = curMax * num", "    curMax = max(num*curMax, num*curMin, num)", "    curMin = min(tmp, num*curMin, num)", "    res = max(res, curMax)"],
+        logic: function* (n) {
+            let res = n[0], cMax = 1, cMin = 1, dpMax = [], dpMin = [];
+            for(let i=0; i<n.length; i++){
+                let val = n[i]; let t = cMax * val;
+                cMax = Math.max(val*cMax, val*cMin, val);
+                cMin = Math.min(t, val*cMin, val);
+                res = Math.max(res, cMax);
+                dpMax.push(cMax); dpMin.push(cMin);
+                yield {ln:0, i, res, v1:cMax, v2:cMin, track1:[...dpMax], track2:[...dpMin], m:`處理元素 ${val}`};
+            }
+        }
+    },
+    preSuf: {
+        file: "prefix_suffix.py", comp: "Time: O(n) | Space: O(1)",
+        code: ["for i in range(n):", "    prefix = nums[i] * (prefix or 1)", "    suffix = nums[n-1-i] * (suffix or 1)", "    res = max(res, prefix, suffix)"],
+        logic: function* (n) {
+            let res = n[0], pre = 0, suf = 0, L = n.length;
+            let pTr = new Array(L).fill(null), sTr = new Array(L).fill(null);
+            for(let i=0; i<L; i++){
+                pre = n[i] * (pre || 1); suf = n[L-1-i] * (suf || 1);
+                res = Math.max(res, pre, suf);
+                pTr[i] = pre; sTr[L-1-i] = suf;
+                yield {ln:1, i, j:L-1-i, res, v1:pre, v2:suf, track1:[...pTr], track2:[...sTr], m:`同步計算前後綴`};
+            }
+        }
+    }
+};
+
+let it;
+function init() {
+    const type = document.getElementById('algo').value;
+    const nums = document.getElementById('nums').value.split(',').map(v => parseInt(v.trim()));
+    const config = algos[type];
+
+    document.getElementById('fname').innerText = config.file;
+    document.getElementById('comp').innerHTML = `<div class="tag">${config.comp}</div>`;
+    document.getElementById('codeView').innerHTML = config.code.map((l, i) => 
+        `<div class="ln" id="ln-${i}"><span class="ln-num">${i+1}</span>${l.replace(/for|in|max|min|if|while|range|len/g, '<span class="kw">$&</span>')}</div>`).join('');
+    
+    document.getElementById('mainArr').innerHTML = nums.map((v, i) => 
+        `<div class="node" id="n-${i}"><div class="lbl lbl-t" id="lt-${i}"></div><span class="val">${v}</span><div class="lbl lbl-b" id="lb-${i}"></div></div>`).join('');
+
+    const trackArea = document.getElementById('trackArea');
+    if(type === 'kadane' || type === 'preSuf') {
+        trackArea.style.display = 'block';
+        document.getElementById('trackLabel1').innerText = type === 'kadane' ? 'DP MAX TRACK' : 'PREFIX TRACK';
+        document.getElementById('trackLabel2').innerText = type === 'kadane' ? 'DP MIN TRACK' : 'SUFFIX TRACK';
+        document.getElementById('track1').innerHTML = nums.map((_, i) => `<div class="track-node" id="t1-${i}">-</div>`).join('');
+        document.getElementById('track2').innerHTML = nums.map((_, i) => `<div class="track-node" id="t2-${i}">-</div>`).join('');
+    } else { trackArea.style.display = 'none'; }
+
+    it = config.logic(nums);
+    document.getElementById('resVal').innerText = "-";
+    document.getElementById('monitor').innerHTML = "等待開始...";
+}
+
+function next() {
+    const s = it.next();
+    if(!s.done) {
+        const {ln, i, j, res, v1, v2, track1, track2, m} = s.value;
+        const type = document.getElementById('algo').value;
+
+        document.querySelectorAll('.ln').forEach(e => e.classList.remove('ln-active'));
+        if(document.getElementById(`ln-${ln}`)) document.getElementById(`ln-${ln}`).classList.add('ln-active');
+        
+        document.querySelectorAll('.node').forEach(e => e.className = 'node');
+        document.querySelectorAll('.lbl').forEach(e => e.innerText = '');
+
+        if(type === 'brute' || type === 'slide') {
+            for(let k=Math.min(i,j); k<=Math.max(i,j); k++) document.getElementById(`n-${k}`).classList.add('range');
+            document.getElementById(`n-${i}`).classList.add('active');
+            document.getElementById(`lt-${i}`).innerText = type === 'brute' ? 'i' : 'i (Right)';
+            document.getElementById(`n-${j}`).classList.add('active');
+            document.getElementById(`lb-${j}`).innerText = type === 'brute' ? 'j' : 'j (Left)';
+            document.getElementById('monitor').innerHTML = type === 'slide' ? `Prod: ${v1}<br>Negs: ${v2}` : `Cur Prod: ${v1}`;
+        } else if(type === 'kadane') {
+            document.getElementById(`n-${i}`).classList.add('active');
+            document.getElementById(`lt-${i}`).innerText = `Max:${v1}`;
+            document.getElementById(`lb-${i}`).innerText = `Min:${v2}`;
+            track1.forEach((v, idx) => { const e = document.getElementById(`t1-${idx}`); e.innerText = v; e.classList.add('fill'); });
+            track2.forEach((v, idx) => { const e = document.getElementById(`t2-${idx}`); e.innerText = v; e.classList.add('fill'); });
+            document.getElementById('monitor').innerHTML = `curMax: ${v1}<br>curMin: ${v2}`;
+        } else if(type === 'preSuf') {
+            document.getElementById(`n-${i}`).classList.add('active');
+            document.getElementById(`n-${j}`).classList.add('active');
+            document.getElementById(`lt-${i}`).innerText = `P:${v1}`;
+            document.getElementById(`lb-${j}`).innerText = `S:${v2}`;
+            track1.forEach((v, idx) => { if(v!==null){const e=document.getElementById(`t1-${idx}`); e.innerText=v; e.classList.add('fill');}});
+            track2.forEach((v, idx) => { if(v!==null){const e=document.getElementById(`t2-${idx}`); e.innerText=v; e.classList.add('fill');}});
+            document.getElementById('monitor').innerHTML = `Prefix: ${v1}<br>Suffix: ${v2}`;
+        }
+        document.getElementById('resVal').innerText = res;
+        document.getElementById('log').innerText = `> ${m}`;
+    }
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Unique Paths Visualizer</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        .container { max-width: 1650px; margin: auto; display: grid; grid-template-columns: 380px 1fr 480px; gap: 15px; height: 95vh; }
+
+        /* 左側資訊 */
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 8px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+
+        /* 中間網格核心 */
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .grid-container { 
+            display: grid; gap: 8px; margin: auto; padding: 20px; background: var(--card); border-radius: 8px; border: 1px solid #333;
+            position: relative;
+        }
+        .cell {
+            width: 60px; height: 60px; border: 1px solid #30363d; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: bold; background: #0d1117; transition: all 0.3s; position: relative;
+        }
+        .cell.start { border: 2px solid var(--pacific); color: var(--pacific); }
+        .cell.end { border: 2px solid var(--energy); color: var(--energy); }
+        .cell.active { border-color: var(--accent); background: var(--hl); transform: scale(1.05); z-index: 5; }
+        .cell.source { border-color: var(--atlantic); color: var(--atlantic); background: rgba(35, 134, 54, 0.1); }
+        .cell.filled { color: #fff; }
+
+        /* 右側 IDE */
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .code-header { background: #161b22; padding: 10px 15px; border-bottom: 1px solid #30363d; font-size: 12px; }
+        .ln { white-space: pre; padding: 0 15px 0 60px; position: relative; line-height: 1.8; font-size: 14px; }
+        .ln-num { position: absolute; left: 0; width: 45px; text-align: right; color: #484f58; padding-right: 15px; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        /* 箭頭指示 */
+        .cell::before { content: attr(data-label); position: absolute; top: -18px; font-size: 10px; color: var(--dim); font-weight: normal; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:18px;">62. Unique Paths (2D DP Visualizer)</div>
+        <div style="display:flex; gap:12px;">
+            m: <input type="number" id="mIn" value="3" style="width:40px; background:#000; color:var(--accent); border:1px solid #444;">
+            n: <input type="number" id="nIn" value="7" style="width:40px; background:#000; color:var(--accent); border:1px solid #444;">
+            <button class="btn" onclick="next()">下一步 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent)">📖 題目敘述</b><br>
+            一個機器人位於 m * n 網格的左上角。機器人每次只能向下或向右移動一步，請問到達右下角有多少條唯一的路徑？
+        </div>
+        <div class="info-card">
+            <b style="color:var(--energy)">💡 範例測資</b>
+            <div class="ex-box"><b>Ex 1:</b> m=3, n=7 → <b>28</b></div>
+            <div class="ex-box"><b>Ex 2:</b> m=3, n=2 → <b>3</b></div>
+            <div class="ex-box"><b>Ex 3:</b> m=7, n=3 → <b>28</b></div>
+        </div>
+        <div class="info-card">
+            <b style="color:var(--atlantic)">🧠 解法思路</b><br>
+            <code>dp[i][j]</code>: 到達點 (i, j) 的路徑數。<br>
+            機器人只能從<b>上方</b>或<b>左方</b>走過來：<br>
+            <code style="color:var(--energy)">dp[i][j] = dp[i-1][j] + dp[i][j-1]</code><br>
+            <i style="color:var(--dim)">* 第一行與第一列的路徑數皆為 1。</i>
+        </div>
+        <div class="info-card">
+            <span class="tag">時間: O(m*n)</span><span class="tag">空間: O(m*n)</span>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div id="grid" class="grid-container"></div>
+        <div class="viz-area" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px;">
+            <div style="font-size:12px; color:var(--dim); letter-spacing: 2px;">TOTAL UNIQUE PATHS</div>
+            <div id="resVal" style="font-size:72px; font-weight:bold; color:var(--energy)">0</div>
+            <div id="log" style="color:var(--accent); font-size:14px; margin-top:15px; font-family: 'Consolas'; font-weight: bold;"></div>
+        </div>
+    </div>
+
+    <div class="editor">
+        <div class="code-header"><span style="color:var(--accent)">unique_paths.py</span></div>
+        <div id="codeView" class="code-body"></div>
+    </div>
+</div>
+
+<script>
+const codeLines = [
+    "dp = [[1] * n for _ in range(m)]",
+    "for i in range(1, m):",
+    "    for j in range(1, n):",
+    "        dp[i][j] = dp[i-1][j] + dp[i][j-1]",
+    "return dp[m-1][n-1]"
+];
+
+let it;
+function init() {
+    const m = parseInt(document.getElementById('mIn').value);
+    const n = parseInt(document.getElementById('nIn').value);
+    
+    const grid = document.getElementById('grid');
+    grid.style.gridTemplateColumns = `repeat(${n}, 60px)`;
+    grid.innerHTML = '';
+    
+    for(let i=0; i<m; i++) {
+        for(let j=0; j<n; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.id = `cell-${i}-${j}`;
+            cell.innerText = (i === 0 || j === 0) ? '1' : '0';
+            if(i === 0 && j === 0) cell.classList.add('start');
+            if(i === m-1 && j === n-1) cell.classList.add('end');
+            grid.appendChild(cell);
+        }
+    }
+
+    document.getElementById('codeView').innerHTML = codeLines.map((l, i) => {
+        const formatted = l.replace(/for|in|range|return/g, '<span class="kw">$&</span>');
+        return `<div class="ln" id="ln-${i}"><span class="ln-num">${i+1}</span>${formatted}</div>`;
+    }).join('');
+
+    it = pathLogic(m, n);
+    document.getElementById('resVal').innerText = "1";
+    document.getElementById('log').innerText = "> 初始化第一行與第一列為 1";
+}
+
+function* pathLogic(m, n) {
+    const dp = Array.from({ length: m }, () => Array(n).fill(1));
+    yield { ln: 0, m: "基礎狀態：機器人沿邊界走只有 1 種方式" };
+
+    for (let i = 1; i < m; i++) {
+        for (let j = 1; j < n; j++) {
+            yield { ln: 2, i, j, m: `計算 dp[${i}][${j}]` };
+            dp[i][j] = dp[i-1][j] + dp[i][j-1];
+            yield { ln: 3, i, j, val: dp[i][j], m: `dp[${i}][${j}] = ${dp[i-1][j]} (上) + ${dp[i][j-1]} (左) = ${dp[i][j]}`, filled: true };
+        }
+    }
+    yield { ln: 4, res: dp[m-1][n-1], m: "到達終點！" };
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) return;
+    const { ln, i, j, val, res, m, filled } = s.value;
+
+    document.querySelectorAll('.ln').forEach(e => e.classList.remove('ln-active'));
+    document.getElementById(`ln-${ln}`).classList.add('ln-active');
+
+    document.querySelectorAll('.cell').forEach(e => e.classList.remove('active', 'source'));
+
+    if (i !== undefined && j !== undefined) {
+        const current = document.getElementById(`cell-${i}-${j}`);
+        current.classList.add('active');
+        
+        // 標示來源
+        document.getElementById(`cell-${i-1}-${j}`).classList.add('source');
+        document.getElementById(`cell-${i}-${j-1}`).classList.add('source');
+
+        if (filled) {
+            current.innerText = val;
+            current.classList.add('filled');
+        }
+    }
+    
+    if (res) document.getElementById('resVal').innerText = res;
+    document.getElementById('log').innerText = `> ${m}`;
+}
+
+init();
+</script>
+</body>
+</html>

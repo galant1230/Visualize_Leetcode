@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Jump Game Visualizer</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        .container { max-width: 1650px; margin: auto; display: grid; grid-template-columns: 380px 1fr 480px; gap: 15px; height: 95vh; }
+
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 8px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .viz-area { background: var(--card); border-radius: 8px; padding: 60px 15px; border: 1px solid #333; position: relative; }
+        
+        .row { display: flex; gap: 10px; justify-content: center; position: relative; }
+        .node { width: 60px; height: 65px; border: 2px solid #30363d; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0d1117; position: relative; transition: all 0.3s; }
+        .node .val { font-size: 20px; font-weight: bold; }
+        .node .idx { font-size: 10px; color: var(--dim); margin-top: 4px; }
+        
+        /* 狀態樣式 */
+        .node.active { border-color: var(--energy); box-shadow: 0 0 15px var(--energy); }
+        .node.reachable { background: rgba(35, 134, 54, 0.2); border-color: var(--atlantic); }
+        .node.reachable::after { content: "✓"; position: absolute; top: -10px; right: -5px; color: var(--atlantic); font-weight: bold; }
+        .node.current-max { border-color: var(--accent); border-style: dashed; }
+
+        .ptr { position: absolute; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; white-space: nowrap; z-index: 10; }
+        .ptr-i { background: var(--energy); color: #000; bottom: -40px; }
+
+        /* 右側 IDE */
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .code-header { background: #161b22; padding: 10px 15px; border-bottom: 1px solid #30363d; font-size: 12px; }
+        .ln { white-space: pre; padding: 0 15px 0 60px; position: relative; line-height: 1.8; font-size: 14px; }
+        .ln-num { position: absolute; left: 0; width: 45px; text-align: right; color: #484f58; padding-right: 15px; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:18px;">55. Jump Game (Greedy / DP Style)</div>
+        <div style="display:flex; gap:12px;">
+            <input type="text" id="numsIn" value="2, 3, 1, 1, 4" style="width:180px; background:#000; color:var(--accent); border:1px solid #444; padding:6px; border-radius:4px;">
+            <button class="btn" onclick="next()">下一步 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent)">📖 題目敘述</b><br>
+            給你一個非負整數數組 <code>nums</code>，你最初位於數組的第一個下標。數組中的每個元素代表你在該位置可以跳躍的最大長度。判斷你是否能夠到達最後一個下標。
+        </div>
+        <div class="info-card">
+            <b style="color:var(--energy)">💡 範例測資</b>
+            <div class="ex-box"><b>Ex 1:</b> [2,3,1,1,4] → <b>True</b></div>
+            <div class="ex-box"><b>Ex 2:</b> [3,2,1,0,4] → <b>False</b></div>
+        </div>
+        <div class="info-card">
+            <b style="color:var(--atlantic)">🧠 解法思路</b><br>
+            維護一個變數 <code>max_reach</code>，代表目前最遠能跳到哪。<br>
+            遍歷陣列：<br>
+            1. 如果當前位置 <code>i > max_reach</code>，代表卡住了，返回 <b>False</b>。<br>
+            2. 更新 <code>max_reach = max(max_reach, i + nums[i])</code>。<br>
+            3. 若 <code>max_reach >= last_index</code>，返回 <b>True</b>。
+        </div>
+        <div class="info-card">
+            <span class="tag">時間: O(N)</span><span class="tag">空間: O(1)</span>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area">
+            <div style="font-size:11px; color:var(--dim); text-align:center; margin-bottom:12px;">NUMS ARRAY (Max Jumps)</div>
+            <div id="numsRow" class="row"></div>
+        </div>
+        
+        <div class="viz-area" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px;">
+            <div style="font-size:12px; color:var(--dim); letter-spacing: 2px;">MAX REACHABLE INDEX</div>
+            <div id="resVal" style="font-size:72px; font-weight:bold; color:var(--energy)">0</div>
+            <div id="log" style="color:var(--accent); font-size:14px; margin-top:15px; font-family: 'Consolas'; font-weight: bold;"></div>
+        </div>
+    </div>
+
+    <div class="editor">
+        <div class="code-header"><span>jump_game.py</span></div>
+        <div id="codeView" class="code-body"></div>
+    </div>
+</div>
+
+<script>
+const codeLines = [
+    "max_reach = 0",
+    "for i, jump in enumerate(nums):",
+    "    if i > max_reach:",
+    "        return False",
+    "    max_reach = max(max_reach, i + jump)",
+    "    if max_reach >= len(nums) - 1:",
+    "        return True",
+    "return False"
+];
+
+let it;
+function init() {
+    const input = document.getElementById('numsIn').value;
+    const nums = input.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
+    
+    document.getElementById('numsRow').innerHTML = nums.map((v, i) => 
+        `<div class="node" id="n-${i}"><span class="val">${v}</span><span class="idx">idx:${i}</span></div>`
+    ).join('');
+    
+    document.getElementById('codeView').innerHTML = codeLines.map((l, i) => {
+        const formatted = l.replace(/for|in|if|max|len|return|enumerate/g, '<span class="kw">$&</span>');
+        return `<div class="ln" id="ln-${i}"><span class="ln-num">${i+1}</span>${formatted}</div>`;
+    }).join('');
+    
+    it = jumpLogic(nums);
+    document.getElementById('resVal').innerText = "0";
+    document.getElementById('log').innerText = "> 準備開始跳躍...";
+}
+
+function* jumpLogic(nums) {
+    let maxReach = 0;
+    const n = nums.length;
+    
+    yield { ln: 0, m: "初始最遠可達位置為 0" };
+    
+    for (let i = 0; i < n; i++) {
+        yield { ln: 1, i, maxReach, m: `檢查下標 ${i}，目前最遠能到 ${maxReach}` };
+        
+        if (i > maxReach) {
+            yield { ln: 3, i, maxReach, failed: true, m: `失敗：下標 ${i} 超過了最遠可達範圍！` };
+            return;
+        }
+        
+        const canReachFromHere = i + nums[i];
+        const oldMax = maxReach;
+        maxReach = Math.max(maxReach, canReachFromHere);
+        
+        yield { 
+            ln: 4, i, maxReach, 
+            updated: maxReach > oldMax,
+            m: `從下標 ${i} 最遠可跳到 ${canReachFromHere}。更新 max_reach = ${maxReach}` 
+        };
+        
+        if (maxReach >= n - 1) {
+            yield { ln: 6, i, maxReach, success: true, m: `成功！最遠可達 ${maxReach}，已覆蓋終點！` };
+            return;
+        }
+    }
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) return;
+    const { ln, i, maxReach, updated, failed, success, m } = s.value;
+
+    document.querySelectorAll('.ln').forEach(e => e.classList.remove('ln-active'));
+    document.getElementById(`ln-${ln}`).classList.add('ln-active');
+
+    document.querySelectorAll('.node').forEach(e => {
+        e.classList.remove('active', 'reachable', 'current-max');
+        const p = e.querySelector('.ptr'); if(p) p.remove();
+    });
+
+    if (i !== undefined) {
+        const ni = document.getElementById(`n-${i}`);
+        ni.classList.add('active');
+        ni.innerHTML += `<div class="ptr ptr-i">i</div>`;
+        
+        // 標記所有目前可達的格子
+        for(let idx=0; idx <= maxReach && idx < document.querySelectorAll('.node').length; idx++) {
+            document.getElementById(`n-${idx}`).classList.add('reachable');
+        }
+        
+        // 標記當前最遠那格
+        const targetIdx = Math.min(maxReach, document.querySelectorAll('.node').length - 1);
+        document.getElementById(`n-${targetIdx}`).classList.add('current-max');
+    }
+    
+    if (maxReach !== undefined) document.getElementById('resVal').innerText = maxReach;
+    document.getElementById('log').innerText = `> ${m}`;
+    
+    if (failed) document.getElementById('resVal').style.color = 'var(--danger)';
+    if (success) document.getElementById('resVal').style.color = 'var(--atlantic)';
+}
+
+init();
+</script>
+</body>
+</html>

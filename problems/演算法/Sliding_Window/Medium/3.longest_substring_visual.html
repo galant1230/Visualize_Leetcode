@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>LeetCode 3. Longest Substring - 終極視覺化教學</title>
+  <style>
+    :root {
+      --primary: #007acc; --success: #2ecc71; --warning: #f39c12;
+      --danger: #e74c3c; --dark: #2c3e50; --bg: #f4f7f9;
+    }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--dark); }
+    .dashboard { max-width: 1200px; margin: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    
+    /* 各區塊樣式 */
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .full-width { grid-column: span 2; }
+    h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.25rem; }
+    
+    /* 題目與複雜度 */
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .complexity-box { background: #eef2f7; padding: 15px; border-radius: 8px; border-left: 5px solid var(--primary); }
+    code { background: #eee; padding: 2px 5px; border-radius: 4px; font-family: monospace; }
+
+    /* 字串方塊 */
+    .visualizer-container { text-align: center; padding: 40px 0; }
+    .box-container { display: flex; justify-content: center; height: 60px; }
+    .char-box {
+      width: 50px; height: 50px; line-height: 50px; margin: 0 6px;
+      border: 2px solid #dee2e6; border-radius: 10px; font-size: 1.6rem;
+      font-weight: bold; position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .char-box.active { background: #e3f2fd; border-color: var(--primary); color: var(--primary); transform: scale(1.05); }
+    .char-box.conflict { background: #fff3e0; border-color: var(--warning); animation: shake 0.4s; }
+    
+    /* 指針 */
+    .ptr { position: absolute; left: 0; width: 100%; font-size: 0.85rem; font-weight: 900; }
+    .ptr-l { bottom: -35px; color: var(--warning); }
+    .ptr-r { top: -35px; color: var(--primary); }
+
+    /* 程式碼高亮 */
+    .code-window { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 0.95rem; line-height: 1.6; }
+    .line { padding: 2px 10px; border-radius: 4px; border-left: 4px solid transparent; }
+    .line.active { background: #3e4451; border-left-color: var(--success); color: white; }
+
+    /* 表格 */
+    .table-wrapper { max-height: 350px; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th { background: #f8f9fa; position: sticky; top: 0; z-index: 10; }
+    th, td { padding: 12px; border: 1px solid #eee; text-align: center; }
+    tr.newest { background: #e8f5e9; font-weight: bold; }
+
+    /* 按鈕與輸入 */
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; align-items: center; }
+    input { padding: 10px 20px; border: 2px solid #ddd; border-radius: 25px; font-size: 1rem; width: 300px; outline: none; transition: 0.3s; }
+    input:focus { border-color: var(--primary); }
+    button { padding: 10px 25px; border: none; border-radius: 25px; cursor: pointer; background: var(--primary); color: white; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    button:hover { filter: brightness(1.1); }
+    button:disabled { background: #ccc; box-shadow: none; }
+
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <div class="card full-width">
+    <h2>題目：無重複字符的最長子字串 (Longest Substring Without Repeating Characters)</h2>
+    <div class="info-grid">
+      <div>
+        <p>給定一個字串 <code>s</code>，請找出其中不含有重複字符的 <strong>最長子字串</strong> 的長度。</p>
+        <p>範例：<code>s = "pwwkew"</code>，最長子字串是 <code>"wke"</code>，長度為 3。</p>
+      </div>
+      <div class="complexity-box">
+        <strong>複雜度分析：</strong>
+        <ul>
+          <li><strong>時間複雜度：$O(n)$</strong><br>右指針 <code>r</code> 遍歷字串一次，左指針 <code>l</code> 最多移動 $n$ 次，整體線性時間。</li>
+          <li><strong>空間複雜度：$O(min(m, n))$</strong><br>字典 <code>seen</code> 最多儲存字串長度 $n$ 或字符集大小 $m$（如 ASCII 128 個字元）。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card full-width" style="background: transparent; box-shadow: none; padding: 0;">
+    <div class="controls">
+      <input type="text" id="inputS" value="abcabcbb" placeholder="輸入自定義字串...">
+      <button onclick="resetSim()">重置模擬</button>
+      <button id="nextBtn" onclick="playStep()">執行下一步 (Step Over)</button>
+    </div>
+  </div>
+
+  <div class="card full-width">
+    <h2>滑動視窗動態表現</h2>
+    <div class="visualizer-container">
+      <div class="box-container" id="boxContainer"></div>
+      <div id="hintText" style="margin-top: 40px; font-weight: bold; font-size: 1.1rem; color: var(--primary);">準備就緒</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>程式碼逐行追蹤</h2>
+    <div class="code-window" id="codeWindow">
+      <div class="line" id="l1">for r in range(len(s)):</div>
+      <div class="line" id="l2">&nbsp;&nbsp;char = s[r]</div>
+      <div class="line" id="l3" style="color: #e5c07b;">&nbsp;&nbsp;if char in seen and seen[char] >= l:</div>
+      <div class="line" id="l4">&nbsp;&nbsp;&nbsp;&nbsp;l = seen[char] + 1</div>
+      <div class="line" id="l5" style="color: #61afef;">&nbsp;&nbsp;length = max(length, r - l + 1)</div>
+      <div class="line" id="l6">&nbsp;&nbsp;seen[char] = r</div>
+      <div class="line" id="l7">return length</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>執行狀態數據表</h2>
+    <div class="table-wrapper">
+      <table id="logTable">
+        <thead>
+          <tr>
+            <th>r (char)</th>
+            <th>seen (最新索引)</th>
+            <th>l</th>
+            <th>當前長度</th>
+            <th>Max 長度</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let s = "", l = 0, r = 0, maxLength = 0, seen = {};
+let subStep = 0;
+
+function resetSim() {
+  s = document.getElementById('inputS').value;
+  l = 0; r = 0; maxLength = 0; seen = {}; subStep = 0;
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('logTable').querySelector('tbody').innerHTML = "";
+  renderBoxes();
+  clearHighlights();
+  updateHint("點擊「下一步」開始循環");
+}
+
+function renderBoxes() {
+  const container = document.getElementById('boxContainer');
+  container.innerHTML = s.split('').map((c, i) => `
+    <div class="char-box" id="b-${i}">
+      <div class="ptr ptr-r" id="pr-${i}"></div>
+      ${c}
+      <div class="ptr ptr-l" id="pl-${i}"></div>
+    </div>
+  `).join('');
+}
+
+function playStep() {
+  if (r >= s.length) {
+    highlightLine('l7');
+    updateHint(`模擬結束！最終最長長度為 ${maxLength}`);
+    document.getElementById('nextBtn').disabled = true;
+    return;
+  }
+
+  const char = s[r];
+  clearHighlights();
+
+  switch(subStep) {
+    case 0: // 進入迴圈
+      highlightLine('l1'); highlightLine('l2');
+      updateVisualPointers();
+      updateHint(`右指針 R 移到索引 ${r} ('${char}')`);
+      subStep = 1;
+      break;
+    case 1: // if 判斷
+      highlightLine('l3');
+      if (char in seen && seen[char] >= l) {
+        document.getElementById(`b-${r}`).classList.add('conflict');
+        updateHint(`發現重複！'${char}' 上次在索引 ${seen[char]}，大於左邊界 L`);
+        subStep = 2;
+      } else {
+        updateHint(`'${char}' 未重複，跳過 L 的更新`);
+        subStep = 3;
+      }
+      break;
+    case 2: // 更新 l
+      l = seen[char] + 1;
+      highlightLine('l4');
+      updateVisualPointers();
+      updateHint(`將左邊界 L 收縮到 ${l}`);
+      subStep = 3;
+      break;
+    case 3: // 更新 max
+      const curLen = r - l + 1;
+      maxLength = Math.max(maxLength, curLen);
+      highlightLine('l5');
+      updateHint(`目前窗口長度 ${curLen} (r-l+1)，更新 Max 為 ${maxLength}`);
+      subStep = 4;
+      break;
+    case 4: // 更新 seen
+      seen[char] = r;
+      highlightLine('l6');
+      addTableRow(r, char, {...seen}, l, (r-l+1), maxLength);
+      updateHint(`在字典記錄 '${char}' 的最新位置：${r}`);
+      r++;
+      subStep = 0;
+      break;
+  }
+}
+
+function highlightLine(id) { document.getElementById(id).classList.add('active'); }
+function clearHighlights() { document.querySelectorAll('.line').forEach(el => el.classList.remove('active')); }
+
+function updateVisualPointers() {
+  document.querySelectorAll('.ptr').forEach(el => el.innerText = "");
+  document.querySelectorAll('.char-box').forEach(el => el.classList.remove('active', 'conflict'));
+  for(let i=l; i<=r; i++) {
+    const el = document.getElementById(`b-${i}`);
+    if(el) el.classList.add('active');
+  }
+  document.getElementById(`pl-${l}`).innerText = "L";
+  document.getElementById(`pr-${r}`).innerText = "R";
+}
+
+function addTableRow(rIdx, char, seenObj, lIdx, curLen, mLen) {
+  const tbody = document.getElementById('logTable').querySelector('tbody');
+  const seenStr = JSON.stringify(seenObj).replace(/[{}"]/g, '').replace(/,/g, ', ');
+  document.querySelectorAll('tr').forEach(tr => tr.classList.remove('newest'));
+  const row = `<tr class="newest">
+    <td>${rIdx} ('${char}')</td>
+    <td style="text-align:left; font-family:monospace; color:#666;">${seenStr}</td>
+    <td>${lIdx}</td>
+    <td>${curLen}</td>
+    <td style="color:var(--danger); font-weight:bold;">${mLen}</td>
+  </tr>`;
+  tbody.insertAdjacentHTML('afterbegin', row);
+}
+
+function updateHint(txt) { document.getElementById('hintText').innerText = txt; }
+
+resetSim();
+</script>
+
+</body>
+</html>

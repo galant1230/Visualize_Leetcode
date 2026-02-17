@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Word Break Visualizer Pro</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --func: #d2a8ff; --num: #79c0ff;
+            --hl: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        .container { max-width: 1650px; margin: auto; display: grid; grid-template-columns: 350px 1fr 500px; gap: 15px; height: 95vh; }
+
+        /* 左側：題目資訊 */
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 12px; border-radius: 8px; font-size: 13px; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); }
+
+        /* 中間：視覺化核心 */
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .viz-area { background: var(--card); border-radius: 8px; padding: 40px 15px; border: 1px solid #333; position: relative; }
+        
+        /* 字符節點 */
+        .string-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 50px; }
+        .char-node { width: 45px; height: 55px; border: 2px solid #30363d; border-radius: 6px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 22px; font-weight: bold; background: #0d1117; }
+        .char-node.active-range { background: var(--hl); border-color: var(--accent); }
+        .char-node.match { background: rgba(35, 134, 54, 0.2); border-color: var(--atlantic); }
+
+        /* DP 陣列 */
+        .dp-row { display: flex; gap: 8px; justify-content: center; margin-top: 30px; }
+        .dp-node { width: 45px; height: 35px; border: 1px solid #444; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; position: relative; background: #161b22; }
+        .dp-node.true { background: var(--atlantic); color: white; border-color: #3fb950; font-weight: bold; }
+        .dp-node.current { border: 2px solid var(--energy); box-shadow: 0 0 10px rgba(210, 153, 34, 0.3); }
+
+        /* 指針標籤 */
+        .ptr { position: absolute; font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px; z-index: 10; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .ptr-i { background: var(--energy); color: #000; bottom: -30px; left: 50%; transform: translateX(-50%); }
+        .ptr-j { background: var(--accent); color: #fff; top: -30px; left: 50%; transform: translateX(-50%); }
+        .ptr-i::after { content: "▲"; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); color: var(--energy); }
+        .ptr-j::after { content: "▼"; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); color: var(--accent); }
+
+        /* 右側：IDE */
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .code-header { background: #161b22; padding: 10px 15px; border-bottom: 1px solid #30363d; font-size: 12px; display: flex; justify-content: space-between; }
+        .code-body { flex: 1; padding: 10px 0; line-height: 1.6; font-size: 13px; white-space: pre; }
+        .ln { padding: 0 40px; position: relative; border-left: 4px solid transparent; }
+        .ln-active { background: var(--hl); border-left-color: var(--accent); }
+        .ln-num { position: absolute; left: 8px; color: #484f58; width: 22px; text-align: right; }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .kw { color: var(--keyword); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent);">139. Word Break (i, j 動態同步)</div>
+        <div style="display:flex; gap:10px;">
+            <input type="text" id="sIn" value="leetcode" style="width:100px; background:#000; color:#fff; border:1px solid #444; padding:4px;">
+            <input type="text" id="wIn" value="leet,code" style="width:120px; background:#000; color:#fff; border:1px solid #444; padding:4px;">
+            <button class="btn" onclick="next()">下一步 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent)">💡 Example 1</b>
+            <div style="font-size:12px; margin-top:5px; color:var(--dim)">s = "leetcode", dict = ["leet", "code"]<br>Return true.</div>
+        </div>
+        <div class="info-card" style="border-top: 2px solid var(--energy);">
+            <b style="color:var(--energy)">🔍 字典清單 (Set)</b>
+            <div id="dictDisplay" style="font-family:monospace; font-size:14px; margin-top:8px; color:var(--num)"></div>
+        </div>
+        <div class="info-card">
+            <div class="tag">Time: O(N³)</div>
+            <div class="tag">Space: O(N)</div>
+            <p style="font-size:11px; color:var(--dim); margin-top:10px;">N 為字串長度。內層迴圈 j 到 i 的 substring 提取亦需 O(N) 時間。</p>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area">
+            <div style="font-size:11px; color:var(--dim); margin-bottom: 25px;">STRING SUBSECTION [j : i]</div>
+            <div id="stringRow" class="string-row"></div>
+            
+            <div style="font-size:11px; color:var(--dim); margin-top: 40px;">DP TABLE (dp[i] = can split s[:i])</div>
+            <div id="dpRow" class="dp-row"></div>
+        </div>
+
+        
+
+        <div class="viz-area" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            <div id="resVal" style="font-size:60px; font-weight:bold; color:var(--energy)">-</div>
+            <div id="log" style="color:var(--accent); font-size:14px; margin-top:10px; font-family: monospace; text-align: center;"></div>
+        </div>
+    </div>
+
+    <div class="editor">
+        <div class="code-header"><span>word_break_dp.py</span><span>Python</span></div>
+        <div id="codeView" class="code-body"></div>
+    </div>
+</div>
+
+<script>
+const code = [
+    "dp = [False] * (len(s) + 1)",
+    "dp[0] = True",
+    "for i in range(1, len(s) + 1):",
+    "    for j in range(i):",
+    "        if dp[j] and s[j:i] in wordSet:",
+    "            dp[i] = True",
+    "            break",
+    "return dp[len(s)]"
+];
+
+let runner;
+function init() {
+    const s = document.getElementById('sIn').value;
+    const dict = document.getElementById('wIn').value.split(',').map(v => v.trim());
+    document.getElementById('dictDisplay').innerText = `{ ${dict.join(', ')} }`;
+    
+    // Code
+    document.getElementById('codeView').innerHTML = code.map((l, idx) => 
+        `<div class="ln" id="ln-${idx}"><span class="ln-num">${idx+1}</span>${l.replace(/for|in|if|and|break|return|True|False/g, '<span class="kw">$&</span>')}</div>`).join('');
+
+    // String Nodes
+    document.getElementById('stringRow').innerHTML = s.split('').map((c, idx) => 
+        `<div class="char-node" id="c-${idx}">${c}</div>`).join('');
+    
+    // DP Nodes
+    document.getElementById('dpRow').innerHTML = Array.from({length: s.length + 1}, (_, idx) => 
+        `<div class="dp-node" id="dp-${idx}">${idx}</div>`).join('');
+    
+    document.getElementById('dp-0').classList.add('true');
+    document.getElementById('dp-0').innerText = 'T';
+
+    runner = logic(s, new Set(dict));
+    document.getElementById('resVal').innerText = "-";
+    document.getElementById('log').innerText = "點擊 [下一步] 開始 DP 演進";
+}
+
+function* logic(s, wordSet) {
+    const n = s.length;
+    const dp = new Array(n + 1).fill(false);
+    dp[0] = true;
+
+    for (let i = 1; i <= n; i++) {
+        yield {ln: 2, i, m: `外層遍歷 i = ${i}，目標確定 dp[${i}]`};
+        for (let j = 0; j < i; j++) {
+            const sub = s.substring(j, i);
+            yield {ln: 4, i, j, m: `檢查 dp[${j}] 是否為 True 且 "${sub}" 是否在字典中`};
+            
+            if (dp[j] && wordSet.has(sub)) {
+                dp[i] = true;
+                yield {ln: 5, i, j, m: `找到了！"${sub}" 匹配且 dp[${j}] 為 T`, match: true};
+                break;
+            }
+        }
+    }
+    yield {ln: 7, m: `完成掃描！最終結果: ${dp[n]}`, res: dp[n].toString().toUpperCase()};
+}
+
+function next() {
+    const step = runner.next();
+    if (!step.done) {
+        const {ln, i, j, m, match, res} = step.value;
+        
+        // 代碼高亮
+        document.querySelectorAll('.ln').forEach(e => e.classList.remove('ln-active'));
+        document.getElementById(`ln-${ln}`).classList.add('ln-active');
+
+        // 清除舊指針與狀態
+        document.querySelectorAll('.ptr').forEach(e => e.remove());
+        document.querySelectorAll('.char-node').forEach(e => e.className = 'char-node');
+        document.querySelectorAll('.dp-node').forEach(e => e.classList.remove('current'));
+
+        // 更新動態指針與範圍
+        if (i !== undefined) {
+            const iTarget = document.getElementById(`dp-${i}`);
+            iTarget.classList.add('current');
+            const iPtr = document.createElement('div');
+            iPtr.className = 'ptr ptr-i'; iPtr.innerText = `i=${i}`;
+            iTarget.appendChild(iPtr);
+
+            if (j !== undefined) {
+                const jTarget = document.getElementById(`dp-${j}`);
+                const jPtr = document.createElement('div');
+                jPtr.className = 'ptr ptr-j'; jPtr.innerText = `j=${j}`;
+                jTarget.appendChild(jPtr);
+
+                // 高亮字串中的 j 到 i 區間
+                for (let k = j; k < i; k++) {
+                    document.getElementById(`c-${k}`).classList.add(match ? 'match' : 'active-range');
+                }
+            }
+        }
+
+        if (match) {
+            const dpI = document.getElementById(`dp-${i}`);
+            dpI.classList.add('true');
+            dpI.innerText = 'T';
+        }
+
+        if (res) document.getElementById('resVal').innerText = res;
+        document.getElementById('log').innerText = `> ${m}`;
+    }
+}
+
+init();
+</script>
+</body>
+</html>

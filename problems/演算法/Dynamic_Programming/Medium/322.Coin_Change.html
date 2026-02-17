@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>322. Coin Change - 終極實驗室</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #569cd6; --purple: #c586c0;
+            --orange: #ce9178; --green: #6a9955; --yellow: #dcdcaa;
+            --num: #b5cea8; --highlight: rgba(56, 139, 253, 0.1);
+        }
+        body { background: #010409; color: var(--text); font-family: 'Segoe UI', 'Consolas', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        .widget-card { width: 1460px; height: 940px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; }
+        
+        /* Header */
+        .header { padding: 12px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #0d1117; }
+        .controls { display: flex; gap: 12px; align-items: center; }
+        input { background: #010409; color: #3fb950; border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; width: 80px; outline: none; }
+        button { background: #21262d; color: var(--text); border: 1px solid var(--border); padding: 6px 15px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #30363d; border-color: #8b949e; }
+
+        .content-grid { display: grid; grid-template-columns: 420px 1fr; flex: 1; overflow: hidden; }
+        
+        /* Sidebar - Full Details */
+        .sidebar { padding: 25px; border-right: 1px solid var(--border); overflow-y: auto; background: #0d1117; }
+        .sidebar h3 { color: var(--blue); margin-top: 0; font-size: 20px; }
+        .sidebar h4 { color: #e6edf3; margin: 20px 0 10px 0; font-size: 15px; border-left: 4px solid var(--blue); padding-left: 10px; }
+        .desc-text { font-size: 13px; line-height: 1.6; color: #8b949e; margin-bottom: 12px; }
+        .example-box { background: #161b22; padding: 10px; border-radius: 6px; border: 1px solid var(--border); font-family: monospace; font-size: 12px; margin-bottom: 15px; }
+        .logic-card { background: rgba(56, 139, 253, 0.05); padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; color: #c9d1d9; border: 1px dashed #484f58; margin-bottom: 10px; }
+
+        /* Workspace */
+        .workspace { display: flex; flex-direction: column; overflow: hidden; background: #0d1117; }
+        .tabs { background: #010409; display: flex; border-bottom: 1px solid var(--border); }
+        .tab { padding: 12px 20px; font-size: 12px; color: #8b949e; border-right: 1px solid var(--border); cursor: pointer; font-family: monospace; }
+        .tab.active { background: var(--panel); color: #fff; border-top: 2px solid #d29922; }
+        
+        .editor { padding: 20px; font-size: 14px; line-height: 1.5; overflow-y: auto; flex: 1; background: #0d1117; font-family: 'Consolas', monospace; }
+        .line { display: block; padding-left: 50px; position: relative; opacity: 0.4; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 15px; color: #484f58; width: 30px; text-align: right; }
+        
+        /* Python Highlighting */
+        .kw { color: var(--purple); } .fn { color: var(--yellow); } .var { color: #9cdcfe; }
+        .num { color: var(--num); } .str { color: var(--orange); } .comment { color: var(--green); }
+
+        /* Viz Section */
+        .viz-section { height: 380px; border-top: 1px solid var(--border); background: #161b22; padding: 20px; display: grid; grid-template-columns: 1fr 450px; gap: 20px; }
+        .dp-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; width: 100%; }
+        .dp-box { border: 1px solid var(--border); padding: 8px; border-radius: 4px; background: #0d1117; text-align: center; font-size: 13px; }
+        .dp-box.active { border-color: var(--blue); box-shadow: 0 0 8px rgba(86, 156, 214, 0.4); }
+        .dp-box.updated { border-color: #3fb950; background: rgba(63, 185, 80, 0.1); }
+
+        .terminal { background: #010409; padding: 15px; border: 1px solid var(--border); border-radius: 8px; font-family: monospace; font-size: 12px; overflow-y: auto; color: #d1d5db; line-height: 1.5; }
+        .log-tag { color: #d29922; font-weight: bold; }
+        .log-val { color: #3fb950; }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="header">
+        <div style="font-weight:bold; font-size:18px;">322. Coin Change <span style="color:var(--blue)">Algorithm Suite</span></div>
+        <div class="controls">
+            <span>Coins:</span><input type="text" id="coinsIn" value="1,2,5">
+            <span>Amount:</span><input type="number" id="amtIn" value="11">
+            <button onclick="init()">Reset</button>
+            <button onclick="prevStep()">Prev</button>
+            <button onclick="nextStep()" style="color: #3fb950; border-color: #3fb950;">Next (F10)</button>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="sidebar">
+            <h3>📖 題目敘述</h3>
+            <div class="desc-text">給定不同面額的硬幣 <b>coins</b> 和一個總金額 <b>amount</b>。編寫一個函數來計算可以湊成該金額所需的<b>最少硬幣個數</b>。</div>
+            <div class="desc-text">若無法湊成，返回 -1。每種硬幣數量視為<b>無限</b>。</div>
+
+            <h4>💡 範例分析</h4>
+            <div class="example-box">
+                Input: coins = [1, 2, 5], amount = 11<br>
+                Output: 3 (11 = 5 + 5 + 1)<br>
+                ---<br>
+                Input: coins = [2], amount = 3<br>
+                Output: -1
+            </div>
+
+            <h4>📝 狀態轉移方程 (DP)</h4>
+            <div class="logic-card" style="font-family: monospace; border-style: solid;">
+                dp[i] = min(dp[i], dp[i - coin] + 1)<br>
+                <span style="font-size:11px; color:#8b949e;"># 其中 dp[i] 代表湊成金額 i 的最少枚數</span>
+            </div>
+
+            <h4>⚡ 複雜度分析</h4>
+            <div id="compBox" class="logic-card" style="background: rgba(197, 134, 192, 0.05);"></div>
+        </div>
+
+        <div class="workspace">
+            <div class="tabs" id="tabBar"></div>
+            <div id="codeEditor" class="editor"></div>
+
+            <div class="viz-section">
+                <div style="display:flex; flex-direction:column; align-items:center; overflow-y:auto;">
+                    <div style="font-size: 11px; color: #484f58; margin-bottom: 10px; font-weight: bold; letter-spacing: 1px;">DP TABLE / MEMO STATE</div>
+                    <div id="dpContainer" class="dp-grid"></div>
+                </div>
+                <div class="terminal" id="logContent">
+                    <div style="color: #484f58; margin-bottom: 8px;">TRACE LOG OUTPUT</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let curStep = 0, steps = [], curAlgoKey = 'bottomup', coins = [];
+
+const algos = {
+    recursive: {
+        name: "1. DFS (Recursive)",
+        comp: "Time: O(kⁿ) | Space: O(n)<br>k:硬幣數, n:金額",
+        code: [`<span class="kw">def</span> <span class="fn">dfs</span>(rem):`, `    <span class="kw">if</span> rem == <span class="num">0</span>: <span class="kw">return</span> <span class="num">0</span>`, `    res = <span class="num">1e9</span>`, `    <span class="kw">for</span> coin <span class="kw">in</span> coins:`, `        <span class="kw">if</span> rem - coin >= <span class="num">0</span>:`, `            res = <span class="fn">min</span>(res, <span class="num">1</span> + <span class="fn">dfs</span>(rem - coin))`, `    <span class="kw">return</span> res`],
+        gen: (amt, c) => {
+            let s = [];
+            const solve = (a) => {
+                s.push({l:1, a, msg: `DFS(rem=${a})`, dp:[]});
+                if(a===0) return 0; let res = 1e9;
+                for(let x of c) {
+                    if(a-x>=0) {
+                        s.push({l:6, a, msg: `嘗試 coin ${x}, 呼叫 DFS(${a-x})`, dp:[]});
+                        res = Math.min(res, 1 + solve(a-x));
+                    }
+                }
+                return res;
+            }; solve(amt); return s.slice(0, 100);
+        }
+    },
+    topdown: {
+        name: "2. Top-Down (Memo)",
+        comp: "Time: O(n*k) | Space: O(n)<br>n:金額, k:硬幣種數",
+        code: [`memo = {}`, `<span class="kw">def</span> <span class="fn">dfs</span>(rem):`, `    <span class="kw">if</span> rem == <span class="num">0</span>: <span class="kw">return</span> <span class="num">0</span>`, `    <span class="kw">if</span> rem <span class="kw">in</span> memo: <span class="kw">return</span> memo[rem]`, `    res = <span class="num">1e9</span>`, `    <span class="kw">for</span> coin <span class="kw">in</span> coins:`, `        <span class="kw">if</span> rem - coin >= <span class="num">0</span>:`, `            res = <span class="fn">min</span>(res, <span class="num">1</span> + <span class="fn">dfs</span>(rem - coin))`, `    memo[rem] = res; <span class="kw">return</span> res`],
+        gen: (amt, c) => {
+            let s = [], memo = {};
+            const solve = (a) => {
+                if(a===0) return 0;
+                if(a in memo) { s.push({l:4, a, msg: `命中 Memo[${a}] = ${memo[a]}`, dp:{...memo}}); return memo[a]; }
+                let res = 1e9;
+                for(let x of c) if(a-x>=0) res = Math.min(res, 1 + solve(a-x));
+                memo[a] = res;
+                s.push({l:9, a, msg: `紀錄 Memo[${a}] = ${res}`, dp:{...memo}});
+                return res;
+            }; solve(amt); return s;
+        }
+    },
+    bottomup: {
+        name: "3. Bottom-Up (DP)",
+        comp: "Time: O(n*k) | Space: O(n)<br>穩定且最推薦解法",
+        code: [`dp = [amount + <span class="num">1</span>] * (amount + <span class="num">1</span>)`, `dp[<span class="num">0</span>] = <span class="num">0</span>`, `<span class="kw">for</span> a <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, amount + <span class="num">1</span>):`, `    <span class="kw">for</span> c <span class="kw">in</span> coins:`, `        <span class="kw">if</span> a - c >= <span class="num">0</span>:`, `            dp[a] = <span class="fn">min</span>(dp[a], <span class="num">1</span> + dp[a - c])`],
+        gen: (amt, c) => {
+            let s = [], dp = new Array(amt+1).fill(amt+1);
+            dp[0] = 0; s.push({l:2, a:0, msg: "初始化 dp[0] = 0", dp:[...dp]});
+            for(let a=1; a<=amt; a++) {
+                for(let x of c) {
+                    let prevVal = dp[a];
+                    if(a-x >= 0) {
+                        dp[a] = Math.min(dp[a], 1 + dp[a-x]);
+                        s.push({l:6, a, msg: `dp[${a}] = min(${prevVal}, 1 + dp[${a-x}]) -> <span class="log-val">${dp[a]}</span>`, dp:[...dp], up: dp[a]!==prevVal});
+                    }
+                }
+            }
+            return s;
+        }
+    },
+    bfs: {
+        name: "4. BFS (Shortest Path)",
+        comp: "Time: O(n*k) | Space: O(n)<br>圖論視角：求最短路徑",
+        code: [`q = deque([<span class="num">0</span>]); res = <span class="num">0</span>`, `<span class="kw">while</span> q:`, `    res += <span class="num">1</span>`, `    <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(q)):`, `        cur = q.popleft()`, `        <span class="kw">for</span> coin <span class="kw">in</span> coins:`, `            nxt = cur + coin`, `            <span class="kw">if</span> nxt == amount: <span class="kw">return</span> res`],
+        gen: (amt, c) => {
+            let s = [], q = [0], seen = new Set([0]), res = 0;
+            s.push({l:1, a:0, msg: "BFS 開始：金額 0 入隊列", dp:[0]});
+            while(q.length > 0) {
+                res++; let len = q.length;
+                for(let i=0; i<len; i++) {
+                    let cur = q.shift();
+                    for(let x of c) {
+                        let nxt = cur + x;
+                        if(nxt === amt) { s.push({l:8, a:nxt, msg: `🎉 找到目標！第 <span class="log-tag">${res}</span> 層抵達 ${amt}`, dp:Array.from(seen)}); return s; }
+                        if(nxt < amt && !seen.has(nxt)) {
+                            seen.add(nxt); q.push(nxt);
+                            s.push({l:7, a:nxt, msg: `探索金額 ${nxt} (步數: ${res})`, dp:Array.from(seen)});
+                        }
+                    }
+                }
+            }
+            return s;
+        }
+    }
+};
+
+function init() {
+    coins = document.getElementById('coinsIn').value.split(',').map(x => parseInt(x.trim()));
+    const amt = parseInt(document.getElementById('amtIn').value);
+    const tabBar = document.getElementById('tabBar');
+    tabBar.innerHTML = Object.keys(algos).map(k => `<div class="tab ${k===curAlgoKey?'active':''}" onclick="changeAlgo('${k}')">${algos[k].name.split('.')[1]}</div>`).join('');
+    
+    const algo = algos[curAlgoKey];
+    document.getElementById('codeEditor').innerHTML = algo.code.map((l, i) => `<div class="line" data-ln="${i+1}">${l}</div>`).join('');
+    document.getElementById('compBox').innerHTML = algo.comp;
+    
+    steps = algo.gen(amt, coins); curStep = 0; 
+    document.getElementById('logContent').innerHTML = '<div style="color: #484f58; margin-bottom: 8px;">TRACE LOG OUTPUT</div>';
+    update();
+}
+
+function update() {
+    const step = steps[curStep];
+    const amt = parseInt(document.getElementById('amtIn').value);
+    document.querySelectorAll('.line').forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    let dpHTML = '';
+    for(let j=0; j<=amt; j++) {
+        let val = '-';
+        if(curAlgoKey==='bottomup') val = step.dp[j] > amt ? '∞' : step.dp[j];
+        else if(curAlgoKey==='topdown') val = step.dp[j] ?? '-';
+        else if(curAlgoKey==='bfs') val = step.dp.includes(j) ? '✔' : '-';
+        
+        dpHTML += `<div class="dp-box ${j===step.a ? 'active':''} ${step.up && j===step.a ? 'updated':''}">
+            <div style="font-size:9px; color:#484f58">${j}</div>
+            <div style="font-weight:bold; color:var(--num)">${val}</div>
+        </div>`;
+    }
+    document.getElementById('dpContainer').innerHTML = dpHTML;
+    document.getElementById('logContent').innerHTML += `<div><span class="log-tag">></span> ${step.msg}</div>`;
+    document.getElementById('logContent').scrollTop = document.getElementById('logContent').scrollHeight;
+}
+
+function changeAlgo(k) { curAlgoKey = k; init(); }
+function nextStep() { if(curStep < steps.length-1) { curStep++; update(); } }
+function prevStep() { if(curStep > 0) { curStep--; update(); } }
+init();
+</script>
+</body>
+</html>

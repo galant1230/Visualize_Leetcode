@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>LIS Visualizer - Final Indent Fix</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --func: #d2a8ff; --hl: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        .container { max-width: 1650px; margin: auto; display: grid; grid-template-columns: 380px 1fr 480px; gap: 15px; height: 95vh; }
+
+        /* 左側資訊 */
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 8px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); margin-right: 5px; }
+
+        /* 中間視覺化 */
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .viz-area { background: var(--card); border-radius: 8px; padding: 60px 15px; border: 1px solid #333; position: relative; }
+        .row { display: flex; gap: 10px; justify-content: center; position: relative; }
+        .node { width: 50px; height: 55px; border: 2px solid #30363d; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; background: #0d1117; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .node.active-i { border-color: var(--energy); background: rgba(210, 153, 34, 0.15); box-shadow: 0 0 15px var(--energy); }
+        .node.active-j { border-color: var(--accent); background: var(--hl); }
+        .node.updated { background: var(--atlantic); border-color: #3fb950; transform: scale(1.15); z-index: 10; }
+
+        .ptr { position: absolute; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+        .ptr-i { background: var(--energy); color: #000; bottom: -38px; left: 50%; transform: translateX(-50%); }
+        .ptr-j { background: var(--accent); color: #fff; top: -38px; left: 50%; transform: translateX(-50%); }
+        .ptr-i::after { content: "▲"; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); color: var(--energy); }
+        .ptr-j::after { content: "▼"; position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%); color: var(--accent); }
+
+        /* 右側 IDE - 強化排版 */
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .code-header { background: #161b22; padding: 10px 15px; border-bottom: 1px solid #30363d; font-size: 12px; display: flex; justify-content: space-between; }
+        .code-body { flex: 1; padding: 15px 0; font-family: 'Consolas', monospace; }
+        .ln { 
+            white-space: pre; /* 關鍵：保留空格縮進 */
+            padding: 0 15px 0 60px; 
+            position: relative; 
+            line-height: 1.8; 
+            font-size: 14px; 
+        }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .ln-num { 
+            position: absolute; 
+            left: 0; 
+            width: 45px; 
+            text-align: right; 
+            color: #484f58; 
+            padding-right: 15px; 
+            user-select: none;
+        }
+        .kw { color: var(--keyword); }
+        
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:18px;">LIS Visualizer - Final Edition</div>
+        <div style="display:flex; gap:12px;">
+            <input type="text" id="numsIn" value="10, 9, 2, 5, 3, 7, 101, 18" style="width:220px; background:#000; color:var(--accent); border:1px solid #444; padding:6px; border-radius:4px;">
+            <button class="btn" onclick="next()">下一步 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent)">📖 題目敘述</b><br>
+            找到整數數組 <code>nums</code> 中最長嚴格遞增子序列的長度。
+        </div>
+        <div class="info-card">
+            <b style="color:var(--energy)">💡 範例測資</b>
+            <div class="ex-box"><b>Ex 1:</b> [10,9,2,5,3,7,101,18] → <b>4</b></div>
+            <div class="ex-box"><b>Ex 2:</b> [0,1,0,3,2,3] → <b>4</b></div>
+            <div class="ex-box"><b>Ex 3:</b> [7,7,7,7,7,7] → <b>1</b></div>
+        </div>
+        <div class="info-card">
+            <b style="color:var(--atlantic)">🧠 解法思路</b><br>
+            <code>dp[i]</code>: 以 <code>nums[i]</code> 結尾的 LIS 長度。<br>
+            對於所有 <code>j < i</code>:<br>
+            若 <code>nums[i] > nums[j]</code><br>
+            <code>dp[i] = max(dp[i], dp[j] + 1)</code>
+        </div>
+        <div class="info-card">
+            <div class="tag">O(N²)</div><div class="tag">Space: O(N)</div>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area">
+            <div style="font-size:11px; color:var(--dim); text-align:center; margin-bottom:12px;">INPUT NUMS</div>
+            <div id="numsRow" class="row" style="margin-bottom: 80px;"></div>
+            <div style="font-size:11px; color:var(--dim); text-align:center; margin-bottom:12px;">DP TABLE</div>
+            <div id="dpRow" class="row"></div>
+        </div>
+        
+        <div class="viz-area" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px;">
+            <div style="font-size:12px; color:var(--dim); letter-spacing: 2px;">MAX LIS LENGTH</div>
+            <div id="resVal" style="font-size:72px; font-weight:bold; color:var(--energy)">1</div>
+            <div id="log" style="color:var(--accent); font-size:14px; margin-top:15px; font-family: 'Consolas'; font-weight: bold;"></div>
+        </div>
+    </div>
+
+    <div class="editor">
+        <div class="code-header"><span>longest_increasing_subsequence.py</span></div>
+        <div id="codeView" class="code-body"></div>
+    </div>
+</div>
+
+<script>
+// 精確定義縮進的代碼行
+const codeLines = [
+    "n = len(nums)",
+    "dp = [1] * n",
+    "for i in range(n):",
+    "    for j in range(i):",
+    "        if nums[i] > nums[j]:",
+    "            dp[i] = max(dp[i], dp[j] + 1)",
+    "return max(dp)"
+];
+
+let it;
+function init() {
+    const input = document.getElementById('numsIn').value;
+    const nums = input.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
+    
+    document.getElementById('numsRow').innerHTML = nums.map((v, i) => `<div class="node" id="n-${i}">${v}</div>`).join('');
+    document.getElementById('dpRow').innerHTML = nums.map((_, i) => `<div class="node" id="dp-${i}">1</div>`).join('');
+    
+    // 渲染代碼並保留縮進
+    document.getElementById('codeView').innerHTML = codeLines.map((l, i) => {
+        const formatted = l.replace(/for|in|if|max|len|return/g, '<span class="kw">$&</span>');
+        return `<div class="ln" id="ln-${i}"><span class="ln-num">${i+1}</span>${formatted}</div>`;
+    }).join('');
+    
+    it = lisLogic(nums);
+    document.getElementById('resVal').innerText = "1";
+    document.getElementById('log').innerText = "> 初始化完成";
+}
+
+function* lisLogic(nums) {
+    const n = nums.length;
+    const dp = new Array(n).fill(1);
+    let maxLIS = 1;
+    for (let i = 0; i < n; i++) {
+        yield { ln: 2, i, dp: [...dp], m: `計算 dp[${i}]...` };
+        for (let j = 0; j < i; j++) {
+            yield { ln: 3, i, j, dp: [...dp], m: `比較 nums[${i}](${nums[i]}) 與 nums[${j}](${nums[j]})` };
+            if (nums[i] > nums[j]) {
+                const old = dp[i];
+                dp[i] = Math.max(dp[i], dp[j] + 1);
+                maxLIS = Math.max(maxLIS, dp[i]);
+                if (dp[i] > old) yield { ln: 5, i, j, dp: [...dp], updated: true, maxLIS, m: `發現更長序列！dp[${i}]=${dp[i]}` };
+            }
+        }
+    }
+    yield { ln: 6, maxLIS, m: "掃描結束" };
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) return;
+    const { ln, i, j, dp, updated, maxLIS, m } = s.value;
+
+    document.querySelectorAll('.ln').forEach(e => e.classList.remove('ln-active'));
+    document.getElementById(`ln-${ln}`).classList.add('ln-active');
+
+    document.querySelectorAll('.node').forEach(e => {
+        e.classList.remove('active-i', 'active-j', 'updated');
+        const p = e.querySelector('.ptr'); if(p) p.remove();
+    });
+
+    if (i !== undefined) {
+        document.getElementById(`n-${i}`).classList.add('active-i');
+        document.getElementById(`dp-${i}`).classList.add('active-i');
+        document.getElementById(`n-${i}`).innerHTML += `<div class="ptr ptr-i">i</div>`;
+        if (dp) dp.forEach((val, idx) => { document.getElementById(`dp-${idx}`).innerText = val; });
+        if (j !== undefined) {
+            document.getElementById(`n-${j}`).classList.add('active-j');
+            document.getElementById(`n-${j}`).innerHTML += `<div class="ptr ptr-j">j</div>`;
+        }
+        if (updated) document.getElementById(`dp-${i}`).classList.add('updated');
+    }
+    if (maxLIS) document.getElementById('resVal').innerText = maxLIS;
+    document.getElementById('log').innerText = `> ${m}`;
+}
+
+init();
+</script>
+</body>
+</html>

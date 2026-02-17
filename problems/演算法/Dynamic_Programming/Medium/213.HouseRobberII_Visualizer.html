@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 213. House Robber II - 語法校正版</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #4fc1ff; --purple: #c586c0;
+            --orange: #ce9178; --green: #6a9955; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #6a9955;
+            --yellow: #dcdcaa;
+        }
+        body { background: #010409; color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        .widget-card { width: 1380px; height: 960px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; }
+        
+        /* Header & Controls */
+        .header { padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #0d1117; }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        input { background: #010409; color: #3fb950; border: 1px solid var(--border); padding: 8px; border-radius: 6px; width: 180px; outline: none; font-family: monospace; }
+        button { background: #21262d; color: var(--text); border: 1px solid var(--border); padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        button:hover { border-color: var(--blue); background: var(--highlight); }
+
+        .content-grid { display: grid; grid-template-columns: 400px 1fr; flex: 1; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { padding: 25px; border-right: 1px solid var(--border); overflow-y: auto; background: rgba(0,0,0,0.2); }
+        .section-box { margin-bottom: 15px; padding: 12px; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .example-block { background: #010409; border-left: 4px solid var(--blue); padding: 12px; border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 12px; margin: 10px 0; }
+
+        /* Workspace */
+        .workspace { display: grid; grid-template-rows: 1fr 420px; overflow: hidden; }
+        .tabs { background: #010409; display: flex; border-bottom: 1px solid var(--border); }
+        .tab { padding: 12px 20px; font-size: 12px; color: #8b949e; border-right: 1px solid var(--border); cursor: pointer; font-family: 'Fira Code', monospace; }
+        .tab.active { background: var(--panel); color: #e6edf3; border-top: 2px solid #d29922; }
+        
+        /* Editor with Correct Indentation */
+        .editor { padding: 25px; font-family: 'Consolas', 'Fira Code', monospace; font-size: 15px; line-height: 1.8; overflow-y: auto; flex: 1; background: #0d1117;}
+        .line { display: block; padding-left: 55px; position: relative; opacity: 0.4; transition: 0.2s; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 15px; color: #484f58; width: 30px; text-align: right; }
+        
+        /* Python Syntax Colors */
+        .kw { color: var(--purple); }    /* def, return, if, for, in */
+        .fn { color: var(--yellow); }    /* function names */
+        .num { color: #b5cea8; }         /* numbers */
+        .comment { color: var(--green); } /* comments */
+        .str { color: var(--orange); }   /* strings/range */
+        .var { color: #9cdcfe; }         /* variables */
+
+        /* Visualization */
+        .viz-section { border-top: 1px solid var(--border); background: #0d1117; padding: 20px; display: grid; grid-template-columns: 1fr 420px; gap: 20px; }
+        .house-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px;}
+        .house { width: 55px; padding: 12px 0; border: 1px solid var(--border); border-radius: 8px; text-align: center; background: #161b22; transition: 0.3s; }
+        .house.active { border-color: #3fb950; background: rgba(63, 185, 80, 0.1); transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .house.disabled { opacity: 0.15; filter: grayscale(1); border-style: dashed; }
+        
+        .viz-bars { display: flex; align-items: flex-end; gap: 10px; height: 110px; justify-content: center; }
+        .bar-container { display: flex; flex-direction: column; align-items: center; width: 45px; }
+        .bar { width: 30px; background: #30363d; border-radius: 4px 4px 0 0; transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bar.active { background: #3fb950; box-shadow: 0 0 15px rgba(63, 185, 80, 0.3); }
+
+        /* Terminal & Logs */
+        .terminal { font-family: 'Fira Code', monospace; font-size: 13px; background: #010409; padding: 18px; border-radius: 10px; border: 1px solid var(--border); overflow-y: auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .log-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #30363d; }
+        .choice { padding: 10px; border-radius: 6px; border: 1px solid #30363d; font-size: 12px; background: #0d1117; }
+        .choice.win { background: rgba(63, 185, 80, 0.1); color: #3fb950; border-color: #3fb950; }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="header">
+        <div style="font-weight: bold; color: #e6edf3; font-size: 18px;">House Robber II <span style="color:var(--blue)">Algorithm Lab</span></div>
+        <div class="controls">
+            <span style="font-size: 13px; color: #8b949e;">Input:</span>
+            <input type="text" id="numsInput" value="2, 3, 2" onchange="init()">
+            <button onclick="prevStep()">Prev</button>
+            <button onclick="nextStep()" style="color: #3fb950; border-color: #3fb950;">Next Step (F10)</button>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="sidebar">
+            <h3>LeetCode 213</h3>
+            <div class="section-box">
+                房屋排成一個圓圈。這意味著首尾兩間房是相鄰的。<b>你不能同時搶劫它們。</b>
+            </div>
+            
+            <h4>範例 1</h4>
+            <div class="example-block">
+                nums = [2, 3, 2]<br>
+                Output: 3<br>
+                搶房 0 則不能搶房 2。<br>
+                最優解：搶房 1 (金額 3)
+            </div>
+
+            <h4>核心轉移方程式</h4>
+            <div class="section-box" style="color: #ce9178; font-family: monospace; font-size: 14px; text-align: center;">
+                DP[i] = max(DP[i-1], DP[i-2] + nums[i])
+            </div>
+
+            <h4>環狀策略</h4>
+            <div class="section-box">
+                拆解為兩個線性問題：<br>
+                1. <span style="color:var(--blue)">rob(nums[0 : n-1])</span><br>
+                2. <span style="color:var(--blue)">rob(nums[1 : n])</span><br>
+                最終結果取兩者最大值。
+            </div>
+            <div id="complexityBox" class="section-box" style="color: var(--purple); font-weight: bold;"></div>
+        </div>
+
+        <div class="workspace">
+            <div class="editor-container">
+                <div class="tabs" id="tabBar"></div>
+                <div id="codeEditor" class="editor"></div>
+            </div>
+
+            <div class="viz-section">
+                <div class="viz-main">
+                    <div id="phaseTag" style="color:var(--blue); font-size:12px; font-weight:bold; text-align:center; margin-bottom:10px; letter-spacing: 1px;"></div>
+                    <div id="houseRow" class="house-row"></div>
+                    <div id="vizBars" class="viz-bars"></div>
+                </div>
+                <div class="terminal" id="terminal">
+                    <div style="color: #8b949e; font-weight: bold; margin-bottom: 10px; font-size: 11px; text-transform: uppercase;">Decision Log</div>
+                    <div id="logContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let curStep = 0, nums = [], steps = [], curAlgo = 'bottomup';
+
+const repo = {
+    recursion: {
+        name: "1_recursion.py", complexity: "O(2^n) / O(n)",
+        code: [
+            `<span class="kw">def</span> <span class="fn">rob</span>(nums):`,
+            `    <span class="kw">return</span> <span class="fn">max</span>(solve(nums[:-<span class="num">1</span>]), solve(nums[<span class="num">1</span>:]))`,
+            ``,
+            `<span class="kw">def</span> <span class="fn">solve</span>(arr, i):`,
+            `    <span class="kw">if</span> i < <span class="num">0</span>: <span class="kw">return</span> <span class="num">0</span>`,
+            `    <span class="kw">return</span> <span class="fn">max</span>(solve(arr, i-<span class="num">1</span>), solve(arr, i-<span class="num">2</span>) + arr[i])`
+        ],
+        gen: (n) => [
+            {l:1, msg: "🔍 初始檢查：將環狀問題拆解為兩個範圍。", dp:Array(n).fill(0)},
+            {l:2, msg: "執行 Case 1：排除最後一間房屋進行遞迴。", range:[0, n-2], dp:Array(n).fill(0), active: 0},
+            {l:5, msg: "遞迴邊界：當 i < 0 時返回 0。", active: -1, range:[0, n-2], dp:Array(n).fill(0)},
+            {l:6, msg: "計算決策：max(不搶, 搶+前前一間)。", active: n-2, range:[0, n-2], dp:getRobDP(nums.slice(0,n-1)).concat(0)}
+        ]
+    },
+    topdown: {
+        name: "2_top_down.py", complexity: "O(n) / O(n)",
+        code: [
+            `<span class="kw">memo</span> = {}`,
+            `<span class="kw">def</span> <span class="fn">solve</span>(arr, i):`,
+            `    <span class="kw">if</span> i <span class="kw">in</span> <span class="kw">memo</span>: <span class="kw">return</span> <span class="kw">memo</span>[i]`,
+            `    <span class="kw">memo</span>[i] = <span class="fn">max</span>(solve(i-<span class="num">1</span>), solve(i-<span class="num">2</span>) + arr[i])`,
+            `    <span class="kw">return</span> <span class="kw">memo</span>[i]`
+        ],
+        gen: (n) => {
+            let s = [{l:1, msg: "🧠 記憶化：初始化 memo 快取。", dp:Array(n).fill(0)}];
+            let d = getRobDP(nums.slice(0, n-1));
+            d.forEach((v, i) => s.push({l:4, msg: `💾 快取結果：memo[${i}] = ${v}`, active:i, range:[0, n-2], dp:[...d.slice(0,i+1), ...Array(n-i-1).fill(0)]}));
+            return s;
+        }
+    },
+    bottomup: {
+        name: "3_bottom_up.py", complexity: "O(n) / O(n)",
+        code: [
+            `<span class="kw">def</span> <span class="fn">rob</span>(nums):`,
+            `    dp1 = <span class="fn">solve_dp</span>(nums[:-<span class="num">1</span>])`,
+            `    dp2 = <span class="fn">solve_dp</span>(nums[<span class="num">1</span>:])`,
+            `    <span class="kw">return</span> <span class="fn">max</span>(dp1[-<span class="num">1</span>], dp2[-<span class="num">1</span>])`
+        ],
+        gen: (n) => {
+            let s = [], d1 = getRobDP(nums.slice(0, n-1)), d2 = getRobDP(nums.slice(1));
+            s.push({l:2, msg:"🏗️ 開始處理方案 1 (0 到 n-2)...", range:[0, n-2], dp:Array(n).fill(0)});
+            d1.forEach((v, i) => {
+                let r = (i>=2?d1[i-2]:0)+nums[i], sk = (i>=1?d1[i-1]:0);
+                s.push({l:2, msg:`決策房 ${i}:`, active:i, range:[0,n-2], dp:[...d1.slice(0,i+1), ...Array(n-i-1).fill(0)],
+                        comp:{r:{v:r, f:`dp[${i-2}]+${nums[i]}`, w:r>=sk}, s:{v:sk, f:`dp[${i-1}]`, w:sk>r}}});
+            });
+            s.push({l:3, msg:"🏗️ 開始處理方案 2 (1 到 n-1)...", range:[1, n-1], dp:Array(n).fill(0)});
+            d2.forEach((v, i) => {
+                let idx = i+1, r = (i>=2?d2[i-2]:0)+nums[idx], sk = (i>=1?d2[i-1]:0);
+                s.push({l:3, msg:`決策房 ${idx}:`, active:idx, range:[1,n-1], dp:[0, ...d2.slice(0,i+1), ...Array(n-i-2).fill(0)],
+                        comp:{r:{v:r, f:`dp[${i-2}]+${nums[idx]}`, w:r>=sk}, s:{v:sk, f:`dp[${i-1}]`, w:sk>r}}});
+            });
+            let res = Math.max(d1[n-2]||0, d2[n-2]||0);
+            s.push({l:4, msg:`🏁 總結結果: max(${d1[n-2]}, ${d2[n-2]}) = ${res}`, dp:Array(n).fill(res)});
+            return s;
+        }
+    },
+    optimal: {
+        name: "4_optimal.py", complexity: "O(n) / O(1)",
+        code: [
+            `<span class="kw">def</span> <span class="fn">solve</span>(nums):`,
+            `    p2, p1 = <span class="num">0</span>, <span class="num">0</span>`,
+            `    <span class="kw">for</span> x <span class="kw">in</span> nums:`,
+            `        p2, p1 = p1, <span class="fn">max</span>(p1, p2 + x)`,
+            `    <span class="kw">return</span> p1`
+        ],
+        gen: (n) => {
+            let s = [], d1 = getRobDP(nums.slice(0, n-1));
+            s.push({l:2, msg:"✨ 空間優化：僅追蹤前兩間房的狀態。", dp:Array(n).fill(0)});
+            d1.forEach((v, i) => {
+                let r = (i>=2?d1[i-2]:0)+nums[i], sk = (i>=1?d1[i-1]:0);
+                s.push({l:4, msg:`滾動更新 i=${i}:`, active:i, range:[0,n-2], dp:[...d1.slice(0,i+1), ...Array(n-i-1).fill(0)],
+                        comp:{r:{v:r, f:`p2 + ${nums[i]}`, w:r>=sk}, s:{v:sk, f:`p1`, w:sk>r}}});
+            });
+            return s;
+        }
+    }
+};
+
+function getRobDP(arr) {
+    if(!arr.length) return [];
+    let d = [arr[0]];
+    if(arr.length > 1) d[1] = Math.max(arr[0], arr[1]);
+    for(let i=2; i<arr.length; i++) d[i] = Math.max(d[i-1], d[i-2]+arr[i]);
+    return d;
+}
+
+function init() {
+    nums = document.getElementById('numsInput').value.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+    if(!nums.length) nums = [0];
+    const tabBar = document.getElementById('tabBar');
+    tabBar.innerHTML = Object.keys(repo).map(k => `<div class="tab ${k===curAlgo?'active':''}" onclick="changeAlgo('${k}')">${repo[k].name}</div>`).join('');
+    document.getElementById('codeEditor').innerHTML = repo[curAlgo].code.map((l, i) => `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    document.getElementById('complexityBox').innerHTML = repo[curAlgo].complexity;
+    steps = repo[curAlgo].gen(nums.length);
+    curStep = 0; update();
+}
+
+function update() {
+    const step = steps[curStep];
+    const lines = document.querySelectorAll('.line');
+    lines.forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    let logHTML = `<div style="color:#e6edf3">> ${step.msg}</div>`;
+    if(step.comp) {
+        logHTML += `<div class="log-compare">
+            <div class="choice ${step.comp.r.w?'win':''}"><b>ROB:</b> ${step.comp.r.f} = <span style="color:#ce9178">${step.comp.r.v}</span></div>
+            <div class="choice ${step.comp.s.w?'win':''}"><b>SKIP:</b> ${step.comp.s.f} = <span style="color:#ce9178">${step.comp.s.v}</span></div>
+        </div>`;
+    }
+    document.getElementById('logContent').innerHTML = logHTML;
+
+    document.getElementById('houseRow').innerHTML = nums.map((v, i) => {
+        let isOff = step.range && (i < step.range[0] || i > step.range[1]);
+        return `<div class="house ${i===step.active?'active':''} ${isOff?'disabled':''}"><div style="color:#ce9178;font-weight:bold;font-size:18px">${v}</div><div style="font-size:9px;color:#8b949e">H-${i}</div></div>`;
+    }).join('');
+
+    const maxVal = Math.max(...steps[steps.length-1].dp, 1);
+    document.getElementById('vizBars').innerHTML = step.dp.map((v, i) => {
+        const h = (v / maxVal) * 90 + (v > 0 ? 5 : 0);
+        return `<div class="bar-container"><div style="font-size:10px;color:#4fc1ff;margin-bottom:4px">${v||''}</div><div class="bar ${i===step.active?'active':''}" style="height:${h}%"></div></div>`;
+    }).join('');
+    
+    document.getElementById('phaseTag').innerText = step.range ? `RANGE: NUMS[${step.range[0]}:${step.range[1]}]` : "COMPLETE";
+}
+
+function changeAlgo(a) { curAlgo = a; init(); }
+function nextStep() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prevStep() { if(curStep > 0) { curStep--; update(); } }
+
+init();
+</script>
+</body>
+</html>
