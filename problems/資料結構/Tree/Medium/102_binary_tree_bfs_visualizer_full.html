@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>102. Level Order Traversal - Masterpiece</title>
+    <style>
+        :root {
+            --primary: #3b82f6; --bg: #0d1117; --line-active: #21262d;
+            --kw: #ff7b72; --fn: #d2a8ff; --vr: #ffa657; --tp: #79c0ff; --st: #a5d6ff;
+            --target: #10b981;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        
+        /* 視覺畫布 */
+        .tree-stage { background: #ffffff; border: 1px solid #d0d7de; border-radius: 8px; height: 320px; position: relative; margin-bottom: 20px; overflow: hidden; }
+        .tree-node { position: absolute; width: 34px; height: 34px; background: #fff; border: 2px solid #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; transition: all 0.4s ease; z-index: 2; transform: translateX(-50%); font-size: 13px; }
+        .node-active { border-color: var(--primary); background: #eff6ff; color: var(--primary); box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); transform: translateX(-50%) scale(1.1); }
+        .node-visited { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; }
+
+        /* 代碼區域 */
+        .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; }
+        .code-window { background: var(--bg); border-radius: 8px; overflow: hidden; border: 1px solid #30363d; }
+        .code-header { background: #161b22; padding: 10px 15px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        .code-panel { color: #c9d1d9; padding: 15px; font-family: 'Fira Code', monospace; font-size: 11.5px; height: 380px; overflow-y: auto; line-height: 1.6; }
+        .line { display: flex; opacity: 0.3; transition: 0.2s; border-left: 3px solid transparent; }
+        .line-num { width: 30px; color: #484f58; text-align: right; padding-right: 15px; }
+        .line-content { white-space: pre; }
+        .active-line { opacity: 1; background: var(--line-active); border-left-color: var(--primary); }
+
+        /* 資訊面板 */
+        .side-label { font-size: 11px; font-weight: bold; color: #57606a; margin-bottom: 6px; display: block; text-transform: uppercase; }
+        .queue-panel { background: #161b22; color: #8b949e; padding: 12px; border-radius: 8px; display: flex; gap: 8px; min-height: 45px; border: 1px solid #30363d; margin-bottom: 15px; overflow-x: auto; align-items: center; }
+        .queue-item { padding: 4px 10px; background: rgba(59, 130, 246, 0.1); color: var(--tp); border: 1px solid var(--primary); border-radius: 4px; font-size: 11px; white-space: nowrap; }
+        #stepDesc { padding: 12px; background: #fff; border: 1px solid #d0d7de; border-radius: 8px; font-size: 13px; min-height: 70px; margin-bottom: 15px; }
+        
+        .comp-table { width: 100%; border-collapse: collapse; font-size: 11px; color: #c9d1d9; margin-top: 10px; border: 1px solid #30363d; }
+        .comp-table th, .comp-table td { border: 1px solid #30363d; padding: 6px; text-align: left; }
+        .comp-table th { background: #161b22; color: var(--fn); }
+
+        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        line { stroke: #d0d7de; stroke-width: 1.5; transition: 0.4s; }
+        .k { color: var(--kw); } .t { color: var(--tp); } .v { color: var(--vr); } .f { color: var(--fn); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <select id="langSelect" onchange="renderCode()" style="padding:8px; border-radius:6px; font-weight:600;">
+                <option value="py">Python 3 (Queue-based BFS)</option>
+                <option value="c">C Language (Manual Queue BFS)</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn-primary" onclick="runStep()" style="background:var(--primary); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:600;">下一步 ▶</button>
+            <button onclick="init()" style="padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:600; border:1px solid #d0d7de;">重置</button>
+        </div>
+    </div>
+
+    <div class="tree-stage">
+        <svg id="svgLines"></svg>
+        <div id="treeNodes"></div>
+    </div>
+
+    <div class="grid">
+        <div class="code-window">
+            <div class="code-header"><span id="fileName" style="color:#8b949e; font-size:12px;">solution.py</span></div>
+            <div class="code-panel" id="codePanel"></div>
+        </div>
+        
+        <div class="status-wrapper">
+            <span class="side-label">BFS Queue (FIFO)</span>
+            <div class="queue-panel" id="queuePanel"></div>
+            <span class="side-label">Step Insight</span>
+            <div id="stepDesc"></div>
+            
+            <div style="background:#161b22; padding:15px; border-radius:8px; border:1px solid #30363d;">
+                <span class="side-label" style="color:var(--fn)">BFS 性質與複雜度分析</span>
+                <p style="font-size:11px; color:#8b949e; margin: 5px 0;">使用「隊列」實現。一層訪問完才進入下一層。</p>
+                <table class="comp-table">
+                    <tr><th>維度</th><th>複雜度</th><th>說明</th></tr>
+                    <tr><td>時間</td><td>$O(N)$</td><td>每個節點皆會被放入並彈出隊列一次。</td></tr>
+                    <tr><td>空間 (迭代)</td><td>$O(W)$</td><td>$W$ 為樹的最大寬度。隊列最多同時存放一層的節點。</td></tr>
+                    <tr><td>空間 (最壞)</td><td>$O(N)$</td><td>對於滿二元樹，最後一層約有 $N/2$ 個節點。</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let stepIdx = 0;
+    const tree = [
+        {id:3, v:3, x:50, y:40, p:null},
+        {id:9, v:9, x:30, y:120, p:3}, {id:20, v:20, x:70, y:120, p:3},
+        {id:15, v:15, x:60, y:200, p:20}, {id:7, v:7, x:80, y:200, p:20}
+    ];
+
+    const codes = {
+        py: [
+            `<span class="k">def</span> <span class="f">levelOrder</span>(<span class="v">root</span>):`,
+            `    <span class="v">res</span> = []`,
+            `    <span class="v">q</span> = <span class="t">collections</span>.<span class="f">deque</span>([<span class="v">root</span>])`,
+            `    <span class="k">while</span> <span class="v">q</span>:`,
+            `        <span class="v">level</span> = []`,
+            `        <span class="k">for</span> <span class="v">_</span> <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(<span class="v">q</span>)):`,
+            `            <span class="v">node</span> = <span class="v">q</span>.<span class="f">popleft</span>()`,
+            `            <span class="v">level</span>.<span class="f">append</span>(<span class="v">node.val</span>)`,
+            `            <span class="k">if</span> <span class="v">node.left</span>: <span class="v">q</span>.<span class="f">append</span>(<span class="v">node.left</span>)`,
+            `            <span class="k">if</span> <span class="v">node.right</span>: <span class="v">q</span>.<span class="f">append</span>(<span class="v">node.right</span>)`,
+            `        <span class="v">res</span>.<span class="f">append</span>(<span class="v">level</span>)`,
+            `    <span class="k">return</span> <span class="v">res</span>`
+        ],
+        c: [
+            `<span class="k">int</span>** <span class="f">levelOrder</span>(<span class="k">struct</span> <span class="t">TreeNode</span>* <span class="v">root</span>, ...) {`,
+            `    <span class="k">struct</span> <span class="t">TreeNode</span>* <span class="v">queue</span>[<span class="n">2000</span>];`,
+            `    <span class="k">int</span> <span class="v">head</span> = <span class="n">0</span>, <span class="v">tail</span> = <span class="n">0</span>;`,
+            `    <span class="v">queue</span>[<span class="v">tail</span>++] = <span class="v">root</span>;`,
+            `    <span class="k">while</span> (<span class="v">head</span> < <span class="v">tail</span>) {`,
+            `        <span class="k">int</span> <span class="v">size</span> = <span class="v">tail</span> - <span class="v">head</span>;`,
+            `        <span class="k">for</span> (<span class="k">int</span> <span class="v">i</span> = <span class="n">0</span>; <span class="v">i</span> < <span class="v">size</span>; <span class="v">i</span>++) {`,
+            `            <span class="k">struct</span> <span class="t">TreeNode</span>* <span class="v">n</span> = <span class="v">queue</span>[<span class="v">head</span>++];`,
+            `            <span class="v">row</span>[<span class="v">i</span>] = <span class="v">n</span>-><span class="v">val</span>;`,
+            `            <span class="k">if</span> (<span class="v">n</span>-><span class="v">left</span>) <span class="v">queue</span>[<span class="v">tail</span>++] = <span class="v">n</span>-><span class="v">left</span>;`,
+            `            <span class="k">if</span> (<span class="v">n</span>-><span class="v">right</span>) <span class="v">queue</span>[<span class="v">tail</span>++] = <span class="v">n</span>-><span class="v">right</span>;`,
+            `        }`,
+            `    }`
+        ]
+    };
+
+    const traces = [
+        { active: 3, py: 2, c: 3, queue: [3], visited: [], desc: "初始化：將根節點 3 放入隊列。" },
+        { active: 3, py: 6, c: 7, queue: [], visited: [3], desc: "取出節點 3。準備將其子節點放入。" },
+        { active: 3, py: 9, c: 10, queue: [9, 20], visited: [3], desc: "將左子節點 9 與右子節點 20 加入隊列。第一層結束。" },
+        { active: 9, py: 6, c: 7, queue: [20], visited: [3, 9], desc: "處理第二層：取出隊首 9。9 沒有子節點。" },
+        { active: 20, py: 6, c: 7, queue: [], visited: [3, 9, 20], desc: "取出隊首 20。" },
+        { active: 20, py: 9, c: 10, queue: [15, 7], visited: [3, 9, 20], desc: "將 20 的子節點 15, 7 加入隊列。第二層結束。" },
+        { active: 15, py: 6, c: 7, queue: [7], visited: [3, 9, 20, 15], desc: "取出 15。" },
+        { active: 7, py: 6, c: 7, queue: [], visited: [3, 9, 20, 15, 7], desc: "取出 7。隊列已空，走訪完成！" }
+    ];
+
+    function init() { stepIdx = 0; renderCode(); render(); }
+    function runStep() { if (stepIdx < traces.length - 1) { stepIdx++; render(); } }
+    
+    function renderCode() {
+        const lang = document.getElementById('langSelect').value;
+        document.getElementById('fileName').innerText = lang === 'py' ? 'solution.py' : 'solution.c';
+        document.getElementById('codePanel').innerHTML = codes[lang].map((l, i) => `
+            <div class="line" id="line-${i}"><div class="line-num">${i + 1}</div><div class="line-content">${l}</div></div>
+        `).join('');
+        render();
+    }
+
+    function render() {
+        const lang = document.getElementById('langSelect').value;
+        const data = traces[stepIdx];
+        
+        document.getElementById('stepDesc').innerHTML = `<b>Step ${stepIdx+1}:</b> ${data.desc}`;
+        document.getElementById('queuePanel').innerHTML = data.queue.map(v => `<div class="queue-item">${v}</div>`).join('');
+        
+        document.querySelectorAll('.line').forEach(l => l.classList.remove('active-line'));
+        const lineIdx = data[lang];
+        if (lineIdx !== undefined) document.getElementById(`line-${lineIdx}`).classList.add('active-line');
+
+        const container = document.getElementById('treeNodes');
+        const svg = document.getElementById('svgLines');
+        container.innerHTML = ''; svg.innerHTML = '';
+
+        tree.forEach(n => {
+            const div = document.createElement('div');
+            let cls = 'tree-node';
+            if (data.active === n.id) cls += ' node-active';
+            if (data.visited.includes(n.id)) cls += ' node-visited';
+            div.className = cls; div.style.left = n.x + '%'; div.style.top = n.y + 'px';
+            div.innerText = n.v; container.appendChild(div);
+
+            if (n.p !== null) {
+                const parent = tree.find(p => p.id === n.p);
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", n.x + "%"); line.setAttribute("y1", n.y);
+                line.setAttribute("x2", parent.x + "%"); line.setAttribute("y2", parent.y + 17);
+                svg.appendChild(line);
+            }
+        });
+    }
+    init();
+</script>
+</body>
+</html>

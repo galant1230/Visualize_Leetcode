@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>121. Best Time to Buy and Sell Stock 終極可視化版</title>
+  <style>
+    :root {
+      --primary: #64ffda; --accent: #007acc; --bg: #0a192f;
+      --card-bg: #112240; --text: #ccd6f6; --text-dim: #8892b0; --success: #2ecc71; --danger: #ff4d4d;
+    }
+    body {
+      font-family: 'Fira Code', 'Segoe UI', sans-serif; background: var(--bg);
+      color: var(--text); padding: 20px; margin: 0; line-height: 1.6;
+    }
+    .dashboard { max-width: 1250px; margin: auto; display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; }
+    .card { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .full-width { grid-column: span 2; }
+    h2, h3 { color: var(--primary); margin-top: 0; border-bottom: 1px solid #233554; padding-bottom: 10px; }
+
+    /* 題目資訊區 */
+    .info-section { background: rgba(100, 255, 218, 0.05); border-left: 5px solid var(--primary); padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+    .complexity-tag { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; background: rgba(0, 122, 204, 0.2); border: 1px solid var(--accent); margin-right: 5px; }
+
+    /* 狀態面板 */
+    .status-panel { 
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; 
+      margin: 15px 0; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid #233554;
+    }
+    .status-item { text-align: center; }
+    .status-label { font-size: 0.8rem; color: var(--text-dim); display: block; }
+    .status-value { font-size: 1.1rem; color: var(--primary); font-weight: bold; }
+
+    /* 圖表標註 */
+    .chart-container {
+      height: 250px; display: flex; align-items: flex-end; justify-content: center;
+      gap: 20px; margin: 60px 0 40px 0; border-bottom: 2px solid #233554; position: relative;
+    }
+    .bar {
+      width: 45px; background: #233554; position: relative; transition: all 0.3s ease;
+      display: flex; justify-content: center;
+    }
+    .bar.buy { background: var(--danger); box-shadow: 0 0 15px var(--danger); }
+    .bar.sell { background: var(--success); box-shadow: 0 0 15px var(--success); }
+    
+    /* 價格標籤 */
+    .bar::after { content: attr(data-p); position: absolute; top: -25px; font-weight: bold; font-size: 0.9rem; }
+    
+    /* 指針標籤 (L/R) */
+    .pointer-label {
+      position: absolute; top: -55px; font-weight: bold; font-size: 1.2rem;
+      padding: 2px 8px; border-radius: 4px; color: white; transition: all 0.3s ease;
+    }
+    .p-l { background: var(--danger); }
+    .p-r { background: var(--success); }
+
+    .controls { text-align: center; margin-bottom: 20px; }
+    input { background: var(--bg); border: 1px solid var(--accent); color: var(--primary); padding: 8px 15px; border-radius: 20px; outline: none; }
+    button { background: var(--accent); border: none; color: white; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    select { background: var(--card-bg); color: var(--primary); border: 1px solid var(--primary); padding: 8px; border-radius: 8px; }
+
+    .code-window { background: #011627; padding: 20px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 0.9rem; min-height: 300px; }
+    .line { white-space: pre; border-left: 4px solid transparent; padding-left: 12px; color: #82aaff; margin: 2px 0; }
+    .active-line { background: #1d3b53; border-left-color: var(--primary); color: #fff; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  <div class="card full-width">
+    <h2>📈 121. Best Time to Buy and Sell Stock</h2>
+    <div class="info-section">
+      <strong>題目描述：</strong>給定一個陣列 <code>prices</code>，第 <code>i</code> 個元素是第 <code>i</code> 天的股票價格。你只能選擇某一天買入，並在未來的另一天賣出。請找出最大利潤。如果無法獲利，回傳 0。<br>
+      <strong>範例：</strong>輸入 <code>[7,1,5,3,6,4]</code> ➔ 輸出 <code>5</code> (第2天買 $1，第5天賣 $6)。
+    </div>
+    
+    <div class="status-panel">
+      <div class="status-item"><span class="status-label">L 指針 (Buy/Min)</span><span id="stat-l" class="status-value">-</span></div>
+      <div class="status-item"><span class="status-label">R 指針 (Sell/Current)</span><span id="stat-r" class="status-value">-</span></div>
+      <div class="status-item"><span class="status-label">當前利潤</span><span id="stat-profit" class="status-value">0</span></div>
+      <div class="status-item"><span class="status-label">最大利潤 (maxP)</span><span id="stat-max" class="status-value" style="color:var(--success)">0</span></div>
+    </div>
+
+    <div class="controls">
+      選擇解法: 
+      <select id="algoSelect" onchange="initSim()">
+        <option value="brute">Sol 1: 暴力法 O(n²)</option>
+        <option value="greedy">Sol 2: 貪婪法 O(n)</option>
+        <option value="twoPointer" selected>Sol 3: 雙指針 O(n)</option>
+      </select>
+      價格陣列: <input type="text" id="pricesInput" value="7,1,5,3,6,4">
+      <button onclick="initSim()">重置</button>
+      <button id="stepBtn" onclick="step()">下一步 (Step)</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🔍 視覺化追蹤</h3>
+    <div class="chart-container" id="chart"></div>
+    <div id="finalBox" style="text-align: center; color: var(--success); font-weight: bold; padding: 15px; border: 2px solid var(--success); border-radius: 8px; display: none; background: rgba(46, 204, 113, 0.1);"></div>
+  </div>
+
+  <div class="card">
+    <div id="complexityBox"></div>
+    <div class="code-window" id="codeBox"></div>
+  </div>
+</div>
+
+<script>
+const codes = {
+    brute: {
+        lines: ["maxP = 0", "for i in range(len(prices)):", "    for j in range(i+1, len(prices)):", "        profit = prices[j] - prices[i]", "        maxP = max(maxP, profit)", "return maxP"],
+        time: "O(n²)", space: "O(1)"
+    },
+    greedy: {
+        lines: ["profit = 0", "minPrice = prices[0]", "for price in prices[1:]:", "    if price > minPrice:", "        profit = max(profit, price - minPrice)", "    else:", "        minPrice = price", "return profit"],
+        time: "O(n)", space: "O(1)"
+    },
+    twoPointer: {
+        lines: ["l, r = 0, 1", "maxP = 0", "while r < len(prices):", "    if prices[l] < prices[r]:", "        profit = prices[r] - prices[l]", "        maxP = max(maxP, profit)", "    else:", "        l = r", "    r += 1", "return maxP"],
+        time: "O(n)", space: "O(1)"
+    }
+};
+
+let prices = [], l = 0, r = 1, maxP = 0;
+let algo = "";
+
+function initSim() {
+    prices = document.getElementById("pricesInput").value.split(",").map(Number).filter(n => !isNaN(n));
+    algo = document.getElementById("algoSelect").value;
+    l = 0; r = 1; maxP = 0;
+    
+    document.getElementById("finalBox").style.display = "none";
+    document.getElementById("stepBtn").disabled = false;
+    document.getElementById("complexityBox").innerHTML = `
+        <span class="complexity-tag">時間: ${codes[algo].time}</span>
+        <span class="complexity-tag">空間: ${codes[algo].space}</span>
+    `;
+    
+    renderCode();
+    renderChart();
+    updateStatus(0);
+}
+
+function renderCode() {
+    document.getElementById("codeBox").innerHTML = codes[algo].lines.map((line, i) => `<div class="line" id="line-${i}">${line}</div>`).join("");
+}
+
+function renderChart() {
+    const chart = document.getElementById("chart");
+    chart.innerHTML = "";
+    const maxVal = Math.max(...prices, 1);
+    prices.forEach((p, idx) => {
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        if (idx === l) {
+            bar.classList.add("buy");
+            bar.innerHTML += `<div class="pointer-label p-l">${algo==='greedy'?'Min':'L'}</div>`;
+        }
+        if (idx === r) {
+            bar.classList.add("sell");
+            bar.innerHTML += `<div class="pointer-label p-r">${algo==='greedy'?'Price':'R'}</div>`;
+        }
+        bar.style.height = (p / maxVal * 150) + "px";
+        bar.setAttribute("data-p", p);
+        chart.appendChild(bar);
+    });
+}
+
+function updateStatus(curP) {
+    document.getElementById("stat-l").innerText = l;
+    document.getElementById("stat-r").innerText = r;
+    document.getElementById("stat-profit").innerText = curP;
+    document.getElementById("stat-max").innerText = maxP;
+}
+
+function step() {
+    clearHighlight();
+    if (algo === "twoPointer") {
+        if (r >= prices.length) return finish();
+        highlight(2);
+        const profit = prices[r] - prices[l];
+        if (prices[l] < prices[r]) {
+            highlight(3); highlight(4); highlight(5);
+            maxP = Math.max(maxP, profit);
+            updateStatus(profit);
+        } else {
+            highlight(6); highlight(7);
+            l = r;
+            updateStatus(0);
+        }
+        highlight(8); r++;
+    } else if (algo === "greedy") {
+        if (r >= prices.length) return finish();
+        highlight(2);
+        const profit = prices[r] - prices[l];
+        if (prices[r] > prices[l]) {
+            highlight(3); highlight(4);
+            maxP = Math.max(maxP, profit);
+            updateStatus(profit);
+        } else {
+            highlight(5); highlight(6);
+            l = r;
+            updateStatus(0);
+        }
+        r++;
+    } else if (algo === "brute") {
+        if (l >= prices.length - 1) return finish();
+        highlight(1); highlight(2); highlight(3);
+        const profit = prices[r] - prices[l];
+        maxP = Math.max(maxP, profit);
+        updateStatus(profit);
+        r++;
+        if (r >= prices.length) { l++; r = l + 1; }
+    }
+    renderChart();
+    if (r >= prices.length && (algo !== 'brute' || l >= prices.length-1)) setTimeout(finish, 400);
+}
+
+function highlight(idx) { document.getElementById("line-"+idx)?.classList.add("active-line"); }
+function clearHighlight() { document.querySelectorAll(".line").forEach(el => el.classList.remove("active-line")); }
+
+function finish() {
+    highlight(codes[algo].lines.length - 1);
+    document.getElementById("stepBtn").disabled = true;
+    const fb = document.getElementById("finalBox");
+    fb.innerText = `✅ 模擬結束！最大利潤為: ${maxP}`;
+    fb.style.display = "block";
+}
+
+initSim();
+</script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>LeetCode 217. Contains Duplicate - 視覺化教學</title>
+  <style>
+    :root {
+      --primary: #007acc; --success: #2ecc71; --warning: #f39c12;
+      --danger: #e74c3c; --dark: #2c3e50; --bg: #f4f7f9;
+    }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--dark); }
+    .dashboard { max-width: 1200px; margin: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .full-width { grid-column: span 2; }
+    h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.25rem; }
+    
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .complexity-box { background: #eef2f7; padding: 15px; border-radius: 8px; border-left: 5px solid var(--primary); }
+    code { background: #eee; padding: 2px 5px; border-radius: 4px; font-family: monospace; }
+
+    .visualizer-container { text-align: center; padding: 40px 0; }
+    .box-container { display: flex; justify-content: center; height: 60px; }
+    .num-box {
+      width: 50px; height: 50px; line-height: 50px; margin: 0 6px;
+      border: 2px solid #dee2e6; border-radius: 10px; font-size: 1.6rem;
+      font-weight: bold; position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .num-box.active { background: #e3f2fd; border-color: var(--primary); color: var(--primary); transform: scale(1.1); }
+    .num-box.found { background: #ffebee; border-color: var(--danger); color: var(--danger); animation: shake 0.4s; }
+    
+    .ptr { position: absolute; left: 0; width: 100%; font-size: 0.85rem; font-weight: 900; top: -35px; color: var(--primary); }
+
+    .code-window { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 0.95rem; line-height: 1.6; }
+    .line { padding: 2px 10px; border-radius: 4px; border-left: 4px solid transparent; }
+    .line.active { background: #3e4451; border-left-color: var(--success); color: white; }
+
+    .table-wrapper { max-height: 350px; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th { background: #f8f9fa; position: sticky; top: 0; z-index: 10; }
+    th, td { padding: 12px; border: 1px solid #eee; text-align: center; }
+    tr.newest { background: #e8f5e9; font-weight: bold; }
+
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; align-items: center; }
+    input { padding: 10px 20px; border: 2px solid #ddd; border-radius: 25px; font-size: 1rem; width: 300px; outline: none; transition: 0.3s; }
+    button { padding: 10px 25px; border: none; border-radius: 25px; cursor: pointer; background: var(--primary); color: white; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    button:disabled { background: #ccc; box-shadow: none; }
+
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <div class="card full-width">
+    <h2>題目：存在重複元素 (Contains Duplicate)</h2>
+    <div class="info-grid">
+      <div>
+        <p>給定一個整數陣列 <code>nums</code>，如果陣列中任何數值至少出現兩次，則回傳 <code>true</code>；如果所有元素都是唯一的，則回傳 <code>false</code>。</p>
+        <p>範例：<code>nums = [1, 2, 3, 1]</code> → 輸出：<code>true</code></p>
+      </div>
+      <div class="complexity-box">
+        <strong>複雜度分析：</strong>
+        <ul>
+          <li><strong>時間複雜度：O(n)</strong><br>線性遍歷陣列。HashSet 的查找與插入平均為 O(1)。</li>
+          <li><strong>空間複雜度：O(n)</strong><br>最壞情況下需要存儲所有唯一元素。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card full-width" style="background: transparent; box-shadow: none; padding: 0;">
+    <div class="controls">
+      <input type="text" id="inputArr" value="1, 2, 3, 1" placeholder="輸入數字，以逗號隔開...">
+      <button onclick="resetSim()">重置模擬</button>
+      <button id="nextBtn" onclick="playStep()">下一步 (Step Over)</button>
+    </div>
+  </div>
+
+  <div class="card full-width">
+    <h2>陣列遍歷與指針</h2>
+    <div class="visualizer-container">
+      <div class="box-container" id="boxContainer"></div>
+      <div id="hintText" style="margin-top: 40px; font-weight: bold; font-size: 1.1rem; color: var(--primary);">準備就緒</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Python 邏輯追蹤</h2>
+    <div class="code-window" id="codeWindow">
+      <div class="line" id="l1">seen = set()</div>
+      <div class="line" id="l2">for num in nums:</div>
+      <div class="line" id="l3" style="color: #e5c07b;">&nbsp;&nbsp;if num in seen:</div>
+      <div class="line" id="l4" style="color: #e06c75;">&nbsp;&nbsp;&nbsp;&nbsp;return True</div>
+      <div class="line" id="l5" style="color: #98c379;">&nbsp;&nbsp;seen.add(num)</div>
+      <div class="line" id="l6">return False</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>集合 (Set) 狀態表格</h2>
+    <div class="table-wrapper">
+      <table id="logTable">
+        <thead>
+          <tr>
+            <th>Index</th>
+            <th>Number</th>
+            <th>seen (集合內容)</th>
+            <th>執行結果</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let nums = [], i = 0, seen = new Set(), subStep = 0, finished = false;
+
+function resetSim() {
+  const raw = document.getElementById('inputArr').value;
+  nums = raw.split(',').map(n => n.trim()).filter(n => n !== "");
+  i = 0; seen = new Set(); subStep = 0; finished = false;
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('logTable').querySelector('tbody').innerHTML = "";
+  renderBoxes();
+  clearHighlights();
+  updateHint("已建立空集合 seen = set()");
+  highlightLine('l1');
+}
+
+function renderBoxes() {
+  const container = document.getElementById('boxContainer');
+  container.innerHTML = nums.map((num, idx) => `
+    <div class="num-box" id="b-${idx}">
+      <div class="ptr" id="p-${idx}"></div>
+      ${num}
+    </div>
+  `).join('');
+}
+
+function playStep() {
+  if (finished) return;
+  if (i >= nums.length) {
+    clearHighlights();
+    highlightLine('l6');
+    updateHint("已檢查完畢，沒有發現任何重複元素。回傳 False");
+    finished = true;
+    document.getElementById('nextBtn').disabled = true;
+    return;
+  }
+
+  const num = nums[i];
+  clearHighlights();
+
+  switch(subStep) {
+    case 0: // For loop
+      highlightLine('l2');
+      updateVisualPointers();
+      updateHint(`遍歷到數字: ${num}`);
+      subStep = 1;
+      break;
+    case 1: // If in seen
+      highlightLine('l3');
+      if (seen.has(num)) {
+        updateHint(`發現衝突！數字 ${num} 已經在集合內了。`);
+        document.getElementById(`b-${i}`).classList.add('found');
+        subStep = 2; 
+      } else {
+        updateHint(`數字 ${num} 不在集合內，安全。`);
+        subStep = 3;
+      }
+      break;
+    case 2: // Return True
+      highlightLine('l4');
+      updateHint(`回傳 True，演算法提早終止。`);
+      addTableRow(i, num, new Set(seen), "重複發現！✅");
+      finished = true;
+      document.getElementById('nextBtn').disabled = true;
+      break;
+    case 3: // Add
+      seen.add(num);
+      highlightLine('l5');
+      addTableRow(i, num, new Set(seen), "加入集合");
+      updateHint(`將 ${num} 加入集合，繼續檢查下一個。`);
+      i++;
+      subStep = 0;
+      break;
+  }
+}
+
+function highlightLine(id) { document.getElementById(id).classList.add('active'); }
+function clearHighlights() { document.querySelectorAll('.line').forEach(el => el.classList.remove('active')); }
+
+function updateVisualPointers() {
+  document.querySelectorAll('.ptr').forEach(el => el.innerText = "");
+  document.querySelectorAll('.num-box').forEach(el => el.classList.remove('active'));
+  const activeBox = document.getElementById(`b-${i}`);
+  if(activeBox) {
+    activeBox.classList.add('active');
+    document.getElementById(`p-${i}`).innerText = "▼ i";
+  }
+}
+
+function addTableRow(idx, num, seenSet, result) {
+  const tbody = document.getElementById('logTable').querySelector('tbody');
+  const setStr = seenSet.size === 0 ? "∅" : `{ ${Array.from(seenSet).join(', ')} }`;
+  document.querySelectorAll('tr').forEach(tr => tr.classList.remove('newest'));
+  const row = `<tr class="newest">
+    <td>${idx}</td>
+    <td>${num}</td>
+    <td style="text-align:left; font-family:monospace;">${setStr}</td>
+    <td style="${result.includes('重複') ? 'color:var(--danger)' : ''}">${result}</td>
+  </tr>`;
+  tbody.insertAdjacentHTML('afterbegin', row);
+}
+
+function updateHint(txt) { document.getElementById('hintText').innerText = txt; }
+
+resetSim();
+</script>
+
+</body>
+</html>

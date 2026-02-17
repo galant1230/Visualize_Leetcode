@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>105. Construct Tree - Full Tutorial</title>
+    <style>
+        :root {
+            --editor-bg: #0d1117; --gutter-bg: #161b22; --active-line: #21262d;
+            --indicator: #2ea043; --primary: #10b981; --text: #c9d1d9;
+            --kw: #ff7b72; --fn: #d2a8ff; --vr: #ffa657; --accent: #79c0ff;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; margin: 0; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: 480px 1fr; gap: 20px; }
+
+        /* 左側：監控與視覺化 */
+        .info-panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 13px; }
+        .example-box { background: #fff; border-left: 4px solid var(--primary); padding: 8px; margin: 8px 0; font-family: monospace; font-size: 11px; }
+        .debug-panel { background: #1e1e1e; color: #d4d4d4; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-family: 'Consolas', monospace; font-size: 13px; border-left: 5px solid var(--accent); }
+        .var-highlight { color: var(--vr); font-weight: bold; }
+        .val-highlight { color: #b5cea8; }
+
+        .tree-stage { border: 1px solid #d0d7de; border-radius: 8px; height: 280px; position: relative; background: #fff; margin-bottom: 15px; overflow: hidden; }
+        .tree-node { position: absolute; width: 32px; height: 32px; border: 2px solid #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; background: #fff; z-index: 2; transform: translateX(-50%); transition: 0.4s; font-size: 12px; opacity: 0; }
+        .node-visible { opacity: 1; }
+        .node-active { border-color: var(--primary); box-shadow: 0 0 15px rgba(16,185,129,0.6); transform: translateX(-50%) scale(1.1); }
+        
+        .array-label { font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 3px; }
+        .array-container { display: flex; gap: 4px; margin-bottom: 10px; height: 32px; }
+        .array-item { width: 30px; height: 30px; border: 1px solid #d1d5db; display: flex; align-items: center; justify-content: center; font-size: 11px; background: #fff; border-radius: 4px; transition: 0.3s; }
+        .pre-active { background: var(--primary); color: white; border-color: var(--primary); }
+        .idx-marker { background: #ff7b72 !important; color: white !important; border-color: #ff7b72 !important; transform: translateY(-3px); }
+
+        /* 右側：編輯器 */
+        .editor { background: var(--editor-bg); border-radius: 8px; border: 1px solid #30363d; display: flex; flex-direction: column; min-height: 520px; }
+        .editor-header { background: var(--gutter-bg); padding: 10px 15px; color: #8b949e; font-size: 12px; border-bottom: 1px solid #30363d; }
+        .code-container { flex: 1; padding: 10px 0; font-family: 'Fira Code', monospace; font-size: 12.5px; line-height: 1.6; color: var(--text); }
+        .line { display: flex; position: relative; padding-left: 45px; white-space: pre; }
+        .line-num { position: absolute; left: 0; width: 35px; text-align: right; color: #484f58; padding-right: 10px; border-right: 1px solid #30363d; }
+        .line-active { background: var(--active-line); }
+        .line-active::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--indicator); }
+
+        /* 下方：解題思路與複雜度 */
+        .theory-section { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; }
+        .theory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .theory-card { background: #fcfcfc; border: 1px solid #eef0f2; padding: 20px; border-radius: 10px; }
+        .theory-card h3 { margin-top: 0; color: #1e293b; border-left: 4px solid var(--primary); padding-left: 10px; }
+        .complexity-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .complexity-table td { padding: 8px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .complexity-table b { color: var(--indicator); }
+
+        button { padding: 10px 18px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        svg { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; }
+        line { stroke: #d0d7de; stroke-width: 2; transition: 0.5s; }
+        .kw { color: var(--kw); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2 style="margin:0;">105. Construct Binary Tree (全方位教學面板)</h2>
+    </div>
+
+    <div class="grid">
+        <div class="visual-side">
+            <div class="info-panel">
+                <strong>題目敘述：</strong> 給定 <code>preorder</code> 與 <code>inorder</code> 陣列，重構二元樹並回傳。
+                <div class="example-box">
+                    Input: preorder = [3,9,20,15,7], inorder = [9,3,15,20,7]<br>
+                    Output: [3,9,20,null,null,15,7]
+                </div>
+            </div>
+
+            <div class="debug-panel" id="debugPanel">
+                <div>// Runtime Monitor</div>
+                <div><span class="var-highlight">root_val (preorder[0])</span>: <span class="val-highlight" id="mon-val">None</span></div>
+                <div><span class="var-highlight">divide_index</span>: <span class="val-highlight" id="mon-idx">None</span></div>
+            </div>
+
+            <div class="array-label">CURRENT PREORDER:</div>
+            <div class="array-container" id="preorderArr"></div>
+            
+            <div class="array-label">CURRENT INORDER:</div>
+            <div class="array-container" id="inorderArr"></div>
+
+            <div class="tree-stage" id="treeStage">
+                <svg id="svgLines"></svg>
+                <div id="nodes"></div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button onclick="nextStep()">下一步 ▶</button>
+                <button onclick="resetDemo()" style="background:#64748b;">重置</button>
+            </div>
+        </div>
+
+        <div class="editor">
+            <div class="editor-header">solution.py</div>
+            <div class="code-container" id="codePanel"></div>
+        </div>
+    </div>
+
+    <div class="theory-section">
+        <div class="theory-grid">
+            <div class="theory-card">
+                <h3>🧠 解題思路：分治法 (Divide and Conquer)</h3>
+                <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+                    利用遍歷特性精確定位子樹：
+                    <ul style="font-size: 14px; color: #475569;">
+                        <li><b>找根：</b>Preorder 的首位 <code>preorder[0]</code> 永遠是當前子樹的根。</li>
+                        <li><b>切分：</b>在 Inorder 中找到根的位置 <code>divide_index</code>。</li>
+                        <li><b>分治：</b>根左側為左子樹，右側為右子樹。利用 <b>List Slicing</b> 產生新的子陣列並遞迴構建。</li>
+                        <li><b>結束：</b>當傳入陣列為空，代表碰到空節點，回傳 <code>None</code>。</li>
+                    </ul>
+                </p>
+            </div>
+            <div class="theory-card">
+                <h3>📊 複雜度分析 (Slicing 版)</h3>
+                <table class="complexity-table">
+                    <tr><td>時間複雜度</td><td><b>O(N²)</b></td></tr>
+                    <tr><td colspan="2" style="font-size: 12px; color: #64748b;">每層遞迴呼叫 <code>.index()</code> (O(N)) 與切片 (O(N))。</td></tr>
+                    <tr><td>空間複雜度</td><td><b>O(N²)</b></td></tr>
+                    <tr><td colspan="2" style="font-size: 12px; color: #64748b;">遞迴深度 O(N)，且每層切片產生新的暫存陣列。</td></tr>
+                    <tr><td>最佳化可能</td><td>使用 <b>HashMap</b> 存索引可降至 <b>O(N)</b>。</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const codeLines = [
+    "class Solution:",
+    "    def buildTree(self, preorder, inorder):",
+    "        if not preorder or not inorder:",
+    "            return None",
+    "",
+    "        root = TreeNode(preorder[0])",
+    "        divide_index = inorder.index(preorder[0])",
+    "",
+    "        root.left = self.buildTree(",
+    "            preorder[1 : divide_index + 1],",
+    "            inorder[:divide_index]",
+    "        )",
+    "        root.right = self.buildTree(",
+    "            preorder[divide_index + 1 :],",
+    "            inorder[divide_index + 1 :]",
+    "        )",
+    "        return root"
+];
+
+const trace = [
+    { ln: 2, pre: [3,9,20,15,7], ino: [9,3,15,20,7], val: "None", idx: "None" },
+    { ln: 5, pre: [3,9,20,15,7], ino: [9,3,15,20,7], val: "3", idx: "None", node: 3, x: 50, y: 35, p: null },
+    { ln: 6, pre: [3,9,20,15,7], ino: [9,3,15,20,7], val: "3", idx: "1", activeIdx: 1 },
+    { ln: 9, pre: [9], ino: [9], val: "9", idx: "0", activeIdx: 0, node: 9, x: 25, y: 110, p: 3 },
+    { ln: 12, pre: [20,15,7], ino: [15,20,7], val: "20", idx: "1", activeIdx: 1, node: 20, x: 75, y: 110, p: 3 },
+    { ln: 9, pre: [15], ino: [15], val: "15", idx: "0", activeIdx: 0, node: 15, x: 62, y: 190, p: 20 },
+    { ln: 12, pre: [7], ino: [7], val: "7", idx: "0", activeIdx: 0, node: 7, x: 88, y: 190, p: 20 }
+];
+
+let currentStep = 0;
+
+function resetDemo() {
+    currentStep = 0;
+    const panel = document.getElementById('codePanel');
+    panel.innerHTML = codeLines.map((line, i) => `
+        <div class="line" id="line-${i}">
+            <div class="line-num">${i + 1}</div>
+            <div class="line-content">${line.replace(/def |class |if |not |or |return |self/g, x => `<span class="kw">${x}</span>`)}</div>
+        </div>`).join('');
+    document.getElementById('nodes').innerHTML = '';
+    document.getElementById('svgLines').innerHTML = '';
+    render();
+}
+
+function nextStep() {
+    if (currentStep < trace.length - 1) { currentStep++; render(); }
+}
+
+function render() {
+    const step = trace[currentStep];
+    document.querySelectorAll('.line').forEach(l => l.classList.remove('line-active'));
+    document.getElementById(`line-${step.ln}`).classList.add('line-active');
+    document.getElementById('mon-val').innerText = step.val;
+    document.getElementById('mon-idx').innerText = step.idx;
+
+    document.getElementById('preorderArr').innerHTML = step.pre.map((v, i) => 
+        `<div class="array-item ${i===0 ? 'pre-active' : ''}">${v}</div>`).join('');
+    document.getElementById('inorderArr').innerHTML = step.ino.map((v, i) => 
+        `<div class="array-item ${step.activeIdx === i ? 'idx-marker' : ''}">${v}</div>`).join('');
+
+    const nodesWrap = document.getElementById('nodes');
+    const svg = document.getElementById('svgLines');
+
+    if (step.node) {
+        if (!document.getElementById(`node-${step.node}`)) {
+            const div = document.createElement('div');
+            div.id = `node-${step.node}`;
+            div.className = 'tree-node node-visible node-active';
+            div.style.left = step.x + "%"; div.style.top = step.y + "px";
+            div.innerText = step.node;
+            nodesWrap.appendChild(div);
+
+            if (step.p) {
+                const parent = document.getElementById(`node-${step.p}`);
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", parent.style.left); line.setAttribute("y1", parseInt(parent.style.top) + 16);
+                line.setAttribute("x2", step.x + "%"); line.setAttribute("y2", step.y);
+                svg.appendChild(line);
+            }
+        }
+        document.querySelectorAll('.tree-node').forEach(n => n.classList.remove('node-active'));
+        document.getElementById(`node-${step.node}`).classList.add('node-active');
+    }
+}
+resetDemo();
+</script>
+</body>
+</html>

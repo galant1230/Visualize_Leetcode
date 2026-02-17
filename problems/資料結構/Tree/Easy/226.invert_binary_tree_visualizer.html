@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>226. Invert Binary Tree - Refined Layout</title>
+    <style>
+        :root {
+            --primary: #f59e0b; --bg: #0d1117; --line-active: #21262d;
+            --kw: #ff7b72; --fn: #d2a8ff; --vr: #ffa657; --tp: #79c0ff; --st: #a5d6ff; --cm: #8b949e;
+            --complexity-bg: #161b22;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        
+        /* 樹狀畫布 */
+        .tree-stage { background: #ffffff; border: 1px solid #d0d7de; border-radius: 8px; height: 320px; position: relative; margin-bottom: 20px; overflow: hidden; }
+        .tree-node { position: absolute; width: 38px; height: 38px; background: #fff; border: 2px solid #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; transition: all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 2; transform: translateX(-50%); }
+        .node-active { border-color: var(--primary); background: #fff8eb; color: var(--primary); box-shadow: 0 0 12px rgba(245,158,11,0.3); }
+
+        /* 代碼區域 - Github Dark */
+        .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; }
+        .code-window { background: var(--bg); border-radius: 8px; overflow: hidden; border: 1px solid #30363d; }
+        .code-header { background: #161b22; padding: 10px 15px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        .code-panel { color: #c9d1d9; padding: 15px; font-family: 'Fira Code', 'Consolas', monospace; font-size: 13px; height: 350px; overflow-y: auto; line-height: 1.7; }
+        .line { display: flex; opacity: 0.4; transition: 0.2s; }
+        .line-num { width: 30px; color: #484f58; text-align: right; padding-right: 15px; user-select: none; }
+        .line-content { white-space: pre; }
+        .active-line { opacity: 1; background: var(--line-active); border-left: 3px solid var(--primary); }
+
+        /* 右側狀態欄 */
+        .side-label { font-size: 11px; font-weight: bold; color: #57606a; margin-bottom: 6px; display: block; letter-spacing: 0.5px; text-transform: uppercase; }
+        .stack-panel { background: #161b22; color: #8b949e; padding: 12px; border-radius: 8px; display: flex; flex-direction: column-reverse; gap: 5px; min-height: 80px; border: 1px solid #30363d; margin-bottom: 20px; }
+        .stack-frame { padding: 4px 8px; background: rgba(121, 192, 255, 0.1); color: var(--tp); border-radius: 4px; border-left: 2px solid var(--tp); font-size: 11px; }
+        
+        #stepDesc { padding: 12px; background: white; border: 1px solid #d0d7de; border-radius: 8px; font-size: 13px; min-height: 80px; color: #24292f; line-height: 1.5; margin-bottom: 20px; }
+
+        .complexity-box { background: var(--complexity-bg); border: 1px solid #30363d; border-radius: 8px; padding: 12px; color: #c9d1d9; font-size: 12px; }
+        .complexity-item { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .complexity-val { font-family: 'Consolas', monospace; color: var(--fn); font-weight: bold; }
+
+        /* 語法高亮標籤 */
+        .k { color: var(--kw); } .t { color: var(--tp); } .v { color: var(--vr); } .f { color: var(--fn); } .c { color: var(--cm); }
+        
+        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        line { stroke: #d0d7de; stroke-width: 2; transition: 0.7s; }
+        button { padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; border: 1px solid #d0d7de; background: white; transition: 0.2s; }
+        button:hover { background: #f6f8fa; }
+        .btn-primary { background: var(--primary); color: white; border: none; }
+        .btn-primary:hover { background: #d97706; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <h2 style="margin:0; font-size: 1.4rem;">226. Invert Binary Tree</h2>
+            <code style="font-size: 12px; color: #57606a;">Input: [4,2,7,1,3,6,9] → Output: [4,7,2,9,6,3,1]</code>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <select id="langSelect" onchange="init()" style="padding: 7px 12px; border-radius: 6px; border: 1px solid #d0d7de;">
+                <option value="py">Python 3</option>
+                <option value="c">C Language</option>
+            </select>
+            <button class="btn-primary" onclick="runStep()">下一步 Step ▶</button>
+            <button onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="tree-stage" id="treeStage">
+        <svg id="svgLines"></svg>
+        <div id="treeNodes"></div>
+    </div>
+
+    <div class="grid">
+        <div class="code-window">
+            <div class="code-header">
+                <span id="fileName" style="color: #8b949e; font-size: 12px;">solution.py</span>
+                <span style="color: #484f58; font-size: 12px;">UTF-8</span>
+            </div>
+            <div class="code-panel" id="codePanel"></div>
+        </div>
+        
+        <div class="status-wrapper">
+            <span class="side-label">Recursion Stack</span>
+            <div class="stack-panel" id="stackPanel"></div>
+
+            <span class="side-label">Execution Insight</span>
+            <div id="stepDesc"></div>
+
+            <span class="side-label">Complexity Analysis</span>
+            <div class="complexity-box">
+                <div class="complexity-item">
+                    <span>Time Complexity</span>
+                    <span class="complexity-val">O(N)</span>
+                </div>
+                <div class="complexity-item">
+                    <span>Space Complexity</span>
+                    <span class="complexity-val">O(H)</span>
+                </div>
+                <div style="font-size: 10px; color: #8b949e; margin-top: 8px; border-top: 1px solid #30363d; padding-top: 8px;">
+                    N: Total Nodes | H: Tree Height (Max Recursion Depth)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let step = 0;
+    let currentNodes = [];
+    const initialNodes = [
+        { id: 4, label: '4', curX: 50, y: 40, p: null },
+        { id: 2, label: '2', curX: 25, y: 120, p: 4 },
+        { id: 7, label: '7', curX: 75, y: 120, p: 4 },
+        { id: 1, label: '1', curX: 12, y: 200, p: 2 },
+        { id: 3, label: '3', curX: 38, y: 200, p: 2 },
+        { id: 6, label: '6', curX: 62, y: 200, p: 7 },
+        { id: 9, label: '9', curX: 88, y: 200, p: 7 }
+    ];
+
+    const allCodes = {
+        py: {
+            name: 'solution.py',
+            lines: [
+                `<span class="k">class</span> <span class="t">Solution</span>:`,
+                `    <span class="k">def</span> <span class="f">invertTree</span>(<span class="v">self</span>, <span class="v">root</span>):`,
+                `        <span class="k">if not</span> <span class="v">root</span>: <span class="k">return</span> <span class="k">None</span>`,
+                `        <span class="c"># Swap nodes and recurse</span>`,
+                `        <span class="v">root</span>.<span class="v">left</span>, <span class="v">root</span>.<span class="v">right</span> = \\`,
+                `            <span class="v">self</span>.<span class="f">invertTree</span>(<span class="v">root</span>.<span class="v">right</span>), \\`,
+                `            <span class="v">self</span>.<span class="f">invertTree</span>(<span class="v">root</span>.<span class="v">left</span>)`,
+                `        <span class="k">return</span> <span class="v">root</span>`
+            ]
+        },
+        c: {
+            name: 'solution.c',
+            lines: [
+                `<span class="k">struct</span> <span class="t">TreeNode</span>* <span class="f">invertTree</span>(<span class="k">struct</span> <span class="t">TreeNode</span>* <span class="v">root</span>) {`,
+                `    <span class="k">if</span> (<span class="v">root</span> == <span class="n">NULL</span>) <span class="k">return</span> <span class="n">NULL</span>;`,
+                `    <span class="c">// Recursive swap</span>`,
+                `    <span class="k">struct</span> <span class="t">TreeNode</span>* <span class="v">l</span> = <span class="f">invertTree</span>(<span class="v">root</span>-><span class="v">left</span>);`,
+                `    <span class="k">struct</span> <span class="t">TreeNode</span>* <span class="v">r</span> = <span class="f">invertTree</span>(<span class="v">root</span>-><span class="v">right</span>);`,
+                `    <span class="v">root</span>-><span class="v">left</span> = <span class="v">r</span>;`,
+                `    <span class="v">root</span>-><span class="v">right</span> = <span class="v">l</span>;`,
+                `    <span class="k">return</span> <span class="v">root</span>;`,
+                `}`
+            ]
+        }
+    };
+
+    const trace = [
+        { py: 1, c: 0, stack: ['invertTree(4)'], active: 4, desc: '<b>Step 1:</b> 進入根節點 4。' },
+        { py: 4, c: 3, stack: ['invertTree(4)', 'invertTree(2)'], active: 2, desc: '<b>Step 2:</b> 向左遞迴處理節點 2。' },
+        { py: 5, c: 5, stack: ['invertTree(4)', 'invertTree(2)'], active: 2, swapPair: [1, 3], desc: '<b>Step 3:</b> 翻轉節點 2 的子樹 (1 ↔ 3)。' },
+        { py: 4, c: 4, stack: ['invertTree(4)', 'invertTree(7)'], active: 7, desc: '<b>Step 4:</b> 向右遞迴處理節點 7。' },
+        { py: 5, c: 6, stack: ['invertTree(4)', 'invertTree(7)'], active: 7, swapPair: [6, 9], desc: '<b>Step 5:</b> 翻轉節點 7 的子樹 (6 ↔ 9)。' },
+        { py: 5, c: 5, stack: ['invertTree(4)'], active: 4, swapPair: [2, 7], desc: '<b>Step 6:</b> 回到根節點 4 並交換兩大分支。' },
+        { py: 7, c: 7, stack: [], active: 4, desc: '<b>Done:</b> 樹狀結構翻轉完畢。' }
+    ];
+
+    function init() {
+        step = 0; currentNodes = JSON.parse(JSON.stringify(initialNodes));
+        renderCode(); render();
+    }
+
+    function runStep() {
+        if (step < trace.length - 1) {
+            step++;
+            const data = trace[step];
+            if (data.swapPair) performActualSwap(data.swapPair[0], data.swapPair[1]);
+            render();
+        }
+    }
+
+    function performActualSwap(id1, id2) {
+        const node1 = currentNodes.find(n => n.id === id1);
+        const node2 = currentNodes.find(n => n.id === id2);
+        const diff = node2.curX - node1.curX;
+        const moveSubtree = (rootId, moveAmount) => {
+            currentNodes.forEach(n => {
+                if (n.id === rootId) {
+                    n.curX += moveAmount;
+                    currentNodes.filter(child => child.p === rootId).forEach(c => moveSubtree(c.id, moveAmount));
+                }
+            });
+        };
+        moveSubtree(id1, diff); moveSubtree(id2, -diff);
+    }
+
+    function renderCode() {
+        const lang = document.getElementById('langSelect').value;
+        const info = allCodes[lang];
+        document.getElementById('fileName').innerText = info.name;
+        document.getElementById('codePanel').innerHTML = info.lines.map((l, i) => `
+            <div class="line" id="line-${i}">
+                <div class="line-num">${i + 1}</div>
+                <div class="line-content">${l}</div>
+            </div>
+        `).join('');
+    }
+
+    function render() {
+        const lang = document.getElementById('langSelect').value;
+        const data = trace[step];
+        document.getElementById('stackPanel').innerHTML = data.stack.map(s => `<div class="stack-frame">${s}</div>`).join('');
+        document.getElementById('stepDesc').innerHTML = data.desc;
+        document.querySelectorAll('.line').forEach(l => l.classList.remove('active-line'));
+        const lineIdx = data[lang];
+        const lineEl = document.getElementById(`line-${lineIdx}`);
+        if (lineEl) lineEl.classList.add('active-line');
+        const container = document.getElementById('treeNodes');
+        const svg = document.getElementById('svgLines');
+        container.innerHTML = ''; svg.innerHTML = '';
+        currentNodes.forEach(n => {
+            const div = document.createElement('div');
+            div.className = 'tree-node' + (n.id === data.active ? ' node-active' : '');
+            div.style.left = n.curX + '%'; div.style.top = n.y + 'px';
+            div.innerText = n.label; container.appendChild(div);
+            if (n.p !== null) {
+                const parent = currentNodes.find(p => p.id === n.p);
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", n.curX + "%"); line.setAttribute("y1", n.y);
+                line.setAttribute("x2", parent.curX + "%"); line.setAttribute("y2", parent.y + 20);
+                svg.appendChild(line);
+            }
+        });
+    }
+    init();
+</script>
+</body>
+</html>

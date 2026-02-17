@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>417. Pacific Atlantic Ultimate Pro</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --both: #d29922;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .dashboard { max-width: 1600px; margin: auto; display: flex; flex-direction: column; gap: 15px; }
+
+        /* 頂部導航與標籤 */
+        .header-panel { 
+            background: var(--card); border: 1px solid #30363d; padding: 20px; border-radius: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .badge-group { display: flex; gap: 10px; margin-top: 5px; }
+        .badge { background: #0d1117; border: 1px solid #30363d; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--accent); font-family: monospace; }
+
+        .algo-nav { display: flex; gap: 5px; background: #010409; padding: 5px; border-radius: 10px; border: 1px solid #30363d; }
+        .nav-btn { padding: 10px 20px; border: none; border-radius: 8px; background: transparent; color: var(--dim); cursor: pointer; font-weight: 600; }
+        .nav-btn.active { background: var(--accent); color: #fff; }
+
+        /* 三矩陣並列區域 (水平固定佈局) */
+        .visual-area { 
+            background: #010409; border-radius: 12px; border: 1px solid #30363d; padding: 20px;
+            display: flex; justify-content: space-around; align-items: center; gap: 10px; min-height: 250px;
+        }
+        .matrix-box { text-align: center; flex: 1; }
+        .matrix-box h5 { margin: 0 0 10px 0; color: var(--dim); font-size: 10px; letter-spacing: 1px; }
+        table { border-collapse: separate; border-spacing: 2px; margin: auto; }
+        td {
+            width: 28px; height: 28px; border-radius: 2px; font-size: 10px; font-weight: bold;
+            background: #161b22; color: #30363d; text-align: center; transition: 0.2s;
+        }
+        .is-p { background: var(--pacific) !important; color: #fff; }
+        .is-a { background: var(--atlantic) !important; color: #fff; }
+        .is-both { background: var(--both) !important; color: #fff; box-shadow: 0 0 10px var(--both); }
+        .scanning { outline: 2px solid #fff; transform: scale(1.1); z-index: 5; }
+
+        /* 下方代碼與日誌 */
+        .bottom-layout { display: grid; grid-template-columns: 320px 1fr; gap: 15px; height: 500px; }
+        .monitor { background: var(--card); border-radius: 12px; border: 1px solid #30363d; padding: 15px; display: flex; flex-direction: column; }
+        .log-box { flex: 1; font-family: monospace; font-size: 11px; overflow-y: auto; color: var(--dim); margin-top: 10px; border-top: 1px solid #334155; padding-top: 10px; }
+
+        .editor { background: var(--editor-bg); border-radius: 12px; border: 1px solid #30363d; display: flex; flex-direction: column; overflow: hidden; }
+        .code-view { flex: 1; padding: 10px 0; font-family: 'Consolas', monospace; font-size: 11.5px; line-height: 1.5; overflow-y: auto; color: #e6edf3; }
+        .line { padding-left: 50px; position: relative; white-space: pre; border-left: 3px solid transparent; }
+        .line-active { background: rgba(88, 166, 255, 0.2) !important; border-left: 3px solid var(--accent); color: #fff; }
+        .line-num { position: absolute; left: 10px; color: #484f58; width: 30px; text-align: right; }
+
+        /* 控制按鈕 */
+        .controls { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #30363d; display: flex; gap: 10px; }
+        input { background: #0d1117; border: 1px solid #30363d; color: var(--accent); padding: 8px 12px; border-radius: 6px; flex: 1; font-family: monospace; }
+        .btn-play { background: #238636; color: white; border: none; padding: 8px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header-panel">
+        <div>
+            <h2 style="margin:0; font-size: 1.5rem;">🌊 Pacific Atlantic Master Console</h2>
+            <div id="comp-badges" class="badge-group"></div>
+        </div>
+        <div class="algo-nav">
+            <button class="nav-btn active" id="btn-brute" onclick="setAlgo('brute')">1. Brute Force</button>
+            <button class="nav-btn" id="btn-dfs" onclick="setAlgo('dfs')">2. Recursive DFS</button>
+            <button class="nav-btn" id="btn-bfs" onclick="setAlgo('bfs')">3. Queue BFS</button>
+        </div>
+    </div>
+
+    <div class="controls">
+        <input type="text" id="gridInput" value="[[1,2,2,3,5],[3,2,3,4,4],[2,4,5,3,1],[6,7,1,4,5],[5,1,1,2,4]]">
+        <button class="nav-btn" style="border: 1px solid #30363d;" onclick="init()">🔃 Reset</button>
+        <button class="btn-play" onclick="handleStep()">🧭 Next Step</button>
+    </div>
+
+    <div class="visual-area">
+        <div class="matrix-box"><h5>PACIFIC REACHABLE</h5><div id="p-grid"></div></div>
+        <div class="matrix-box"><h5>MERGED RESULT</h5><div id="res-grid"></div></div>
+        <div class="matrix-box"><h5>ATLANTIC REACHABLE</h5><div id="a-grid"></div></div>
+    </div>
+
+    <div class="bottom-layout">
+        <div class="monitor">
+            <div style="font-size:11px; font-weight:bold; color:var(--accent);">TRACE LOG</div>
+            <div id="log" class="log-box"></div>
+        </div>
+        <div class="editor">
+            <div style="background:#161b22; padding:8px 15px; font-size:11px; color:var(--accent); font-family: monospace;">solution.py</div>
+            <div id="codeView" class="code-view"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const algoRepo = {
+brute: {
+    comp: ["Time: O((M*N)^2)", "Space: O(M*N)"],
+    lines: [
+        "class Solution:",
+        "    def pacificAtlantic(self, heights):",
+        "        # 對每一個格子進行獨立 DFS 搜索",
+        "        for r in range(ROWS):",
+        "            for c in range(COLS):",
+        "                pacific = atlantic = False",
+        "                self.naive_dfs(r, c, float('inf'))",
+        "                if pacific and atlantic:",
+        "                    res.append([r, c])",
+        "        return res"
+    ],
+    highlight: 6
+},
+dfs: {
+    comp: ["Time: O(M*N)", "Space: O(M*N)"],
+    lines: [
+        "class Solution:",
+        "    def check(self, row, col, heights, ocean):",
+        "        ocean[row][col] = True",
+        "        lst = [[row+1, col],[row-1, col],[row, col-1],[row, col+1]]",
+        "        for r, c in lst:",
+        "            if (0 <= r < len(heights) and 0 <= c < len(heights[0]) and",
+        "                not ocean[r][c] and heights[r][c] >= heights[row][col]):",
+        "                self.check(r, c, heights, ocean)",
+        "",
+        "    def pacificAtlantic(self, heights):",
+        "        for i in range(rows):",
+        "            self.check(i, 0, heights, pac) # 左邊",
+        "            self.check(i, cols-1, heights, atl) # 右邊",
+        "        for j in range(cols):",
+        "            self.check(0, j, heights, pac) # 上邊",
+        "            self.check(rows-1, j, heights, atl) # 下邊"
+    ],
+    highlight: 2
+},
+bfs: {
+    comp: ["Time: O(M*N)", "Space: O(M*N)"],
+    lines: [
+        "def bfs(source_q, ocean_map):",
+        "    q = deque(source_q)",
+        "    while q:",
+        "        r, c = q.popleft()",
+        "        ocean_map[r][c] = True",
+        "        for nr, nc in neighbors:",
+        "            if (valid and not ocean_map[nr][nc] and ",
+        "                heights[nr][nc] >= heights[r][c]):",
+        "                q.append((nr, nc))"
+    ],
+    highlight: 3
+}
+};
+
+let currentAlgo = 'brute';
+let matrix, R, C, pac, atl, stack = [], rIdx=0, cIdx=0;
+
+function setAlgo(name) {
+    currentAlgo = name;
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + name).classList.add('active');
+    init();
+}
+
+function init() {
+    matrix = JSON.parse(document.getElementById('gridInput').value);
+    R = matrix.length; C = matrix[0].length;
+    pac = Array.from({length: R}, () => Array(C).fill(false));
+    atl = Array.from({length: R}, () => Array(C).fill(false));
+    rIdx = 0; cIdx = 0; stack = [];
+    
+    if(currentAlgo !== 'brute') {
+        // DFS/BFS 邊界初始化
+        for(let i=0; i<R; i++) { stack.push({r:i, c:0, o:'p'}); stack.push({r:i, c:C-1, o:'a'}); pac[i][0]=true; atl[i][C-1]=true; }
+        for(let j=0; j<C; j++) { stack.push({r:0, c:j, o:'p'}); stack.push({r:R-1, c:j, o:'a'}); pac[0][j]=true; atl[R-1][j]=true; }
+    }
+
+    // 更新介面
+    document.getElementById('comp-badges').innerHTML = algoRepo[currentAlgo].comp.map(b => `<span class="badge">${b}</span>`).join('');
+    renderCode();
+    renderAll();
+    document.getElementById('log').innerHTML = `Algorithm initialized: ${currentAlgo}`;
+}
+
+function renderCode() {
+    const lines = algoRepo[currentAlgo].lines;
+    document.getElementById('codeView').innerHTML = lines.map((l, i) => 
+        `<div class="line" id="line-${i}"><span class="line-num">${i+1}</span>${l.replace(/def |class |if |for |in |not |and |return |while /g, x => `<span style="color:#ff7b72">${x}</span>`)}</div>`
+    ).join('');
+}
+
+function highlight(idx) {
+    document.querySelectorAll('.line').forEach(l => l.classList.remove('line-active'));
+    const target = document.getElementById(`line-${idx}`);
+    if(target) target.classList.add('line-active');
+}
+
+function renderGrid(id, data, type, active) {
+    let html = "<table>";
+    for(let r=0; r<R; r++){
+        html += "<tr>";
+        for(let c=0; c<C; c++){
+            let cls = data[r][c] ? (type==='p'?'is-p':'is-a') : "";
+            if(active && active.r===r && active.c===c) cls += " scanning";
+            html += `<td class="${cls}">${matrix[r][c]}</td>`;
+        }
+        html += "</tr>";
+    }
+    document.getElementById(id).innerHTML = html + "</table>";
+}
+
+function renderAll(active = null) {
+    renderGrid('p-grid', pac, 'p', active);
+    renderGrid('a-grid', atl, 'a', active);
+    
+    let resHtml = "<table>";
+    for(let r=0; r<R; r++){
+        resHtml += "<tr>";
+        for(let c=0; c<C; c++){
+            let cls = (pac[r][c] && atl[r][c]) ? "is-both" : (pac[r][c]?"is-p":(atl[r][c]?"is-a":""));
+            if(active && active.r===r && active.c===c) cls += " scanning";
+            resHtml += `<td class="${cls}">${matrix[r][c]}</td>`;
+        }
+        resHtml += "</tr>";
+    }
+    document.getElementById('res-grid').innerHTML = resHtml + "</table>";
+}
+
+function handleStep() {
+    const logger = (m) => { const l=document.getElementById('log'); l.innerHTML += `<div>> ${m}</div>`; l.scrollTop=l.scrollHeight; };
+    highlight(algoRepo[currentAlgo].highlight);
+
+    if (currentAlgo === 'brute') {
+        if (rIdx >= R) { logger("Complete!"); return; }
+        pac[rIdx][cIdx] = true; atl[rIdx][cIdx] = true;
+        logger(`Brute Force Check: (${rIdx}, ${cIdx})`);
+        renderAll({r: rIdx, c: cIdx});
+        cIdx++; if(cIdx >= C){ cIdx=0; rIdx++; }
+    } 
+    else {
+        if (stack.length === 0) { logger("Traversal Finished."); return; }
+        let curr = currentAlgo === 'bfs' ? stack.shift() : stack.pop();
+        let targetOcean = curr.o === 'p' ? pac : atl;
+        
+        logger(`${currentAlgo.toUpperCase()} Processing ${curr.o==='p'?'Pac':'Atl'}: (${curr.r}, ${curr.c})`);
+        
+        [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr, dc]) => {
+            let nr=curr.r+dr, nc=curr.c+dc;
+            if(nr>=0 && nr<R && nc>=0 && nc<C && !targetOcean[nr][nc] && matrix[nr][nc] >= matrix[curr.r][curr.c]) {
+                targetOcean[nr][nc] = true;
+                stack.push({r: nr, c: nc, o: curr.o});
+            }
+        });
+        renderAll(curr);
+    }
+}
+
+init();
+</script>
+</body>
+</html>
+

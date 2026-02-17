@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>211. Word Dictionary Visualizer</title>
+    <style>
+        :root {
+            --bg: #f8fafc; --card-yellow: #fffbeb; --border-yellow: #fde68a;
+            --monitor-bg: #1e1e1e; --editor-bg: #0d1117; --tree-bg: #000;
+            --primary: #f59e0b; --node-purple: #4c1d95; --success: #22c55e; --fail: #ef4444;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .dashboard { max-width: 1450px; margin: auto; display: grid; gap: 15px; }
+
+        /* 控制台 */
+        .control-panel { background: var(--card-yellow); border: 1.5px solid var(--border-yellow); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; }
+        .btn-auto { background: #6366f1; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        
+        /* 主區域 */
+        .main-layout { display: grid; grid-template-columns: 320px 1fr 480px; gap: 15px; height: 600px; }
+
+        /* 左側 Monitor */
+        .side-panel { background: var(--monitor-bg); border-radius: 12px; padding: 15px; color: #d1d5db; display: flex; flex-direction: column; }
+        .log-area { flex: 1; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 12px; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
+        .status-tag { color: var(--primary); font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+
+        /* 中間 Trie 樹 (黑色背景) */
+        .tree-container { background: var(--tree-bg); border-radius: 12px; position: relative; border: 1px solid #333; overflow: hidden; }
+        .node {
+            position: absolute; width: 38px; height: 38px; border-radius: 50%; background: #2d1b36;
+            border: 2px solid var(--node-purple); display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; font-size: 14px; z-index: 5; transition: 0.2s;
+        }
+        .node.is-end { border-color: var(--success); background: #064e3b; box-shadow: 0 0 8px var(--success); }
+        .node.searching { border-color: var(--primary); box-shadow: 0 0 15px var(--primary); transform: scale(1.15); }
+        .node.fail { border-color: var(--fail); }
+
+        .line-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .edge { stroke: rgba(255,255,255,0.1); stroke-width: 1.5; }
+
+        /* 右側 IDE */
+        .editor { background: var(--editor-bg); border-radius: 12px; border: 1px solid #30363d; overflow: hidden; display: flex; flex-direction: column; }
+        .code-view { flex: 1; padding: 10px 0; font-family: 'Fira Code', monospace; font-size: 11px; color: #c9d1d9; line-height: 1.5; }
+        .line-row { padding-left: 40px; position: relative; }
+        .line-active { background: #21262d; border-left: 3px solid var(--primary); }
+        .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #8b949e; }
+
+        /* 底部資訊卡 */
+        .footer { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .info-card { padding: 12px 15px; border-radius: 10px; border-left: 5px solid; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="control-panel">
+        <b style="color:#92400e;">211. Add/Search (Wildcard):</b>
+        <input type="text" id="api-input" value=".ad" style="width: 100px; padding: 8px; border-radius: 4px; border:1px solid #ccc;">
+        <button class="btn-auto" onclick="handleManual('search')">Search</button>
+        <button class="btn-auto" style="background:var(--success)" onclick="handleManual('add')">AddWord</button>
+        <div style="flex:1"></div>
+        <button class="btn-auto" style="background:#6366f1" onclick="runSequence()">⚡ 執行範例序列 (bad, dad, mad...)</button>
+        <button onclick="location.reload()" style="background:#444; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer;">Reset</button>
+    </div>
+
+    <div class="main-layout">
+        <div class="side-panel">
+            <div class="status-tag" id="status-display">// Status: Idle</div>
+            <b>Execution Log:</b>
+            <div id="log-container" class="log-area"></div>
+        </div>
+
+        <div class="tree-container" id="tree-box">
+            <svg class="line-svg" id="svg-layer"></svg>
+            <div id="node-layer"></div>
+        </div>
+
+        <div class="editor">
+            <div style="padding:5px 15px; background:#161b22; font-size:11px; color:#8b949e;">word_dictionary.py</div>
+            <div class="code-view" id="code-box"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="info-card" style="background:#f0fdf4; border-color:var(--success);">
+            <h4 style="margin:0 0 5px; color:#166534;">📊 複雜度分析 (Complexity)</h4>
+            <b>Time:</b> Add O(L) , Search O(M * 26^L) (M為單字數, 點號會觸發DFS)<br>
+            <b>Space:</b> O(N * 26) (N為總節點數)
+        </div>
+        <div class="info-card" style="background:#eff6ff; border-color:#3b82f6;">
+            <h4 style="margin:0 0 5px; color:#1e40af;">💡 DFS 與萬用字元</h4>
+            當遇到 <code>'.'</code> 時，必須遍歷當前節點的所有 <code>children</code>，並對剩餘字串進行遞迴搜尋。
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+class TrieNode {
+    constructor(char, x, y) {
+        this.char = char; this.children = {}; this.isEnd = false; 
+        this.x = x; this.y = y; this.id = 'n' + Math.random().toString(36).substr(2, 5);
+    }
+}
+
+let root = new TrieNode('R', 150, 40);
+let allNodes = [root];
+
+const codeContent = [
+    {t: "def addWord(self, word):", i: 0},
+    {t: "    node = self.root", i: 1},
+    {t: "    for c in word: ...", i: 1},
+    {t: "def search(self, word):", i: 0},
+    {t: "    def dfs(j, node):", i: 1},
+    {t: "        curr = node", i: 2},
+    {t: "        for i in range(j, len(word)):", i: 2},
+    {t: "            c = word[i]", i: 3},
+    {t: "            if c == '.':", i: 3},
+    {t: "                for child in curr.children.values():", i: 4},
+    {t: "                    if dfs(i + 1, child): return True", i: 5},
+    {t: "                return False", i: 4},
+    {t: "            if c not in curr.children: return False", i: 3},
+    {t: "            curr = curr.children[c]", i: 3},
+    {t: "        return curr.isEnd", i: 2},
+    {t: "    return dfs(0, self.root)", i: 1}
+];
+
+function init() {
+    document.getElementById('code-box').innerHTML = codeContent.map((l, i) => 
+        `<div class="line-row" id="ln-${i}" style="padding-left:${l.i*18 + 40}px">${highlight(l.t)}</div>`).join('');
+    renderTree();
+}
+
+function highlight(t) { return t.replace(/def |if |for |in |range|return /g, x => `<span class="kw">${x}</span>`).replace(/dfs|addWord|search/g, x => `<span class="fn">${x}</span>`); }
+
+function renderTree() {
+    const nodeLayer = document.getElementById('node-layer');
+    const svgLayer = document.getElementById('svg-layer');
+    nodeLayer.innerHTML = ''; svgLayer.innerHTML = '';
+    allNodes.forEach(n => {
+        const div = document.createElement('div');
+        div.className = `node ${n.isEnd ? 'is-end' : ''}`;
+        div.id = n.id; div.style.left = n.x - 19 + 'px'; div.style.top = n.y - 19 + 'px';
+        div.innerText = n.char;
+        nodeLayer.appendChild(div);
+        for (let key in n.children) {
+            const child = n.children[key];
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", n.x); line.setAttribute("y1", n.y);
+            line.setAttribute("x2", child.x); line.setAttribute("y2", child.y);
+            line.setAttribute("class", "edge");
+            svgLayer.appendChild(line);
+        }
+    });
+}
+
+async function addWord(word) {
+    let curr = root;
+    for (let char of word) {
+        if (!curr.children[char]) {
+            const count = Object.keys(curr.children).length;
+            const newNode = new TrieNode(char, curr.x + (count * 65) - 65, curr.y + 70);
+            curr.children[char] = newNode;
+            allNodes.push(newNode);
+        }
+        curr = curr.children[char];
+    }
+    curr.isEnd = true;
+    renderTree();
+}
+
+async function dfsSearch(word, j, node) {
+    const ui = document.getElementById(node.id);
+    ui.classList.add('searching');
+    await new Promise(r => setTimeout(r, 400));
+
+    for (let i = j; i < word.length; i++) {
+        let c = word[i];
+        if (c === '.') {
+            highlightLine(9);
+            for (let child of Object.values(node.children)) {
+                document.getElementById('status-display').innerText = `DFS: Testing '.' at index ${i}`;
+                if (await dfsSearch(word, i + 1, child)) return true;
+            }
+            ui.classList.remove('searching');
+            return false;
+        } else {
+            highlightLine(12);
+            if (!node.children[c]) {
+                ui.classList.add('fail');
+                setTimeout(() => ui.classList.remove('fail'), 500);
+                ui.classList.remove('searching');
+                return false;
+            }
+            node = node.children[c];
+            document.getElementById(node.id).classList.add('searching');
+            await new Promise(r => setTimeout(r, 300));
+        }
+    }
+    const result = node.isEnd;
+    if (!result) ui.classList.remove('searching');
+    return result;
+}
+
+function highlightLine(ln) {
+    document.querySelectorAll('.line-row').forEach(r => r.classList.remove('line-active'));
+    document.getElementById(`ln-${ln}`).classList.add('line-active');
+}
+
+async function handleManual(type) {
+    const val = document.getElementById('api-input').value;
+    if (type === 'add') {
+        await addWord(val);
+        addLog(`addWord("${val}") → null`);
+    } else {
+        highlightLine(3);
+        const res = await dfsSearch(val, 0, root);
+        addLog(`search("${val}") → <b style="color:${res?'var(--success)':'var(--fail)'}">${res}</b>`);
+        document.querySelectorAll('.node').forEach(n => n.classList.remove('searching'));
+    }
+}
+
+function addLog(msg) {
+    const log = document.getElementById('log-container');
+    log.innerHTML += `<div class="log-entry">${msg}</div>`;
+    log.scrollTop = log.scrollHeight;
+}
+
+async function runSequence() {
+    const words = ["bad", "dad", "mad"];
+    for(let w of words) { await addWord(w); addLog(`addWord("${w}") → null`); await new Promise(r => setTimeout(r, 300)); }
+    
+    const searches = [
+        {v: "pad", res: false}, {v: "bad", res: true}, 
+        {v: ".ad", res: true}, {v: "b..", res: true}
+    ];
+    for(let s of searches) {
+        document.getElementById('api-input').value = s.v;
+        await handleManual('search');
+        await new Promise(r => setTimeout(r, 800));
+    }
+}
+
+init();
+</script>
+</body>
+</html>

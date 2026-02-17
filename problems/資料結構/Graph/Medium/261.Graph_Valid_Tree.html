@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Graph Valid Tree Debugger</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --both: #d29922;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --error: #f85149; --highlight: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .dashboard { max-width: 1500px; margin: auto; display: flex; flex-direction: column; gap: 15px; }
+
+        /* 題目描述區 */
+        .problem-info { background: var(--card); border: 1px solid #30363d; padding: 15px; border-radius: 8px; border-left: 5px solid var(--atlantic); }
+        
+        /* 頂部自訂輸入 */
+        .input-panel { background: var(--card); border: 1px solid #30363d; padding: 15px; border-radius: 8px; }
+        textarea { width: 100%; height: 45px; background: #0d1117; color: var(--accent); border: 1px solid #30363d; border-radius: 6px; padding: 10px; font-family: monospace; resize: none; }
+
+        /* 數據監控 */
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .monitor-box { background: var(--card); border: 1px solid #30363d; border-radius: 8px; padding: 12px; }
+        .monitor-label { font-size: 12px; font-weight: bold; color: var(--dim); margin-bottom: 8px; }
+        .data-view { font-family: 'Consolas', monospace; font-size: 13px; background: #010409; padding: 10px; border-radius: 6px; color: var(--accent); min-height: 60px; }
+
+        /* 主佈局 */
+        .main-layout { display: grid; grid-template-columns: 1fr 520px; gap: 15px; height: 500px; }
+        .visual-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        
+        .node {
+            width: 45px; height: 45px; border-radius: 50%; border: 2px solid #30363d;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+            position: absolute; transition: 0.3s; background: var(--card); color: var(--text);
+            z-index: 2;
+        }
+        .node.visiting { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
+        .node.visited { background: var(--atlantic); border-color: var(--atlantic); color: white; }
+        .node.error { border-color: var(--error); box-shadow: 0 0 15px var(--error); animation: shake 0.5s; }
+
+        /* IDE 程式碼 */
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .code-view { flex: 1; padding: 10px 0; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6; overflow-y: auto; color: #e6edf3; }
+        .line { padding-left: 45px; position: relative; white-space: pre; border-left: 3px solid transparent; }
+        .line-active { background: var(--highlight); border-left: 3px solid var(--accent); color: #fff; }
+        .line-num { position: absolute; left: 10px; color: #484f58; width: 25px; text-align: right; }
+
+        .controls { display: flex; gap: 12px; align-items: center; margin-top: 10px; }
+        .btn-step { background: var(--atlantic); color: white; border: none; padding: 10px 30px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .algo-switch { display: flex; background: #010409; padding: 4px; border-radius: 8px; border: 1px solid #30363d; }
+        .sw-btn { padding: 6px 15px; border: none; background: transparent; color: var(--dim); cursor: pointer; border-radius: 6px; font-size: 12px; }
+        .sw-btn.active { background: var(--accent); color: white; }
+
+        @keyframes shake { 0%, 100% { transform: translate(0); } 25% { transform: translate(-5px); } 75% { transform: translate(5px); } }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="problem-info">
+        <h3 style="margin:0; color:var(--accent);">261. Graph Valid Tree</h3>
+        <p style="font-size:13px; margin:5px 0;">給定 <code>n</code> 個節點與 <code>edges</code> 列表。判斷這是否為一棵樹：1. 無環 2. 全連通。</p>
+    </div>
+
+    <div class="input-panel">
+        <div class="monitor-label">🛠️ 自訂 Edges (無向圖):</div>
+        <textarea id="edgeInput">[[0,1], [0,2], [0,3], [1,4]]</textarea>
+        <div class="controls">
+            <div class="algo-switch">
+                <button class="sw-btn active" id="sw-dfs" onclick="setAlgo('dfs')">DFS (Recursion)</button>
+                <button class="sw-btn" id="sw-uf" onclick="setAlgo('uf')">Union-Find</button>
+            </div>
+            <button class="btn-step" onclick="handleStep()">下一步 🧭</button>
+            <span id="log" style="font-size:13px; color:var(--dim)">點擊下一步開始...</span>
+        </div>
+    </div>
+
+    <div class="status-grid">
+        <div class="monitor-box">
+            <div class="monitor-label">🗓️ Adj List / Parents:</div>
+            <div id="adjView" class="data-view"></div>
+        </div>
+        <div class="monitor-box">
+            <div class="monitor-label">📊 Status (Visited / Sets):</div>
+            <div id="stateView" class="data-view"></div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="visual-panel">
+            
+            <div id="nodeContainer" style="position:relative; width:400px; height:300px;"></div>
+        </div>
+        <div class="editor">
+            <div style="background:#161b22; padding:8px 15px; font-size:11px; color:var(--accent);">solution.py</div>
+            <div id="codeView" class="code-view"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const algoCodes = {
+dfs: [
+    "def validTree(n, edges):",
+    "    if not n: return True",
+    "    adj = {i:[] for i in range(n)}",
+    "    for u, v in edges:",
+    "        adj[u].append(v)",
+    "        adj[v].append(u)",
+    "",
+    "    visit = set()",
+    "    def dfs(i, prev):",
+    "        if i in visit: return False # 發現環！",
+    "        visit.add(i)",
+    "        for neighbor in adj[i]:",
+    "            if neighbor == prev: continue",
+    "            if not dfs(neighbor, i): return False",
+    "        return True",
+    "",
+    "    return dfs(0, -1) and len(visit) == n"
+],
+uf: [
+    "def validTree(n, edges):",
+    "    if len(edges) != n - 1: return False",
+    "    parent = [i for i in range(n)]",
+    "    def find(i):",
+    "        if parent[i] == i: return i",
+    "        return find(parent[i])",
+    "",
+    "    def union(i, j):",
+    "        root_i, root_j = find(i), find(j)",
+    "        if root_i == root_j: return False # 同根即有環",
+    "        parent[root_i] = root_j",
+    "        return True",
+    "",
+    "    for u, v in edges:",
+    "        if not union(u, v): return False",
+    "    return True"
+]
+};
+
+let currentAlgo = 'dfs';
+let n = 0, edges = [], adj = {}, visited = new Set(), uf_parent = [];
+let step = 0, edgeIdx = 0, dfsStack = [];
+
+function setAlgo(name) {
+    currentAlgo = name;
+    document.querySelectorAll('.sw-btn').forEach(b => b.classList.toggle('active', b.id.includes(name)));
+    reset();
+}
+
+function reset() {
+    edges = JSON.parse(document.getElementById('edgeInput').value);
+    n = Math.max(...edges.flat()) + 1;
+    adj = Array.from({length: n}, () => []);
+    edges.forEach(([u, v]) => { adj[u].push(v); adj[v].push(u); });
+    visited = new Set();
+    uf_parent = Array.from({length: n}, (_, i) => i);
+    edgeIdx = 0; step = 0;
+    
+    renderCode();
+    renderNodes();
+    updateUI();
+}
+
+function renderCode() {
+    document.getElementById('codeView').innerHTML = algoCodes[currentAlgo].map((l, i) => 
+        `<div class="line" id="ln-${i}"><span class="line-num">${i+1}</span>${l.replace(/def |if |for |in |not |return |continue /g, x => `<span style="color:#ff7b72">${x}</span>`)}</div>`
+    ).join('');
+}
+
+function updateUI() {
+    if(currentAlgo === 'dfs') {
+        let adjStr = ""; adj.forEach((l, i) => adjStr += `${i}: [${l.join(',')}]\n`);
+        document.getElementById('adjView').innerText = adjStr;
+        document.getElementById('stateView').innerText = `Visited: {${Array.from(visited).join(', ')}}`;
+    } else {
+        document.getElementById('adjView').innerText = `Parents: ${JSON.stringify(uf_parent)}`;
+        document.getElementById('stateView').innerText = `Edges Processed: ${edgeIdx} / ${edges.length}`;
+    }
+}
+
+function renderNodes() {
+    const container = document.getElementById('nodeContainer');
+    container.innerHTML = '';
+    const radius = 110;
+    for(let i=0; i<n; i++) {
+        const angle = (i / n) * 2 * Math.PI;
+        const x = 175 + radius * Math.cos(angle);
+        const y = 125 + radius * Math.sin(angle);
+        const div = document.createElement('div');
+        div.className = 'node'; div.id = `node-${i}`;
+        div.style.left = x + 'px'; div.style.top = y + 'px';
+        div.innerText = i;
+        container.appendChild(div);
+    }
+}
+
+function handleStep() {
+    const log = (m) => document.getElementById('log').innerText = m;
+    const highlight = (i) => { document.querySelectorAll('.line').forEach(l => l.classList.remove('line-active')); document.getElementById(`ln-${i}`).classList.add('line-active'); };
+
+    if (currentAlgo === 'dfs') {
+        if (step === 0) { highlight(8); visited.add(0); document.getElementById('node-0').className = 'node visited'; log("DFS 從節點 0 開始遍歷..."); step = 1; dfsStack = [0]; }
+        else {
+            if(dfsStack.length === 0) { 
+                highlight(16); 
+                log(visited.size === n ? "✅ 全連通且無環！" : "❌ 圖不連通！");
+                return; 
+            }
+            let curr = dfsStack.pop();
+            highlight(11);
+            adj[curr].forEach(neighbor => {
+                if(!visited.has(neighbor)) {
+                    visited.add(neighbor);
+                    dfsStack.push(neighbor);
+                    document.getElementById(`node-${neighbor}`).className = 'node visited';
+                }
+            });
+        }
+    } else {
+        // Union-Find Logic
+        if (edgeIdx >= edges.length) { highlight(15); log("遍歷結束。"); return; }
+        highlight(13);
+        let [u, v] = edges[edgeIdx];
+        
+        function find(i) { return uf_parent[i] === i ? i : find(uf_parent[i]); }
+        let rootU = find(u), rootV = find(v);
+        
+        if (rootU === rootV) {
+            highlight(9);
+            document.getElementById(`node-${u}`).className = 'node error';
+            document.getElementById(`node-${v}`).className = 'node error';
+            log(`❌ 發現環！節點 ${u} 與 ${v} 已在同一集合中。`);
+        } else {
+            uf_parent[rootU] = rootV;
+            document.getElementById(`node-${u}`).className = 'node visited';
+            document.getElementById(`node-${v}`).className = 'node visited';
+            log(`合併節點 ${u} 與 ${v}。`);
+            edgeIdx++;
+        }
+    }
+    updateUI();
+}
+
+reset();
+</script>
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>LeetCode 1. Two Sum 雙解法模擬器</title>
+  <style>
+    :root {
+      --primary: #007acc; --success: #2ecc71; --warning: #f39c12;
+      --danger: #e74c3c; --dark: #2c3e50; --bg: #f4f7f9;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--dark); }
+    .dashboard { max-width: 1000px; margin: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .full-width { grid-column: span 2; }
+    h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    
+    .complexity-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9rem; }
+    .complexity-table th, .complexity-table td { border: 1px solid #eee; padding: 10px; text-align: left; }
+    .complexity-table th { background: #f8f9fa; }
+
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    select, input { padding: 8px 15px; border: 2px solid #ddd; border-radius: 20px; outline: none; }
+    button { padding: 8px 20px; border: none; border-radius: 20px; cursor: pointer; background: var(--primary); color: white; font-weight: bold; }
+    button:disabled { background: #ccc; }
+
+    .box-container { display: flex; justify-content: center; gap: 10px; margin: 20px 0; min-height: 60px; }
+    .num-box {
+      width: 50px; height: 50px; border: 2px solid #dee2e6; border-radius: 10px;
+      line-height: 50px; text-align: center; font-weight: bold; font-size: 1.2rem; position: relative; background: white;
+    }
+    .num-box.active-i { border-color: var(--warning); background: #fff8e1; transform: translateY(-5px); }
+    .num-box.active-j { border-color: var(--primary); background: #e3f2fd; transform: translateY(-5px); }
+    .num-box.match { background: var(--success); color: white; border-color: var(--success); }
+    
+    .ptr { position: absolute; width: 100%; font-size: 0.8rem; font-weight: bold; bottom: -25px; left: 0; }
+
+    .code-window { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 0.85rem; line-height: 1.6; min-height: 220px; }
+    .line { padding: 2px 8px; border-radius: 4px; border-left: 4px solid transparent; white-space: pre; }
+    .line.active { background: #3e4451; border-left-color: var(--success); color: white; }
+
+    .log-container { max-height: 250px; overflow-y: auto; }
+    table.log-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .log-table th { position: sticky; top: 0; background: #f8f9fa; z-index: 1; }
+    .log-table td, .log-table th { padding: 8px; border: 1px solid #eee; text-align: center; }
+    tr.newest { background: #e8f5e9; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  <div class="card full-width">
+    <h2>1. 兩數之和 (Two Sum)</h2>
+    <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+      <div>
+        <p><strong>題目描述：</strong>給定一個整數陣列 <code>nums</code> 和一個整數 <code>target</code>，請回傳兩個數字的索引，使它們的和等於 <code>target</code>。</p>
+        <p><strong>範例：</strong>nums = [2, 7, 11, 15], target = 9 → 輸出 [0, 1]</p>
+      </div>
+      <table class="complexity-table">
+        <tr><th>解法</th><th>時間複雜度</th><th>空間複雜度</th></tr>
+        <tr><td>暴力解 (Brute Force)</td><td>O(n^2)</td><td>O(1)</td></tr>
+        <tr><td>雜湊表 (Hash Table)</td><td>O(n)</td><td>O(n)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card full-width" style="background: transparent; box-shadow: none; padding: 0;">
+    <div class="controls">
+      演算法：
+      <select id="algoSelect" onchange="initSim()">
+        <option value="brute">暴力解法 (Double Loop)</option>
+        <option value="hash">雜湊表法 (One-pass Hash Table)</option>
+      </select>
+      nums: <input type="text" id="inputNums" value="2, 7, 11, 15" style="width: 150px;">
+      target: <input type="number" id="inputTarget" value="9" style="width: 70px;">
+      <button onclick="initSim()">重置</button>
+      <button id="nextBtn" onclick="runStep()">下一步 (Step)</button>
+    </div>
+  </div>
+
+  <div class="card full-width">
+    <div id="statusHint" style="text-align: center; font-weight: bold; color: var(--primary); margin-bottom: 10px;">準備就緒</div>
+    <div class="box-container" id="boxContainer"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="codeTitle">Python 代碼</h2>
+    <div class="code-window" id="codeDisplay"></div>
+  </div>
+
+  <div class="card">
+    <h2>執行狀態 / 字典內容</h2>
+    <div class="log-container">
+      <table class="log-table" id="logTable">
+        <thead><tr id="logHeader"></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const codes = {
+  brute: [
+    "for i in range(len(nums)):",
+    "    for j in range(i + 1, len(nums)):",
+    "        if nums[i] + nums[j] == target:",
+    "            return [i, j]"
+  ],
+  hash: [
+    "seen = {}",
+    "for i, num in enumerate(nums):",
+    "    diff = target - num",
+    "    if diff in seen:",
+    "        return [seen[diff], i]",
+    "    seen[num] = i"
+  ]
+};
+
+let algo = "brute", nums = [], target = 0, i = 0, j = 0, seen = {}, finished = false, subStep = 0;
+
+function initSim() {
+  algo = document.getElementById('algoSelect').value;
+  nums = document.getElementById('inputNums').value.split(',').map(n => parseInt(n.trim()));
+  target = parseInt(document.getElementById('inputTarget').value);
+  i = 0; j = 1; seen = {}; finished = false; subStep = 0;
+  
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('codeDisplay').innerHTML = codes[algo].map((line, idx) => 
+    `<div class="line" id="line-${idx}">${line}</div>`
+  ).join('');
+  
+  const header = document.getElementById('logHeader');
+  header.innerHTML = algo === 'brute' ? '<th>i</th><th>j</th><th>和 (Sum)</th><th>結果</th>' : '<th>i</th><th>nums[i]</th><th>尋找 (diff)</th><th>字典 (seen)</th>';
+  
+  renderBoxes();
+  document.getElementById('logTable').querySelector('tbody').innerHTML = "";
+  updateHint("點擊下一步開始模擬...");
+}
+
+function renderBoxes() {
+  document.getElementById('boxContainer').innerHTML = nums.map((num, idx) => `
+    <div class="num-box" id="box-${idx}">
+      ${num}
+      <div class="ptr" id="ptr-${idx}"></div>
+    </div>
+  `).join('');
+}
+
+function runStep() {
+  if (finished) return;
+  clearHighlights();
+  
+  if (algo === 'brute') {
+    runBruteStep();
+  } else {
+    runHashStep();
+  }
+}
+
+function runBruteStep() {
+  if (i >= nums.length) { updateHint("未找到解"); finished = true; return; }
+
+  highlight(2); // if nums[i] + nums[j] == target
+  const sum = nums[i] + nums[j];
+  updateVisualsBrute(i, j);
+  
+  const isMatch = (sum === target);
+  addLogBrute(i, j, sum, isMatch);
+
+  if (isMatch) {
+    highlight(3);
+    updateHint(`成功！${nums[i]} + ${nums[j]} = ${target}`);
+    document.getElementById(`box-${i}`).classList.add('match');
+    document.getElementById(`box-${j}`).classList.add('match');
+    finished = true;
+    document.getElementById('nextBtn').disabled = true;
+  } else {
+    j++;
+    if (j >= nums.length) {
+      i++;
+      j = i + 1;
+    }
+    updateHint(`檢查索引 ${i} 和 ${j-1}，總和為 ${sum}，不匹配。`);
+  }
+}
+
+function runHashStep() {
+  if (i >= nums.length) { updateHint("未找到解"); finished = true; return; }
+
+  const num = nums[i];
+  const diff = target - num;
+
+  if (subStep === 0) {
+    highlight(2); // diff = target - num
+    updateVisualsHash(i);
+    updateHint(`當前數字 ${num}，我們需要尋找 target - ${num} = ${diff}`);
+    subStep = 1;
+  } else if (subStep === 1) {
+    highlight(3); // if diff in seen
+    if (diff in seen) {
+      highlight(4);
+      updateHint(`找到了！${diff} 已經在字典中 (索引 ${seen[diff]})`);
+      document.getElementById(`box-${seen[diff]}`).classList.add('match');
+      document.getElementById(`box-${i}`).classList.add('match');
+      addLogHash(i, num, diff, true);
+      finished = true;
+      document.getElementById('nextBtn').disabled = true;
+    } else {
+      highlight(5);
+      updateHint(`字典裡沒有 ${diff}，將 ${num} 存入字典。`);
+      addLogHash(i, num, diff, false);
+      seen[num] = i;
+      i++;
+      subStep = 0;
+    }
+  }
+}
+
+function updateVisualsBrute(idxI, idxJ) {
+  document.querySelectorAll('.num-box').forEach(b => b.className = 'num-box');
+  document.querySelectorAll('.ptr').forEach(p => p.innerText = '');
+  if (idxI < nums.length) {
+    document.getElementById(`box-${idxI}`).classList.add('active-i');
+    document.getElementById(`ptr-${idxI}`).innerText = 'i';
+  }
+  if (idxJ < nums.length) {
+    document.getElementById(`box-${idxJ}`).classList.add('active-j');
+    document.getElementById(`ptr-${idxJ}`).innerText = 'j';
+  }
+}
+
+function updateVisualsHash(idxI) {
+  document.querySelectorAll('.num-box').forEach(b => b.className = 'num-box');
+  document.querySelectorAll('.ptr').forEach(p => p.innerText = '');
+  document.getElementById(`box-${idxI}`).classList.add('active-j');
+  document.getElementById(`ptr-${idxI}`).innerText = 'i';
+}
+
+function addLogBrute(i, j, sum, match) {
+  const tbody = document.getElementById('logTable').querySelector('tbody');
+  const row = `<tr class="${match ? 'newest found' : 'newest'}"><td>${i}</td><td>${j}</td><td>${sum}</td><td>${match ? '✅' : '❌'}</td></tr>`;
+  tbody.insertAdjacentHTML('afterbegin', row);
+}
+
+function addLogHash(i, num, diff, match) {
+  const tbody = document.getElementById('logTable').querySelector('tbody');
+  const seenStr = JSON.stringify(seen);
+  const row = `<tr class="${match ? 'newest found' : 'newest'}"><td>${i}</td><td>${num}</td><td>${diff}</td><td>${seenStr}</td></tr>`;
+  tbody.insertAdjacentHTML('afterbegin', row);
+}
+
+function highlight(idx) { document.getElementById(`line-${idx}`).classList.add('active'); }
+function clearHighlights() { document.querySelectorAll('.line').forEach(l => l.classList.remove('active')); }
+function updateHint(txt) { document.getElementById('statusHint').innerText = txt; }
+
+initSim();
+</script>
+
+</body>
+</html>

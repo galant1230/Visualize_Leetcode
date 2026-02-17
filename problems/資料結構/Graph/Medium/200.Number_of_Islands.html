@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>200. Number of Islands - Tech Visualizer</title>
+    <style>
+        :root {
+            --bg: #0f172a; --card-dark: #1e293b; --accent: #22d3ee;
+            --land: #059669; --water: #1e3a8a; --visited: #f59e0b;
+            --editor-bg: #0d1117; --text-gray: #94a3b8; --danger: #f87171;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: #e2e8f0; margin: 0; padding: 20px; line-height: 1.5; }
+        .dashboard { max-width: 1400px; margin: auto; display: flex; flex-direction: column; gap: 20px; }
+
+        /* 1. 頂部題目資訊區 */
+        .header-section { 
+            background: var(--card-dark); border-left: 5px solid var(--accent); 
+            padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .header-section h2 { margin-top: 0; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+        .complexity-tags { display: flex; gap: 10px; margin: 10px 0; }
+        .tag { background: #0f172a; border: 1px solid #334155; padding: 4px 12px; border-radius: 4px; font-size: 13px; font-family: monospace; }
+        .problem-desc { font-size: 14px; color: var(--text-gray); max-width: 900px; }
+
+        /* 2. 控制台 */
+        .control-panel { 
+            background: #111827; border: 1px solid #334155; border-radius: 12px; 
+            padding: 15px; display: flex; align-items: center; gap: 15px; 
+        }
+        input { background: #0f172a; border: 1px solid #334155; color: var(--accent); padding: 10px; border-radius: 6px; width: 450px; font-family: monospace; }
+        .btn { padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
+        .btn-reset { background: #334155; color: white; }
+        .btn-step { background: var(--accent); color: #0f172a; }
+        .island-count { margin-left: auto; font-size: 18px; font-weight: bold; color: var(--accent); border: 2px solid var(--accent); padding: 5px 15px; border-radius: 50px; }
+
+        /* 3. 中間核心區 (Monitor | Grid | IDE) */
+        .main-layout { display: grid; grid-template-columns: 320px 1fr 480px; gap: 15px; height: 550px; }
+
+        .side-panel { background: #111827; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; border: 1px solid #1f2937; }
+        .log-area { flex: 1; overflow-y: auto; font-family: monospace; font-size: 12px; color: var(--text-gray); border-top: 1px solid #1f2937; padding-top: 10px; }
+        .log-entry { margin-bottom: 5px; border-left: 2px solid var(--accent); padding-left: 8px; animation: fadeIn 0.3s; }
+
+        .grid-container { background: #000; border-radius: 12px; border: 1px solid #1f2937; display: flex; align-items: center; justify-content: center; position: relative; }
+        table { border-collapse: separate; border-spacing: 5px; }
+        td {
+            width: 42px; height: 42px; border-radius: 4px; text-align: center; font-weight: bold;
+            transition: all 0.3s; font-size: 12px; color: rgba(255,255,255,0.1);
+        }
+        .land { background: var(--land); border: 1px solid #10b981; color: white; }
+        .water { background: var(--water); border: 1px solid #1d4ed8; }
+        .visited { background: var(--visited) !important; color: white; box-shadow: 0 0 12px var(--visited); }
+        .active-cell { outline: 3px solid var(--danger); outline-offset: 2px; transform: scale(1.1); z-index: 10; box-shadow: 0 0 20px var(--danger); }
+
+        .editor { background: var(--editor-bg); border-radius: 12px; border: 1px solid #30363d; overflow: hidden; display: flex; flex-direction: column; }
+        .code-view { flex: 1; padding: 15px 0; font-family: 'Fira Code', monospace; font-size: 12px; line-height: 1.6; color: #c9d1d9; }
+        .line-row { padding-left: 45px; position: relative; }
+        .line-active { background: #21262d; border-left: 4px solid var(--accent); }
+        .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .num { color: #79c0ff; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header-section">
+        <h2>🏝️ 200. Number of Islands</h2>
+        <div class="problem-desc">
+            給定一個由 <b>'1' (陸地)</b> 和 <b>'0' (水)</b> 組成的 2D 網格，請計算島嶼的數量。
+            島嶼是被水包圍，由相鄰（水平或垂直）的陸地連接而成。
+        </div>
+        <div class="complexity-tags">
+            <span class="tag">Time: O(M × N)</span>
+            <span class="tag">Space: O(M × N)</span>
+            <span class="tag">Algorithm: DFS / BFS</span>
+        </div>
+        <div style="font-size: 12px; color: var(--accent); margin-top: 10px;">
+            <b>Example Input:</b> [["1","1","0","0","0"],["1","1","0","0","0"],["0","0","1","0","0"],["0","0","0","1","1"]] ⮕ <b>Result: 3</b>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <input type="text" id="gridInput" value='[["1","1","0","0","0"],["1","1","0","0","0"],["0","0","1","0","0"],["0","0","0","1","1"]]'>
+        <button class="btn btn-reset" onclick="init()">🔃 RESET</button>
+        <button class="btn btn-step" onclick="step()">🧭 NEXT STEP</button>
+        <div class="island-count">Islands: <span id="count-val">0</span></div>
+    </div>
+
+    <div class="main-layout">
+        <div class="side-panel">
+            <div style="color:var(--accent); font-size:12px; font-weight:bold; margin-bottom:10px;">SYSTEM TRACE</div>
+            <div id="stepInfo" style="font-size:13px; color:white; margin-bottom:10px;">Ready.</div>
+            <div class="log-area" id="debugBox"></div>
+        </div>
+
+        <div class="grid-container" id="grid"></div>
+
+        <div class="editor">
+            <div style="background:#161b22; padding:8px 15px; font-size:11px; color:#8b949e; border-bottom:1px solid #30363d;">dfs_recursive.py</div>
+            <div class="code-view" id="code-box"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let grid = [], m = 0, n = 0;
+let visited = [], dfsStack = [], islandCount = 0;
+
+const codeLines = [
+    {t: "def numIslands(self, grid):", i: 0},
+    {t: "    count = 0", i: 1},
+    {t: "    for r in range(len(grid)):", i: 1},
+    {t: "        for c in range(len(grid[0])):", i: 2},
+    {t: "            if grid[r][c] == '1':", i: 3},
+    {t: "                self.dfs(grid, r, c)", i: 4},
+    {t: "                count += 1", i: 4},
+    {t: "def dfs(self, grid, r, c):", i: 0},
+    {t: "    # Base case: out of bounds or water", i: 1},
+    {t: "    if r<0 or c<0 or r>=m or c>=n or grid[r][c]=='0':", i: 1},
+    {t: "        return", i: 2},
+    {t: "    grid[r][c] = '0' # Sink the land", i: 1},
+    {t: "    self.dfs(grid, r+1, c)", i: 1},
+    {t: "    self.dfs(grid, r-1, c)", i: 1},
+    {t: "    self.dfs(grid, r, c+1)", i: 1},
+    {t: "    self.dfs(grid, r, c-1)", i: 1}
+];
+
+function init() {
+    try {
+        grid = JSON.parse(document.getElementById("gridInput").value);
+        m = grid.length; n = grid[0].length;
+        visited = Array.from({ length: m }, () => Array(n).fill(false));
+        dfsStack = []; islandCount = 0;
+        document.getElementById('debugBox').innerHTML = '';
+        document.getElementById('count-val').innerText = '0';
+        document.getElementById('code-box').innerHTML = codeLines.map((l, i) => 
+            `<div class="line-row" id="ln-${i}" style="padding-left:${l.i*20 + 45}px">${highlight(l.t)}</div>`).join('');
+        renderGrid();
+        log("System initialized.");
+    } catch(e) { alert("Invalid JSON format"); }
+}
+
+function highlight(t) {
+    return t.replace(/def |if |for |in |return |self|or /g, x => `<span class="kw">${x}</span>`)
+            .replace(/dfs|numIslands/g, x => `<span class="fn">${x}</span>`)
+            .replace(/#.*/g, x => `<span class="cm">${x}</span>`)
+            .replace(/\d+/g, x => `<span class="num">${x}</span>`);
+}
+
+function renderGrid(active = null) {
+    const div = document.getElementById("grid");
+    div.innerHTML = "<table>" + grid.map((row, r) => "<tr>" + row.map((cell, c) => {
+        let cls = cell === "1" ? "land" : "water";
+        if (visited[r][c]) cls = "visited";
+        if (active && active[0] === r && active[1] === c) cls += " active-cell";
+        return `<td class="${cls}">${cell}</td>`;
+    }).join('') + "</tr>").join('') + "</table>";
+}
+
+function log(msg) {
+    const box = document.getElementById("debugBox");
+    box.innerHTML += `<div class="log-entry">${msg}</div>`;
+    box.scrollTop = box.scrollHeight;
+}
+
+function highlightLine(ln) {
+    document.querySelectorAll('.line-row').forEach(r => r.classList.remove('line-active'));
+    if(ln >= 0) document.getElementById(`ln-${ln}`).classList.add('line-active');
+}
+
+function step() {
+    if (dfsStack.length === 0) {
+        let found = false;
+        for (let r = 0; r < m; r++) {
+            for (let c = 0; c < n; c++) {
+                if (grid[r][c] === "1" && !visited[r][c]) {
+                    dfsStack.push([r, c]);
+                    islandCount++;
+                    document.getElementById('count-val').innerText = islandCount;
+                    highlightLine(6);
+                    log(`🚀 Found Island #${islandCount} at (${r},${c})`);
+                    renderGrid([r, c]);
+                    found = true; break;
+                }
+            }
+            if (found) break;
+        }
+        if (!found) {
+            document.getElementById("stepInfo").innerText = "Scan Complete.";
+            highlightLine(-1);
+            log("🏁 All grids scanned.");
+            return;
+        }
+    } else {
+        const [r, c] = dfsStack.pop();
+        if (r < 0 || c < 0 || r >= m || c >= n || visited[r][c] || grid[r][c] === "0") return step();
+        
+        visited[r][c] = true;
+        highlightLine(11);
+        const dirs = [[r + 1, c], [r - 1, c], [r, c + 1], [r, c - 1]];
+        for (const [nr, nc] of dirs) dfsStack.push([nr, nc]);
+        
+        document.getElementById("stepInfo").innerText = `DFS exploration: (${r}, ${c})`;
+        log(`Synced: [${r},${c}]`);
+        renderGrid([r, c]);
+    }
+}
+
+init();
+</script>
+</body>
+</html>

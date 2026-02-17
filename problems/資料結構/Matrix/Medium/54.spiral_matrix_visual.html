@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Spiral Matrix Visualizer</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        
+        .container { 
+            max-width: 1850px; margin: auto; 
+            display: grid; grid-template-columns: 350px 1.2fr 480px; gap: 20px; height: 95vh; 
+        }
+
+        /* 左側面板 */
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 10px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+        .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); margin-right: 5px; }
+
+        /* 中間視覺化區 */
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
+        .viz-area { 
+            background: var(--card); border-radius: 8px; padding: 20px; border: 1px solid #333; 
+            position: relative; min-height: 300px; display: flex; justify-content: center; align-items: center; 
+        }
+        .matrix-grid { display: grid; gap: 8px; position: relative; }
+        .cell {
+            width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
+            background: #21262d; border: 1px solid #30363d; border-radius: 4px; font-weight: bold; font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        .cell.visited { background: var(--atlantic); border-color: #3fb950; color: white; transform: scale(0.9); }
+        .cell.active { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); z-index: 10; transform: scale(1.1); }
+
+        /* 結果顯示區 */
+        .res-display { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #30363d; min-height: 80px; }
+        .res-list { display: flex; flex-wrap: wrap; gap: 8px; font-size: 16px; color: var(--accent); font-weight: bold; }
+
+        /* 右側代碼 */
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; width: 480px; }
+        .ln { white-space: pre; padding: 0 15px 0 65px; position: relative; line-height: 1.6; font-size: 13px; }
+        .ln-num { position: absolute; left: 0; width: 50px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:20px;">54. Spiral Matrix <span style="font-size:13px; color:var(--dim);">Boundary Shrinking</span></div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn" id="nextBtn" onclick="next()">下一步 Step 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent); font-size:15px;">📖 題目描述</b><br>
+            給予一個 <code>m x n</code> 的矩陣，請按照<b>順時針螺旋</b>的順序，回傳矩陣中的所有元素。
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--energy); font-size:15px;">💡 範例解析</b>
+            <div class="ex-box">
+                <b>Input:</b> [[1,2,3],[4,5,6],[7,8,9]]<br>
+                <b>Output:</b> [1,2,3,6,9,8,7,4,5]
+            </div>
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--atlantic); font-size:15px;">🧠 解題思路：四界縮減</b><br>
+            定義四個邊界指標：<br>
+            1. <code>top</code> (起始列), <code>bottom</code> (結束列)<br>
+            2. <code>left</code> (起始行), <code>right</code> (結束行)<br><br>
+            每次走完一個方向，就將該邊界<b>內縮一格</b>。當 <code>left > right</code> 或 <code>top > bottom</code> 時結束。
+        </div>
+
+        <div class="info-card">
+            <span class="tag">Time: O(M*N)</span>
+            <span class="tag">Space: O(1)</span>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area">
+            <div id="matrixGrid" class="matrix-grid"></div>
+        </div>
+        <div class="res-display">
+            <div style="font-size:11px; color:var(--dim); margin-bottom:8px;">SPIRAL ORDER RESULT:</div>
+            <div id="resList" class="res-list"></div>
+        </div>
+        <div id="log" style="color:var(--accent); font-size:14px; font-weight:bold; text-align:center; padding:10px;"></div>
+    </div>
+
+    <div class="editor">
+        <div style="background:#161b22; padding:10px; font-size:13px; color:var(--dim)">Python Algorithm</div>
+        <div id="codeView" style="padding-top:10px;"></div>
+    </div>
+</div>
+
+<script>
+const spiralCode = [
+    "res = []",
+    "top, bottom = 0, len(matrix) - 1",
+    "left, right = 0, len(matrix[0]) - 1",
+    "while left <= right and top <= bottom:",
+    "    # 1. 往右走",
+    "    for i in range(left, right + 1):",
+    "        res.append(matrix[top][i])",
+    "    top += 1",
+    "    # 2. 往下走",
+    "    for i in range(top, bottom + 1):",
+    "        res.append(matrix[i][right])",
+    "    right -= 1",
+    "    # 3. 往左走",
+    "    if top <= bottom:",
+    "        for i in range(right, left - 1, -1):",
+    "            res.append(matrix[bottom][i])",
+    "        bottom -= 1",
+    "    # 4. 往上走",
+    "    if left <= right:",
+    "        for i in range(bottom, top - 1, -1):",
+    "            res.append(matrix[i][left])",
+    "        left += 1",
+    "return res"
+];
+
+const matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+];
+let it;
+
+function init() {
+    const grid = document.getElementById('matrixGrid');
+    const rows = matrix.length;
+    const cols = matrix[0].length;
+    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    grid.innerHTML = '';
+    
+    matrix.forEach((row, r) => {
+        row.forEach((val, c) => {
+            const div = document.createElement('div');
+            div.className = 'cell';
+            div.id = `cell-${r}-${c}`;
+            div.innerText = val;
+            grid.appendChild(div);
+        });
+    });
+
+    document.getElementById('codeView').innerHTML = spiralCode.map((l, i) => {
+        const f = l.replace(/while|if|for|in|range|return|len|append/g, '<span class="kw">$&</span>');
+        return `<div class="ln" id="ln-${i}"><span class="ln-num">${i}</span>${f}</div>`;
+    }).join('');
+
+    document.getElementById('resList').innerHTML = '';
+    document.getElementById('nextBtn').disabled = false;
+    it = spiralLogic();
+}
+
+function* spiralLogic() {
+    let top = 0, bottom = matrix.length - 1;
+    let left = 0, right = matrix[0].length - 1;
+    
+    yield { ln: 1, m: `初始化邊界: Top=${top}, Bottom=${bottom}, Left=${left}, Right=${right}` };
+
+    while (left <= right && top <= bottom) {
+        // Right
+        yield { ln: 5, m: "➡ 往右遍歷 Top Row" };
+        for (let i = left; i <= right; i++) {
+            yield { ln: 6, r: top, c: i, val: matrix[top][i] };
+        }
+        top++;
+        yield { ln: 7, m: `Top 邊界下移至 ${top}` };
+
+        // Down
+        yield { ln: 9, m: "⬇ 往下遍歷 Right Column" };
+        for (let i = top; i <= bottom; i++) {
+            yield { ln: 10, r: i, c: right, val: matrix[i][right] };
+        }
+        right--;
+        yield { ln: 11, m: `Right 邊界左移至 ${right}` };
+
+        if (top <= bottom) {
+            yield { ln: 14, m: "⬅ 往左遍歷 Bottom Row" };
+            for (let i = right; i >= left; i--) {
+                yield { ln: 15, r: bottom, c: i, val: matrix[bottom][i] };
+            }
+            bottom--;
+            yield { ln: 16, m: `Bottom 邊界上移至 ${bottom}` };
+        }
+
+        if (left <= right) {
+            yield { ln: 19, m: "⬆ 往上遍歷 Left Column" };
+            for (let i = bottom; i >= top; i--) {
+                yield { ln: 20, r: i, c: left, val: matrix[i][left] };
+            }
+            left++;
+            yield { ln: 21, m: `Left 邊界右移至 ${left}` };
+        }
+    }
+    yield { ln: 22, m: "遍歷完成！" };
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) { document.getElementById('nextBtn').disabled = true; return; }
+    
+    const { ln, m, r, c, val } = s.value;
+    document.querySelectorAll('.ln').forEach(l => l.classList.remove('ln-active'));
+    document.getElementById(`ln-${ln}`).classList.add('ln-active');
+    
+    if (val !== undefined) {
+        const cell = document.getElementById(`cell-${r}-${c}`);
+        cell.classList.add('active');
+        setTimeout(() => {
+            cell.classList.remove('active');
+            cell.classList.add('visited');
+        }, 300);
+        
+        const resDiv = document.createElement('div');
+        resDiv.innerText = val;
+        resDiv.style.padding = "4px 8px";
+        resDiv.style.background = "rgba(88,166,255,0.1)";
+        resDiv.style.borderRadius = "4px";
+        document.getElementById('resList').appendChild(resDiv);
+    }
+    if (m) document.getElementById('log').innerText = `> ${m}`;
+}
+
+init();
+</script>
+</body>
+</html>

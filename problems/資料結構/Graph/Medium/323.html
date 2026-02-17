@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Connected Components Debugger</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --island: #d29922;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --highlight: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .dashboard { max-width: 1500px; margin: auto; display: flex; flex-direction: column; gap: 15px; }
+
+        /* 題目描述 */
+        .problem-info { background: var(--card); border: 1px solid #30363d; padding: 15px; border-radius: 8px; border-left: 5px solid var(--island); }
+        
+        /* 輸入與控制 */
+        .input-panel { background: var(--card); border: 1px solid #30363d; padding: 15px; border-radius: 8px; }
+        textarea { width: 100%; height: 45px; background: #0d1117; color: var(--accent); border: 1px solid #30363d; border-radius: 6px; padding: 10px; font-family: monospace; resize: none; }
+
+        /* 數據監控 */
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .monitor-box { background: var(--card); border: 1px solid #30363d; border-radius: 8px; padding: 12px; }
+        .monitor-label { font-size: 11px; font-weight: bold; color: var(--dim); margin-bottom: 8px; text-transform: uppercase; }
+        .data-view { font-family: 'Consolas', monospace; font-size: 13px; background: #010409; padding: 10px; border-radius: 6px; color: var(--accent); min-height: 50px; }
+
+        /* 主佈局 */
+        .main-layout { display: grid; grid-template-columns: 1fr 520px; gap: 15px; height: 500px; }
+        .visual-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        
+        /* 節點樣式 - 增加隨機顏色以區分不同分量 */
+        .node {
+            width: 45px; height: 45px; border-radius: 50%; border: 2px solid #30363d;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+            position: absolute; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); background: var(--card); color: var(--text);
+            z-index: 2;
+        }
+        .node.visiting { border-color: #fff; box-shadow: 0 0 15px #fff; transform: scale(1.1); }
+        .node.comp-0 { background: #1f6feb; border-color: #1f6feb; color: white; }
+        .node.comp-1 { background: #238636; border-color: #238636; color: white; }
+        .node.comp-2 { background: #d29922; border-color: #d29922; color: white; }
+        .node.comp-3 { background: #8957e5; border-color: #8957e5; color: white; }
+
+        /* IDE 程式碼 */
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .code-view { flex: 1; padding: 10px 0; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6; overflow-y: auto; color: #e6edf3; }
+        .line { padding-left: 45px; position: relative; white-space: pre; border-left: 3px solid transparent; }
+        .line-active { background: var(--highlight); border-left: 3px solid var(--accent); color: #fff; }
+        .line-num { position: absolute; left: 10px; color: #484f58; width: 25px; text-align: right; }
+
+        .controls { display: flex; gap: 12px; align-items: center; margin-top: 10px; }
+        .btn-step { background: var(--atlantic); color: white; border: none; padding: 10px 30px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .algo-switch { display: flex; background: #010409; padding: 4px; border-radius: 8px; border: 1px solid #30363d; }
+        .sw-btn { padding: 6px 15px; border: none; background: transparent; color: var(--dim); cursor: pointer; border-radius: 6px; font-size: 12px; }
+        .sw-btn.active { background: var(--accent); color: white; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="problem-info">
+        <h3 style="margin:0; color:var(--island);">323. Number of Connected Components</h3>
+        <p style="font-size:13px; margin:5px 0;">給定 <code>n</code> 個節點與 <code>edges</code>。計算圖中共有幾個連通分量（Connected Components）。</p>
+    </div>
+
+    <div class="input-panel">
+        <div class="monitor-label">🛠️ 自訂 Edges (無向圖):</div>
+        <textarea id="edgeInput">[[0,1], [1,2], [3,4]]</textarea>
+        <div class="controls">
+            <div class="algo-switch">
+                <button class="sw-btn active" id="sw-dfs" onclick="setAlgo('dfs')">DFS (Island Hopping)</button>
+                <button class="sw-btn" id="sw-uf" onclick="setAlgo('uf')">Union-Find (Merging)</button>
+            </div>
+            <button class="btn-step" onclick="handleStep()">下一步 🧭</button>
+            <button class="btn-action" style="background:#21262d; color:#c9d1d9; border:1px solid #30363d; padding:8px 15px; border-radius:6px; cursor:pointer;" onclick="reset()">重置</button>
+            <span id="log" style="font-size:13px; color:var(--dim)"></span>
+        </div>
+    </div>
+
+    <div class="status-grid">
+        <div class="monitor-box">
+            <div class="monitor-label">📊 Adj List / Parents:</div>
+            <div id="adjView" class="data-view"></div>
+        </div>
+        <div class="monitor-box">
+            <div class="monitor-label">🗺️ Global State:</div>
+            <div id="stateView" class="data-view"></div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="visual-panel">
+            <div id="nodeContainer" style="position:relative; width:400px; height:300px;"></div>
+            <div id="stats" style="margin-top:auto; padding-bottom:20px; font-size:14px;">
+                Components Count: <span id="compCount" style="color:var(--island); font-weight:bold;">0</span>
+            </div>
+        </div>
+        <div class="editor">
+            <div style="background:#161b22; padding:8px 15px; font-size:11px; color:var(--accent);">solution.py</div>
+            <div id="codeView" class="code-view"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const algoCodes = {
+dfs: [
+    "def countComponents(n, edges):",
+    "    adj = [[] for _ in range(n)]",
+    "    for u, v in edges:",
+    "        adj[u].append(v)",
+    "        adj[v].append(u)",
+    "",
+    "    visit = set()",
+    "    def dfs(node):",
+    "        visit.add(node)",
+    "        for neighbor in adj[node]:",
+    "            if neighbor not in visit:",
+    "                dfs(neighbor)",
+    "",
+    "    count = 0",
+    "    for i in range(n):",
+    "        if i not in visit:",
+    "            dfs(i) # 進入新的島嶼",
+    "            count += 1",
+    "    return count"
+],
+uf: [
+    "def countComponents(n, edges):",
+    "    parent = [i for i in range(n)]",
+    "    count = n # 初始每個點都是獨立島嶼",
+    "",
+    "    def find(i):",
+    "        if parent[i] == i: return i",
+    "        parent[i] = find(parent[i]) # Path Compression",
+    "        return parent[i]",
+    "",
+    "    for u, v in edges:",
+    "        root_u, root_v = find(u), find(v)",
+    "        if root_u != root_v:",
+    "            parent[root_u] = root_v",
+    "            count -= 1",
+    "    return count"
+]
+};
+
+let currentAlgo = 'dfs';
+let n = 5, edges = [], adj = [], visit = new Set(), uf_parent = [];
+let compCount = 0, currentI = 0, edgeIdx = 0;
+
+function setAlgo(name) {
+    currentAlgo = name;
+    document.querySelectorAll('.sw-btn').forEach(b => b.classList.toggle('active', b.id.includes(name)));
+    reset();
+}
+
+function reset() {
+    edges = JSON.parse(document.getElementById('edgeInput').value);
+    n = edges.length > 0 ? Math.max(...edges.flat()) + 1 : 0;
+    if (n === 0) n = 5; // Default if empty
+    
+    adj = Array.from({length: n}, () => []);
+    edges.forEach(([u, v]) => { adj[u].push(v); adj[v].push(u); });
+    
+    visit = new Set();
+    uf_parent = Array.from({length: n}, (_, i) => i);
+    compCount = (currentAlgo === 'uf') ? n : 0;
+    currentI = 0; edgeIdx = 0;
+    
+    renderCode();
+    renderNodes();
+    updateUI();
+    document.getElementById('log').innerText = "重置完成。";
+}
+
+function renderCode() {
+    document.getElementById('codeView').innerHTML = algoCodes[currentAlgo].map((l, i) => 
+        `<div class="line" id="ln-${i}"><span class="line-num">${i+1}</span>${l.replace(/def |if |for |in |not |return |yield /g, x => `<span style="color:#ff7b72">${x}</span>`)}</div>`
+    ).join('');
+}
+
+function updateUI() {
+    if(currentAlgo === 'dfs') {
+        let adjStr = ""; adj.forEach((l, i) => adjStr += `${i}: [${l.join(',')}]\n`);
+        document.getElementById('adjView').innerText = adjStr;
+        document.getElementById('stateView').innerText = `Visit Set: {${Array.from(visit).join(', ')}}`;
+    } else {
+        document.getElementById('adjView').innerText = `Parents: ${JSON.stringify(uf_parent)}`;
+        document.getElementById('stateView').innerText = `Current Components: ${compCount}`;
+    }
+    document.getElementById('compCount').innerText = compCount;
+}
+
+function renderNodes() {
+    const container = document.getElementById('nodeContainer');
+    container.innerHTML = '';
+    const radius = 110;
+    for(let i=0; i<n; i++) {
+        const angle = (i / n) * 2 * Math.PI;
+        const x = 175 + radius * Math.cos(angle);
+        const y = 125 + radius * Math.sin(angle);
+        const div = document.createElement('div');
+        div.className = 'node'; div.id = `node-${i}`;
+        div.style.left = x + 'px'; div.style.top = y + 'px';
+        div.innerText = i;
+        container.appendChild(div);
+    }
+}
+
+function handleStep() {
+    const log = (m) => document.getElementById('log').innerText = m;
+    const highlight = (i) => { document.querySelectorAll('.line').forEach(l => l.classList.remove('line-active')); document.getElementById(`ln-${i}`).classList.add('line-active'); };
+
+    if (currentAlgo === 'dfs') {
+        if (currentI >= n) { highlight(18); log("所有節點已檢查完畢。"); return; }
+        
+        highlight(15);
+        if (!visit.has(currentI)) {
+            compCount++;
+            highlight(16);
+            log(`節點 ${currentI} 未被訪問，開啟新的連通分量 DFS...`);
+            
+            // 模擬內部遞迴 (簡化版：一次染完一個島)
+            let q = [currentI];
+            let colorClass = `comp-${(compCount-1) % 4}`;
+            while(q.length > 0) {
+                let curr = q.shift();
+                if(!visit.has(curr)) {
+                    visit.add(curr);
+                    document.getElementById(`node-${curr}`).className = `node ${colorClass}`;
+                    adj[curr].forEach(neighbor => q.push(neighbor));
+                }
+            }
+        } else {
+            log(`節點 ${currentI} 已在現有連通分量中，跳過。`);
+        }
+        currentI++;
+    } else {
+        // Union-Find
+        if (edgeIdx >= edges.length) { highlight(15); log("邊界處理完畢。最終連通分量數: " + compCount); return; }
+        highlight(10);
+        let [u, v] = edges[edgeIdx];
+        
+        function find(i) { return uf_parent[i] === i ? i : find(uf_parent[i]); }
+        let rootU = find(u), rootV = find(v);
+        
+        if (rootU !== rootV) {
+            highlight(12);
+            uf_parent[rootU] = rootV;
+            compCount--;
+            log(`合併 ${u} 與 ${v}。分量總數遞減為 ${compCount}`);
+            
+            // 視覺更新：將同集合的點同步顏色
+            for(let i=0; i<n; i++) {
+                if(find(i) === rootV) document.getElementById(`node-${i}`).className = `node comp-${rootV % 4}`;
+            }
+        } else {
+            log(`節點 ${u} 與 ${v} 已連通，無需操作。`);
+        }
+        edgeIdx++;
+    }
+    updateUI();
+}
+
+reset();
+</script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>133. Clone Graph Visualizer</title>
+    <style>
+        :root {
+            --bg: #0f172a; --card-dark: #1e293b; --accent: #22d3ee;
+            --original: #6366f1; --cloned: #10b981; --mapping: #f59e0b;
+            --editor-bg: #0d1117; --text-gray: #94a3b8; --danger: #f87171;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: #e2e8f0; margin: 0; padding: 20px; }
+        .dashboard { max-width: 1450px; margin: auto; display: flex; flex-direction: column; gap: 20px; }
+
+        /* 1. 題目描述區 */
+        .header-section { 
+            background: var(--card-dark); border-left: 5px solid var(--accent); 
+            padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .header-section h2 { margin-top: 0; color: var(--accent); }
+        .complexity-tags { display: flex; gap: 10px; margin: 10px 0; }
+        .tag { background: #0f172a; border: 1px solid #334155; padding: 4px 12px; border-radius: 4px; font-size: 13px; font-family: monospace; }
+
+        /* 2. 控制台 */
+        .control-panel { 
+            background: #111827; border: 1px solid #334155; border-radius: 12px; 
+            padding: 15px; display: flex; align-items: center; gap: 15px; 
+        }
+        .btn { padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
+        .btn-reset { background: #334155; color: white; }
+        .btn-step { background: var(--accent); color: #0f172a; }
+
+        /* 3. 主區域佈局 */
+        .main-layout { display: grid; grid-template-columns: 320px 1fr 480px; gap: 15px; height: 580px; }
+
+        /* 左側 Hash Map 監控 */
+        .side-panel { background: #111827; border-radius: 12px; padding: 15px; border: 1px solid #1f2937; overflow: hidden; display: flex; flex-direction: column; }
+        .mapping-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        .mapping-table th { color: var(--accent); text-align: left; padding: 8px; border-bottom: 1px solid #334155; }
+        .mapping-table td { padding: 8px; border-bottom: 1px solid #1f2937; font-family: monospace; }
+
+        /* 中間：雙圖對比 (Original vs Cloned) */
+        .graph-container { 
+            background: #000; border-radius: 12px; border: 1px solid #1f2937; 
+            display: grid; grid-template-columns: 1fr 1fr; position: relative;
+        }
+        .graph-box { position: relative; overflow: hidden; border-right: 1px solid #1f2937; }
+        .graph-label { position: absolute; top: 10px; left: 10px; font-size: 12px; color: var(--text-gray); font-weight: bold; z-index: 10; }
+        canvas { width: 100%; height: 100%; }
+
+        /* 右側 IDE */
+        .editor { background: var(--editor-bg); border-radius: 12px; border: 1px solid #30363d; overflow: hidden; display: flex; flex-direction: column; }
+        .code-view { flex: 1; padding: 15px 0; font-family: 'Fira Code', monospace; font-size: 11px; line-height: 1.6; color: #c9d1d9; }
+        .line-row { padding-left: 45px; position: relative; }
+        .line-active { background: #21262d; border-left: 4px solid var(--accent); }
+        .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #8b949e; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header-section">
+        <h2>🕸️ 133. Clone Graph</h2>
+        <div class="problem-desc">
+            給你一個無向連通圖中一個節點的引用，請返回該圖的 <b>深拷貝（Deep Copy）</b>。<br>
+            圖中每個節點都包含它的值 <code>val</code> 和一個鄰居列表 <code>neighbors</code>。
+        </div>
+        <div class="complexity-tags">
+            <span class="tag">Time: O(V + E)</span>
+            <span class="tag">Space: O(V)</span>
+            <span class="tag">Technique: Hash Map + DFS/BFS</span>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <button class="btn btn-reset" onclick="init()">🔃 RESET GRAPH</button>
+        <button class="btn btn-step" onclick="step()">🧭 NEXT STEP (DFS)</button>
+        <div style="flex:1"></div>
+        <div style="font-size: 14px; color: var(--text-gray)">
+            <span style="color:var(--original)">●</span> 原圖 | <span style="color:var(--cloned)">●</span> 拷貝圖
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="side-panel">
+            <div style="color:var(--mapping); font-size:12px; font-weight:bold; letter-spacing:1px;">HASH MAP (OLD ⮕ NEW)</div>
+            <table class="mapping-table">
+                <thead><tr><th>Old Node</th><th>New Node</th></tr></thead>
+                <tbody id="map-body"></tbody>
+            </table>
+            <div id="status-msg" style="margin-top:auto; font-size:12px; color:var(--accent); font-family:monospace;">Waiting...</div>
+        </div>
+
+        <div class="graph-container">
+            <div class="graph-box">
+                <div class="graph-label">ORIGINAL GRAPH</div>
+                <canvas id="canvas-old"></canvas>
+            </div>
+            <div class="graph-box">
+                <div class="graph-label">CLONED GRAPH</div>
+                <canvas id="canvas-new"></canvas>
+            </div>
+        </div>
+
+        <div class="editor">
+            <div style="background:#161b22; padding:8px 15px; font-size:11px; color:#8b949e; border-bottom:1px solid #30363d;">dfs_clone.py</div>
+            <div class="code-view" id="code-box"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let oldGraph = [], nodeMap = new Map();
+let stack = [], visited = new Set();
+let canvasOld, canvasNew, ctxOld, ctxNew;
+
+const codeLines = [
+    {t: "def cloneGraph(self, node):", i: 0},
+    {t: "    if not node: return None", i: 1},
+    {t: "    old_to_new = {}", i: 1},
+    {t: "    def dfs(node):", i: 1},
+    {t: "        if node in old_to_new:", i: 2},
+    {t: "            return old_to_new[node]", i: 3},
+    {t: "        copy = Node(node.val)", i: 2},
+    {t: "        old_to_new[node] = copy", i: 2},
+    {t: "        for nei in node.neighbors:", i: 2},
+    {t: "            copy.neighbors.append(dfs(nei))", i: 3},
+    {t: "        return copy", i: 2},
+    {t: "    return dfs(node)", i: 1}
+];
+
+function init() {
+    // 建立 1-2-3-4 環狀圖
+    oldGraph = [
+        {val: 1, x: 100, y: 100, neighbors: [2, 4]},
+        {val: 2, x: 250, y: 100, neighbors: [1, 3]},
+        {val: 3, x: 250, y: 250, neighbors: [2, 4]},
+        {val: 4, x: 100, y: 250, neighbors: [1, 3]}
+    ];
+    nodeMap = new Map();
+    stack = [1];
+    visited = new Set();
+    
+    canvasOld = document.getElementById('canvas-old');
+    canvasNew = document.getElementById('canvas-new');
+    canvasOld.width = canvasNew.width = canvasOld.offsetWidth;
+    canvasOld.height = canvasNew.height = canvasOld.offsetHeight;
+    ctxOld = canvasOld.getContext('2d');
+    ctxNew = canvasNew.getContext('2d');
+
+    document.getElementById('code-box').innerHTML = codeLines.map((l, i) => 
+        `<div class="line-row" id="ln-${i}" style="padding-left:${l.i*20 + 45}px">${highlight(l.t)}</div>`).join('');
+    
+    document.getElementById('map-body').innerHTML = "";
+    draw();
+}
+
+function highlight(t) {
+    return t.replace(/def |if |not |in |return |for /g, x => `<span class="kw">${x}</span>`)
+            .replace(/cloneGraph|dfs/g, x => `<span class="fn">${x}</span>`);
+}
+
+function draw() {
+    ctxOld.clearRect(0, 0, 400, 400); ctxNew.clearRect(0, 0, 400, 400);
+    
+    // Draw edges
+    oldGraph.forEach(n => {
+        n.neighbors.forEach(neiVal => {
+            const nei = oldGraph.find(x => x.val === neiVal);
+            ctxOld.strokeStyle = "#334155"; ctxOld.beginPath();
+            ctxOld.moveTo(n.x, n.y); ctxOld.lineTo(nei.x, nei.y); ctxOld.stroke();
+            
+            if(nodeMap.has(n.val) && nodeMap.has(nei.val)) {
+                ctxNew.strokeStyle = varColor('--cloned'); ctxNew.beginPath();
+                ctxNew.moveTo(n.x, n.y); ctxNew.lineTo(nei.x, nei.y); ctxNew.stroke();
+            }
+        });
+    });
+
+    // Draw nodes
+    oldGraph.forEach(n => {
+        // Old
+        ctxOld.fillStyle = visited.has(n.val) ? varColor('--original') : "#1e293b";
+        ctxOld.beginPath(); ctxOld.arc(n.x, n.y, 18, 0, Math.PI*2); ctxOld.fill();
+        ctxOld.fillStyle = "white"; ctxOld.fillText(n.val, n.x-5, n.y+5);
+
+        // New
+        if(nodeMap.has(n.val)) {
+            ctxNew.fillStyle = varColor('--cloned');
+            ctxNew.beginPath(); ctxNew.arc(n.x, n.y, 18, 0, Math.PI*2); ctxNew.fill();
+            ctxNew.fillStyle = "white"; ctxNew.fillText(n.val, n.x-5, n.y+5);
+        }
+    });
+}
+
+function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
+
+function highlightLine(ln) {
+    document.querySelectorAll('.line-row').forEach(r => r.classList.remove('line-active'));
+    if(ln >= 0) document.getElementById(`ln-${ln}`).classList.add('line-active');
+}
+
+async function step() {
+    if(stack.length === 0) {
+        document.getElementById('status-msg').innerText = "Clone Complete.";
+        highlightLine(-1);
+        return;
+    }
+
+    let currVal = stack.pop();
+    if(visited.has(currVal)) {
+        highlightLine(5);
+        document.getElementById('status-msg').innerText = `Node ${currVal} exists in Map. Returning clone.`;
+        return;
+    }
+
+    // Clone logic
+    visited.add(currVal);
+    highlightLine(6);
+    nodeMap.set(currVal, `NodeCopy(${currVal})`);
+    
+    // Update Map UI
+    const row = `<tr><td>Node(${currVal})</td><td style="color:var(--cloned)">NodeCopy(${currVal})</td></tr>`;
+    document.getElementById('map-body').innerHTML += row;
+    
+    const currNode = oldGraph.find(x => x.val === currVal);
+    highlightLine(8);
+    currNode.neighbors.forEach(nei => {
+        if(!visited.has(nei)) stack.push(nei);
+    });
+
+    document.getElementById('status-msg').innerText = `Cloning Node ${currVal}...`;
+    draw();
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>207. Course Schedule Debugger</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --both: #d29922;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --highlight: rgba(210, 153, 34, 0.25);
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .dashboard { max-width: 1600px; margin: auto; display: flex; flex-direction: column; gap: 15px; }
+
+        /* 1. 題目敘述區 */
+        .problem-section { 
+            background: var(--card); border: 1px solid #30363d; padding: 20px; border-radius: 8px;
+            border-left: 5px solid var(--accent);
+        }
+        .example-box { background: #0d1117; padding: 10px; border-radius: 6px; margin-top: 10px; font-family: monospace; font-size: 13px; }
+
+        /* 2. 演算法導航 */
+        .header-flex { display: flex; justify-content: space-between; align-items: center; }
+        .algo-nav { display: flex; gap: 5px; background: #010409; padding: 5px; border-radius: 10px; border: 1px solid #30363d; }
+        .nav-btn { padding: 8px 15px; border: none; border-radius: 6px; background: transparent; color: var(--dim); cursor: pointer; font-weight: bold; }
+        .nav-btn.active { background: var(--accent); color: white; }
+
+        /* 3. 核心佈局 */
+        .main-layout { display: grid; grid-template-columns: 350px 1fr 500px; gap: 15px; height: 600px; }
+
+        /* 左側：狀態監控 */
+        .monitor { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; }
+        .status-item { margin-bottom: 10px; font-size: 13px; }
+        .queue-view { display: flex; gap: 5px; margin-top: 5px; min-height: 30px; }
+        .q-node { background: var(--both); color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+
+        /* 中間：圖形視覺化 */
+        .visual-center { background: #010409; border-radius: 12px; border: 1px solid #30363d; padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative; }
+        .node-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 40px; }
+        .node {
+            width: 50px; height: 50px; border-radius: 50%; border: 2px solid #30363d;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+            background: #161b22; position: relative; transition: 0.3s;
+        }
+        .node.active { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); transform: scale(1.1); }
+        .node.done { background: var(--atlantic); border-color: var(--atlantic); color: white; }
+        .node.in-path { border-color: var(--both); color: var(--both); }
+        .in-degree-pop { position: absolute; top: -10px; right: -10px; background: #f85149; color: white; font-size: 10px; padding: 2px 5px; border-radius: 10px; }
+
+        /* 右側：IDE 完整連動 */
+        .editor { background: var(--editor-bg); border-radius: 12px; border: 1px solid #30363d; overflow: hidden; display: flex; flex-direction: column; }
+        .code-view { flex: 1; padding: 10px 0; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6; overflow-y: auto; }
+        .line { padding-left: 45px; position: relative; white-space: pre; border-left: 3px solid transparent; }
+        .line-active { background: var(--highlight) !important; border-left: 3px solid var(--both); color: white; }
+        .line-num { position: absolute; left: 10px; color: #484f58; width: 25px; text-align: right; }
+
+        /* 控制按鈕 */
+        .controls { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #30363d; display: flex; gap: 10px; align-items: center; }
+        .btn-next { background: var(--atlantic); color: white; border: none; padding: 8px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="problem-section">
+        <h3 style="margin:0; color:var(--accent);">Problem 207: Course Schedule</h3>
+        <p style="font-size:14px; color:var(--dim);">你必須修完 <code>numCourses</code> 門課程。某些課程有先修課，例如 <code>[1, 0]</code> 表示修課程 1 前必須先修課程 0。判斷是否能修完所有課程？（即檢查圖中是否存在<b>環</b>）</p>
+        <div class="example-box">
+            Example: numCourses = 4, prerequisites = [[1,0],[2,0],[3,1],[3,2]] <br>
+            Output: true (可以按順序 0 -> 1 -> 2 -> 3 修完)
+        </div>
+    </div>
+
+    <div class="header-flex">
+        <div class="algo-nav">
+            <button class="nav-btn active" id="btn-bfs" onclick="switchAlgo('bfs')">BFS (Kahn's Algorithm)</button>
+            <button class="nav-btn" id="btn-dfs" onclick="switchAlgo('dfs')">DFS (Cycle Detection)</button>
+        </div>
+        <div class="controls">
+            <input type="text" id="preInput" value="[[1,0],[2,0],[3,1],[3,2]]" style="background:#0d1117; border:1px solid #30363d; color:var(--accent); padding:5px; border-radius:4px; width:250px;">
+            <button class="nav-btn" style="border:1px solid #30363d" onclick="reset()">🔃 Reset</button>
+            <button class="btn-next" onclick="step()">🧭 Next Step</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="monitor">
+            <div class="status-item"><b>Complexity:</b> <span id="comp-text" style="color:var(--accent)">O(V+E)</span></div>
+            <div class="status-item"><b>Current Queue/Stack:</b> <div id="queue-view" class="queue-view"></div></div>
+            <div class="status-item" id="indegree-list"></div>
+            <div id="log" style="font-size:11px; color:var(--dim); border-top:1px solid #334155; padding-top:10px; margin-top:auto; height:150px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="visual-center">
+            <h4 id="vis-title" style="margin-top:0">Dependency Graph</h4>
+            
+            <div id="node-grid" class="node-grid"></div>
+        </div>
+
+        <div class="editor">
+            <div style="background:#161b22; padding:8px 15px; font-size:11px; color:var(--accent);">Solution.py</div>
+            <div id="code-box" class="code-view"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const codes = {
+bfs: [
+    "class Solution:",
+    "    def canFinish(self, numCourses, prerequisites):",
+    "        adj = [[] for _ in range(numCourses)]",
+    "        indegree = [0] * numCourses",
+    "        for crs, pre in prerequisites:",
+    "            adj[pre].append(crs)",
+    "            indegree[crs] += 1",
+    "",
+    "        queue = deque([i for i in range(numCourses) if indegree[i] == 0])",
+    "        finish_count = 0",
+    "        while queue:",
+    "            curr = queue.popleft()",
+    "            finish_count += 1",
+    "            for neighbor in adj[curr]:",
+    "                indegree[neighbor] -= 1",
+    "                if indegree[neighbor] == 0:",
+    "                    queue.append(neighbor)",
+    "        return finish_count == numCourses"
+],
+dfs: [
+    "class Solution:",
+    "    def canFinish(self, numCourses, prerequisites):",
+    "        adj = {i: [] for i in range(numCourses)}",
+    "        for crs, pre in prerequisites: adj[crs].append(pre)",
+    "        visitSet = set() # Path Set",
+    "",
+    "        def dfs(crs):",
+    "            if crs in visitSet: return False # Cycle!",
+    "            if adj[crs] == []: return True",
+    "            ",
+    "            visitSet.add(crs)",
+    "            for pre in adj[crs]:",
+    "                if not dfs(pre): return False",
+    "            visitSet.remove(crs)",
+    "            adj[crs] = []",
+    "            return True",
+    "",
+    "        for c in range(numCourses):",
+    "            if not dfs(c): return False",
+    "        return True"
+]
+};
+
+let currentAlgo = 'bfs';
+let state = { step: 0, queue: [], adj: [], indegree: [], finished: new Set(), path: new Set() };
+
+function switchAlgo(algo) {
+    currentAlgo = algo;
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id.includes(algo)));
+    reset();
+}
+
+function reset() {
+    const pre = JSON.parse(document.getElementById('preInput').value);
+    const numCourses = Math.max(...pre.flat()) + 1;
+    state = {
+        step: 0,
+        queue: [],
+        adj: Array.from({length: numCourses}, () => []),
+        indegree: new Array(numCourses).fill(0),
+        finished: new Set(),
+        path: new Set(),
+        numCourses: numCourses,
+        nodesToProcess: []
+    };
+
+    pre.forEach(([crs, preNode]) => {
+        state.adj[preNode].push(crs);
+        state.indegree[crs]++;
+    });
+
+    if(currentAlgo === 'bfs') {
+        for(let i=0; i<numCourses; i++) if(state.indegree[i] === 0) state.queue.push(i);
+        state.step = 10; // Start at while queue
+    } else {
+        state.nodesToProcess = Array.from({length: numCourses}, (_, i) => i);
+        state.step = 17; // Start at global loop
+    }
+
+    renderCode();
+    renderNodes();
+    updateMonitor();
+    document.getElementById('log').innerHTML = "Simulator Reset.";
+}
+
+function renderCode() {
+    document.getElementById('code-box').innerHTML = codes[currentAlgo].map((l, i) => 
+        `<div class="line" id="ln-${i}"><span class="line-num">${i}</span>${l.replace(/class |def |if |for |in |while |return |not /g, x => `<span style="color:#ff7b72">${x}</span>`)}</div>`
+    ).join('');
+}
+
+function highlight(idx) {
+    document.querySelectorAll('.line').forEach(l => l.classList.remove('line-active'));
+    const target = document.getElementById(`ln-${idx}`);
+    if(target) target.classList.add('line-active');
+}
+
+function renderNodes() {
+    let html = "";
+    for(let i=0; i<state.numCourses; i++) {
+        let cls = "node";
+        if(state.finished.has(i)) cls += " done";
+        if(state.path.has(i)) cls += " active";
+        html += `<div class="${cls}" id="node-${i}">${i}${currentAlgo === 'bfs' ? `<span class="in-degree-pop">${state.indegree[i]}</span>` : ''}</div>`;
+    }
+    document.getElementById('node-grid').innerHTML = html;
+}
+
+function updateMonitor() {
+    document.getElementById('queue-view').innerHTML = state.queue.map(q => `<div class="q-node">${q}</div>`).join('');
+    let indHtml = "<b>Indegrees:</b><br>";
+    state.indegree.forEach((v, i) => indHtml += `Course ${i}: ${v} | `);
+    document.getElementById('indegree-list').innerHTML = indHtml;
+}
+
+function step() {
+    const logger = (m) => { const l=document.getElementById('log'); l.innerHTML += `<div>> ${m}</div>`; l.scrollTop=l.scrollHeight; };
+    
+    if (currentAlgo === 'bfs') {
+        if (state.queue.length === 0) {
+            highlight(17);
+            logger(state.finished.size === state.numCourses ? "Success: No cycles!" : "Failed: Cycle detected!");
+            return;
+        }
+        highlight(11); // Popleft
+        let curr = state.queue.shift();
+        state.finished.add(curr);
+        logger(`Processing Course ${curr}, reducing neighbors' indegree...`);
+        
+        state.adj[curr].forEach(neighbor => {
+            state.indegree[neighbor]--;
+            if (state.indegree[neighbor] === 0) {
+                state.queue.push(neighbor);
+                logger(`Course ${neighbor} indegree is 0, added to queue.`);
+            }
+        });
+        renderNodes();
+        updateMonitor();
+    } 
+    else {
+        // DFS Step
+        if (state.nodesToProcess.length === 0 && state.path.size === 0) {
+            highlight(19);
+            logger("All courses checked. No cycles found.");
+            return;
+        }
+
+        highlight(7); // dfs check
+        let curr = state.nodesToProcess[0];
+        if (state.path.has(curr)) {
+            highlight(7);
+            document.getElementById(`node-${curr}`).style.background = "var(--error)";
+            logger("CYCLE DETECTED at Course " + curr);
+            return;
+        }
+
+        state.path.add(curr);
+        logger(`DFS searching path: Course ${curr}`);
+        
+        // 模擬遞迴展開 (簡化版)
+        setTimeout(() => {
+            state.path.delete(curr);
+            state.finished.add(curr);
+            state.nodesToProcess.shift();
+            renderNodes();
+        }, 400);
+        renderNodes();
+    }
+}
+
+reset();
+</script>
+</body>
+</html>

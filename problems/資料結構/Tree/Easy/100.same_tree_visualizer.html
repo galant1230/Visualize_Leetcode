@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>100. Same Tree - IDE Style</title>
+    <style>
+        :root {
+            --primary: #10b981; /* 採用綠色象徵比較與正確性 */
+            --bg: #0d1117; --line-active: #21262d;
+            --kw: #ff7b72; --fn: #d2a8ff; --vr: #ffa657; --tp: #79c0ff; --st: #a5d6ff; --cm: #8b949e;
+            --complexity-bg: #161b22; --error: #f85149;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        
+        /* 雙樹畫布區域 */
+        .stage-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .tree-stage { background: #ffffff; border: 1px solid #d0d7de; border-radius: 8px; height: 260px; position: relative; overflow: hidden; }
+        .stage-title { position: absolute; top: 10px; left: 15px; font-size: 12px; font-weight: bold; color: #8b949e; z-index: 10; }
+        
+        .tree-node { position: absolute; width: 34px; height: 34px; background: #fff; border: 2px solid #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; transition: all 0.4s ease; z-index: 2; transform: translateX(-50%); font-size: 14px; }
+        .node-active { border-color: var(--primary); background: #ecfdf5; color: var(--primary); box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); }
+        .node-error { border-color: var(--error) !important; background: #fff5f5 !important; color: var(--error) !important; animation: shake 0.4s; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(-50%); } 25% { transform: translateX(-55%); } 75% { transform: translateX(-45%); } }
+
+        /* 代碼與狀態 */
+        .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; }
+        .code-window { background: var(--bg); border-radius: 8px; overflow: hidden; border: 1px solid #30363d; }
+        .code-header { background: #161b22; padding: 10px 15px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        .code-panel { color: #c9d1d9; padding: 15px; font-family: 'Fira Code', 'Consolas', monospace; font-size: 13px; height: 320px; overflow-y: auto; line-height: 1.6; }
+        .line { display: flex; opacity: 0.4; transition: 0.2s; }
+        .line-num { width: 30px; color: #484f58; text-align: right; padding-right: 15px; user-select: none; }
+        .line-content { white-space: pre; }
+        .active-line { opacity: 1; background: var(--line-active); border-left: 3px solid var(--primary); }
+
+        .side-label { font-size: 11px; font-weight: bold; color: #57606a; margin-bottom: 6px; display: block; letter-spacing: 0.5px; text-transform: uppercase; }
+        .stack-panel { background: #161b22; color: #8b949e; padding: 12px; border-radius: 8px; display: flex; flex-direction: column-reverse; gap: 5px; min-height: 70px; border: 1px solid #30363d; margin-bottom: 15px; }
+        .stack-frame { padding: 4px 8px; background: rgba(16, 185, 129, 0.1); color: #79c0ff; border-radius: 4px; border-left: 2px solid var(--primary); font-size: 11px; }
+        
+        #stepDesc { padding: 12px; background: white; border: 1px solid #d0d7de; border-radius: 8px; font-size: 13px; min-height: 60px; color: #24292f; margin-bottom: 15px; }
+
+        .complexity-box { background: var(--complexity-bg); border: 1px solid #30363d; border-radius: 8px; padding: 10px; color: #c9d1d9; font-size: 12px; }
+        .complexity-item { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .complexity-val { font-family: 'Consolas', monospace; color: var(--fn); }
+
+        .k { color: var(--kw); } .t { color: var(--tp); } .v { color: var(--vr); } .f { color: var(--fn); } .c { color: var(--cm); } .n { color: #79c0ff; }
+        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        line { stroke: #d0d7de; stroke-width: 1.5; transition: 0.4s; }
+        button { padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; border: 1px solid #d0d7de; background: white; }
+        .btn-primary { background: var(--primary); color: white; border: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <h2 style="margin:0; font-size: 1.4rem;">100. Same Tree</h2>
+            <code style="font-size: 11px; color: #57606a;">Compare if two binary trees are structurally identical and have same values.</code>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <select id="langSelect" onchange="init()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #d0d7de;">
+                <option value="py">Python 3</option>
+                <option value="c">C Language</option>
+            </select>
+            <button class="btn-primary" onclick="runStep()">下一步 Step ▶</button>
+            <button onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="stage-container">
+        <div class="tree-stage" id="stageP">
+            <div class="stage-title">TREE P</div>
+            <svg id="svgP"></svg><div id="nodesP"></div>
+        </div>
+        <div class="tree-stage" id="stageQ">
+            <div class="stage-title">TREE Q</div>
+            <svg id="svgQ"></svg><div id="nodesQ"></div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="code-window">
+            <div class="code-header"><span id="fileName">solution.py</span></div>
+            <div class="code-panel" id="codePanel"></div>
+        </div>
+        
+        <div class="status-wrapper">
+            <span class="side-label">Recursion Stack</span>
+            <div class="stack-panel" id="stackPanel"></div>
+
+            <span class="side-label">Execution Insight</span>
+            <div id="stepDesc"></div>
+
+            <span class="side-label">Complexity Analysis</span>
+            <div class="complexity-box">
+                <div class="complexity-item"><span>Time Complexity</span><span class="complexity-val">O(min(N, M))</span></div>
+                <div class="complexity-item"><span>Space Complexity</span><span class="complexity-val">O(min(H1, H2))</span></div>
+                <div style="font-size: 10px; color: #8b949e; margin-top: 5px; border-top: 1px solid #30363d; padding-top: 5px;">
+                    N, M: 兩樹節點數 | 一旦不匹配即停止走訪。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let step = 0;
+    // 定義測試資料：兩棵相同的樹 [1,2,3]
+    const treeP = [ {id:1, v:'1', x:50, y:40, p:null}, {id:2, v:'2', x:30, y:120, p:1}, {id:3, v:'3', x:70, y:120, p:1} ];
+    const treeQ = [ {id:1, v:'1', x:50, y:40, p:null}, {id:2, v:'2', x:30, y:120, p:1}, {id:3, v:'3', x:70, y:120, p:1} ];
+
+    const allCodes = {
+        py: { name: 'solution.py', lines: [
+            `<span class="k">def</span> <span class="f">isSameTree</span>(<span class="v">p</span>, <span class="v">q</span>):`,
+            `    <span class="k">if not</span> <span class="v">p</span> <span class="k">and not</span> <span class="v">q</span>: <span class="k">return</span> <span class="n">True</span>`,
+            `    <span class="k">if not</span> <span class="v">p</span> <span class="k">or not</span> <span class="v">q</span>: <span class="k">return</span> <span class="n">False</span>`,
+            `    <span class="k">if</span> <span class="v">p</span>.<span class="v">val</span> != <span class="v">q</span>.<span class="v">val</span>: <span class="k">return</span> <span class="n">False</span>`,
+            `    <span class="k">return</span> <span class="v">self</span>.<span class="f">isSameTree</span>(<span class="v">p</span>.<span class="v">left</span>, <span class="v">q</span>.<span class="v">left</span>) <span class="k">and</span> \\`,
+            `           <span class="v">self</span>.<span class="f">isSameTree</span>(<span class="v">p</span>.<span class="v">right</span>, <span class="v">q</span>.<span class="v">right</span>)`
+        ]},
+        c: { name: 'solution.c', lines: [
+            `<span class="k">bool</span> <span class="f">isSameTree</span>(<span class="k">struct</span> <span class="t">TreeNode</span>* <span class="v">p</span>, <span class="k">struct</span> <span class="t">TreeNode</span>* <span class="v">q</span>) {`,
+            `    <span class="k">if</span> (<span class="v">p</span> == <span class="n">NULL</span> && <span class="v">q</span> == <span class="n">NULL</span>) <span class="k">return</span> <span class="n">true</span>;`,
+            `    <span class="k">if</span> (<span class="v">p</span> == <span class="n">NULL</span> || <span class="v">q</span> == <span class="n">NULL</span>) <span class="k">return</span> <span class="n">false</span>;`,
+            `    <span class="k">if</span> (<span class="v">p</span>-><span class="v">val</span> != <span class="v">q</span>-><span class="v">val</span>) <span class="k">return</span> <span class="n">false</span>;`,
+            `    <span class="k">return</span> <span class="f">isSameTree</span>(<span class="v">p</span>-><span class="v">left</span>, <span class="v">q</span>-><span class="v">left</span>) && `,
+            `           <span class="f">isSameTree</span>(<span class="v">p</span>-><span class="v">right</span>, <span class="v">q</span>-><span class="v">right</span>);`,
+            `}`
+        ]}
+    };
+
+    const trace = [
+        { py: 0, c: 0, stack: ['isSameTree(p1, q1)'], active: 1, desc: '<b>Step 1:</b> 同步比對兩棵樹的根節點 (1, 1)。' },
+        { py: 3, c: 3, stack: ['isSameTree(p1, q1)'], active: 1, desc: '兩節點數值相同，繼續向下比對。' },
+        { py: 4, c: 4, stack: ['isSameTree(p1, q1)', 'isSameTree(p2, q2)'], active: 2, desc: '<b>Step 2:</b> 同步進入左子節點 (2, 2)。' },
+        { py: 1, c: 1, stack: ['isSameTree(p1, q1)', 'isSameTree(p2, q2)', 'isSameTree(null, null)'], active: null, desc: '節點 2 的子節點皆為空，回傳 True。' },
+        { py: 5, c: 5, stack: ['isSameTree(p1, q1)', 'isSameTree(p3, q3)'], active: 3, desc: '<b>Step 3:</b> 回到根節點，同步進入右子節點 (3, 3)。' },
+        { py: 5, c: 5, stack: [], active: null, desc: '<b>Done:</b> 所有節點與結構皆相符，回傳 <b style="color:var(--primary)">True</b>。' }
+    ];
+
+    function init() {
+        step = 0; renderCode(); render();
+    }
+
+    function runStep() {
+        if (step < trace.length - 1) { step++; render(); }
+    }
+
+    function renderCode() {
+        const lang = document.getElementById('langSelect').value;
+        const info = allCodes[lang];
+        document.getElementById('fileName').innerText = info.name;
+        document.getElementById('codePanel').innerHTML = info.lines.map((l, i) => `
+            <div class="line" id="line-${i}">
+                <div class="line-num">${i + 1}</div><div class="line-content">${l}</div>
+            </div>
+        `).join('');
+    }
+
+    function renderTree(tree, containerId, svgId, activeId) {
+        const container = document.getElementById(containerId);
+        const svg = document.getElementById(svgId);
+        container.innerHTML = ''; svg.innerHTML = '';
+        tree.forEach(n => {
+            const div = document.createElement('div');
+            div.className = 'tree-node' + (n.id === activeId ? ' node-active' : '');
+            div.style.left = n.x + '%'; div.style.top = n.y + 'px';
+            div.innerText = n.v;
+            container.appendChild(div);
+            if (n.p !== null) {
+                const parent = tree.find(p => p.id === n.p);
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", n.x + "%"); line.setAttribute("y1", n.y);
+                line.setAttribute("x2", parent.x + "%"); line.setAttribute("y2", parent.y + 20);
+                svg.appendChild(line);
+            }
+        });
+    }
+
+    function render() {
+        const lang = document.getElementById('langSelect').value;
+        const data = trace[step];
+        document.getElementById('stackPanel').innerHTML = data.stack.map(s => `<div class="stack-frame">${s}</div>`).join('');
+        document.getElementById('stepDesc').innerHTML = data.desc;
+        document.querySelectorAll('.line').forEach(l => l.classList.remove('active-line'));
+        const lineEl = document.getElementById(`line-${data[lang]}`);
+        if (lineEl) lineEl.classList.add('active-line');
+
+        renderTree(treeP, 'nodesP', 'svgP', data.active);
+        renderTree(treeQ, 'nodesQ', 'svgQ', data.active);
+    }
+    init();
+</script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>417. 太平洋大西洋水流模擬器 - DFS 模式</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f9f9f9; padding: 2rem; margin: 0; color: #333; }
+    h2, h3, h4 { color: #007acc; }
+    .container {
+      max-width: 1200px; margin: auto; background: #fff; padding: 2rem;
+      border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    table { margin: 0.5rem auto; border-collapse: collapse; }
+    td {
+      width: 40px; height: 40px; text-align: center; vertical-align: middle;
+      border: 1px solid #ccc; font-size: 14px;
+    }
+    .pacific { background-color: #2196F3; color: white; }
+    .atlantic { background-color: #4CAF50; color: white; }
+    .both { background-color: orange; color: white; }
+    .active-cell { outline: 3px solid red; font-weight: bold; }
+    .visited-true { background-color: #c8e6c9; }
+    #codeBox {
+      background: #272822; color: #f8f8f2; padding: 1rem;
+      border-radius: 6px; margin: 2rem 0; font-family: monospace; white-space: pre-wrap;
+    }
+    .matrix-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      gap: 2rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+    .matrix-col {
+      text-align: center;
+    }
+    button {
+      padding: 8px 16px; font-size: 14px; margin: 0.3rem;
+      cursor: pointer; border: none; border-radius: 6px;
+      background: #007acc; color: white;
+    }
+    input { width: 400px; padding: 5px; }
+    .status-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #eef5ff;
+      border-left: 5px solid #007acc;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .toggle-debug {
+      font-size: 12px; background: #ccc; color: #000;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>💧 417. 太平洋大西洋水流問題（DFS 逐步模擬）</h2>
+  <hr>
+  <h3>📘 題目描述</h3>
+  <p>給定一個 m x n 的整數矩陣 heights ，其中 heights[r][c] 表示單元格 (r, c) 的高度。
+  雨水可以從較高或相等高度的單元格流到相鄰的單元格（上下左右），請找出所有能同時流到「太平洋」和「大西洋」的格子。
+  太平洋位於矩陣的左邊與上邊；大西洋位於矩陣的右邊與下邊。</p>
+
+  <h3>🧪 輸入</h3>
+  <input type="text" id="matrixInput" value="[[1,2,2,3,5],[3,2,3,4,4],[2,4,5,3,1],[6,7,1,4,5],[5,1,1,2,4]]">
+  <button onclick="initSim()">🔃 重設</button>
+  <button onclick="stepSim()">🧭 下一步</button>
+  <button onclick="toggleDebug()" class="toggle-debug">🛠️ 切換 詳細/精簡 模式</button>
+  <p id="stepInfo"></p>
+
+  <div class="matrix-row">
+    <div class="matrix-col">
+      <h4>🌊 主矩陣</h4>
+      <div id="grid"></div>
+    </div>
+    <div class="matrix-col">
+      <h4>🌊 太平洋 visited 狀態</h4>
+      <div id="pacificGrid"></div>
+    </div>
+    <div class="matrix-col">
+      <h4>🌊 大西洋 visited 狀態</h4>
+      <div id="atlanticGrid"></div>
+    </div>
+  </div>
+
+  <div class="status-box" id="debugBox" style="display: none;"></div>
+
+  <h3>📄 DFS 模擬程式碼</h3>
+  <div id="codeBox"></div>
+</div>
+
+<script>
+let matrix, m, n;
+let pacific, atlantic;
+let dfsStack = [], stepInfo;
+let currentOcean = "Pacific";
+let debugMode = false;
+
+const dfsCode = `class Solution:
+    def check(self, row, col, heights, ocean):
+        ocean[row][col] = True
+        lst = [[row + 1, col],[row - 1, col],[row, col - 1],[row, col + 1]] # 上下左右
+        for r, c in lst:
+            if (0 <= r < len(heights) and 
+                0 <= c < len(heights[0]) and
+                not ocean[r][c] and
+                heights[r][c] >= heights[row][col]
+            ):
+                self.check(r, c, heights, ocean)
+        return
+
+    def pacificAtlantic(self, heights: List[List[int]]) -> List[List[int]]:
+        if not heights or not heights[0]:
+            return []
+
+        rows, cols = len(heights), len(heights[0])
+        pac = [[False for _ in range(cols)] for _ in range(rows)]
+        atl = [[False for _ in range(cols)] for _ in range(rows)]
+
+        for i in range(rows):
+            self.check(i, 0, heights, pac)           # 左邊（太平洋）
+            self.check(i, cols - 1, heights, atl)    # 右邊（大西洋）
+
+        for j in range(cols):
+            self.check(0, j, heights, pac)           # 上邊（太平洋）
+            self.check(rows - 1, j, heights, atl)    # 下邊（大西洋）
+
+        result = []
+        for r in range(rows):
+            for c in range(cols):
+                if pac[r][c] and atl[r][c]:
+                    result.append([r, c])
+        return result
+`;
+
+document.getElementById("codeBox").innerText = dfsCode;
+
+function renderMatrix(id, mat) {
+  const container = document.getElementById(id);
+  container.innerHTML = "<table>" +
+    mat.map(row => "<tr>" +
+      row.map(cell => `<td class='${cell ? "visited-true" : ""}'>${cell ? "✅" : ""}</td>`).join('') +
+    "</tr>").join('') + "</table>";
+}
+
+function createGrid(active = null) {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "<table>" +
+    matrix.map((row, r) => "<tr>" +
+      row.map((val, c) => {
+        let cls = "";
+        if (pacific[r][c] && atlantic[r][c]) cls = "both";
+        else if (pacific[r][c]) cls = "pacific";
+        else if (atlantic[r][c]) cls = "atlantic";
+        if (active && active[0] === r && active[1] === c) cls += " active-cell";
+        return `<td class='${cls}'>${val}</td>`;
+      }).join('') + "</tr>").join('') + "</table>";
+
+  renderMatrix("pacificGrid", pacific);
+  renderMatrix("atlanticGrid", atlantic);
+}
+
+function toggleDebug() {
+  debugMode = !debugMode;
+  document.getElementById("debugBox").style.display = debugMode ? "block" : "none";
+}
+
+function logDebug(msg) {
+  if (!debugMode) return;
+  const box = document.getElementById("debugBox");
+  box.innerText += msg + "\n";
+  box.scrollTop = box.scrollHeight;
+}
+
+function initSim() {
+  matrix = JSON.parse(document.getElementById("matrixInput").value);
+  m = matrix.length;
+  n = matrix[0].length;
+  pacific = Array.from({ length: m }, () => Array(n).fill(false));
+  atlantic = Array.from({ length: m }, () => Array(n).fill(false));
+  dfsStack = [];
+
+  for (let i = 0; i < m; i++) {
+    dfsStack.push([i, 0, pacific, -1, "Pacific"]);
+    dfsStack.push([i, n - 1, atlantic, -1, "Atlantic"]);
+  }
+  for (let j = 0; j < n; j++) {
+    dfsStack.push([0, j, pacific, -1, "Pacific"]);
+    dfsStack.push([m - 1, j, atlantic, -1, "Atlantic"]);
+  }
+
+  document.getElementById("stepInfo").innerText = "🔁 初始化完成，請點『下一步』模擬 DFS 流程";
+  document.getElementById("debugBox").innerText = "";
+  createGrid();
+}
+
+function stepSim() {
+  while (dfsStack.length > 0) {
+    const [row, col, visited, prev, oceanName] = dfsStack.pop();
+    currentOcean = oceanName;
+    if (row < 0 || col < 0 || row >= m || col >= n || visited[row][col]) continue;
+    if (prev !== -1 && matrix[row][col] < prev) continue;
+    visited[row][col] = true;
+
+    const lst = [
+      [row + 1, col],
+      [row - 1, col],
+      [row, col - 1],
+      [row, col + 1]
+    ];
+    for (const [r, c] of lst) {
+      dfsStack.push([r, c, visited, matrix[row][col], oceanName]);
+    }
+    createGrid([row, col]);
+    document.getElementById("stepInfo").innerText = `🧭 ${oceanName} - DFS 探索 (${row}, ${col}) 高度: ${matrix[row][col]}`;
+    logDebug(`✅ 訪問 (${row}, ${col}) - 來自 ${oceanName}，高度 ${matrix[row][col]}`);
+    return;
+  }
+  document.getElementById("stepInfo").innerText = "✅ DFS 模擬完成！";
+  logDebug("🎉 所有 DFS 遍歷已完成！");
+}
+</script>
+</body>
+</html>
+

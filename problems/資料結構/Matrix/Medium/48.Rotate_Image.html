@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Rotate Image Visualizer</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        
+        .container { 
+            max-width: 1850px; 
+            margin: auto; 
+            display: grid; 
+            grid-template-columns: 350px 1.2fr 480px; 
+            gap: 20px; 
+            height: 95vh; 
+        }
+
+        /* 左側面板 */
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 10px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+        .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); margin-right: 5px; }
+
+        /* 中間視覺化區 */
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
+        .viz-area { 
+            background: var(--card); border-radius: 8px; padding: 40px 20px; border: 1px solid #333; 
+            position: relative; min-height: 400px; display: flex; justify-content: center; align-items: center; 
+        }
+        .matrix-display {
+            display: grid;
+            gap: 5px;
+            padding: 10px;
+            background: #010409;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            position: relative;
+        }
+        .matrix-cell {
+            width: 45px; height: 45px;
+            display: flex; justify-content: center; align-items: center;
+            background: #21262d;
+            color: var(--text);
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.4s ease-in-out;
+            border: 1px solid #30363d;
+        }
+        .matrix-cell.highlight { background: var(--hl); border-color: var(--accent); }
+        .matrix-cell.swapped { background: var(--atlantic); border-color: #3fb950; color: white; }
+        .matrix-cell.primary-diag { background: #452100; border-color: #d29922; color: var(--energy); }
+
+
+        /* 右側代碼區 */
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; width: 480px; }
+        .code-header { background: #161b22; padding: 12px 20px; border-bottom: 1px solid #30363d; font-size: 13px; color: var(--dim); }
+        .ln { white-space: pre; padding: 0 15px 0 65px; position: relative; line-height: 1.8; font-size: 14px; }
+        .ln-num { position: absolute; left: 0; width: 50px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:20px;">48. Rotate Image <span style="font-size:13px; color:var(--dim);">In-place Rotation</span></div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn" id="nextBtn" onclick="next()">下一步 Step 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent); font-size:15px;">📖 題目描述</b><br>
+            給予一個 <code>n x n</code> 的 2D 矩陣，請將它順時針旋轉 90 度。<br>
+            <b>要求:</b> 必須「原地」(in-place) 操作，不能使用額外的 2D 矩陣。
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--energy); font-size:15px;">💡 範例解析</b>
+            <div class="ex-box">
+                <b>Input:</b> [[1,2,3],[4,5,6],[7,8,9]]<br>
+                <b>Output:</b> [[7,4,1],[8,5,2],[9,6,3]]<br>
+                <i>*解釋: 第一行變為第三列，第二行變為第二列，以此類推。</i>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--atlantic); font-size:15px;">🧠 解題思路：翻轉兩次 (Two Flips)</b><br>
+            這是一種常用的原地旋轉技巧：<br>
+            1. <b>水平翻轉 (Horizontal Flip)：</b> 將矩陣上下對稱翻轉。<br>
+            2. <b>主對角線翻轉 (Diagonal Flip)：</b> 將矩陣沿著左上到右下的主對角線翻轉。
+            這兩個步驟結合起來，就能達到順時針 90 度旋轉的效果。
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--keyword); font-size:15px;">📊 複雜度分析</b>
+            <div style="margin-top:5px;">
+                <span class="tag">時間: O(N^2)</span> (每個元素訪問常數次)<br>
+                <span class="tag">空間: O(1)</span> (原地操作)
+            </div>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area">
+            <div id="matrixViz" class="matrix-display"></div>
+        </div>
+        <div id="log" style="color:var(--accent); font-size:14px; font-weight: bold; text-align: center; background: rgba(88,166,255,0.05); padding: 10px; border-radius: 10px;"></div>
+    </div>
+
+    <div class="editor">
+        <div class="code-header"><span>rotate_image.py</span></div>
+        <div id="codeView" class="code-body" style="padding-top: 15px;"></div>
+    </div>
+</div>
+
+<script>
+const matrixCodeLines = [
+    "def rotate(matrix: list[list[int]]) -> None:",
+    "    n = len(matrix)",
+    "    # 1. 水平翻轉 (Reverse rows)",
+    "    for i in range(n // 2):",
+    "        matrix[i], matrix[n - 1 - i] = matrix[n - 1 - i], matrix[i]",
+    "",
+    "    # 2. 沿主對角線翻轉 (Transpose)",
+    "    for i in range(n):",
+    "        for j in range(i + 1, n):",
+    "            matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]"
+];
+
+const testMatrix = [[1,2,3],[4,5,6],[7,8,9]];
+let currentMatrix;
+let n;
+let it;
+
+function init() {
+    currentMatrix = JSON.parse(JSON.stringify(testMatrix)); // Deep copy
+    n = currentMatrix.length;
+    renderMatrix(currentMatrix, n, "Initial Matrix");
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('log').innerText = "點擊下一步開始旋轉操作...";
+
+    document.getElementById('codeView').innerHTML = matrixCodeLines.map((l, i) => {
+        const formatted = l.replace(/def|for|in|range|if|None|list|int|len/g, '<span class="kw">$&</span>');
+        return `<div class="ln" id="ln-${i}"><span class="ln-num">${i}</span>${formatted}</div>`;
+    }).join('');
+
+    // 調整 grid-template-columns 以適應矩陣大小
+    document.getElementById('matrixViz').style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+
+    it = rotateLogic();
+}
+
+function renderMatrix(matrix, size, title, highlightCoords = [], swappedCoords = []) {
+    const viz = document.getElementById('matrixViz');
+    viz.innerHTML = ''; // Clear previous cells
+    viz.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+    matrix.flat().forEach((val, idx) => {
+        const r = Math.floor(idx / size);
+        const c = idx % size;
+        const cell = document.createElement('div');
+        cell.className = 'matrix-cell';
+        cell.id = `cell-${r}-${c}`;
+        cell.innerText = val;
+        
+        if (highlightCoords.some(coord => coord[0] === r && coord[1] === c)) {
+            cell.classList.add('highlight');
+        }
+        if (swappedCoords.some(coord => coord[0] === r && coord[1] === c)) {
+            cell.classList.add('swapped');
+        }
+        if (r === c) { // Highlight primary diagonal
+            cell.classList.add('primary-diag');
+        }
+        viz.appendChild(cell);
+    });
+    document.getElementById('log').innerText = title;
+}
+
+function* rotateLogic() {
+    yield { ln: 1, m: `矩陣大小 n = ${n}。` };
+
+    // Step 1: 水平翻轉
+    yield { ln: 3, m: "✨ 第一步：水平翻轉 (上下翻轉矩陣)。" };
+    for (let i = 0; i < n / 2; i++) {
+        let row1Idx = i;
+        let row2Idx = n - 1 - i;
+        yield { 
+            ln: 4, 
+            m: `交換第 ${row1Idx} 行與第 ${row2Idx} 行。`, 
+            highlight: [[row1Idx, -1], [row2Idx, -1]] 
+        }; // -1 表示整行
+
+        [currentMatrix[row1Idx], currentMatrix[row2Idx]] = [currentMatrix[row2Idx], currentMatrix[row1Idx]];
+        
+        yield { 
+            ln: 4, 
+            m: `交換完成。`, 
+            matrix: JSON.parse(JSON.stringify(currentMatrix)),
+            swapped: [[row1Idx, -1], [row2Idx, -1]]
+        };
+    }
+    yield { ln: 4, m: "水平翻轉完成！" };
+
+    // Step 2: 沿主對角線翻轉
+    yield { ln: 7, m: "✨ 第二步：沿主對角線翻轉 (轉置矩陣)。" };
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            yield { 
+                ln: 8, 
+                m: `交換 matrix[${i}][${j}] 和 matrix[${j}][${i}]。`, 
+                highlight: [[i, j], [j, i]] 
+            };
+
+            [currentMatrix[i][j], currentMatrix[j][i]] = [currentMatrix[j][i], currentMatrix[i][j]];
+            
+            yield { 
+                ln: 8, 
+                m: `交換完成。`, 
+                matrix: JSON.parse(JSON.stringify(currentMatrix)),
+                swapped: [[i, j], [j, i]]
+            };
+        }
+    }
+    yield { ln: 8, m: "主對角線翻轉完成！矩陣已順時針旋轉 90 度。" };
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) {
+        document.getElementById('nextBtn').disabled = true;
+        document.getElementById('log').innerText = "✅ 旋轉完成！";
+        return;
+    }
+
+    const { ln, m, highlight, swapped, matrix } = s.value;
+    
+    document.querySelectorAll('.ln').forEach(el => el.classList.remove('ln-active'));
+    document.getElementById(`ln-${ln}`).classList.add('ln-active');
+
+    if (matrix) currentMatrix = matrix; // Update matrix state
+    
+    // Reset all highlights first
+    document.querySelectorAll('.matrix-cell').forEach(cell => {
+        cell.classList.remove('highlight', 'swapped');
+    });
+
+    let currentHighlight = [];
+    let currentSwapped = [];
+
+    if (highlight) {
+        highlight.forEach(([r, c]) => {
+            if (c === -1) { // Whole row highlight
+                for (let col = 0; col < n; col++) currentHighlight.push([r, col]);
+            } else {
+                currentHighlight.push([r, c]);
+            }
+        });
+    }
+    if (swapped) {
+        swapped.forEach(([r, c]) => {
+            if (c === -1) { // Whole row swapped
+                for (let col = 0; col < n; col++) currentSwapped.push([r, col]);
+            } else {
+                currentSwapped.push([r, c]);
+            }
+        });
+    }
+
+    renderMatrix(currentMatrix, n, m, currentHighlight, currentSwapped);
+}
+
+init();
+</script>
+</body>
+</html>

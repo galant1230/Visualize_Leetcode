@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>124. Maximum Path Sum - Interactive</title>
+    <style>
+        :root {
+            --editor-bg: #0d1117; --gutter-bg: #161b22; --active-line: #21262d;
+            --indicator: #2ea043; --primary: #10b981; --text: #c9d1d9;
+            --kw: #ff7b72; --fn: #d2a8ff; --vr: #ffa657; --accent: #79c0ff;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; margin: 0; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: 480px 1fr; gap: 20px; }
+
+        /* 左側：監控與視覺化 */
+        .info-panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 13px; }
+        .example-box { background: #fff; border-left: 4px solid var(--primary); padding: 8px; margin: 8px 0; font-family: monospace; font-size: 11px; }
+        
+        .debug-panel { background: #1e1e1e; color: #d4d4d4; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-family: 'Consolas', monospace; font-size: 13px; border-left: 5px solid #ff4500; }
+        .var-highlight { color: #ce9178; font-weight: bold; }
+        .val-highlight { color: #4fc1ff; }
+
+        .tree-stage { border: 1px solid #d0d7de; border-radius: 8px; height: 300px; position: relative; background: #fff; margin-bottom: 15px; overflow: hidden; }
+        .tree-node { position: absolute; width: 36px; height: 36px; border: 2px solid #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; background: #fff; z-index: 2; transform: translateX(-50%); transition: 0.4s; font-size: 13px; }
+        .node-active { border-color: var(--primary); box-shadow: 0 0 15px rgba(16,185,129,0.6); transform: translateX(-50%) scale(1.1); }
+        .node-val-display { position: absolute; bottom: -20px; font-size: 10px; color: #666; white-space: nowrap; }
+        
+        /* 右側：編輯器 */
+        .editor { background: var(--editor-bg); border-radius: 8px; border: 1px solid #30363d; display: flex; flex-direction: column; min-height: 520px; }
+        .editor-header { background: var(--gutter-bg); padding: 10px 15px; color: #8b949e; font-size: 12px; border-bottom: 1px solid #30363d; }
+        .code-container { flex: 1; padding: 10px 0; font-family: 'Fira Code', monospace; font-size: 12.5px; line-height: 1.6; color: var(--text); }
+        .line { display: flex; position: relative; padding-left: 45px; white-space: pre; }
+        .line-num { position: absolute; left: 0; width: 35px; text-align: right; color: #484f58; padding-right: 10px; border-right: 1px solid #30363d; }
+        .line-active { background: var(--active-line); }
+        .line-active::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--indicator); }
+
+        /* 理論分析區 */
+        .theory-section { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; }
+        .theory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .theory-card { background: #fcfcfc; border: 1px solid #eef0f2; padding: 20px; border-radius: 10px; }
+        .theory-card h3 { margin-top: 0; color: #1e293b; border-left: 4px solid #ff4500; padding-left: 10px; }
+
+        button { padding: 10px 18px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        svg { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; }
+        line { stroke: #d0d7de; stroke-width: 2; transition: 0.5s; }
+        .kw { color: var(--kw); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2 style="margin:0;">124. Binary Tree Maximum Path Sum</h2>
+    </div>
+
+    <div class="grid">
+        <div class="visual-side">
+            <div class="info-panel">
+                <strong>題目敘述：</strong> 找出二元樹中具有「最大權重和」的路徑。路徑可以從任何節點開始，在任何節點結束（必須是相連節點）。
+                <div class="example-box">
+                    Input: root = [-10, 9, 20, null, null, 15, 7]<br>
+                    Output: 42 (15 + 20 + 7)
+                </div>
+            </div>
+
+            <div class="debug-panel">
+                <div>// DFS Result Tracker</div>
+                <div><span class="var-highlight">Global max_sum</span>: <span class="val-highlight" id="mon-max">-inf</span></div>
+                <div><span class="var-highlight">Current Node</span>: <span class="val-highlight" id="mon-node">None</span></div>
+                <div><span class="var-highlight">Returns to Parent</span>: <span class="val-highlight" id="mon-ret">None</span></div>
+            </div>
+
+            <div class="tree-stage">
+                <svg id="svgLines"></svg>
+                <div id="nodes"></div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button onclick="nextStep()">下一步 ▶</button>
+                <button onclick="resetDemo()" style="background:#64748b;">重置</button>
+            </div>
+        </div>
+
+        <div class="editor">
+            <div class="editor-header">solution.py</div>
+            <div class="code-container" id="codePanel"></div>
+        </div>
+    </div>
+
+    <div class="theory-section">
+        <div class="theory-grid">
+            <div class="theory-card">
+                <h3>🧠 解題核心：DFS 雙重責任</h3>
+                <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+                    每個節點在遞迴過程中要做兩件事：
+                    <ul style="font-size: 14px; color: #475569;">
+                        <li><b>更新全局最大值：</b>計算 <code>left + right + node.val</code>。這是以該點為「轉折點」的路徑。</li>
+                        <li><b>回傳給父節點：</b>回傳 <code>node.val + max(left, right)</code>。因為父節點只能選你的一邊來形成路徑。</li>
+                        <li><b>負值處理：</b>如果子樹貢獻是負的，我們寧願不選，所以用 <code>max(0, left)</code>。</li>
+                    </ul>
+                </p>
+            </div>
+            <div class="theory-card">
+                <h3>📊 複雜度分析</h3>
+                <table style="width:100%; font-size:14px; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid #eee;"><td style="padding:8px;">時間複雜度</td><td><b>O(N)</b></td></tr>
+                    <tr style="border-bottom: 1px solid #eee;"><td style="padding:8px;">空間複雜度</td><td><b>O(H)</b></td></tr>
+                    <tr><td colspan="2" style="font-size: 12px; color: #64748b; padding:8px;">N 為節點數，H 為樹高。每個節點僅被遍歷一次。</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const codeLines = [
+    "class Solution:",
+    "    def maxPathSum(self, root):",
+    "        self.max_sum = float('-inf')",
+    "        ",
+    "        def dfs(node):",
+    "            if not node: return 0",
+    "            ",
+    "            # 負數貢獻則取 0",
+    "            left = max(0, dfs(node.left))",
+    "            right = max(0, dfs(node.right))",
+    "            ",
+    "            # 嘗試以當前節點為路徑最高點 (轉折點)",
+    "            current_path_sum = node.val + left + right",
+    "            self.max_sum = max(self.max_sum, current_path_sum)",
+    "            ",
+    "            # 回傳給父節點：只能選左右其中一邊加上自己",
+    "            return node.val + max(left, right)",
+    "        ",
+    "        dfs(root)",
+    "        return self.max_sum"
+];
+
+const treeData = [
+    {id: -10, v: -10, x: 50, y: 40, p: null},
+    {id: 9, v: 9, x: 25, y: 120, p: -10},
+    {id: 20, v: 20, x: 75, y: 120, p: -10},
+    {id: 15, v: 15, x: 65, y: 200, p: 20},
+    {id: 7, v: 7, x: 85, y: 200, p: 20}
+];
+
+const trace = [
+    { ln: 2, max: "-inf", node: "Init", msg: "初始化 max_sum" },
+    { ln: 8, max: "-inf", node: "9", msg: "DFS 到達 9" },
+    { ln: 13, max: "9", node: "9", ret: "9", msg: "9 左右為空，max_sum 更新為 9" },
+    { ln: 8, max: "9", node: "15", msg: "DFS 到達 15" },
+    { ln: 13, max: "15", node: "15", ret: "15", msg: "15 更新 max_sum 為 15" },
+    { ln: 8, max: "15", node: "7", msg: "DFS 到達 7" },
+    { ln: 13, max: "15", node: "7", ret: "7", msg: "7 更新 max_sum 保持 15" },
+    { ln: 12, max: "15", node: "20", msg: "處理 20，Left=15, Right=7" },
+    { ln: 13, max: "42", node: "20", ret: "35", msg: "20 為轉折點: 15+20+7=42! 更新!" },
+    { ln: 13, max: "42", node: "-10", ret: "25", msg: "處理根節點 -10，最終結果為 42" }
+];
+
+let currentStep = 0;
+
+function resetDemo() {
+    currentStep = 0;
+    const panel = document.getElementById('codePanel');
+    panel.innerHTML = codeLines.map((line, i) => `
+        <div class="line" id="line-${i}">
+            <div class="line-num">${i + 1}</div>
+            <div class="line-content">${line.replace(/def |class |if |return |self\.|max/g, x => `<span class="kw">${x}</span>`)}</div>
+        </div>`).join('');
+    render();
+}
+
+function nextStep() {
+    if (currentStep < trace.length - 1) { currentStep++; render(); }
+}
+
+function render() {
+    const step = trace[currentStep];
+    document.querySelectorAll('.line').forEach(l => l.classList.remove('line-active'));
+    document.getElementById(`line-${step.ln}`).classList.add('line-active');
+
+    document.getElementById('mon-max').innerText = step.max;
+    document.getElementById('mon-node').innerText = step.node;
+    document.getElementById('mon-ret').innerText = step.ret || "N/A";
+
+    const nodesWrap = document.getElementById('nodes');
+    const svg = document.getElementById('svgLines');
+    nodesWrap.innerHTML = ''; svg.innerHTML = '';
+
+    treeData.forEach(n => {
+        if (n.p !== null) {
+            const parent = treeData.find(p => p.id === n.p);
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", n.x + "%"); line.setAttribute("y1", n.y);
+            line.setAttribute("x2", parent.x + "%"); line.setAttribute("y2", parent.y + 18);
+            svg.appendChild(line);
+        }
+        const div = document.createElement('div');
+        div.className = 'tree-node' + (step.node == n.id ? ' node-active' : '');
+        div.style.left = n.x + "%"; div.style.top = n.y + "px";
+        div.innerHTML = `${n.v}`;
+        nodesWrap.appendChild(div);
+    });
+}
+resetDemo();
+</script>
+</body>
+</html>

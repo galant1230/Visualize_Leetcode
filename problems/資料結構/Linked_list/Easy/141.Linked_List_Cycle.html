@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Linked List Cycle 完整教學版</title>
+    <style>
+        :root {
+            --primary: #3b82f6; --code-bg: #1e1e1e;
+            --kw: #c678dd; --fn: #61afef; --vr: #e06c75; --tp: #e5c07b; --st: #98c379;
+            --slow: #10b981; --fast: #f43f5e;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; padding: 20px; line-height: 1.5; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
+        /* 題目區塊 */
+        .problem-section { background: #f8fafc; border-left: 5px solid var(--primary); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .problem-section h2 { margin: 0 0 10px 0; color: #1e40af; }
+        .example-box { background: #fff; border: 1px solid #e2e8f0; padding: 10px 15px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; margin-top: 10px; }
+
+        /* 配置 UI */
+        .config-ui { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px 0; border-bottom: 2px solid #f1f5f9; }
+        .input-group { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+        input { padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; width: 140px; }
+        .tab-group { background: #e2e8f0; padding: 4px; border-radius: 8px; display: flex; }
+        .tab { padding: 6px 18px; border: none; cursor: pointer; border-radius: 6px; font-weight: bold; color: #64748b; }
+        .tab.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        /* 畫布 */
+        .stage { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; height: 300px; position: relative; margin-bottom: 20px; overflow: hidden; }
+        .node { width: 48px; height: 48px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; position: absolute; z-index: 5; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3); transition: transform 0.4s; }
+        .ptr-label { position: absolute; padding: 2px 8px; border-radius: 5px; color: white; font-size: 11px; font-weight: 800; white-space: nowrap; z-index: 10; left: 50%; transform: translateX(-50%); }
+        .ptr-label.slow { background: var(--slow); top: -32px; }
+        .ptr-label.fast { background: var(--fast); bottom: -32px; }
+        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+
+        /* 代碼區域 */
+        .grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 20px; }
+        .code-panel { background: var(--code-bg); color: #abb2bf; padding: 20px; border-radius: 12px; font-family: 'Fira Code', 'Consolas', monospace; font-size: 13.5px; line-height: 1.8; overflow-x: auto; }
+        .line { display: block; border-left: 3px solid transparent; padding-left: 15px; opacity: 0.3; white-space: pre; }
+        .active-line { background: rgba(255,255,255,0.1); border-left-color: var(--primary); opacity: 1; }
+        
+        .k { color: var(--kw); } .t { color: var(--tp); } .v { color: var(--vr); } .f { color: var(--fn); }
+
+        .controls { text-align: center; margin-top: 25px; }
+        .btn { padding: 12px 35px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 15px; }
+        .btn-step { background: #1e293b; color: white; }
+        .btn-reset { background: #94a3b8; color: white; margin-right: 15px; }
+        #status-msg { font-weight: bold; font-size: 1.2rem; height: 35px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="problem-section">
+        <h2>題目：141. Linked List Cycle</h2>
+        <p>判斷鏈結串列中是否有環。我們使用<b>快慢指標</b>：慢指標一次走一格，快指標一次走兩格。如果兩者相遇，則必有環。</p>
+        <div class="example-box">
+            <b>範例：</b> Input: head = [3, 2, 0, -4], pos = 1 (接回索引1)<br>
+            <b>期望結果：</b> true
+        </div>
+    </div>
+
+    <div class="config-ui">
+        <div class="input-group">
+            自定義數據: <input type="text" id="nodeInput" value="3,2,0,-4">
+            接回索引: <input type="number" id="posInput" value="1" min="-1" style="width: 50px;">
+            <button onclick="init()" style="cursor:pointer">套用</button>
+        </div>
+        <div class="tab-group">
+            <button class="tab active" onclick="setLang('py', this)">Python</button>
+            <button class="tab" onclick="setLang('c', this)">C++</button>
+        </div>
+    </div>
+
+    <div id="status-msg"></div>
+
+    <div class="stage" id="stage">
+        <svg id="svgCanvas"></svg>
+        <div id="nodes"></div>
+    </div>
+
+    <div class="grid">
+        <div class="code-panel" id="codePanel"></div>
+        <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px;">
+            <h4 style="margin:0; color:var(--primary);">複雜度分析</h4>
+            <p style="font-size: 0.9rem;">
+                <b>時間:</b> $O(n)$<br>
+                <b>空間:</b> $O(1)$ (不佔用額外空間)
+            </p>
+            <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+            <p id="desc" style="font-size: 0.85rem; color: #64748b;"></p>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-reset" onclick="init()">重置</button>
+        <button class="btn btn-step" id="step-btn" onclick="runStep()">下一步 (Step)</button>
+    </div>
+</div>
+
+<script>
+    let listData = [], loopIdx = -1, slowIdx = 0, fastIdx = 0, stepCount = 0, lang = 'py', isDone = false;
+
+    const snippets = {
+        py: [
+            `<span class="k">def</span> <span class="f">hasCycle</span>(<span class="v">head</span>):`,
+            `    <span class="v">slow</span> = <span class="v">fast</span> = <span class="v">head</span>`,
+            `    <span class="k">while</span> <span class="v">fast</span> <span class="k">and</span> <span class="v">fast</span>.next:`,
+            `        <span class="v">slow</span> = <span class="v">slow</span>.next`,
+            `        <span class="v">fast</span> = <span class="v">fast</span>.next.next`,
+            `        <span class="k">if</span> <span class="v">slow</span> == <span class="v">fast</span>:`,
+            `            <span class="k">return</span> <span class="k">True</span>`,
+            `    <span class="k">return</span> <span class="k">False</span>`
+        ],
+        c: [
+            `<span class="t">bool</span> <span class="f">hasCycle</span>(<span class="t">ListNode</span> *<span class="v">head</span>) {`,
+            `    <span class="t">ListNode</span> *<span class="v">slow</span> = <span class="v">head</span>, *<span class="v">fast</span> = <span class="v">head</span>;`,
+            `    <span class="k">while</span> (<span class="v">fast</span> && <span class="v">fast</span>-><span class="v">next</span>) {`,
+            `        <span class="v">slow</span> = <span class="v">slow</span>-><span class="v">next</span>;`,
+            `        <span class="v">fast</span> = <span class="v">fast</span>-><span class="v">next</span>-><span class="v">next</span>;`,
+            `        <span class="k">if</span> (<span class="v">slow</span> == <span class="v">fast</span>) <span class="k">return</span> <span class="k">true</span>;`,
+            `    }`,
+            `    <span class="k">return</span> <span class="k">false</span>;`,
+            `}`
+        ]
+    };
+
+    function setLang(l, btn) {
+        lang = l;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        init();
+    }
+
+    function init() {
+        const input = document.getElementById('nodeInput').value;
+        listData = input.split(',').map(s => s.trim()).filter(s => s !== "");
+        loopIdx = parseInt(document.getElementById('posInput').value);
+        if (loopIdx >= listData.length) loopIdx = -1;
+
+        slowIdx = 0; fastIdx = 0; stepCount = 0; isDone = false;
+        document.getElementById('step-btn').disabled = false;
+        document.getElementById('status-msg').innerText = "";
+        
+        renderCode();
+        renderStage();
+        updateUI(1, "初始化", "將快慢指標同時指向頭節點。");
+    }
+
+    function renderCode() {
+        document.getElementById('codePanel').innerHTML = snippets[lang].map((l, i) => `<div class="line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function runStep() {
+        if (isDone) return;
+        const phase = stepCount % 3;
+        if (phase === 0) {
+            updateUI(3, "烏龜移動", "慢指標 (slow) 向前走一步。");
+            slowIdx = getNext(slowIdx);
+        } else if (phase === 1) {
+            updateUI(4, "兔子移動", "快指標 (fast) 速度倍增，連跳兩步。");
+            let n1 = getNext(fastIdx);
+            if (n1 === null) { end(false); return; }
+            fastIdx = getNext(n1);
+            if (fastIdx === null) { end(false); return; }
+        } else {
+            updateUI(5, "檢查相遇", "判斷指標是否指向同一個節點。");
+            if (slowIdx === fastIdx) end(true);
+        }
+        stepCount++;
+        renderStage();
+    }
+
+    function end(found) {
+        isDone = true;
+        document.getElementById('step-btn').disabled = true;
+        const msg = document.getElementById('status-msg');
+        if (found) {
+            msg.innerText = "✅ 相遇！偵測到環路。";
+            msg.style.color = "var(--slow)";
+            updateUI(6, "回傳結果", "Return True");
+        } else {
+            msg.innerText = "❌ 抵達 NULL，無環。";
+            msg.style.color = "var(--fast)";
+            updateUI(lang === 'py' ? 7 : 7, "回傳結果", "Return False");
+        }
+        renderStage();
+    }
+
+    function getNext(idx) {
+        if (idx === null) return null;
+        if (idx === listData.length - 1) return loopIdx === -1 ? null : loopIdx;
+        return idx + 1;
+    }
+
+    function updateUI(line, title, d) {
+        document.querySelectorAll('.line').forEach(l => l.classList.remove('active-line'));
+        if(document.getElementById('l'+line)) document.getElementById('l'+line).classList.add('active-line');
+        document.getElementById('desc').innerHTML = `<b>${title}</b><br>${d}`;
+    }
+
+    function renderStage() {
+        const nodes = document.getElementById('nodes');
+        nodes.innerHTML = '';
+        listData.forEach((val, i) => {
+            const x = 70 + i * 110, y = 140;
+            const div = document.createElement('div');
+            div.className = 'node';
+            div.style.left = x + 'px'; div.style.top = y + 'px';
+            div.innerText = val;
+            if (i === slowIdx && !isDone) div.innerHTML += `<div class="ptr-label slow">🐢 slow</div>`;
+            if (i === fastIdx && !isDone) div.innerHTML += `<div class="ptr-label fast">🐇 fast</div>`;
+            nodes.appendChild(div);
+        });
+        drawArrows();
+    }
+
+    function drawArrows() {
+        const svg = document.getElementById('svgCanvas');
+        svg.innerHTML = '<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="26" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#cbd5e0"/></marker></defs>';
+        for(let i=0; i<listData.length; i++) {
+            const sx = 70 + i * 110 + 24, sy = 140 + 24;
+            const ni = getNext(i);
+            if (ni !== null) {
+                const ex = 70 + ni * 110 + 24, ey = 140 + 24;
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                let d = (ni <= i) ? `M ${sx} ${sy-24} Q ${(sx+ex)/2} ${sy-70} ${ex} ${ey-24}` : `M ${sx} ${sy} L ${ex} ${ey}`;
+                path.setAttribute("d", d); path.setAttribute("stroke", "#cbd5e0"); path.setAttribute("stroke-width", "2.5");
+                path.setAttribute("fill", "none"); path.setAttribute("marker-end", "url(#arr)");
+                svg.appendChild(path);
+            }
+        }
+    }
+    init();
+</script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>Add Two Numbers 視覺化</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background: #f5f7fa; }
+    h1 { text-align: center; color: #007acc; }
+    .description { max-width: 800px; margin: 1rem auto; background: #fff; padding: 1rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .list { display: flex; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+    .node { position: relative; margin: 8px; padding: 10px 16px; background: #3498db; color: white; font-weight: bold; border-radius: 10px; }
+    .node::after { content: "→"; position: absolute; right: -18px; top: 50%; transform: translateY(-50%); font-size: 20px; color: #444; }
+    .node:last-child::after { display: none; }
+    .pointer { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-size: 12px; color: white; padding: 2px 6px; border-radius: 6px; }
+    .l1ptr { background: #2ecc71; }
+    .l2ptr { background: #e74c3c; }
+    .code-line { font-family: monospace; padding: 2px 0; }
+    .active-code { background: #444; color: white; }
+    #codeBox { background: #272822; color: #f8f8f2; padding: 1rem; border-radius: 6px; max-width: 800px; margin: 2rem auto; }
+    button { background: #007acc; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem; }
+    #status { margin-top: 1rem; text-align: center; font-weight: bold; }
+    h2 { text-align: center; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+<h1>Add Two Numbers 視覺化</h1>
+<div class="description">
+  <p>給定兩個非空的單向鏈結串列，代表兩個非負整數。數字以反向順序儲存，每個節點只包含一個數字。將兩個數字相加並返回一個新的反向單向鏈結串列。</p>
+  <p><strong>範例：</strong><br>
+  輸入：l1 = [2,4,3], l2 = [5,6,4]<br>
+  輸出：[7,0,8]（因為 342 + 465 = 807）
+  </p>
+</div>
+
+<div style="text-align:center;">
+  <label>輸入 l1：<input id="inputL1" value="2,4,3" size="20"></label><br>
+  <label>輸入 l2：<input id="inputL2" value="5,6,4" size="20"></label><br>
+  <button onclick="start()">開始模擬</button>
+</div>
+
+<h2>l1</h2>
+<div class="list" id="linkedList1"></div>
+<h2>l2</h2>
+<div class="list" id="linkedList2"></div>
+<h2>結果 Result</h2>
+<div class="list" id="resultList"></div>
+
+<div id="codeBox">
+  <div class="code-line" id="c1">1: carry = 0</div>
+  <div class="code-line" id="c2">2: while l1 or l2 or carry:</div>
+  <div class="code-line" id="c3">3: &nbsp;&nbsp;sum = carry</div>
+  <div class="code-line" id="c4">4: &nbsp;&nbsp;if l1: sum += l1.val; l1 = l1.next</div>
+  <div class="code-line" id="c5">5: &nbsp;&nbsp;if l2: sum += l2.val; l2 = l2.next</div>
+  <div class="code-line" id="c6">6: &nbsp;&nbsp;carry = sum // 10</div>
+  <div class="code-line" id="c7">7: &nbsp;&nbsp;digit = sum % 10</div>
+  <div class="code-line" id="c8">8: &nbsp;&nbsp;append digit to result list</div>
+</div>
+
+<div id="status"></div>
+
+<div style="text-align:center;">
+  <button onclick="step()">下一步</button>
+</div>
+
+<div class="description">
+  <h3>⏱時間 & 空間複雜度</h3>
+  <table border="1" cellpadding="8" style="margin:auto; border-collapse: collapse;">
+    <tr><th>方法</th><th>時間複雜度</th><th>空間複雜度</th><th>備註</th></tr>
+    <tr><td>逐位加法 + 進位</td><td>O(max(m, n))</td><td>O(max(m, n))</td><td>建立新鏈表</td></tr>
+  </table>
+</div>
+
+<script>
+let l1 = [], l2 = [], result = [];
+let i1 = 0, i2 = 0, carry = 0;
+let phase = 0;
+
+function start() {
+  l1 = document.getElementById("inputL1").value.split(',').map(Number);
+  l2 = document.getElementById("inputL2").value.split(',').map(Number);
+  result = [];
+  i1 = 0; i2 = 0; carry = 0;
+  phase = 0;
+  render();
+  highlight("c1");
+  updateStatus("初始化 carry = 0");
+}
+
+function step() {
+  if (phase === 0) {
+    highlight("c1");
+    carry = 0;
+    phase++;
+    updateStatus("初始化 carry = 0");
+  } else {
+    highlight("c2");
+    if (i1 < l1.length || i2 < l2.length || carry !== 0) {
+      let sum = carry;
+      highlight("c3");
+      let val1 = 0, val2 = 0;
+      if (i1 < l1.length) {
+        highlight("c4");
+        val1 = l1[i1++];
+        sum += val1;
+      }
+      if (i2 < l2.length) {
+        highlight("c5");
+        val2 = l2[i2++];
+        sum += val2;
+      }
+      carry = Math.floor(sum / 10);
+      highlight("c6");
+      let digit = sum % 10;
+      highlight("c7");
+      result.push(digit);
+      highlight("c8");
+      updateStatus(`加總 ${val1} + ${val2} + 上一輪進位 = ${sum}，新位數是 ${digit}，新的 carry 是 ${carry}`);
+    }
+  }
+  render();
+}
+
+function highlight(id) {
+  document.querySelectorAll(".code-line").forEach(l => l.classList.remove("active-code"));
+  if (id) document.getElementById(id).classList.add("active-code");
+}
+
+function render() {
+  const area1 = document.getElementById("linkedList1");
+  const area2 = document.getElementById("linkedList2");
+  const rArea = document.getElementById("resultList");
+  area1.innerHTML = "";
+  area2.innerHTML = "";
+  rArea.innerHTML = "";
+
+  l1.forEach((v, idx) => {
+    const el = document.createElement("div");
+    el.className = "node";
+    el.innerText = v;
+    if (idx === i1) {
+      const p = document.createElement("div");
+      p.className = "pointer l1ptr";
+      p.innerText = "l1";
+      el.appendChild(p);
+    }
+    area1.appendChild(el);
+  });
+
+  l2.forEach((v, idx) => {
+    const el = document.createElement("div");
+    el.className = "node";
+    el.innerText = v;
+    if (idx === i2) {
+      const p = document.createElement("div");
+      p.className = "pointer l2ptr";
+      p.innerText = "l2";
+      el.appendChild(p);
+    }
+    area2.appendChild(el);
+  });
+
+  result.forEach(v => {
+    const el = document.createElement("div");
+    el.className = "node";
+    el.innerText = v;
+    rArea.appendChild(el);
+  });
+}
+
+function updateStatus(msg) {
+  document.getElementById("status").innerText = msg;
+}
+</script>
+</body>
+</html>

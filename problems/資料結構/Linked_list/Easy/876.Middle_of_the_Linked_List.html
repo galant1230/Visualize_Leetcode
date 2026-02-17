@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>Middle of the Linked List 視覺化</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background: #f5f7fa;
+    }
+    h1 {
+      text-align: center;
+      color: #007acc;
+    }
+    .description {
+      max-width: 800px;
+      margin: 1rem auto;
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .list {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+    .node {
+      position: relative;
+      margin: 10px;
+      padding: 10px 16px;
+      background: #3498db;
+      color: white;
+      font-weight: bold;
+      border-radius: 10px;
+    }
+    .node::after {
+      content: "→";
+      position: absolute;
+      right: -18px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      color: #444;
+    }
+    .node:last-child::after {
+      display: none;
+    }
+    .pointer {
+      position: absolute;
+      top: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      padding: 2px 6px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+    .slow { background: #2ecc71; }
+    .fast { background: #e74c3c; }
+    button {
+      background: #007acc;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    #codeBox {
+      background: #272822;
+      color: #f8f8f2;
+      text-align: left;
+      padding: 1rem;
+      border-radius: 6px;
+      max-width: 800px;
+      margin: 2rem auto;
+      font-family: monospace;
+    }
+    .code-line {
+      padding: 2px 0;
+    }
+    .active-code {
+      background-color: #444;
+    }
+  </style>
+</head>
+<body>
+<h1>Middle of the Linked List</h1>
+
+<div class="description">
+  <h2>📌 題目描述</h2>
+  <p>給定一個單向鏈結串列 head，返回中間節點。如果為偶數長度，回傳第二個中間節點。</p>
+  <pre><code>Input: [1,2,3,4,5] → Output: [3,4,5]
+Input: [1,2,3,4,5,6] → Output: [4,5,6]</code></pre>
+  <p>參考影片: <a href="https://www.youtube.com/watch?v=A2_ldqM4QcY&t=63s&ab_channel=NeetCodeIO" target="_blank">NeetCode Middle Node</a></p>
+</div>
+
+<div id="codeBox">
+  <div class="code-line" id="line1">1: slow, fast = head, head</div>
+  <div class="code-line" id="line2">2: while fast and fast.next:</div>
+  <div class="code-line" id="line3">3: &nbsp;&nbsp;slow = slow.next</div>
+  <div class="code-line" id="line4">4: &nbsp;&nbsp;fast = fast.next.next</div>
+  <div class="code-line" id="line5">5: return slow</div>
+</div>
+
+<div style="text-align:center; margin-bottom: 1rem;">
+  <label>輸入鏈表 (用逗號分隔):</label>
+  <input id="inputList" type="text" value="1,2,3,4,5" style="padding:4px; width:200px;">
+  <button onclick="start()">開始模擬</button>
+</div>
+
+<div class="list" id="linkedList"></div>
+<div style="text-align:center;">
+  <button onclick="step()">下一步</button>
+  <button onclick="reset()">重置</button>
+</div>
+
+<div class="description">
+  <h3>⏱ 時間 & 空間複雜度</h3>
+  <table border="1" cellpadding="8" style="margin:auto; border-collapse: collapse;">
+    <tr><th>方法</th><th>時間複雜度</th><th>空間複雜度</th></tr>
+    <tr><td>快慢指針法</td><td>O(n)</td><td>O(1)</td></tr>
+  </table>
+</div>
+
+<script>
+let nodes = [1,2,3,4,5];
+let state = [];
+let slow = 0;
+let fast = 0;
+let finished = false;
+
+function highlight(id) {
+  document.querySelectorAll(".code-line").forEach(l => l.classList.remove("active-code"));
+  if (id) document.getElementById(id).classList.add("active-code");
+}
+
+function buildState() {
+  state = nodes.map((val, idx) => ({
+    val: val,
+    next: idx + 1 < nodes.length ? idx + 1 : null
+  }));
+  slow = 0;
+  fast = 0;
+  finished = false;
+  render();
+  highlight("line1");
+}
+
+function render() {
+  const area = document.getElementById("linkedList");
+  area.innerHTML = "";
+  for (let i = 0; i < state.length; i++) {
+    const node = document.createElement("div");
+    node.className = "node";
+    node.innerText = state[i].val;
+    if (i === slow && !finished) {
+      const s = document.createElement("div");
+      s.className = "pointer slow";
+      s.innerText = "slow";
+      node.appendChild(s);
+    }
+    if (i === fast && !finished) {
+      const f = document.createElement("div");
+      f.className = "pointer fast";
+      f.innerText = "fast";
+      node.appendChild(f);
+    }
+    area.appendChild(node);
+  }
+}
+
+function step() {
+  if (finished) return;
+
+  if (fast == null || state[fast] == null || state[fast].next == null) {
+    highlight("line5");
+    finished = true;
+    render();
+    return;
+  }
+
+  highlight("line2");
+  slow = state[slow].next;
+  highlight("line3");
+  fast = state[state[fast].next].next;
+  highlight("line4");
+  render();
+}
+
+function start() {
+  const input = document.getElementById("inputList").value.trim();
+  nodes = input ? input.split(',').map(Number) : [];
+  buildState();
+}
+
+function reset() {
+  document.getElementById("inputList").value = "1,2,3,4,5";
+  start();
+}
+
+buildState();
+</script>
+</body>
+</html>

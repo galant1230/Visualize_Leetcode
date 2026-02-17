@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>295. Median Finder - Fixed Indentation</title>
+    <style>
+        :root {
+            --editor-bg: #0d1117; --gutter-bg: #161b22; --active-line: #21262d;
+            --indicator: #3b82f6; --primary: #3b82f6; --text: #c9d1d9;
+            --max-heap: #f87171; --min-heap: #34d399;
+            --kw: #ff7b72; --fn: #d2a8ff; --cm: #8b949e;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f3f4f6; padding: 20px; margin: 0; }
+        .container { max-width: 1300px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 25px rgba(0,0,0,0.1); }
+        
+        .layout { display: grid; grid-template-columns: 480px 1fr; gap: 30px; }
+
+        /* 監控與 Heap 視覺化 */
+        .monitor { background: #1e1e1e; border-radius: 8px; padding: 15px; color: #d4d4d4; font-family: monospace; margin-bottom: 20px; border-left: 5px solid var(--primary); }
+        .heap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .heap-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 180px; }
+        .node { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s; }
+        .node-max { background: var(--max-heap); }
+        .node-min { background: var(--min-heap); }
+        .top-active { outline: 3px solid #f59e0b; outline-offset: 2px; transform: scale(1.1); }
+
+        /* 核心：IDE 縮排排版 */
+        .editor { background: var(--editor-bg); border-radius: 8px; border: 1px solid #30363d; height: 550px; overflow: hidden; display: flex; flex-direction: column; }
+        .editor-header { background: var(--gutter-bg); padding: 10px 15px; color: #8b949e; font-size: 12px; border-bottom: 1px solid #30363d; }
+        .code-view { flex: 1; padding: 15px 0; font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.6; color: var(--text); overflow-y: auto; }
+        
+        .line { display: flex; position: relative; min-height: 22px; }
+        .line-no { width: 45px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; user-select: none; flex-shrink: 0; }
+        
+        /* 縮排核心：使用 ch 確保絕對對齊 */
+        .line-content { white-space: pre; padding-left: 15px; }
+        .indent-0 { padding-left: 15px; }
+        .indent-1 { padding-left: calc(15px + 4ch); }
+        .indent-2 { padding-left: calc(15px + 8ch); }
+        .indent-3 { padding-left: calc(15px + 12ch); }
+
+        .line-active { background: var(--active-line); }
+        .line-active::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--indicator); }
+
+        .kw { color: var(--kw); }
+        .fn { color: var(--fn); }
+        .cm { color: var(--cm); }
+
+        button { flex: 1; padding: 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background: var(--primary); color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="margin-top:0;">295. Find Median from Data Stream</h2>
+    <div class="layout">
+        <div class="visual-side">
+            <div class="monitor">
+                <div>Incoming Num: <span id="cur-n" style="color:#4fc1ff">-</span></div>
+                <div>Median: <span id="cur-m" style="color:#fbbf24">0.0</span></div>
+            </div>
+            <div class="heap-grid">
+                <div class="heap-card">
+                    <div style="font-size:11px; color:#9ca3af; margin-bottom:10px;">MAX-HEAP (LEFT)</div>
+                    <div id="lNodes" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
+                </div>
+                <div class="heap-card">
+                    <div style="font-size:11px; color:#9ca3af; margin-bottom:10px;">MIN-HEAP (RIGHT)</div>
+                    <div id="rNodes" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="step()">下一步 Simulation ▶</button>
+                <button onclick="reset()" style="background:#94a3b8;">重置</button>
+            </div>
+            <p id="msg" style="font-size:13px; color:#64748b; margin-top:15px; text-align:center;"></p>
+        </div>
+
+        <div class="editor">
+            <div class="editor-header">solution.py</div>
+            <div class="code-view" id="codeArea"></div>
+        </div>
+    </div>
+
+    <div style="margin-top:25px; display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+        <div style="background:#f0f9ff; padding:15px; border-radius:10px; border-left:5px solid #0ea5e9;">
+            <h4 style="margin:0 0 10px 0;">📊 複雜度分析</h4>
+            addNum: <b>O(log N)</b><br>
+            findMedian: <b>O(1)</b><br>
+            空間複雜度: <b>O(N)</b>
+        </div>
+        <div style="background:#fef2f2; padding:15px; border-radius:10px; border-left:5px solid #ef4444;">
+            <h4 style="margin:0 0 10px 0;">⚖️ 平衡規則</h4>
+            1. 插入 Small (Max-Heap)，再彈出最大值給 Large (Min-Heap)。<br>
+            2. 若 Large 較長，則彈回一個給 Small。
+        </div>
+    </div>
+</div>
+
+<script>
+const codeData = [
+    { t: "class MedianFinder:", i: 0 },
+    { t: "def __init__(self):", i: 1 },
+    { t: "self.small = [] # Max-heap", i: 2 },
+    { t: "self.large = [] # Min-heap", i: 2 },
+    { t: "", i: 0 },
+    { t: "def addNum(self, num):", i: 1 },
+    { t: "heapq.heappush(self.small, -num)", i: 2 },
+    { t: "heapq.heappush(self.large, -heapq.heappop(self.small))", i: 2 },
+    { t: "", i: 0 },
+    { t: "if len(self.large) > len(self.small):", i: 2 },
+    { t: "heapq.heappush(self.small, -heapq.heappop(self.large))", i: 3 },
+    { t: "", i: 0 },
+    { t: "def findMedian(self):", i: 1 },
+    { t: "if len(self.small) > len(self.large):", i: 2 },
+    { t: "return float(-self.small[0])", i: 3 },
+    { t: "return (-self.small[0] + self.large[0]) / 2.0", i: 2 }
+];
+
+const trace = [
+    { ln: 6, n: 1, s: [1], l: [], m: "插入 1 到 Small" },
+    { ln: 9, n: 1, s: [1], l: [], m: "檢查平衡..." },
+    { ln: 6, n: 5, s: [5,1], l: [], m: "插入 5" },
+    { ln: 7, n: 5, s: [1], l: [5], m: "調整：5 移至 Large" },
+    { ln: 9, n: 5, s: [1], l: [5], m: "兩堆平衡" },
+    { ln: 6, n: 2, s: [2,1], l: [5], m: "插入 2" },
+    { ln: 7, n: 2, s: [1], l: [2,5], m: "2 移至 Large" },
+    { ln: 10, n: 2, s: [2,1], l: [5], m: "平衡：將 2 移回 Small" },
+    { ln: 14, n: 2, s: [2,1], l: [5], m: "中位數 = 2.0" }
+];
+
+let idx = 0;
+function reset() {
+    idx = 0;
+    const area = document.getElementById('codeArea');
+    area.innerHTML = codeData.map((l, i) => `
+        <div class="line" id="l-${i}">
+            <div class="line-no">${i+1}</div>
+            <div class="line-content indent-${l.i}">${highlight(l.t)}</div>
+        </div>
+    `).join('');
+    render();
+}
+
+function highlight(c) {
+    return c.replace(/def |class |if |return |float/g, x => `<span class="kw">${x}</span>`)
+            .replace(/self|heapq/g, x => `<span class="fn">${x}</span>`)
+            .replace(/#.*/g, x => `<span class="cm">${x}</span>`);
+}
+
+function step() { if (idx < trace.length - 1) { idx++; render(); } }
+
+function render() {
+    const s = trace[idx];
+    document.querySelectorAll('.line').forEach(l => l.classList.remove('line-active'));
+    document.getElementById(`l-${s.ln}`).classList.add('line-active');
+    document.getElementById('cur-n').innerText = s.n;
+    document.getElementById('msg').innerText = s.m;
+
+    const lBox = document.getElementById('lNodes');
+    const rBox = document.getElementById('rNodes');
+    lBox.innerHTML = ''; rBox.innerHTML = '';
+
+    s.s.sort((a,b)=>b-a).forEach((v, i) => {
+        const d = document.createElement('div');
+        d.className = 'node node-max' + (i === 0 ? ' top-active' : '');
+        d.innerText = v;
+        lBox.appendChild(d);
+    });
+    s.l.sort((a,b)=>a-b).forEach((v, i) => {
+        const d = document.createElement('div');
+        d.className = 'node node-min' + (i === 0 ? ' top-active' : '');
+        d.innerText = v;
+        rBox.appendChild(d);
+    });
+
+    let med = s.s.length > s.l.length ? s.s[0] : (s.s.length === 0 ? 0 : (s.s[0] + s.l[0]) / 2);
+    document.getElementById('cur-m').innerText = med.toFixed(1);
+}
+reset();
+</script>
+</body>
+</html>

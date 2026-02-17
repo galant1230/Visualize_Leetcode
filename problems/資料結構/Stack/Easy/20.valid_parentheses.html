@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 20. Valid Parentheses 視覺化教學</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --code-bg: #1e293b;
+            --stack-bg: #f8fafc;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        
+        h1 { text-align: center; color: #0f172a; margin-bottom: 30px; }
+        .section { margin-bottom: 30px; }
+        h2 { border-left: 5px solid var(--primary); padding-left: 15px; font-size: 1.4rem; margin-bottom: 15px; }
+
+        /* 模擬區域 */
+        .viz-box { border: 2px solid #e2e8f0; border-radius: 12px; padding: 30px; background: white; margin-bottom: 20px; }
+        .input-group { text-align: center; margin-bottom: 20px; }
+        input { padding: 10px; border: 2px solid #cbd5e1; border-radius: 6px; font-size: 1rem; width: 200px; font-family: monospace; }
+        
+        .simulation-area { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+        
+        /* 堆疊視覺化 */
+        .stack-wrapper { display: flex; flex-direction: column; align-items: center; }
+        .stack-visual { 
+            width: 120px; height: 250px; 
+            border: 4px solid #64748b; border-top: none; 
+            border-radius: 0 0 12px 12px;
+            display: flex; flex-direction: column-reverse; /* 由下往上堆 */
+            padding: 10px; background: var(--stack-bg); gap: 8px;
+        }
+        .stack-item {
+            height: 40px; background: var(--primary); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; border-radius: 4px; font-size: 1.2rem;
+            animation: pushIn 0.3s ease-out;
+        }
+        @keyframes pushIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* 程式碼面板 */
+        .code-panel { background: var(--code-bg); color: #e2e8f0; padding: 20px; border-radius: 12px; font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.6; position: relative; }
+        .line { display: block; border-left: 3px solid transparent; padding-left: 15px; white-space: pre; }
+        .active-line { background: #334155; border-left-color: #3b82f6; color: #fff; }
+        
+        /* 狀態訊息 */
+        .msg-box { min-height: 60px; background: #eff6ff; border: 1px dashed var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 10px; font-weight: bold; color: var(--primary); margin-bottom: 20px; }
+
+        .btn-group { text-align: center; margin-top: 20px; }
+        button { padding: 12px 24px; cursor: pointer; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; transition: 0.2s; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        .keyword { color: #c678dd; }
+        .comment { color: #5c6370; font-style: italic; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        th { background: #f8fafc; color: #64748b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Valid Parentheses 視覺化教學</h1>
+
+    <div class="section">
+        <h2>1. 題目敘述</h2>
+        <p>給定包含 <code>()[]{}</code> 的字串，判斷是否有效。必須以正確順序匹配且閉合。</p>
+        <p><strong>範例：</strong> <code>s = "([{}])"</code> → <span style="color:var(--success)">True</span> | <code>s = "(]"</code> → <span style="color:var(--danger)">False</span></p>
+    </div>
+
+    <div class="section">
+        <h2>2. 逐步模擬 (Step-by-Step)</h2>
+        <div class="viz-box">
+            <div class="input-group">
+                <input type="text" id="inputStr" value="([])">
+                <button onclick="startSimulation()">開始模擬</button>
+                <button id="nextBtn" onclick="nextStep()" disabled>下一步</button>
+            </div>
+            
+            <div class="msg-box" id="msg">請輸入字串並點擊「開始模擬」</div>
+
+            <div class="simulation-area">
+                <div class="stack-wrapper">
+                    <div style="font-weight:bold; margin-bottom:10px;">堆疊狀態 (Stack)</div>
+                    <div class="stack-visual" id="stack-v"></div>
+                    <div style="margin-top:10px; color:#64748b; font-size:0.9rem;">(底端)</div>
+                </div>
+
+                <div class="code-panel" id="code-box">
+<span class="line" id="l1"><span class="keyword">def</span> isValid(s):</span>
+<span class="line" id="l2">    stack = []</span>
+<span class="line" id="l3">    pairs = {<span style="color:#98c379">')'</span>:<span style="color:#98c379">'('</span>, <span style="color:#98c379">']'</span>:<span style="color:#98c379">'['</span>, <span style="color:#98c379">'}'</span>:<span style="color:#98c379">'{'</span>}</span>
+<span class="line" id="l4"></span>
+<span class="line" id="l5">    <span class="keyword">for</span> char <span class="keyword">in</span> s:</span>
+<span class="line" id="l6">        <span class="keyword">if</span> char <span class="keyword">not in</span> pairs:</span>
+<span class="line" id="l7">            stack.append(char) <span class="comment"># 左括號 Push</span></span>
+<span class="line" id="l8">        <span class="keyword">else</span>:</span>
+<span class="line" id="l9">            <span class="keyword">if not</span> stack <span class="keyword">or</span> stack.pop() != pairs[char]:</span>
+<span class="line" id="l10">                <span class="keyword">return</span> <span class="keyword">False</span> <span class="comment"># 不匹配 Pop</span></span>
+<span class="line" id="l11"></span>
+<span class="line" id="l12">    <span class="keyword">return</span> len(stack) == <span class="val">0</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>3. 複雜度分析</h2>
+        <table>
+            <tr><th>分析項目</th><th>Big-O</th><th>說明</th></tr>
+            <tr><td>時間複雜度</td><td>$O(n)$</td><td>只需遍歷字串長度 $n$ 一次。</td></tr>
+            <tr><td>空間複雜度</td><td>$O(n)$</td><td>最壞情況下（全是左括號）堆疊需儲存所有字元。</td></tr>
+        </table>
+    </div>
+</div>
+
+<script>
+    let s = "";
+    let index = 0;
+    let stack = [];
+    const pairs = { ')': '(', ']': '[', '}': '{' };
+
+    function startSimulation() {
+        s = document.getElementById('inputStr').value;
+        if (!s) return;
+        index = 0;
+        stack = [];
+        document.getElementById('nextBtn').disabled = false;
+        updateUI(2, `開始模擬：輸入字串 "${s}"`);
+    }
+
+    function nextStep() {
+        if (index < s.length) {
+            let char = s[index];
+            if (!pairs[char]) {
+                // 左括號
+                stack.push(char);
+                updateUI(7, `讀取到左括號 "${char}"，推入 (Push) 堆疊`);
+            } else {
+                // 右括號
+                if (stack.length === 0) {
+                    updateUI(10, `讀取到右括號 "${char}"，但堆疊已空！結果：False`, true);
+                    return;
+                }
+                let top = stack.pop();
+                if (top !== pairs[char]) {
+                    updateUI(10, `右括號 "${char}" 與頂部 "${top}" 不匹配！結果：False`, true);
+                    return;
+                }
+                updateUI(9, `右括號 "${char}" 與 "${top}" 匹配，彈出 (Pop) 堆疊`);
+            }
+            index++;
+        } else {
+            // 結束檢查
+            const result = stack.length === 0;
+            updateUI(12, result ? "遍歷完成，堆疊為空，結果：True ✅" : "遍歷完成，堆疊不為空，結果：False ❌");
+            document.getElementById('nextBtn').disabled = true;
+        }
+    }
+
+    function updateUI(lineNum, msg, isError = false) {
+        // 更新訊息
+        const msgBox = document.getElementById('msg');
+        msgBox.innerText = msg;
+        msgBox.style.color = isError ? "var(--danger)" : "var(--primary)";
+        msgBox.style.borderColor = isError ? "var(--danger)" : "var(--primary)";
+
+        // 更新代碼高亮
+        document.querySelectorAll('.line').forEach(el => el.classList.remove('active-line'));
+        document.getElementById('l' + lineNum).classList.add('active-line');
+
+        // 更新堆疊視覺化
+        const stackV = document.getElementById('stack-v');
+        stackV.innerHTML = '';
+        stack.forEach(char => {
+            const item = document.createElement('div');
+            item.className = 'stack-item';
+            item.innerText = char;
+            stackV.appendChild(item);
+        });
+    }
+</script>
+
+<script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

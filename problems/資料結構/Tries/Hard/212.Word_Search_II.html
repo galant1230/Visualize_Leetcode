@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>212. Word Search II - Trie & DFS</title>
+    <style>
+        :root {
+            --editor-bg: #0d1117; --gutter-bg: #161b22; --active-line: #21262d;
+            --indicator: #f59e0b; --primary: #f59e0b; --text: #c9d1d9;
+            --kw: #ff7b72; --fn: #d2a8ff; --vr: #ffa657; --accent: #79c0ff;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; margin: 0; }
+        .container { max-width: 1260px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        
+        .grid { display: grid; grid-template-columns: 500px 1fr; gap: 25px; }
+
+        /* 棋盤樣式 */
+        .board-container { background: #f8fafc; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; }
+        .board { display: grid; grid-template-columns: repeat(4, 50px); gap: 10px; justify-content: center; }
+        .cell { width: 50px; height: 50px; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; background: white; border-radius: 8px; transition: 0.3s; color: #1e293b; }
+        .cell-active { background: #fef3c7; border-color: var(--primary); transform: scale(1.1); box-shadow: 0 0 10px rgba(245,158,11,0.3); }
+
+        /* Trie 視覺化區塊 */
+        .trie-container { margin-top: 20px; border: 1px solid #d0d7de; border-radius: 10px; background: #fff; height: 320px; position: relative; overflow: hidden; }
+        .trie-node { position: absolute; width: 30px; height: 30px; border: 1px solid #64748b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; background: white; transition: 0.4s; transform: translateX(-50%); z-index: 2; }
+        .trie-active { background: var(--primary); color: white; border-color: var(--primary); transform: translateX(-50%) scale(1.2); }
+        .trie-end { border: 2px solid #ef4444; color: #ef4444; font-weight: bold; }
+
+        /* 監控面板 */
+        .debug-panel { background: #1e1e1e; color: #d4d4d4; border-radius: 8px; padding: 15px; margin-bottom: 20px; font-family: 'Consolas', monospace; font-size: 14px; border-left: 6px solid var(--primary); }
+        .var-name { color: #ce9178; }
+        .var-val { color: #4fc1ff; font-weight: bold; }
+
+        /* 編輯器 */
+        .editor { background: var(--editor-bg); border-radius: 8px; border: 1px solid #30363d; display: flex; flex-direction: column; min-height: 600px; }
+        .editor-header { background: var(--gutter-bg); padding: 12px 15px; color: #8b949e; font-size: 13px; border-bottom: 1px solid #30363d; }
+        .code-container { flex: 1; padding: 10px 0; font-family: 'Fira Code', monospace; font-size: 13px; line-height: 1.6; color: var(--text); overflow-y: auto; }
+        .line { display: flex; position: relative; padding-left: 45px; white-space: pre; }
+        .line-num { position: absolute; left: 0; width: 35px; text-align: right; color: #484f58; padding-right: 10px; border-right: 1px solid #30363d; }
+        .line-active { background: var(--active-line); }
+        .line-active::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--indicator); }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button { flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 15px; }
+        button:hover { filter: brightness(1.1); }
+        
+        svg { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+        line { stroke: #e2e8f0; stroke-width: 2; }
+        .kw { color: var(--kw); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header" style="border-bottom: 2px solid #f1f5f9; margin-bottom: 20px; padding-bottom: 10px;">
+        <h2 style="margin:0; color: #1e293b;">212. Word Search II <small style="color:#64748b; font-weight: normal;">(Trie + Backtracking)</small></h2>
+    </div>
+
+    <div class="grid">
+        <div class="visual-side">
+            <div class="debug-panel">
+                <div>// DFS 運行監控</div>
+                <div style="margin-top:8px;"><span class="var-name">Path:</span> <span class="var-val" id="mon-path">""</span></div>
+                <div><span class="var-name">Trie Node:</span> <span class="var-val" id="mon-node">root</span></div>
+                <div><span class="var-name">Words Found:</span> <span id="mon-found" style="color:#10b981; font-weight:bold;">[]</span></div>
+            </div>
+
+            <div class="board-container">
+                <div style="text-align:center; font-size:12px; color:#64748b; margin-bottom:10px; letter-spacing:1px; font-weight:bold;">BOARD</div>
+                <div class="board" id="boardGrid"></div>
+            </div>
+
+            <div class="trie-container">
+                <div style="position:absolute; top:10px; left:10px; font-size:12px; color:#94a3b8; font-weight:bold; z-index:5;">TRIE STRUCTURE</div>
+                <svg id="svgLines"></svg>
+                <div id="trieNodes"></div>
+            </div>
+
+            <div class="btn-group">
+                <button onclick="nextStep()">執行下一步 DFS ▶</button>
+                <button onclick="resetDemo()" style="background:#94a3b8;">重置</button>
+            </div>
+        </div>
+
+        <div class="editor">
+            <div class="editor-header">solution.py</div>
+            <div class="code-container" id="codePanel"></div>
+        </div>
+    </div>
+
+    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+        <div style="background:#f8fafc; padding:20px; border-radius:10px; border-left: 5px solid #3b82f6;">
+            <h3 style="margin:0 0 10px 0; font-size: 18px;">💡 核心邏輯</h3>
+            <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+                1. <b>Trie 建構</b>：先將所有單字建成字典樹。每個節點代表一個字符。<br>
+                2. <b>同步 DFS</b>：在棋盤移動時，我們不同時在 Trie 上移動。如果棋盤上的字母不在當前 Trie 節點的子節點中，表示此路不通，直接<b>剪枝 (Pruning)</b>。<br>
+                3. <b>去重與優化</b>：找到單字後，將其從 Trie 中移除或標記，避免重複搜尋。
+            </p>
+        </div>
+        <div style="background:#fdf2f8; padding:20px; border-radius:10px; border-left: 5px solid #ec4899;">
+            <h3 style="margin:0 0 10px 0; font-size: 18px;">📊 複雜度分析</h3>
+            <table style="width:100%; font-size:14px; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #fce7f3;"><td style="padding:10px 0;">時間複雜度</td><td><b>O(M * 4 * 3^(L-1))</b></td></tr>
+                <tr style="border-bottom: 1px solid #fce7f3;"><td style="padding:10px 0;">空間複雜度</td><td><b>O(W * L)</b></td></tr>
+                <tr><td colspan="2" style="font-size: 12px; color: #9d174d; padding-top:10px;">M 為格數，L 為最長單字，W 為單字數量。</td></tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+const board = [
+    ['o','a','a','n'],
+    ['e','t','a','e'],
+    ['i','h','k','r'],
+    ['i','f','l','v']
+];
+const codeLines = [
+    "def findWords(board, words):",
+    "    trie = {}",
+    "    for w in words:",
+    "        node = trie",
+    "        for char in w:",
+    "            node = node.setdefault(char, {})",
+    "        node['#'] = w # 結束標記",
+    "    ",
+    "    res, R, C = set(), len(board), len(board[0])",
+    "    ",
+    "    def dfs(r, c, node):",
+    "        char = board[r][c]",
+    "        curr_node = node[char]",
+    "        if '#' in curr_node:",
+    "            res.add(curr_node['#'])",
+    "        ",
+    "        board[r][c] = '@' # 標記訪問",
+    "        for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:",
+    "            nr, nc = r+dr, c+dc",
+    "            if 0<=nr<R and 0<=nc<C and board[nr][nc] in curr_node:",
+    "                dfs(nr, nc, curr_node)",
+    "        board[r][c] = char # 回溯",
+    "    ",
+    "    for r in range(R):",
+    "        for c in range(C):",
+    "            if board[r][c] in trie:",
+    "                dfs(r, c, trie)",
+    "    return list(res)"
+];
+
+const trieData = {
+    "root": {x: 50, y: 30, p: null},
+    "o": {x: 30, y: 100, p: "root"},
+    "oa": {x: 20, y: 170, p: "o"},
+    "oat": {x: 15, y: 240, p: "oa"},
+    "oath": {x: 15, y: 300, p: "oat", isEnd: true},
+    "e": {x: 70, y: 100, p: "root"},
+    "ea": {x: 80, y: 170, p: "e"},
+    "eat": {x: 85, y: 240, p: "ea", isEnd: true}
+};
+
+const trace = [
+    { ln: 24, r: 0, c: 0, path: "o", node: "o", msg: "於 (0,0) 找到 'o'" },
+    { ln: 17, r: 0, c: 1, path: "oa", node: "oa", msg: "移動至 (0,1) 'a'" },
+    { ln: 20, r: 1, c: 1, path: "oat", node: "oat", msg: "移動至 (1,1) 't'" },
+    { ln: 20, r: 2, c: 1, path: "oath", node: "oath", msg: "找到單字 OATH!", found: ["oath"] },
+    { ln: 24, r: 1, c: 0, path: "e", node: "e", msg: "回溯結束，從 (1,0) 'e' 開始" },
+    { ln: 17, r: 1, c: 1, path: "et", node: "e", msg: "'et' 不在 Trie 中，剪枝" },
+    { ln: 17, r: 1, c: 2, path: "ea", node: "ea" },
+    { ln: 20, r: 1, c: 3, path: "eat", node: "eat", found: ["oath", "eat"] }
+];
+
+let stepIdx = 0;
+
+function resetDemo() {
+    stepIdx = 0;
+    const panel = document.getElementById('codePanel');
+    panel.innerHTML = codeLines.map((line, i) => `
+        <div class="line" id="line-${i}">
+            <div class="line-num">${i + 1}</div>
+            <div class="line-content">${line.replace(/def |if |for |in |return |set/g, x => `<span class="kw">${x}</span>`)}</div>
+        </div>`).join('');
+    
+    const boardGrid = document.getElementById('boardGrid');
+    boardGrid.innerHTML = board.flatMap((row, r) => row.map((char, c) => `<div class="cell" id="cell-${r}-${c}">${char}</div>`)).join('');
+
+    const nodesWrap = document.getElementById('trieNodes');
+    const svg = document.getElementById('svgLines');
+    nodesWrap.innerHTML = ''; svg.innerHTML = '';
+
+    Object.keys(trieData).forEach(id => {
+        const n = trieData[id];
+        const div = document.createElement('div');
+        div.className = 'trie-node' + (n.isEnd ? ' trie-end' : '');
+        div.id = `trie-${id}`;
+        div.style.left = n.x + "%"; div.style.top = n.y + "px";
+        div.innerText = id === "root" ? "RT" : id[id.length-1];
+        nodesWrap.appendChild(div);
+
+        if (n.p) {
+            const parent = trieData[n.p];
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", parent.x + "%"); line.setAttribute("y1", parent.y + 15);
+            line.setAttribute("x2", n.x + "%"); line.setAttribute("y2", n.y);
+            svg.appendChild(line);
+        }
+    });
+    render();
+}
+
+function nextStep() {
+    if (stepIdx < trace.length - 1) { stepIdx++; render(); }
+}
+
+function render() {
+    const s = trace[stepIdx];
+    document.querySelectorAll('.line').forEach(l => l.classList.remove('line-active'));
+    document.getElementById(`line-${s.ln}`).classList.add('line-active');
+
+    document.querySelectorAll('.cell').forEach(c => c.classList.remove('cell-active'));
+    document.getElementById(`cell-${s.r}-${s.c}`).classList.add('cell-active');
+
+    document.querySelectorAll('.trie-node').forEach(n => n.classList.remove('trie-active'));
+    if (s.node) document.getElementById(`trie-${s.node}`).classList.add('trie-active');
+
+    document.getElementById('mon-path').innerText = `"${s.path}"`;
+    document.getElementById('mon-node').innerText = s.node;
+    document.getElementById('mon-found').innerText = JSON.stringify(s.found || []);
+}
+
+resetDemo();
+</script>
+</body>
+</html>
+

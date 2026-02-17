@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>Remove Duplicates 可視化模擬器</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      padding: 2rem;
+      margin: 0;
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    h2, h3 {
+      color: #007acc;
+    }
+    table {
+      margin: 1rem auto;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    td, th {
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 14px;
+      text-align: center;
+    }
+    .written {
+      background-color: #4caf50;
+      color: white;
+    }
+    .pointer {
+      color: red;
+      font-weight: bold;
+    }
+    #codeBox {
+      background: #272822;
+      color: #f8f8f2;
+      padding: 1rem;
+      border-radius: 6px;
+      margin: 2rem 0;
+      font-family: monospace;
+    }
+    .code-line {
+      padding: 2px 0;
+    }
+    .active-code {
+      background-color: #444;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      margin: 0.3rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      background: #007acc;
+      color: white;
+    }
+    input {
+      padding: 6px;
+      margin: 0.2rem;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>🧹 26. 移除排序陣列中的重複項目</h2>
+  <hr>
+  <h3>📘 題目描述</h3>
+  <p>給定一個<strong>已排序</strong>的整數陣列 <code>nums</code>，請<strong>就地</strong>移除重複的元素，使每個元素只出現一次，並返回新陣列的長度 <code>k</code>。</p>
+  <p>你必須使用 O(1) 額外空間並就地修改輸入陣列。</p>
+
+  <hr>
+  <h3>🧪 範例</h3>
+  <pre><code>輸入: nums = [0,0,1,1,1,2,2,3,3,4]
+輸出: 5, nums = [0,1,2,3,4,_,_,_,_,_]</code></pre>
+
+  <hr>
+  <h3>⏳ 時間與空間複雜度</h3>
+  <ul>
+    <li><strong>時間複雜度：</strong> O(n)</li>
+    <li><strong>空間複雜度：</strong> O(1)</li>
+  </ul>
+
+  <hr>
+  <h3>▶️ 模擬器</h3>
+  <div>
+    <label>輸入 nums: <input type="text" id="numsInput" value="0,0,1,1,1,2,2,3,3,4"></label>
+    <button onclick="startSim()">🔃 重設</button>
+    <button onclick="stepSim()">🧭 下一步</button>
+  </div>
+
+  <table id="stepTable">
+    <thead>
+    <tr><th>read</th><th>write</th><th>nums[read]</th><th>動作</th><th>目前 nums</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h3>📍 陣列狀態</h3>
+  <table id="arrayState"></table>
+
+  <div id="codeBox">
+    <div class="code-line">1: if not nums: return 0</div>
+    <div class="code-line">2: write = 1</div>
+    <div class="code-line">3: for read in range(1, len(nums)):</div>
+    <div class="code-line">4:&nbsp;&nbsp;&nbsp;&nbsp;if nums[read] != nums[read - 1]:</div>
+    <div class="code-line">5:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nums[write] = nums[read]</div>
+    <div class="code-line">6:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;write += 1</div>
+    <div class="code-line">7: return write</div>
+  </div>
+</div>
+
+<script>
+  let nums = [], read = 1, write = 1;
+  const tbody = document.querySelector("#stepTable tbody");
+  const codeLines = document.querySelectorAll(".code-line");
+  const arrayTable = document.getElementById("arrayState");
+
+  function highlight(line) {
+    codeLines.forEach((l, idx) => l.classList.toggle("active-code", idx === line - 1));
+  }
+
+  function renderArrayState() {
+    arrayTable.innerHTML = "";
+    const row1 = document.createElement("tr");
+    const row2 = document.createElement("tr");
+    for (let i = 0; i < nums.length; i++) {
+      const cell1 = document.createElement("td");
+      cell1.textContent = nums[i];
+      row1.appendChild(cell1);
+      const cell2 = document.createElement("td");
+      if (i === read && i === write) cell2.innerHTML = '<span class="pointer">R/W</span>';
+      else if (i === read) cell2.innerHTML = '<span class="pointer">R</span>';
+      else if (i === write) cell2.innerHTML = '<span class="pointer">W</span>';
+      else cell2.innerHTML = "&nbsp;";
+      row2.appendChild(cell2);
+    }
+    arrayTable.appendChild(row1);
+    arrayTable.appendChild(row2);
+  }
+
+  function startSim() {
+    nums = document.getElementById("numsInput").value.split(',').map(x => parseInt(x.trim()));
+    read = 1;
+    write = 1;
+    tbody.innerHTML = "";
+    highlight(2);
+    renderArrayState();
+  }
+
+  function stepSim() {
+    if (read >= nums.length) return;
+    highlight(4);
+    let action = "";
+    if (nums[read] !== nums[read - 1]) {
+      highlight(5);
+      nums[write] = nums[read];
+      action = `nums[${write}] = ${nums[read]}`;
+      write++;
+      highlight(6);
+    } else {
+      action = `跳過重複值 ${nums[read]}`;
+    }
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${read}</td>
+      <td>${write}</td>
+      <td>${nums[read]}</td>
+      <td>${action}</td>
+      <td>${nums.join(', ')}</td>
+    `;
+    tbody.appendChild(row);
+    read++;
+    renderArrayState();
+  }
+</script>
+</body>
+</html>

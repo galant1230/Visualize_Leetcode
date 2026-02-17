@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Merge Two Sorted Lists 專業教學版</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --code-bg: #282c34;
+            --hl-keyword: #c678dd;
+            --hl-func: #61afef;
+            --hl-var: #e06c75;
+            --hl-num: #d19a66;
+            --hl-comment: #7f848e;
+            --node-l1: #ef4444;
+            --node-l2: #f59e0b;
+            --node-merged: #22c55e;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
+        /* 題頭資訊 */
+        .problem-info { background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 5px solid var(--primary); }
+        .problem-info h2 { margin-top: 0; color: #1e293b; }
+
+        .header-ui { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-group { display: flex; background: #e2e8f0; padding: 4px; border-radius: 10px; }
+        .tab { padding: 8px 18px; border: none; background: transparent; cursor: pointer; font-weight: 600; border-radius: 8px; transition: 0.2s; }
+        .tab.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        /* 動態畫布 */
+        .stage { background: #fafafa; border: 2px solid #edf2f7; border-radius: 15px; height: 380px; position: relative; margin-bottom: 25px; overflow: hidden; }
+        .label { position: absolute; font-size: 11px; font-weight: bold; color: #a0aec0; left: 20px; }
+        
+        .node {
+            width: 48px; height: 48px; color: white; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+            position: absolute; transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .node.dummy { background: #4a5568; }
+        .ptr-label { position: absolute; font-size: 10px; padding: 2px 6px; border-radius: 4px; color: white; top: -30px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+
+        /* 專業 Code Panel */
+        .grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 20px; }
+        .code-panel { 
+            background: var(--code-bg); color: #abb2bf; padding: 20px; border-radius: 15px; 
+            font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.6;
+            overflow-x: auto;
+        }
+        .line { display: block; border-left: 4px solid transparent; padding-left: 15px; white-space: pre; opacity: 0.4; }
+        .active-line { background: rgba(255,255,255,0.1); border-left-color: var(--primary); opacity: 1; }
+
+        /* 高亮顏色 */
+        .k { color: var(--hl-keyword); } .f { color: var(--hl-func); } .v { color: var(--hl-var); } .n { color: var(--hl-num); }
+
+        .controls { text-align: center; margin-top: 25px; }
+        .btn-main { padding: 12px 35px; background: #1a202c; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-main:hover { opacity: 0.9; transform: translateY(-1px); }
+        input { border: 1px solid #cbd5e0; padding: 8px; border-radius: 6px; width: 100px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="problem-info">
+        <h2>LeetCode 21. Merge Two Sorted Lists</h2>
+        <p>將 <strong>list1</strong> 與 <strong>list2</strong> 合併，保持遞增順序。空間複雜度必須為 <strong>O(1)</strong>。</p>
+    </div>
+
+    <div class="header-ui">
+        <div>
+            L1: <input type="text" id="in1" value="1,2,4">
+            L2: <input type="text" id="in2" value="1,3,4">
+        </div>
+        <div class="btn-group">
+            <button class="tab active" id="btn-py" onclick="setLang('py')">Python</button>
+            <button class="tab" id="btn-c" onclick="setLang('c')">C++</button>
+        </div>
+    </div>
+
+    <div class="stage" id="stage">
+        <div class="label" style="top: 20px;">List 1 (待合併)</div>
+        <div class="label" style="top: 130px;">List 2 (待合併)</div>
+        <div class="label" style="top: 250px;">Merged List (拼接結果)</div>
+        <div id="elements"></div>
+    </div>
+
+    <div class="grid">
+        <div class="code-panel" id="code"></div>
+        <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 15px;">
+            <h3 id="step-title" style="margin:0; color:var(--primary);">教學說明</h3>
+            <p id="step-desc" style="font-size: 0.9rem; color: #4a5568; min-height: 80px;">點擊下一步開始模擬。</p>
+            <div style="font-size: 0.85rem; border-top: 1px solid #eee; padding-top: 15px;">
+                <strong>時空複雜度：</strong><br>
+                時間: 180°C O(n+m) | 空間: O(1)
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-main" style="background:#718096;" onclick="init()">重置</button>
+        <button class="btn-main" id="btn-step" onclick="runNext()">下一步 (Step)</button>
+    </div>
+</div>
+
+<script>
+    let l1 = [], l2 = [], merged = [], lang = 'py', p1 = 0, p2 = 0;
+
+    const snippets = {
+        py: [
+            `<span class="k">def</span> <span class="f">mergeTwoLists</span>(<span class="v">l1</span>, <span class="v">l2</span>):`,
+            `    <span class="v">dummy</span> = <span class="f">ListNode</span>(<span class="n">0</span>)`,
+            `    <span class="v">curr</span> = <span class="v">dummy</span>`,
+            `    <span class="k">while</span> <span class="v">l1</span> <span class="k">and</span> <span class="v">l2</span>:`,
+            `        <span class="k">if</span> <span class="v">l1</span>.<span class="v">val</span> &lt;= <span class="v">l2</span>.<span class="v">val</span>:`,
+            `            <span class="v">curr</span>.<span class="v">next</span> = <span class="v">l1</span>`,
+            `            <span class="v">l1</span> = <span class="v">l1</span>.<span class="v">next</span>`,
+            `        <span class="k">else</span>:`,
+            `            <span class="v">curr</span>.<span class="v">next</span> = <span class="v">l2</span>`,
+            `            <span class="v">l2</span> = <span class="v">l2</span>.<span class="v">next</span>`,
+            `        <span class="v">curr</span> = <span class="v">curr</span>.<span class="v">next</span>`,
+            `    <span class="v">curr</span>.<span class="v">next</span> = <span class="v">l1</span> <span class="k">or</span> <span class="v">l2</span>`,
+            `    <span class="k">return</span> <span class="v">dummy</span>.<span class="v">next</span>`
+        ],
+        c: [
+            `<span class="v">ListNode</span>* <span class="f">mergeTwoLists</span>(<span class="v">ListNode</span>* <span class="v">l1</span>, <span class="v">ListNode</span>* <span class="v">l2</span>) {`,
+            `    <span class="v">ListNode</span> <span class="v">dummy</span>(<span class="n">0</span>);`,
+            `    <span class="v">ListNode</span>* <span class="v">ptr</span> = &<span class="v">dummy</span>;`,
+            `    <span class="k">while</span> (<span class="v">l1</span> && <span class="v">l2</span>) {`,
+            `        <span class="k">if</span> (<span class="v">l1</span>-&gt;<span class="v">val</span> &lt;= <span class="v">l2</span>-&gt;<span class="v">val</span>) {`,
+            `            <span class="v">ptr</span>-&gt;<span class="v">next</span> = <span class="v">l1</span>;`,
+            `            <span class="v">l1</span> = <span class="v">l1</span>-&gt;<span class="v">next</span>;`,
+            `        } <span class="k">else</span> {`,
+            `            <span class="v">ptr</span>-&gt;<span class="v">next</span> = <span class="v">l2</span>;`,
+            `            <span class="v">l2</span> = <span class="v">l2</span>-&gt;<span class="v">next</span>;`,
+            `        }`,
+            `        <span class="v">ptr</span> = <span class="v">ptr</span>-&gt;<span class="v">next</span>;`,
+            `    }`,
+            `    <span class="v">ptr</span>-&gt;<span class="v">next</span> = <span class="v">l1</span> ? <span class="v">l1</span> : <span class="v">l2</span>;`,
+            `    <span class="k">return</span> <span class="v">dummy</span>.<span class="v">next</span>;`,
+            `}`
+        ]
+    };
+
+    function setLang(l) { 
+        lang = l; 
+        document.getElementById('btn-py').className = 'tab ' + (l==='py'?'active':'');
+        document.getElementById('btn-c').className = 'tab ' + (l==='c'?'active':'');
+        init(); 
+    }
+
+    function init() {
+        l1 = document.getElementById('in1').value.split(',').map(Number);
+        l2 = document.getElementById('in2').value.split(',').map(Number);
+        p1 = 0; p2 = 0; merged = ["D"];
+        document.getElementById('btn-step').disabled = false;
+        renderCode();
+        renderStage();
+        updateUI(lang==='py'?2:2, "初始化", "建立 Dummy 節點，準備開始合併。");
+    }
+
+    function renderCode() {
+        document.getElementById('code').innerHTML = snippets[lang].map((line, i) => 
+            `<div class="line" id="l${i}">${line}</div>`).join('');
+    }
+
+    function runNext() {
+        if (p1 < l1.length && p2 < l2.length) {
+            updateUI(lang==='py'?3:3, "比較", `比較 L1(${l1[p1]}) 與 L2(${l2[p2]})。`);
+            setTimeout(() => {
+                if (l1[p1] <= l2[p2]) {
+                    updateUI(lang==='py'?5:5, "接入 L1", "L1 較小，將其指標接入新串列。");
+                    merged.push({v: l1[p1], origin: 1}); p1++;
+                } else {
+                    updateUI(lang==='py'?8:8, "接入 L2", "L2 較小，將其指標接入新串列。");
+                    merged.push({v: l2[p2], origin: 2}); p2++;
+                }
+                renderStage();
+            }, 300);
+        } else {
+            updateUI(lang==='py'?11:13, "完成合併", "拼接剩餘串列。");
+            while(p1 < l1.length) { merged.push({v: l1[p1], origin: 1}); p1++; }
+            while(p2 < l2.length) { merged.push({v: l2[p2], origin: 2}); p2++; }
+            document.getElementById('btn-step').disabled = true;
+            renderStage();
+        }
+    }
+
+    function updateUI(line, title, desc) {
+        document.querySelectorAll('.line').forEach(l => l.classList.remove('active-line'));
+        if(document.getElementById('l'+line)) document.getElementById('l'+line).classList.add('active-line');
+        document.getElementById('step-title').innerText = title;
+        document.getElementById('step-desc').innerText = desc;
+    }
+
+    function renderStage() {
+        const stage = document.getElementById('elements');
+        stage.innerHTML = '';
+        l1.forEach((v, i) => { if(i >= p1) stage.appendChild(createNode(v, 100+i*70, 50, i===p1?'L1':'', '#ef4444')); });
+        l2.forEach((v, i) => { if(i >= p2) stage.appendChild(createNode(v, 100+i*70, 140, i===p2?'L2':'', '#f59e0b')); });
+        merged.forEach((item, i) => {
+            let val = item === "D" ? "Dummy" : item.v;
+            let n = createNode(val, 100+i*70, 280, i===merged.length-1?(lang==='py'?'curr':'ptr'):'', '#22c55e');
+            if(item==="D") n.classList.add('dummy');
+            stage.appendChild(n);
+        });
+    }
+
+    function createNode(val, x, y, label, color) {
+        const div = document.createElement('div');
+        div.className = 'node';
+        div.style.left = x + 'px'; div.style.top = y + 'px'; div.innerText = val;
+        div.style.backgroundColor = label ? color : '#3b82f6';
+        if(label) div.innerHTML += `<div class="ptr-label" style="background:${color}">${label}</div>`;
+        return div;
+    }
+
+    init();
+</script>
+</body>
+</html>

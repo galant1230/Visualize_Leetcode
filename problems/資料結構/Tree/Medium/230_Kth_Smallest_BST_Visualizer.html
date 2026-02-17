@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 230 - 終極互動面板</title>
+    <style>
+        :root {
+            --editor-bg: #0d1117; --gutter-bg: #161b22; --active-line: #21262d;
+            --indicator: #2ea043; --primary: #10b981; --text: #c9d1d9;
+            --kw: #ff7b72; --fn: #d2a8ff; --vr: #ffa657; --cm: #8b949e;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; padding: 20px; margin: 0; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: 450px 1fr; gap: 20px; }
+
+        /* 左側：敘述與視覺化 */
+        .info-panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; font-size: 13.5px; }
+        .example-box { background: #fff; border-left: 4px solid var(--primary); padding: 8px 12px; margin: 10px 0; font-family: monospace; font-size: 12px; }
+        
+        .tree-stage { border: 1px solid #d0d7de; border-radius: 8px; height: 260px; position: relative; background: #fff; margin-bottom: 15px; overflow: hidden; }
+        .tree-node { position: absolute; width: 32px; height: 32px; border: 2px solid #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; background: #fff; z-index: 2; transform: translateX(-50%); transition: 0.3s; font-size: 12px; }
+        .node-active { border-color: var(--primary); box-shadow: 0 0 15px rgba(16,185,129,0.6); transform: translateX(-50%) scale(1.2); z-index: 3; }
+        .node-visited { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; }
+        
+        .stack-area { background: var(--gutter-bg); border-radius: 8px; padding: 12px; height: 100px; display: flex; flex-direction: column-reverse; gap: 4px; border: 1px solid #30363d; overflow-y: auto; }
+        .stack-item { background: rgba(16,185,129,0.1); color: var(--primary); border: 1px solid var(--primary); padding: 4px; border-radius: 4px; text-align: center; font-size: 11px; }
+
+        /* 右側：編輯器 */
+        .editor { background: var(--editor-bg); border-radius: 8px; overflow: hidden; border: 1px solid #30363d; display: flex; flex-direction: column; min-height: 550px; }
+        .editor-header { background: var(--gutter-bg); padding: 10px 15px; color: #8b949e; font-size: 12px; border-bottom: 1px solid #30363d; }
+        .code-container { flex: 1; padding: 10px 0; font-family: 'Fira Code', monospace; font-size: 12px; line-height: 1.6; color: var(--text); }
+        .line { display: flex; position: relative; padding-left: 45px; white-space: pre; }
+        .line-num { position: absolute; left: 0; width: 35px; text-align: right; color: #484f58; padding-right: 10px; border-right: 1px solid #30363d; }
+        .line-active { background: var(--active-line); }
+        .line-active::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--indicator); }
+
+        .comp-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #e2e8f0; font-size: 11px; font-weight: bold; margin-right: 5px; }
+        button { padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        select { padding: 6px; border-radius: 6px; border: 1px solid #d1d5db; }
+        svg { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+        line { stroke: #d0d7de; stroke-width: 1.5; }
+        .kw { color: var(--kw); } .fn { color: var(--fn); } .vr { color: var(--vr); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2 style="margin:0;">230. Kth Smallest Element in a BST</h2>
+        <select id="methodSelect" onchange="initMethod()">
+            <option value="1">1. Brute Force (暴力排序)</option>
+            <option value="2">2. Inorder Traversal (中序數組)</option>
+            <option value="3">3. Recursive DFS (優化遞迴)</option>
+            <option value="4" selected>4. Iterative DFS (迭代堆疊)</option>
+            <option value="5">5. Morris Traversal (空間 O(1))</option>
+        </select>
+    </div>
+
+    <div class="grid">
+        <div class="visual-side">
+            <div class="info-panel">
+                <strong>題目敘述：</strong> 給定一棵二元搜尋樹的根節點 <code>root</code> ，和一個整數 <code>k</code> ，請找出該樹中第 <code>k</code> 小的節點值。
+                <div class="example-box">
+                    Example 1:<br>
+                    Input: root = [3,1,4,null,2], k = 1<br>
+                    Output: 1
+                </div>
+                <div style="margin-top:10px;">
+                    <span class="comp-tag">時間: <span id="timeComp">O(H+k)</span></span>
+                    <span class="comp-tag">空間: <span id="spaceComp">O(H)</span></span>
+                </div>
+            </div>
+
+            <div class="tree-stage" id="treeStage">
+                <svg id="svgLines"></svg>
+                <div id="nodes"></div>
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <button onclick="nextStep()">下一步 ▶</button>
+                <button onclick="initMethod()" style="background:#64748b;">重置</button>
+            </div>
+
+            <div style="font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 4px;">STACK / LIST STATUS</div>
+            <div class="stack-area" id="stackPanel"></div>
+        </div>
+
+        <div class="editor">
+            <div class="editor-header" id="fileName">solution.py</div>
+            <div class="code-container" id="codePanel"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const treeNodes = [
+    {id: 3, v: 3, x: 50, y: 35, p: null}, {id: 1, v: 1, x: 25, y: 100, p: 3},
+    {id: 4, v: 4, x: 75, y: 100, p: 3}, {id: 2, v: 2, x: 38, y: 170, p: 1}
+];
+
+const configs = {
+    "1": {
+        time: "O(N log N)", space: "O(N)",
+        code: ["class Solution:","    def kthSmallest(root, k):","        arr = []","        def dfs(node):","            if not node: return","            arr.append(node.val)","            dfs(node.left)","            dfs(node.right)","        dfs(root)","        arr.sort()","        return arr[k-1]"],
+        trace: [
+            {ln: 2, s: [], active: 3, msg: "Init list"},
+            {ln: 5, s: [3], active: 3}, {ln: 5, s: [3, 1], active: 1},
+            {ln: 5, s: [3, 1, 2], active: 2}, {ln: 5, s: [3, 1, 2, 4], active: 4},
+            {ln: 9, s: [1,2,3,4], active: null}, {ln: 10, s: [1,2,3,4], visited: [1]}
+        ]
+    },
+    "4": {
+        time: "O(H + k)", space: "O(H)",
+        code: ["while curr or stack:","    while curr:","        stack.append(curr)","        curr = curr.left","    curr = stack.pop()","    k -= 1","    if k == 0: return curr.val","    curr = curr.right"],
+        trace: [
+            {ln: 0, s: [], active: 3},
+            {ln: 2, s: [3], active: 3}, {ln: 2, s: [3,1], active: 1},
+            {ln: 4, s: [3], active: 1, visited: [1]},
+            {ln: 7, s: [3,2], active: 2},
+            {ln: 4, s: [3], active: 2, visited: [1,2]},
+            {ln: 4, s: [], active: 3, visited: [1,2,3]}
+        ]
+    }
+    // 其他解法可按同格式擴充
+};
+
+let currentStep = 0;
+let methodId = "4";
+
+function initMethod() {
+    methodId = document.getElementById('methodSelect').value;
+    currentStep = 0;
+    const conf = configs[methodId] || configs["4"];
+    document.getElementById('timeComp').innerText = conf.time;
+    document.getElementById('spaceComp').innerText = conf.space;
+    
+    const panel = document.getElementById('codePanel');
+    panel.innerHTML = conf.code.map((line, i) => `
+        <div class="line" id="line-${i}">
+            <div class="line-num">${i + 1}</div>
+            <div class="line-content">${line.replace(/def |class |if |return |while |not |in /g, x => `<span class="kw">${x}</span>`)}</div>
+        </div>`).join('');
+    render();
+}
+
+function nextStep() {
+    const conf = configs[methodId] || configs["4"];
+    if (currentStep < conf.trace.length - 1) { currentStep++; render(); }
+}
+
+function render() {
+    const conf = configs[methodId] || configs["4"];
+    const step = conf.trace[currentStep];
+    document.querySelectorAll('.line').forEach(l => l.classList.remove('line-active'));
+    document.getElementById(`line-${step.ln}`).classList.add('line-active');
+
+    document.getElementById('stackPanel').innerHTML = step.s.map(v => `<div class="stack-item">Val: ${v}</div>`).join('');
+
+    const nodesWrap = document.getElementById('nodes');
+    const svg = document.getElementById('svgLines');
+    nodesWrap.innerHTML = ''; svg.innerHTML = '';
+
+    treeNodes.forEach(n => {
+        if (n.p !== null) {
+            const parent = treeNodes.find(p => p.id === n.p);
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", n.x + "%"); line.setAttribute("y1", n.y);
+            line.setAttribute("x2", parent.x + "%"); line.setAttribute("y2", parent.y + 16);
+            svg.appendChild(line);
+        }
+        const div = document.createElement('div');
+        div.className = 'tree-node';
+        if (step.active === n.id) div.classList.add('node-active');
+        if (step.visited && step.visited.includes(n.id)) div.classList.add('node-visited');
+        div.style.left = n.x + "%"; div.style.top = n.y + "px";
+        div.innerText = n.v;
+        nodesWrap.appendChild(div);
+    });
+}
+initMethod();
+</script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Merge K Lists - Multi-Lang Debugger</title>
+    <style>
+        :root {
+            --primary: #3b82f6; --code-bg: #1e1e1e;
+            --kw: #569cd6; --fn: #dcdcaa; --vr: #9cdcfe; --tp: #4ec9b0; --st: #ce9178; --cm: #6a9955; --nm: #b5cea8;
+            --split: #c586c0; --merge: #4ade80;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; padding: 20px; }
+        .container { max-width: 1300px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
+        .info-header { background: #f8fafc; border-left: 6px solid var(--primary); padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+        
+        /* 遞迴樹視覺化 */
+        .tree-stage { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; height: 320px; position: relative; margin-bottom: 20px; overflow: hidden; }
+        .tree-node { position: absolute; padding: 8px 12px; background: #f8fafc; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 11px; font-weight: bold; text-align: center; transition: all 0.4s; z-index: 2; transform: translateX(-50%); }
+        .node-active { border-color: var(--primary); background: #eff6ff; box-shadow: 0 0 15px rgba(59,130,246,0.3); transform: translateX(-50%) scale(1.1); }
+        .node-merged { border-color: var(--merge); background: #f0fdf4; color: #166534; }
+
+        .grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 20px; }
+        .nav-tabs { display: flex; gap: 4px; }
+        .nav-tab { padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 12px; font-weight: bold; color: #64748b; }
+        .nav-tab.active { background: var(--code-bg); color: #fff; }
+        
+        .code-panel { background: var(--code-bg); color: #d4d4d4; padding: 20px; border-radius: 0 12px 12px 12px; font-family: 'Consolas', monospace; font-size: 13px; height: 450px; overflow-y: auto; }
+        .line { display: block; border-left: 3px solid transparent; padding-left: 10px; opacity: 0.4; white-space: pre; }
+        .active-line { background: rgba(255,255,255,0.1); border-left-color: var(--fn); opacity: 1; }
+
+        .stack-panel { background: #252526; color: #ccc; padding: 15px; border-radius: 10px; display: flex; flex-direction: column-reverse; gap: 6px; min-height: 120px; }
+        .stack-frame { padding: 5px 10px; background: rgba(255,255,255,0.05); border-left: 3px solid var(--split); border-radius: 4px; font-size: 11px; }
+        
+        .k { color: var(--kw); } .t { color: var(--tp); } .v { color: var(--vr); } .f { color: var(--fn); } .c { color: var(--cm); } .n { color: var(--nm); }
+        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="info-header">
+        <h3 style="margin:0">LeetCode 23. Merge k Sorted Lists</h3>
+        <p style="margin:5px 0; font-size:13px; color:#64748b;">Example: Input [[1,2,4],[1,3,5],[3,6]] → Output [1,1,2,3,3,4,5,6]</p>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div style="display: flex; gap: 10px;">
+            <select id="langSelect" onchange="init()" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-weight: bold;">
+                <option value="py">Python 版</option>
+                <option value="c">C 語言版</option>
+            </select>
+            <button onclick="runStep()" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">Next Step ▶</button>
+            <button onclick="init()" style="background:white; border:1px solid #ddd; padding:8px 15px; border-radius:8px; cursor:pointer;">Reset</button>
+        </div>
+        <div style="font-size:13px; color:var(--primary);">Step: <span id="stepCount">0</span></div>
+    </div>
+
+    <div class="tree-stage" id="treeStage">
+        <svg id="svgLines"></svg>
+        <div id="treeNodes"></div>
+    </div>
+
+    <div class="grid">
+        <div class="code-wrapper">
+            <div class="nav-tabs">
+                <button class="nav-tab active" id="tabMain" onclick="switchTab('main')">Main Entry</button>
+                <button class="nav-tab" id="tabRange" onclick="switchTab('range')">mergeRange (Recursion)</button>
+                <button class="nav-tab" id="tabMerge" onclick="switchTab('merge')">mergeTwoLists (Combine)</button>
+            </div>
+            <div class="code-panel" id="codePanel"></div>
+        </div>
+        
+        <div class="status-wrapper">
+            <h4 style="margin:0 0 10px 0; font-size:14px;">🥞 Call Stack</h4>
+            <div class="stack-panel" id="stackPanel"></div>
+            <h4 style="margin:20px 0 10px 0; font-size:14px;">📝 Insight</h4>
+            <div id="stepDesc" style="padding:15px; background:#fff; border-radius:10px; font-size:13px; border:1px solid #e2e8f0; min-height:80px;">
+                Ready...
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let step = 0;
+    let currentTab = 'main';
+    
+    const nodes = [
+        { id: 'root', label: 'Merge(0, 2)', x: 50, y: 50 },
+        { id: '0-1', label: 'Merge(0, 1)', x: 30, y: 150, p: 'root' },
+        { id: 'L2', label: 'L[2]: [3, 6]', x: 70, y: 150, p: 'root' },
+        { id: 'L0', label: 'L[0]: [1, 2, 4]', x: 15, y: 250, p: '0-1' },
+        { id: 'L1', label: 'L[1]: [1, 3, 5]', x: 45, y: 250, p: '0-1' }
+    ];
+
+    const allCodes = {
+        py: {
+            main: [
+                `<span class="k">def</span> <span class="f">mergeKLists</span>(<span class="v">self</span>, <span class="v">lists</span>: <span class="t">List</span>[<span class="t">ListNode</span>]):`,
+                `    <span class="k">if not</span> <span class="v">lists</span>: <span class="k">return</span> <span class="k">None</span>`,
+                `    <span class="c"># Entry: Call divide and conquer helper</span>`,
+                `    <span class="k">return</span> <span class="v">self</span>.<span class="f">_mergeRange</span>(<span class="v">lists</span>, <span class="n">0</span>, <span class="f">len</span>(<span class="v">lists</span>) - <span class="n">1</span>)`
+            ],
+            range: [
+                `<span class="k">def</span> <span class="f">_mergeRange</span>(<span class="v">self</span>, <span class="v">lists</span>, <span class="v">l</span>, <span class="v">r</span>):`,
+                `    <span class="k">if</span> <span class="v">l</span> == <span class="v">r</span>: <span class="k">return</span> <span class="v">lists</span>[<span class="v">l</span>]`,
+                `    <span class="v">mid</span> = <span class="v">l</span> + (<span class="v">r</span> - <span class="v">l</span>) // <span class="n">2</span>`,
+                `    <span class="v">left_l</span> = <span class="v">self</span>.<span class="f">_mergeRange</span>(<span class="v">lists</span>, <span class="v">l</span>, <span class="v">mid</span>)`,
+                `    <span class="v">right_l</span> = <span class="v">self</span>.<span class="f">_mergeRange</span>(<span class="v">lists</span>, <span class="v">mid</span> + <span class="n">1</span>, <span class="v">r</span>)`,
+                `    <span class="k">return</span> <span class="v">self</span>.<span class="f">_mergeTwoLists</span>(<span class="v">left_l</span>, <span class="v">right_l</span>)`
+            ],
+            merge: [
+                `<span class="k">def</span> <span class="f">_mergeTwoLists</span>(<span class="v">self</span>, <span class="v">l1</span>, <span class="v">l2</span>):`,
+                `    <span class="v">dummy</span> = <span class="t">ListNode</span>(<span class="n">0</span>); <span class="v">curr</span> = <span class="v">dummy</span>`,
+                `    <span class="k">while</span> <span class="v">l1</span> <span class="k">and</span> <span class="v">l2</span>:`,
+                `        <span class="k">if</span> <span class="v">l1</span>.<span class="v">val</span> < <span class="v">l2</span>.<span class="v">val</span>:`,
+                `            <span class="v">curr</span>.<span class="v">next</span> = <span class="v">l1</span>; <span class="v">l1</span> = <span class="v">l1</span>.<span class="v">next</span>`,
+                `        <span class="k">else</span>:`,
+                `            <span class="v">curr</span>.<span class="v">next</span> = <span class="v">l2</span>; <span class="v">l2</span> = <span class="v">l2</span>.<span class="v">next</span>`,
+                `        <span class="v">curr</span> = <span class="v">curr</span>.<span class="v">next</span>`,
+                `    <span class="v">curr</span>.<span class="v">next</span> = <span class="v">l1</span> <span class="k">or</span> <span class="v">l2</span>`,
+                `    <span class="k">return</span> <span class="v">dummy</span>.<span class="v">next</span>`
+            ]
+        },
+        c: {
+            main: [
+                `<span class="k">struct</span> <span class="t">ListNode</span>* <span class="f">mergeKLists</span>(<span class="k">struct</span> <span class="t">ListNode</span>** <span class="v">lists</span>, <span class="k">int</span> <span class="v">size</span>) {`,
+                `    <span class="k">if</span> (<span class="v">size</span> == <span class="n">0</span>) <span class="k">return</span> <span class="n">NULL</span>;`,
+                `    <span class="k">return</span> <span class="f">mergeRange</span>(<span class="v">lists</span>, <span class="n">0</span>, <span class="v">size</span> - <span class="n">1</span>);`,
+                `}`
+            ],
+            range: [
+                `<span class="k">struct</span> <span class="t">ListNode</span>* <span class="f">mergeRange</span>(<span class="k">struct</span> <span class="t">ListNode</span>** <span class="v">ls</span>, <span class="k">int</span> <span class="v">l</span>, <span class="k">int</span> <span class="v">r</span>) {`,
+                `    <span class="k">if</span> (<span class="v">l</span> == <span class="v">r</span>) <span class="k">return</span> <span class="v">ls</span>[<span class="v">l</span>];`,
+                `    <span class="k">int</span> <span class="v">mid</span> = <span class="v">l</span> + (<span class="v">r</span> - <span class="v">l</span>) / <span class="n">2</span>;`,
+                `    <span class="k">struct</span> <span class="t">ListNode</span>* <span class="v">s1</span> = <span class="f">mergeRange</span>(<span class="v">ls</span>, <span class="v">l</span>, <span class="v">mid</span>);`,
+                `    <span class="k">struct</span> <span class="t">ListNode</span>* <span class="v">s2</span> = <span class="f">mergeRange</span>(<span class="v">ls</span>, <span class="v">mid</span> + <span class="n">1</span>, <span class="v">r</span>);`,
+                `    <span class="k">return</span> <span class="f">mergeTwoLists</span>(<span class="v">s1</span>, <span class="v">s2</span>);`,
+                `}`
+            ],
+            merge: [
+                `<span class="k">struct</span> <span class="t">ListNode</span>* <span class="f">mergeTwoLists</span>(<span class="k">struct</span> <span class="t">ListNode</span>* <span class="v">l1</span>, <span class="k">struct</span> <span class="t">ListNode</span>* <span class="v">l2</span>) {`,
+                `    <span class="k">struct</span> <span class="t">ListNode</span> <span class="v">dummy</span>; <span class="k">struct</span> <span class="t">ListNode</span>* <span class="v">curr</span> = &<span class="v">dummy</span>;`,
+                `    <span class="k">while</span> (<span class="v">l1</span> && <span class="v">l2</span>) {`,
+                `        <span class="k">if</span> (<span class="v">l1</span>-><span class="v">val</span> < <span class="v">l2</span>-><span class="v">val</span>) { <span class="v">curr</span>-><span class="v">next</span> = <span class="v">l1</span>; <span class="v">l1</span> = <span class="v">l1</span>-><span class="v">next</span>; }`,
+                `        <span class="k">else</span> { <span class="v">curr</span>-><span class="v">next</span> = <span class="v">l2</span>; <span class="v">l2</span> = <span class="v">l2</span>-><span class="v">next</span>; }`,
+                `        <span class="v">curr</span> = <span class="v">curr</span>-><span class="v">next</span>;`,
+                `    }`,
+                `    <span class="v">curr</span>-><span class="v">next</span> = <span class="v">l1</span> ? <span class="v">l1</span> : <span class="v">l2</span>;`,
+                `    <span class="k">return</span> <span class="v">dummy</span>.<span class="v">next</span>;`,
+                `}`
+            ]
+        }
+    };
+
+    const trace = [
+        { tab: 'main', line: 3, stack: ['mergeKLists'], node: 'root', desc: '進入主程式，接收指標陣列，開始處理範圍 [0, 2]。' },
+        { tab: 'range', line: 2, stack: ['mergeKLists', 'mergeRange(0, 2)'], node: 'root', desc: '計算 mid = 1，準備遞迴左半部 [0, 1]。' },
+        { tab: 'range', line: 3, stack: ['...', 'mergeRange(0, 2)', 'mergeRange(0, 1)'], node: '0-1', desc: '繼續分解，呼叫 mergeRange(0, 0)。' },
+        { tab: 'range', line: 1, stack: ['...', 'mergeRange(0, 1)', 'mergeRange(0, 0)'], node: 'L0', desc: '基礎情況：找到 L[0]: [1,2,4]，回傳節點。' },
+        { tab: 'range', line: 4, stack: ['...', 'mergeRange(0, 1)', 'mergeRange(1, 1)'], node: 'L1', desc: '右半部基礎情況：找到 L[1]: [1,3,5]。' },
+        { tab: 'merge', line: 2, stack: ['mergeRange(0, 1)', 'mergeTwoLists(L0, L1)'], node: '0-1', desc: '使用 dummy 節點與指標，開始比對節點大小並合併。' },
+        { tab: 'range', line: 5, stack: ['mergeKLists', 'mergeRange(0, 2)'], node: '0-1', desc: 'L[0] 與 L[1] 合併完成。', merged: ['L0', 'L1', '0-1'] },
+        { tab: 'range', line: 4, stack: ['mergeKLists', 'mergeRange(0, 2)', 'mergeRange(2, 2)'], node: 'L2', desc: '處理右半部單獨的 L[2]: [3, 6]。' },
+        { tab: 'merge', line: 9, stack: ['mergeKLists', 'mergeTwoLists(Final)'], node: 'root', desc: '最終合併：將已排序的 (L0+L1) 與 L2 進行合併。', merged: ['root', 'L2'] }
+    ];
+
+    function switchTab(t) {
+        currentTab = t;
+        ['Main', 'Range', 'Merge'].forEach(id => {
+            const btn = document.getElementById('tab' + id);
+            if (btn) btn.classList.toggle('active', id.toLowerCase() === t);
+        });
+        renderCode();
+    }
+
+    function renderCode() {
+        const lang = document.getElementById('langSelect').value;
+        const codeArray = allCodes[lang][currentTab];
+        document.getElementById('codePanel').innerHTML = codeArray.map((l, i) => `<div class="line" id="line-${i}">${l}</div>`).join('');
+        highlightLine();
+    }
+
+    function highlightLine() {
+        const data = trace[step];
+        document.querySelectorAll('.line').forEach(l => l.classList.remove('active-line'));
+        if (data.tab === currentTab) {
+            const el = document.getElementById(`line-${data.line}`);
+            if (el) el.classList.add('active-line');
+        }
+    }
+
+    function init() {
+        step = 0; switchTab('main'); renderTree(); updateUI();
+    }
+
+    function runStep() {
+        if (step < trace.length - 1) {
+            step++;
+            if (trace[step].tab !== currentTab) switchTab(trace[step].tab);
+            updateUI(); renderTree();
+        }
+    }
+
+    function updateUI() {
+        const data = trace[step];
+        document.getElementById('stepCount').innerText = step;
+        document.getElementById('stackPanel').innerHTML = data.stack.map(s => `<div class="stack-frame">${s}</div>`).join('');
+        document.getElementById('stepDesc').innerHTML = `<b>執行詳情：</b><br>${data.desc}`;
+        highlightLine();
+    }
+
+    function renderTree() {
+        const container = document.getElementById('treeNodes');
+        const svg = document.getElementById('svgLines');
+        container.innerHTML = ''; svg.innerHTML = '';
+        const data = trace[step];
+
+        nodes.forEach(n => {
+            const div = document.createElement('div');
+            div.className = 'tree-node';
+            div.style.left = n.x + '%'; div.style.top = n.y + 'px';
+            div.innerText = n.label;
+            if (n.id === data.node) div.classList.add('node-active');
+            if (data.merged && data.merged.includes(n.id)) div.classList.add('node-merged');
+            container.appendChild(div);
+
+            if (n.p) {
+                const parent = nodes.find(x => x.id === n.p);
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", n.x + "%"); line.setAttribute("y1", n.y);
+                line.setAttribute("x2", parent.x + "%"); line.setAttribute("y2", parent.y + 30);
+                line.setAttribute("stroke", (data.merged && data.merged.includes(n.id)) ? "var(--merge)" : "#cbd5e0");
+                line.setAttribute("stroke-width", "2");
+                svg.appendChild(line);
+            }
+        });
+    }
+
+    init();
+</script>
+</body>
+</html>

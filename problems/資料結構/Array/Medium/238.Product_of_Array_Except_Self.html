@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>238. Product of Array Except Self 完整教學版</title>
+  <style>
+    :root {
+      --primary: #007acc; --success: #2ecc71; --warning: #f39c12;
+      --danger: #e74c3c; --dark: #2c3e50; --bg: #f4f7f9;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--dark); line-height: 1.6; }
+    .dashboard { max-width: 1200px; margin: auto; display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; }
+    
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .full-width { grid-column: span 2; }
+    h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.25rem; }
+    
+    /* 題目資訊區 */
+    .problem-info { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 10px; }
+    .example-box { background: #f8f9fa; padding: 15px; border-left: 4px solid var(--warning); font-family: monospace; font-size: 0.9rem; border-radius: 0 8px 8px 0; }
+    .logic-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+    .logic-table th, .logic-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    .logic-table th { background: #f1f1f1; }
+
+    /* 控制面板 */
+    .controls { display: flex; gap: 10px; margin: 20px 0; justify-content: center; align-items: center; flex-wrap: wrap; }
+    select, input { padding: 8px 15px; border: 2px solid #ddd; border-radius: 25px; outline: none; }
+    button { padding: 8px 25px; border: none; border-radius: 25px; cursor: pointer; background: var(--primary); color: white; font-weight: bold; }
+    button:disabled { background: #ccc; }
+
+    /* 視覺化元件 */
+    .array-container { display: flex; flex-direction: column; gap: 15px; margin: 20px 0; align-items: center; }
+    .row { display: flex; align-items: center; gap: 10px; }
+    .label { width: 140px; font-weight: bold; font-size: 0.9rem; text-align: right; }
+    .box-row { display: flex; gap: 8px; }
+    .box { 
+      width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 8px; 
+      display: flex; align-items: center; justify-content: center; font-weight: bold;
+      background: white; transition: all 0.2s; font-size: 1rem;
+    }
+    .box.active { border-color: var(--warning); background: #fff8e1; transform: scale(1.1); }
+    .box.target { background: #fce4ec; border-color: var(--danger); }
+
+    /* 代碼視窗 */
+    .code-window { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 0.85rem; line-height: 1.5; min-height: 320px; }
+    .line { padding: 1px 10px; border-left: 4px solid transparent; }
+    .line.active { background: #3e4451; border-left-color: var(--success); color: white; }
+    
+    .status-msg { font-weight: bold; color: var(--primary); text-align: center; height: 1.5rem; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  <div class="card full-width">
+    <h2>📌 238. Product of Array Except Self</h2>
+    <div class="problem-info">
+      <div>
+        <p><strong>題目描述：</strong> 給定一個陣列 <code>nums</code>，回傳一個新陣列，其中每個元素是除了自己以外的所有數字乘積。</p>
+        <p><strong>限制條件：</strong>
+          <br>1. 時間複雜度必須是 <strong>O(n)</strong>。
+          <br>2. <strong>不能使用除法</strong> (Sol 2 除外，僅供對照)。
+          <br>3. 額外空間複雜度 <strong>O(1)</strong> (輸出陣列不計入)。
+        </p>
+      </div>
+      <div class="example-box">
+        <strong>範例：</strong> nums = [1, 2, 3, 4]<br>
+        1. 除 1 以外: 2*3*4 = 24<br>
+        2. 除 2 以外: 1*3*4 = 12<br>
+        3. 除 3 以外: 1*2*4 = 8<br>
+        4. 除 4 以外: 1*2*3 = 6<br>
+        <strong>結果：[24, 12, 8, 6]</strong>
+      </div>
+    </div>
+
+    <div id="logicExplanation" style="display:none;">
+      <h3>💡 Sol 3 核心邏輯 (Prefix & Suffix)</h3>
+      <table class="logic-table">
+        <tr><th>Index</th><th>0</th><th>1</th><th>2</th><th>3</th></tr>
+        <tr><td>nums</td><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+        <tr style="color:var(--primary)"><td>Prefix (左側積)</td><td>1</td><td>1</td><td>2</td><td>6</td></tr>
+        <tr style="color:var(--success)"><td>Suffix (右側積)</td><td>24</td><td>12</td><td>4</td><td>1</td></tr>
+        <tr style="font-weight:bold; background:#e8f5e9;"><td>結果 (左*右)</td><td>24</td><td>12</td><td>8</td><td>6</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card full-width" style="background: transparent; box-shadow: none; padding: 0;">
+    <div class="controls">
+      切換解法：
+      <select id="algoSelect" onchange="initSim()">
+        <option value="sol1">Sol 1: 暴力法 (O(n²))</option>
+        <option value="sol2">Sol 2: 除法 (處理 0)</option>
+        <option value="sol3" selected>Sol 3: 前後綴 (面試最優)</option>
+      </select>
+      測試數據: <input type="text" id="inputNums" value="1, 2, 3, 4" style="width: 150px;">
+      <button onclick="initSim()">重置</button>
+      <button id="nextBtn" onclick="runStep()">下一步 (Step)</button>
+    </div>
+    <div class="status-msg" id="statusMsg">點擊下一步開始模擬</div>
+  </div>
+
+  <div class="card">
+    <h2>🔍 視覺化追蹤</h2>
+    <div class="array-container">
+      <div class="row">
+        <div class="label">Input (nums):</div>
+        <div class="box-row" id="numsRow"></div>
+      </div>
+      <div class="row">
+        <div class="label">Result (res):</div>
+        <div class="box-row" id="resRow"></div>
+      </div>
+    </div>
+    <div id="varDisplay" style="text-align:center; font-family:monospace; background:#f1f1f1; padding:10px; border-radius:8px;"></div>
+  </div>
+
+  <div class="card">
+    <h2>Python 實作</h2>
+    <div class="code-window" id="codeDisplay"></div>
+  </div>
+</div>
+
+<script>
+const configs = {
+  sol1: {
+    code: ["for i in range(n):","    prod = 1","    for j in range(n):","        if i == j: continue","        prod *= nums[j]","    res[i] = prod"],
+    showTable: false
+  },
+  sol2: {
+    code: ["for num in nums:","    if num: prod *= num","    else: zero_cnt += 1","for i, c in enumerate(nums)","    if zero_cnt > 1: res[i] = 0","    elif zero_cnt == 1: res[i] = prod if not c else 0","    else: res[i] = prod // c"],
+    showTable: false
+  },
+  sol3: {
+    code: ["prefix = 1","for i in range(n):","    res[i] = prefix","    prefix *= nums[i]","suffix = 1","for i in range(n-1, -1, -1):","    res[i] *= suffix","    suffix *= nums[i]"],
+    showTable: true
+  }
+};
+
+let nums = [], res = [], i = 0, j = 0, state = "start", prefix = 1, suffix = 1;
+
+function initSim() {
+  const algo = document.getElementById('algoSelect').value;
+  nums = document.getElementById('inputNums').value.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+  res = new Array(nums.length).fill(0);
+  i = 0; j = 0; state = "start"; prefix = 1; suffix = 1;
+  
+  document.getElementById('codeDisplay').innerHTML = configs[algo].code.map((l, idx) => `<div class="line" id="l${idx}">${l}</div>`).join('');
+  document.getElementById('logicExplanation').style.display = configs[algo].showTable ? 'block' : 'none';
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('statusMsg').innerText = "準備就緒";
+  render();
+}
+
+function render() {
+  const algo = document.getElementById('algoSelect').value;
+  const nRow = document.getElementById('numsRow');
+  const rRow = document.getElementById('resRow');
+  
+  nRow.innerHTML = nums.map((val, idx) => {
+    let cls = 'box';
+    if (algo === 'sol1' && idx === i) cls += ' target';
+    if (idx === (algo === 'sol1' && state === 'inner' ? j : i)) cls += ' active';
+    return `<div class="${cls}">${val}</div>`;
+  }).join('');
+
+  rRow.innerHTML = res.map((val, idx) => `<div class="box ${idx === i ? 'active' : ''}">${val}</div>`).join('');
+}
+
+function runStep() {
+  const algo = document.getElementById('algoSelect').value;
+  const msg = document.getElementById('statusMsg');
+  const vDisp = document.getElementById('varDisplay');
+  clearHighlight();
+
+  if (algo === 'sol1') {
+    if (i < nums.length) {
+      if (state === "start") {
+        highlight(1); res[i] = 1; j = 0; state = "inner";
+        msg.innerText = `準備計算第 ${i} 位`;
+      } else if (j < nums.length) {
+        highlight(3); highlight(4);
+        if (i !== j) res[i] *= nums[j];
+        vDisp.innerText = `計算中: res[${i}] = ${res[i]}`;
+        j++;
+      } else {
+        highlight(5);
+        i++; state = "start";
+      }
+    } else { msg.innerText = "模擬結束"; document.getElementById('nextBtn').disabled = true; }
+  } 
+  else if (algo === 'sol2') {
+    const zeroCnt = nums.filter(x => x === 0).length;
+    const prod = nums.filter(x => x !== 0).reduce((a,b) => a*b, 1);
+    if (i < nums.length) {
+      highlight(4); highlight(5); highlight(6);
+      if (zeroCnt > 1) res[i] = 0;
+      else if (zeroCnt === 1) res[i] = (nums[i] === 0 ? prod : 0);
+      else res[i] = prod / nums[i];
+      msg.innerText = `處理索引 ${i}`;
+      vDisp.innerText = `非零乘積: ${prod}, 零個數: ${zeroCnt}`;
+      i++;
+    } else { msg.innerText = "完成"; document.getElementById('nextBtn').disabled = true; }
+  }
+  else if (algo === 'sol3') {
+    if (state === "start") {
+      highlight(2); highlight(3);
+      if (i === 0) res.fill(1);
+      res[i] = prefix;
+      msg.innerText = `Prefix 階段：res[${i}] = ${prefix}`;
+      prefix *= nums[i];
+      vDisp.innerText = `下一個前綴積: ${prefix}`;
+      i++;
+      if (i === nums.length) { state = "suffix"; i = nums.length - 1; }
+    } else {
+      highlight(6); highlight(7);
+      res[i] *= suffix;
+      msg.innerText = `Suffix 階段：res[${i}] 更新為 ${res[i]}`;
+      suffix *= nums[i];
+      vDisp.innerText = `下一個後綴積: ${suffix}`;
+      i--;
+      if (i < 0) { msg.innerText = "前後綴計算完成！"; document.getElementById('nextBtn').disabled = true; }
+    }
+  }
+  render();
+}
+
+function highlight(id) { 
+  const el = document.getElementById('l' + id);
+  if (el) el.classList.add('active'); 
+}
+function clearHighlight() { document.querySelectorAll('.line').forEach(l => l.classList.remove('active')); }
+
+initSim();
+</script>
+</body>
+</html>

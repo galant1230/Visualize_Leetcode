@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>143. Reorder List 三段式視覺化</title>
+    <style>
+        :root {
+            --primary: #3b82f6; --code-bg: #282c34;
+            --kw: #c678dd; --fn: #61afef; --vr: #e06c75; --tp: #e5c07b; --st: #98c379; --cm: #5c6370;
+            --slow: #10b981; --fast: #f43f5e;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        
+        /* 描述框 */
+        .problem-header { background: #f8fafc; border-left: 6px solid var(--primary); padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+        
+        /* 動態畫布 */
+        .stage { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 15px; height: 350px; position: relative; margin-bottom: 25px; overflow: hidden; }
+        .node { width: 48px; height: 48px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; position: absolute; z-index: 5; transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .ptr-label { position: absolute; padding: 2px 8px; border-radius: 5px; color: white; font-size: 11px; font-weight: bold; top: -32px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+
+        /* 代碼區域 */
+        .grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 25px; }
+        .code-panel { background: var(--code-bg); color: #abb2bf; padding: 25px; border-radius: 15px; font-family: 'Fira Code', monospace; font-size: 13px; line-height: 1.6; height: 420px; overflow-y: auto; }
+        .line { display: block; border-left: 3px solid transparent; padding-left: 15px; opacity: 0.3; white-space: pre; transition: 0.3s; }
+        .active-line { background: rgba(255,255,255,0.1); border-left-color: var(--primary); opacity: 1; }
+        
+        /* 高亮顏色 */
+        .k { color: var(--kw); } .t { color: var(--tp); } .v { color: var(--vr); } .f { color: var(--fn); } .c { color: var(--cm); font-style: italic; }
+
+        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .controls { text-align: center; margin-top: 25px; }
+        .btn { padding: 12px 30px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 15px; }
+        .btn-step { background: #1e293b; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="problem-header">
+        <h2 style="margin:0">143. Reorder List</h2>
+        <p><code>L0 → L1 → … → Ln-1 → Ln</code> 改為 <code>L0 → Ln → L1 → Ln-1 → …</code></p>
+        <div style="display:flex; gap:20px; font-size:0.85rem; margin-top:10px;">
+            <span>範例 1: [1,2,3,4] → <b>[1,4,2,3]</b></span>
+            <span>範例 2: [1,2,3,4,5] → <b>[1,5,2,4,3]</b></span>
+        </div>
+    </div>
+
+    <div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+        <div id="phaseDisplay" style="font-weight:bold; color:var(--primary); font-size:1.1rem;">階段：準備開始</div>
+        <div>
+            語言：
+            <select id="langSelect" onchange="init()" style="padding:5px; border-radius:5px;">
+                <option value="py">Python</option>
+                <option value="cpp">C++</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="stage" id="stage">
+        <svg id="svgLines"></svg>
+        <div id="nodes"></div>
+    </div>
+
+    <div class="grid">
+        <div class="code-panel" id="codePanel"></div>
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:20px; border-radius:15px;">
+            <h4 style="margin:0; color:var(--primary)">演算法步驟</h4>
+            <p id="stepDesc" style="font-size: 0.9rem; min-height:100px; color:#475569;">點擊下一步觀察細節...</p>
+            <div style="border-top:1px solid #ddd; padding-top:10px; font-size:0.8rem;">
+                <b>⏱ 時間:</b> O(N) | <b>💾 空間:</b> O(1)
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" style="background:#94a3b8; color:white; margin-right:15px;" onclick="init()">重置</button>
+        <button class="btn btn-step" id="stepBtn" onclick="runStep()">下一步 (Step)</button>
+    </div>
+</div>
+
+<script>
+    let list = [], slowIdx = 0, fastIdx = 0, phase = 0, subStep = 0, lang = 'py', isDone = false;
+    let firstHead = 0, secondHead = null, prevNode = null;
+
+    const codeSource = {
+        py: [
+            `<span class="c"># 1. 找中點 (快慢指標)</span>`,
+            `<span class="v">slow</span>, <span class="v">fast</span> = <span class="v">head</span>, <span class="v">head</span>.<span class="v">next</span>`,
+            `<span class="k">while</span> <span class="v">fast</span> <span class="k">and</span> <span class="v">fast</span>.<span class="v">next</span>:`,
+            `    <span class="v">slow</span> = <span class="v">slow</span>.<span class="v">next</span>`,
+            `    <span class="v">fast</span> = <span class="v">fast</span>.<span class="v">next</span>.<span class="v">next</span>`,
+            `<span class="c"># 2. 反轉後半段</span>`,
+            `<span class="v">second</span> = <span class="v">slow</span>.<span class="v">next</span>`,
+            `<span class="v">slow</span>.<span class="v">next</span> = <span class="k">None</span>`,
+            `<span class="v">prev</span> = <span class="k">None</span>`,
+            `<span class="k">while</span> <span class="v">second</span>:`,
+            `    <span class="v">tmp</span> = <span class="v">second</span>.<span class="v">next</span>`,
+            `    <span class="v">second</span>.<span class="v">next</span> = <span class="v">prev</span>`,
+            `    <span class="v">prev</span> = <span class="v">second</span>`,
+            `    <span class="v">second</span> = <span class="v">tmp</span>`,
+            `<span class="c"># 3. 合併</span>`,
+            `<span class="v">first</span>, <span class="v">second</span> = <span class="v">head</span>, <span class="v">prev</span>`,
+            `<span class="k">while</span> <span class="v">second</span>:`,
+            `    <span class="v">t1</span>, <span class="v">t2</span> = <span class="v">first</span>.<span class="v">next</span>, <span class="v">second</span>.<span class="v">next</span>`,
+            `    <span class="v">first</span>.<span class="v">next</span> = <span class="v">second</span>`,
+            `    <span class="v">second</span>.<span class="v">next</span> = <span class="v">t1</span>`,
+            `    <span class="v">first</span>, <span class="v">second</span> = <span class="v">t1</span>, <span class="v">t2</span>`
+        ],
+        cpp: [
+            `<span class="c">// 1. Find Mid</span>`,
+            `<span class="t">ListNode</span> *<span class="v">s</span> = <span class="v">head</span>, *<span class="v">f</span> = <span class="v">head</span>-><span class="v">next</span>;`,
+            `<span class="k">while</span> (<span class="v">f</span> && <span class="v">f</span>-><span class="v">next</span>) {`,
+            `    <span class="v">s</span> = <span class="v">s</span>-><span class="v">next</span>; <span class="v">f</span> = <span class="v">f</span>-><span class="v">next</span>-><span class="v">next</span>;`,
+            `}`,
+            `<span class="c">// 2. Reverse</span>`,
+            `<span class="t">ListNode</span> *<span class="v">curr</span> = <span class="v">s</span>-><span class="v">next</span>;`,
+            `<span class="v">s</span>-><span class="v">next</span> = <span class="k">nullptr</span>;`,
+            `<span class="t">ListNode</span> *<span class="v">prev</span> = <span class="k">nullptr</span>;`,
+            `<span class="k">while</span> (<span class="v">curr</span>) {`,
+            `    <span class="t">ListNode</span> *<span class="v">t</span> = <span class="v">curr</span>-><span class="v">next</span>;`,
+            `    <span class="v">curr</span>-><span class="v">next</span> = <span class="v">prev</span>;`,
+            `    <span class="v">prev</span> = <span class="v">curr</span>; <span class="v">curr</span> = <span class="v">t</span>;`,
+            `}`,
+            `<span class="c">// 3. Merge</span>`,
+            `<span class="t">ListNode</span> *<span class="v">h1</span> = <span class="v">head</span>, *<span class="v">h2</span> = <span class="v">prev</span>;`,
+            `<span class="k">while</span> (<span class="v">h2</span>) {`,
+            `    <span class="t">ListNode</span> *<span class="v">t1</span> = <span class="v">h1</span>-><span class="v">next</span>, *<span class="v">t2</span> = <span class="v">h2</span>-><span class="v">next</span>;`,
+            `    <span class="v">h1</span>-><span class="v">next</span> = <span class="v">h2</span>; <span class="v">h2</span>-><span class="v">next</span> = <span class="v">t1</span>;`,
+            `    <span class="v">h1</span> = <span class="v">t1</span>; <span class="v">h2</span> = <span class="v">t2</span>;`,
+            `}`
+        ]
+    };
+
+    function init() {
+        lang = document.getElementById('langSelect').value;
+        const data = [1, 2, 3, 4, 5];
+        list = data.map((v, i) => ({ val: v, next: i + 1 < data.length ? i + 1 : null, x: 100 + i * 120, y: 170 }));
+        slowIdx = 0; fastIdx = 1; phase = 0; subStep = 0; isDone = false; prevNode = null;
+        document.getElementById('stepBtn').disabled = false;
+        renderCode(); render();
+        updateUI(1, "1. 找中點", "初始化快慢指標。");
+    }
+
+    function renderCode() {
+        document.getElementById('codePanel').innerHTML = codeSource[lang === 'py' ? 'py' : 'cpp'].map((l, i) => `<div class="line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function runStep() {
+        if (isDone) return;
+        if (phase === 0) { // Find Middle
+            if (fastIdx !== null && list[fastIdx] && list[fastIdx].next !== null) {
+                slowIdx = list[slowIdx].next;
+                fastIdx = list[list[fastIdx].next].next;
+                updateUI(3, "1. 找中點", "slow 走一格，fast 走二格。當 fast 到底，slow 就在前半段末尾。");
+            } else {
+                phase = 1; subStep = 0; runStep();
+            }
+        } else if (phase === 1) { // Split & Reverse
+            if (subStep === 0) {
+                secondHead = list[slowIdx].next;
+                updateUI(6, "2. 切斷與反轉", "定位後半段起點，並斷開連接（slow.next = None）。");
+                // 視覺分開兩段
+                for(let i = list[slowIdx].next; i != null; i = list[i].next) {
+                    list[i].y = 260;
+                }
+                subStep++;
+            } else if (subStep === 1) {
+                list[slowIdx].next = null;
+                updateUI(7, "2. 切斷與反轉", "將前半段末尾指向空，正式分離成兩條鏈。");
+                subStep++;
+            } else if (subStep === 2) {
+                if (secondHead !== null) {
+                    let tmp = list[secondHead].next;
+                    list[secondHead].next = prevNode;
+                    prevNode = secondHead;
+                    secondHead = tmp;
+                    updateUI(11, "2. 切斷與反轉", "反轉後半段指標。注意看箭頭方向！");
+                } else {
+                    phase = 2; subStep = 0; runStep();
+                }
+            }
+        } else if (phase === 2) { // Merge
+            if (subStep === 0) {
+                firstIdx = 0; secondIdx = prevNode;
+                updateUI(15, "3. 交錯合併", "準備將兩段鏈結交錯拼接。");
+                subStep++;
+            } else if (subStep === 1) {
+                if (secondIdx !== null) {
+                    let t1 = list[firstIdx].next;
+                    let t2 = list[secondIdx].next;
+                    list[firstIdx].next = secondIdx;
+                    list[secondIdx].next = t1;
+                    
+                    // 視覺拼接效果
+                    list[secondIdx].x = list[firstIdx].x + 60;
+                    list[secondIdx].y = 170;
+                    if (t1 !== null) list[t1].x = list[secondIdx].x + 60;
+
+                    firstIdx = t1;
+                    secondIdx = t2;
+                    updateUI(18, "3. 交錯合併", "將後半段的一個節點插在前半段兩個節點中間。");
+                } else {
+                    isDone = true;
+                    document.getElementById('stepBtn').disabled = true;
+                    updateUI(20, "✅ 完成", "串列重排完畢！");
+                }
+            }
+        }
+        render();
+    }
+
+    function updateUI(line, phaseTitle, desc) {
+        document.querySelectorAll('.line').forEach(l => l.classList.remove('active-line'));
+        if(document.getElementById('l'+line)) document.getElementById('l'+line).classList.add('active-line');
+        document.getElementById('phaseDisplay').innerText = "階段：" + phaseTitle;
+        document.getElementById('stepDesc').innerText = desc;
+    }
+
+    function render() {
+        const nodes = document.getElementById('nodes');
+        nodes.innerHTML = '';
+        list.forEach((n, i) => {
+            const div = document.createElement('div');
+            div.className = 'node';
+            div.style.left = n.x + 'px'; div.style.top = n.y + 'px';
+            div.innerText = n.val;
+            if (i === slowIdx && phase === 0) div.innerHTML += `<div class="ptr-label" style="background:var(--slow)">slow</div>`;
+            if (i === fastIdx && phase === 0) div.innerHTML += `<div class="ptr-label" style="background:var(--fast)">fast</div>`;
+            nodes.appendChild(div);
+        });
+        drawArrows();
+    }
+
+    function drawArrows() {
+        const svg = document.getElementById('svgLines');
+        svg.innerHTML = '<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="25" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#94a3b8"/></marker></defs>';
+        list.forEach((n, i) => {
+            if (n.next !== null) {
+                const target = list[n.next];
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                let d = (target.x < n.x) 
+                    ? `M ${n.x+24} ${n.y+24} Q ${(n.x+target.x)/2} ${n.y+60} ${target.x+24} ${target.y+24}` 
+                    : `M ${n.x+24} ${n.y+24} L ${target.x+24} ${target.y+24}`;
+                path.setAttribute("d", d); path.setAttribute("stroke", "#cbd5e0"); path.setAttribute("stroke-width", "2.5");
+                path.setAttribute("fill", "none"); path.setAttribute("marker-end", "url(#arr)");
+                svg.appendChild(path);
+            }
+        });
+    }
+    init();
+</script>
+</body>
+</html>

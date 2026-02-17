@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>297. Codec - Multi-Mode Interactive</title>
+    <style>
+        :root {
+            --editor-bg: #0d1117; --gutter-bg: #161b22; --active-line: #21262d;
+            --indicator: #10b981; --primary: #10b981; --text: #c9d1d9;
+            --kw: #ff7b72; --fn: #d2a8ff; --vr: #ffa657; --accent: #79c0ff;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; margin: 0; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .mode-selector { padding: 8px 12px; border-radius: 6px; border: 2px solid var(--primary); font-weight: bold; color: #1e293b; outline: none; cursor: pointer; }
+
+        .grid { display: grid; grid-template-columns: 480px 1fr; gap: 20px; }
+
+        /* 左側：監控與視覺化 */
+        .info-panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 13px; }
+        .debug-panel { background: #1e1e1e; color: #d4d4d4; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-family: 'Consolas', monospace; font-size: 13px; border-left: 5px solid var(--accent); }
+        .var-highlight { color: #ce9178; font-weight: bold; }
+        .val-highlight { color: #4fc1ff; }
+
+        /* 字串展示區 */
+        .string-display { background: #f1f5f9; padding: 10px; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 14px; margin-bottom: 10px; border: 1px dashed #cbd5e1; min-height: 24px; word-break: break-all; transition: 0.3s; }
+        .token { display: inline-block; padding: 0 2px; transition: 0.3s; }
+        .token-active { background: var(--primary); color: white; border-radius: 3px; transform: scale(1.1); }
+        .token-used { color: #cbd5e1; text-decoration: line-through; }
+
+        .tree-stage { border: 1px solid #d0d7de; border-radius: 8px; height: 260px; position: relative; background: #fff; margin-bottom: 15px; overflow: hidden; }
+        .tree-node { position: absolute; width: 32px; height: 32px; border: 2px solid #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; background: #fff; z-index: 2; transform: translateX(-50%); transition: 0.4s; font-size: 12px; opacity: 0; }
+        .node-visible { opacity: 1; }
+        .node-active { border-color: var(--primary); box-shadow: 0 0 15px rgba(16,185,129,0.6); transform: translateX(-50%) scale(1.1); }
+
+        /* 右側：編輯器 */
+        .editor { background: var(--editor-bg); border-radius: 8px; border: 1px solid #30363d; display: flex; flex-direction: column; min-height: 540px; }
+        .editor-header { background: var(--gutter-bg); padding: 10px 15px; color: #8b949e; font-size: 12px; border-bottom: 1px solid #30363d; }
+        .code-container { flex: 1; padding: 10px 0; font-family: 'Fira Code', monospace; font-size: 12px; line-height: 1.6; color: var(--text); }
+        .line { display: flex; position: relative; padding-left: 45px; white-space: pre; }
+        .line-num { position: absolute; left: 0; width: 35px; text-align: right; color: #484f58; padding-right: 10px; border-right: 1px solid #30363d; }
+        .line-active { background: var(--active-line); }
+        .line-active::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--indicator); }
+
+        /* 底欄 */
+        .theory-section { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; }
+        .theory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .theory-card { background: #fcfcfc; border: 1px solid #eef0f2; padding: 20px; border-radius: 10px; }
+        .theory-card h3 { margin-top: 0; color: #1e293b; border-left: 4px solid var(--accent); padding-left: 10px; }
+
+        button { padding: 10px 18px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
+        svg { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; }
+        line { stroke: #d0d7de; stroke-width: 2; transition: 0.5s; opacity: 0; }
+        .line-visible { opacity: 1; }
+        .kw { color: var(--kw); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2 style="margin:0;">297. Serialize & Deserialize Binary Tree</h2>
+        <select class="mode-selector" id="modeSelect" onchange="resetDemo()">
+            <option value="serialize">模式：Serialize (Encode)</option>
+            <option value="deserialize">模式：Deserialize (Decode)</option>
+        </select>
+    </div>
+
+    <div class="grid">
+        <div class="visual-side">
+            <div class="info-panel" id="modeInfo">
+                切換模式以查看不同流程。
+            </div>
+
+            <div class="debug-panel">
+                <div>// <span id="debugTitle">State</span></div>
+                <div><span class="var-highlight">Current:</span> <span class="val-highlight" id="mon-node">None</span></div>
+                <div><span class="var-highlight">Data:</span> <span class="val-highlight" id="mon-data">[]</span></div>
+            </div>
+
+            <div class="string-display" id="strDisplay"></div>
+
+            <div class="tree-stage">
+                <svg id="svgLines"></svg>
+                <div id="nodes"></div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button onclick="nextStep()">下一步 ▶</button>
+                <button onclick="resetDemo()" style="background:#64748b;">重置</button>
+            </div>
+        </div>
+
+        <div class="editor">
+            <div class="editor-header" id="editorTitle">solution.py</div>
+            <div class="code-container" id="codePanel"></div>
+        </div>
+    </div>
+
+    <div class="theory-section">
+        <div class="theory-grid">
+            <div class="theory-card">
+                <h3>🧠 解題思路：Preorder DFS</h3>
+                <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+                    <b>序列化：</b>根節點永遠排在子節點前面，這讓還原時可以依照字串順序一個個建立節點。<br>
+                    <b>還原技巧：</b>利用 Iterator (next) 或 Queue (popleft) 每次處理最前方的元素，遞迴建立結構。
+                </p>
+            </div>
+            <div class="theory-card">
+                <h3>📊 複雜度分析</h3>
+                <table style="width:100%; font-size:14px; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid #eee;"><td style="padding:8px;">時間複雜度</td><td><b>O(N)</b></td></tr>
+                    <tr style="border-bottom: 1px solid #eee;"><td style="padding:8px;">空間複雜度</td><td><b>O(N)</b></td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const treeNodes = [
+    {id: 1, v: 1, x: 50, y: 30, p: null},
+    {id: 2, v: 2, x: 25, y: 100, p: 1},
+    {id: 3, v: 3, x: 75, y: 100, p: 1},
+    {id: 4, v: 4, x: 60, y: 180, p: 3},
+    {id: 5, v: 5, x: 90, y: 180, p: 3}
+];
+
+const serializeCode = [
+    "class Codec:",
+    "    def serialize(self, root):",
+    "        res = []",
+    "        def dfs(node):",
+    "            if not node:",
+    "                res.append('N')",
+    "                return",
+    "            res.append(str(node.val))",
+    "            dfs(node.left)",
+    "            dfs(node.right)",
+    "        dfs(root)",
+    "        return ','.join(res)"
+];
+
+const deserializeCode = [
+    "    def deserialize(self, data):",
+    "        vals = iter(data.split(','))",
+    "        ",
+    "        def dfs():",
+    "            v = next(vals)",
+    "            if v == 'N':",
+    "                return None",
+    "            ",
+    "            node = TreeNode(int(v))",
+    "            node.left = dfs()",
+    "            node.right = dfs()",
+    "            return node",
+    "            ",
+    "        return dfs()"
+];
+
+const serializeTrace = [
+    { ln: 2, res: [], node: "Init", msg: "開始編碼" },
+    { ln: 7, res: ["1"], node: 1 },
+    { ln: 7, res: ["1","2"], node: 2 },
+    { ln: 5, res: ["1","2","N"], node: "2.L" },
+    { ln: 5, res: ["1","2","N","N"], node: "2.R" },
+    { ln: 7, res: ["1","2","N","N","3"], node: 3 },
+    { ln: 7, res: ["1","2","N","N","3","4"], node: 4 },
+    { ln: 5, res: ["1","2","N","N","3","4","N"], node: "4.L" },
+    { ln: 5, res: ["1","2","N","N","3","4","N","N"], node: "4.R" },
+    { ln: 7, res: ["1","2","N","N","3","4","N","N","5"], node: 5 },
+    { ln: 11, res: ["1","2","N","N","3","4","N","N","5","N","N"], node: "Done" }
+];
+
+const deserializeTrace = [
+    { ln: 1, tIdx: -1, node: null, res: ["1","2","N","N","3","4","N","N","5","N","N"] },
+    { ln: 4, tIdx: 0, node: 1, x: 50, y: 30, p: null },
+    { ln: 9, tIdx: 1, node: 2, x: 25, y: 100, p: 1 },
+    { ln: 5, tIdx: 2, node: "N" },
+    { ln: 5, tIdx: 3, node: "N" },
+    { ln: 10, tIdx: 4, node: 3, x: 75, y: 100, p: 1 },
+    { ln: 9, tIdx: 5, node: 4, x: 60, y: 180, p: 3 },
+    { ln: 5, tIdx: 6, node: "N" },
+    { ln: 5, tIdx: 7, node: "N" },
+    { ln: 10, tIdx: 8, node: 5, x: 90, y: 180, p: 3 },
+    { ln: 13, tIdx: 10, node: "N", msg: "還原完成" }
+];
+
+let currentStep = 0;
+
+function resetDemo() {
+    currentStep = 0;
+    const mode = document.getElementById('modeSelect').value;
+    const code = mode === 'serialize' ? serializeCode : deserializeCode;
+    const info = mode === 'serialize' ? '<strong>Serialize：</strong>將樹轉為 Preorder 字串。' : '<strong>Deserialize：</strong>彈出字串首位元素，遞迴建樹。';
+    
+    document.getElementById('modeInfo').innerHTML = info;
+    document.getElementById('debugTitle').innerText = mode === 'serialize' ? 'Serializer Monitor' : 'Deserializer Cursor';
+    document.getElementById('editorTitle').innerText = mode === 'serialize' ? 'solution.py (Serialize)' : 'solution.py (Deserialize)';
+
+    // 渲染代碼
+    document.getElementById('codePanel').innerHTML = code.map((line, i) => `
+        <div class="line" id="line-${i}"><div class="line-num">${i + 1}</div><div class="line-content">${line.replace(/def |class |if |return |next |int |str/g, x => `<span class="kw">${x}</span>`)}</div></div>`).join('');
+    
+    // 清除樹
+    document.getElementById('nodes').innerHTML = '';
+    document.getElementById('svgLines').innerHTML = '';
+
+    if (mode === 'serialize') {
+        // 初始顯示完整樹
+        treeNodes.forEach(n => drawNode(n, true));
+    } else {
+        // Deserialize 模式下初始字串顯示
+        const dataStr = "1,2,N,N,3,4,N,N,5,N,N";
+        document.getElementById('strDisplay').innerHTML = dataStr.split(',').map((t, i) => `<span class="token" id="tk-${i}">${t}</span>`).join(',');
+    }
+    
+    render();
+}
+
+function nextStep() {
+    const mode = document.getElementById('modeSelect').value;
+    const trace = mode === 'serialize' ? serializeTrace : deserializeTrace;
+    if (currentStep < trace.length - 1) { currentStep++; render(); }
+}
+
+function drawNode(n, visible = false) {
+    const nodesWrap = document.getElementById('nodes');
+    const svg = document.getElementById('svgLines');
+    
+    if (!document.getElementById(`n-${n.id}`)) {
+        const div = document.createElement('div');
+        div.id = `n-${n.id}`;
+        div.className = 'tree-node' + (visible ? ' node-visible' : '');
+        div.style.left = n.x + "%"; div.style.top = n.y + "px";
+        div.innerText = n.v;
+        nodesWrap.appendChild(div);
+
+        if (n.p !== null) {
+            const parent = treeNodes.find(p => p.id === n.p);
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.id = `l-${n.id}`;
+            line.setAttribute("x1", parent.x + "%"); line.setAttribute("y1", parent.y + 16);
+            line.setAttribute("x2", n.x + "%"); line.setAttribute("y2", n.y);
+            if (visible) line.classList.add('line-visible');
+            svg.appendChild(line);
+        }
+    }
+}
+
+function render() {
+    const mode = document.getElementById('modeSelect').value;
+    const step = mode === 'serialize' ? serializeTrace[currentStep] : deserializeTrace[currentStep];
+    
+    document.querySelectorAll('.line').forEach(l => l.classList.remove('line-active'));
+    document.getElementById(`line-${step.ln}`).classList.add('line-active');
+
+    if (mode === 'serialize') {
+        document.getElementById('mon-node').innerText = step.node;
+        document.getElementById('mon-data').innerText = JSON.stringify(step.res);
+        document.getElementById('strDisplay').innerText = "Result: " + step.res.join(',');
+        
+        document.querySelectorAll('.tree-node').forEach(n => n.classList.remove('node-active'));
+        if (typeof step.node === 'number') {
+            document.getElementById(`n-${step.node}`).classList.add('node-active');
+        }
+    } else {
+        document.getElementById('mon-node').innerText = step.node || "N/A";
+        document.getElementById('mon-data').innerText = step.tIdx >= 0 ? "Popped Index " + step.tIdx : "Queue Ready";
+        
+        // Token 高亮
+        document.querySelectorAll('.token').forEach((t, i) => {
+            t.className = 'token' + (i < step.tIdx ? ' token-used' : '') + (i === step.tIdx ? ' token-active' : '');
+        });
+
+        if (typeof step.node === 'number') {
+            const nData = treeNodes.find(n => n.id === step.node);
+            drawNode(nData, true);
+            const nodeEl = document.getElementById(`n-${step.node}`);
+            const lineEl = document.getElementById(`l-${step.node}`);
+            setTimeout(() => {
+                nodeEl.classList.add('node-visible', 'node-active');
+                if (lineEl) lineEl.classList.add('line-visible');
+            }, 50);
+        }
+    }
+}
+
+resetDemo();
+</script>
+</body>
+</html>

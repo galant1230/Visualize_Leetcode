@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>235. LCA of BST - Integrated Analysis</title>
+    <style>
+        :root {
+            --primary: #ec4899; --bg: #0d1117; --line-active: #21262d;
+            --kw: #ff7b72; --fn: #d2a8ff; --vr: #ffa657; --tp: #79c0ff; --cm: #8b949e;
+            --target: #f59e0b;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        
+        /* 視覺畫布 */
+        .tree-stage { background: #ffffff; border: 1px solid #d0d7de; border-radius: 8px; height: 320px; position: relative; margin-bottom: 20px; overflow: hidden; }
+        .tree-node { position: absolute; width: 34px; height: 34px; background: #fff; border: 2px solid #30363d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; transition: all 0.4s ease; z-index: 2; transform: translateX(-50%); font-size: 13px; }
+        .node-p-q { border-color: var(--target); background: #fffbeb; color: var(--target); border-width: 3px; }
+        .node-active { border-color: var(--primary); background: #fdf2f8; color: var(--primary); box-shadow: 0 0 15px rgba(236, 72, 153, 0.4); transform: translateX(-50%) scale(1.1); }
+        .node-lca { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; }
+
+        /* 代碼區域 */
+        .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; }
+        .code-window { background: var(--bg); border-radius: 8px; overflow: hidden; border: 1px solid #30363d; }
+        .code-header { background: #161b22; padding: 10px 15px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        .code-panel { color: #c9d1d9; padding: 15px; font-family: 'Fira Code', monospace; font-size: 12px; height: 350px; overflow-y: auto; line-height: 1.6; }
+        .line { display: flex; opacity: 0.3; transition: 0.2s; border-left: 3px solid transparent; }
+        .line-num { width: 30px; color: #484f58; text-align: right; padding-right: 15px; }
+        .line-content { white-space: pre; }
+        .active-line { opacity: 1; background: var(--line-active); border-left-color: var(--primary); }
+
+        /* 資訊面板 */
+        .side-label { font-size: 11px; font-weight: bold; color: #57606a; margin-bottom: 6px; display: block; text-transform: uppercase; }
+        .stack-panel { background: #161b22; color: #8b949e; padding: 12px; border-radius: 8px; display: flex; flex-direction: column-reverse; gap: 5px; min-height: 60px; border: 1px solid #30363d; margin-bottom: 15px; }
+        .stack-frame { padding: 4px 8px; background: rgba(236, 72, 153, 0.1); color: var(--tp); border-radius: 4px; border-left: 2px solid var(--primary); font-size: 10px; }
+        #stepDesc { padding: 12px; background: #fff; border: 1px solid #d0d7de; border-radius: 8px; font-size: 13px; min-height: 70px; margin-bottom: 15px; }
+        
+        /* 複雜度表格 */
+        .comp-table { width: 100%; border-collapse: collapse; font-size: 11px; color: #c9d1d9; margin-top: 10px; border: 1px solid #30363d; }
+        .comp-table th, .comp-table td { border: 1px solid #30363d; padding: 6px; text-align: left; }
+        .comp-table th { background: #161b22; color: var(--fn); }
+
+        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        line { stroke: #d0d7de; stroke-width: 1.5; transition: 0.4s; }
+        .k { color: var(--kw); } .t { color: var(--tp); } .v { color: var(--vr); } .f { color: var(--fn); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <select id="caseSelect" onchange="init()" style="padding:8px; border-radius:6px; font-weight:600;">
+                <option value="case1">案例 1: p=2, q=8 (分岔點在根)</option>
+                <option value="case2">案例 2: p=2, q=4 (LCA 為 2)</option>
+            </select>
+            <select id="langSelect" onchange="renderCode()" style="padding:5px; border-radius:6px;">
+                <option value="py">Python 3 (Iterative)</option>
+                <option value="c">C Language (Recursive)</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn-primary" onclick="runStep()">下一步 ▶</button>
+            <button onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="tree-stage">
+        <svg id="svgLines"></svg>
+        <div id="treeNodes"></div>
+    </div>
+
+    <div class="grid">
+        <div class="code-window">
+            <div class="code-header"><span id="fileName" style="color:#8b949e; font-size:12px;">solution.py</span></div>
+            <div class="code-panel" id="codePanel"></div>
+        </div>
+        
+        <div class="status-wrapper">
+            <span class="side-label">Execution Trace</span>
+            <div class="stack-panel" id="stackPanel"></div>
+            <span class="side-label">Step Insight</span>
+            <div id="stepDesc"></div>
+            
+            <div style="background:#161b22; padding:15px; border-radius:8px; border:1px solid #30363d;">
+                <span class="side-label" style="color:var(--fn)">BST 性質與複雜度分析</span>
+                <p style="font-size:11px; color:#8b949e; margin: 5px 0;">左子樹所有值 &lt; 節點 &lt; 右子樹所有值。利用此點可單向搜尋。</p>
+                <table class="comp-table">
+                    <tr><th>維度</th><th>複雜度</th><th>說明</th></tr>
+                    <tr><td>時間</td><td>$O(H)$</td><td>$H$ 為樹高，平衡時為 $O(\log N)$。</td></tr>
+                    <tr><td>空間 (迭代)</td><td>$O(1)$</td><td>不佔用額外棧空間（Python 版）。</td></tr>
+                    <tr><td>空間 (遞迴)</td><td>$O(H)$</td><td>由系統維護 Call Stack（C 語言版）。</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let step = 0;
+    const bstNodes = [
+        {id:6, v:6, x:50, y:40, p:null},
+        {id:2, v:2, x:25, y:110, p:6}, {id:8, v:8, x:75, y:110, p:6},
+        {id:0, v:0, x:15, y:180, p:2}, {id:4, v:4, x:35, y:180, p:2},
+        {id:7, v:7, x:65, y:180, p:8}, {id:9, v:9, x:85, y:180, p:8},
+        {id:3, v:3, x:30, y:250, p:4}, {id:5, v:5, x:40, y:250, p:4}
+    ];
+
+    const codes = {
+        py: [
+            `<span class="k">def</span> <span class="f">lowestCommonAncestor</span>(<span class="v">self</span>, <span class="v">root</span>, <span class="v">p</span>, <span class="v">q</span>):`,
+            `    <span class="v">curr</span> = <span class="v">root</span>`,
+            `    <span class="k">while</span> <span class="v">curr</span>:`,
+            `        <span class="k">if</span> <span class="v">p.val</span> > <span class="v">curr.val</span> <span class="k">and</span> <span class="v">q.val</span> > <span class="v">curr.val</span>:`,
+            `            <span class="v">curr</span> = <span class="v">curr.right</span>`,
+            `        <span class="k">elif</span> <span class="v">p.val</span> < <span class="v">curr.val</span> <span class="k">and</span> <span class="v">q.val</span> < <span class="v">curr.val</span>:`,
+            `            <span class="v">curr</span> = <span class="v">curr.left</span>`,
+            `        <span class="k">else</span>:`,
+            `            <span class="k">return</span> <span class="v">curr</span>`
+        ],
+        c: [
+            `<span class="k">struct</span> <span class="t">TreeNode</span>* <span class="f">lowestCommonAncestor</span>(<span class="k">struct</span> <span class="t">TreeNode</span>* <span class="v">root</span>, ...) {`,
+            `    <span class="k">int</span> <span class="v">rv</span> = <span class="v">root</span>-><span class="v">val</span>;`,
+            `    <span class="k">if</span> (<span class="v">p</span>-><span class="v">val</span> > <span class="v">rv</span> && <span class="v">q</span>-><span class="v">val</span> > <span class="v">rv</span>)`,
+            `        <span class="k">return</span> <span class="f">lowestCommonAncestor</span>(<span class="v">root</span>-><span class="v">right</span>, <span class="v">p</span>, <span class="v">q</span>);`,
+            `    <span class="k">if</span> (<span class="v">p</span>-><span class="v">val</span> < <span class="v">rv</span> && <span class="v">q</span>-><span class="v">val</span> < <span class="v">rv</span>)`,
+            `        <span class="k">return</span> <span class="f">lowestCommonAncestor</span>(<span class="v">root</span>-><span class="v">left</span>, <span class="v">p</span>, <span class="v">q</span>);`,
+            `    <span class="k">return</span> <span class="v">root</span>;`,
+            `}`
+        ]
+    };
+
+    const traces = {
+        case1: { p: 2, q: 8, steps: [
+            { active: 6, py: 1, c: 0, stack: ['LCA(6)'], desc: "從根節點 6 開始。" },
+            { active: 6, py: 7, c: 6, stack: ['LCA(6)'], desc: "2 < 6 且 8 > 6。分佈兩側，找到分岔點。" },
+            { active: 6, py: 8, c: 6, stack: ['LCA(6)'], isLCA: true, desc: "LCA 為節點 6。" }
+        ]},
+        case2: { p: 2, q: 4, steps: [
+            { active: 6, py: 1, c: 0, stack: ['LCA(6)'], desc: "從根節點 6 開始。" },
+            { active: 6, py: 5, c: 4, stack: ['LCA(6)'], desc: "2 與 4 皆小於 6。往左搜尋。" },
+            { active: 2, py: 6, c: 5, stack: ['LCA(6)', 'LCA(2)'], desc: "移動到節點 2。" },
+            { active: 2, py: 8, c: 6, stack: ['LCA(6)', 'LCA(2)'], isLCA: true, desc: "2 等於當前節點，2 即為 LCA。" }
+        ]}
+    };
+
+    function init() { step = 0; renderCode(); render(); }
+    function runStep() { const c = traces[document.getElementById('caseSelect').value]; if (step < c.steps.length-1) { step++; render(); } }
+    function renderCode() {
+        const lang = document.getElementById('langSelect').value;
+        document.getElementById('fileName').innerText = lang === 'py' ? 'solution.py' : 'solution.c';
+        document.getElementById('codePanel').innerHTML = codes[lang].map((l, i) => `<div class="line" id="line-${i}"><div class="line-num">${i + 1}</div><div class="line-content">${l}</div></div>`).join('');
+        render();
+    }
+    function render() {
+        const lang = document.getElementById('langSelect').value;
+        const currentCase = traces[document.getElementById('caseSelect').value];
+        const data = currentCase.steps[step];
+        document.getElementById('stepDesc').innerHTML = data.desc;
+        document.getElementById('stackPanel').innerHTML = data.stack.map(s => `<div class="stack-frame">${s}</div>`).join('');
+        document.querySelectorAll('.line').forEach(l => l.classList.remove('active-line'));
+        const lineIdx = data[lang];
+        if (lineIdx !== undefined) document.getElementById(`line-${lineIdx}`).classList.add('active-line');
+        const container = document.getElementById('treeNodes');
+        const svg = document.getElementById('svgLines');
+        container.innerHTML = ''; svg.innerHTML = '';
+        bstNodes.forEach(n => {
+            const div = document.createElement('div');
+            let cls = 'tree-node';
+            if (n.id === currentCase.p || n.id === currentCase.q) cls += ' node-p-q';
+            if (n.id === data.active) cls += ' node-active';
+            if (data.isLCA && n.id === data.active) cls += ' node-lca';
+            div.className = cls; div.style.left = n.x + '%'; div.style.top = n.y + 'px';
+            div.innerText = n.v; container.appendChild(div);
+            if (n.p !== null) {
+                const parent = bstNodes.find(p => p.id === n.p);
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", n.x + "%"); line.setAttribute("y1", n.y);
+                line.setAttribute("x2", parent.x + "%"); line.setAttribute("y2", parent.y + 17);
+                svg.appendChild(line);
+            }
+        });
+    }
+    init();
+</script>
+</body>
+</html>

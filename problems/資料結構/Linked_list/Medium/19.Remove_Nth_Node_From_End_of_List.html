@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>19. Remove Nth Node 雙語專業版</title>
+    <style>
+        :root {
+            --primary: #3b82f6; --code-bg: #282c34;
+            --kw: #c678dd; --fn: #61afef; --vr: #e06c75; --tp: #e5c07b; --st: #98c379; --cm: #5c6370; --nm: #d19a66;
+            --slow: #10b981; --fast: #f43f5e;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; padding: 20px; }
+        .container { max-width: 1050px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        
+        /* 題目描述 */
+        .problem-header { background: #f8fafc; border-left: 6px solid var(--primary); padding: 15px 20px; margin-bottom: 25px; border-radius: 4px; }
+        
+        /* 模擬畫布 */
+        .stage { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 15px; height: 300px; position: relative; margin-bottom: 25px; overflow: hidden; box-shadow: inset 0 2px 10px rgba(0,0,0,0.02); }
+        .node { width: 48px; height: 48px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; position: absolute; z-index: 5; transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        .dummy-node { background: #64748b; }
+        .ptr-label { position: absolute; padding: 2px 8px; border-radius: 5px; color: white; font-size: 11px; font-weight: bold; top: -32px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+
+        /* 程式碼與控制區 */
+        .grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 25px; }
+        .code-panel { background: var(--code-bg); color: #abb2bf; padding: 25px; border-radius: 15px; font-family: 'Fira Code', 'Consolas', monospace; font-size: 13.5px; line-height: 1.7; height: 400px; overflow-y: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .line { display: block; border-left: 3px solid transparent; padding-left: 15px; opacity: 0.3; white-space: pre; transition: 0.2s; }
+        .active-line { background: rgba(255,255,255,0.08); border-left-color: var(--primary); opacity: 1; transform: translateX(5px); }
+        
+        /* 語法高亮 */
+        .k { color: var(--kw); font-weight: bold; } .t { color: var(--tp); } .v { color: var(--vr); } .f { color: var(--fn); } .c { color: var(--cm); font-style: italic; } .n { color: var(--nm); }
+
+        .status-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 15px; }
+        .controls { text-align: center; margin-top: 30px; display: flex; justify-content: center; gap: 15px; }
+        .btn { padding: 12px 25px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s; }
+        .btn-step { background: #1e293b; color: white; }
+        .btn-step:hover { background: #334155; }
+        
+        /* 切換鈕樣式 */
+        .tab-group { background: #f1f5f9; padding: 5px; border-radius: 12px; display: inline-flex; margin-bottom: 20px; }
+        .tab { padding: 8px 20px; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; color: #64748b; background: transparent; transition: 0.3s; }
+        .tab.active { background: white; color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="problem-header">
+        <h2 style="margin:0; color:#1e293b;">19. Remove Nth Node From End of List</h2>
+        <p style="color:#64748b; margin-top:5px;">刪除倒數第 N 個節點。核心：維持快慢指針間距為 N。</p>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="tab-group">
+            <button class="tab active" id="pyTab" onclick="setLang('py')">Python</button>
+            <button class="tab" id="cppTab" onclick="setLang('cpp')">C++</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            n = <input type="number" id="nInput" value="2" min="1" max="5" style="padding:5px; border-radius:5px; border:1px solid #ddd; width:40px;">
+            <button onclick="init()" style="cursor:pointer; padding:5px 10px; border-radius:5px; border:1px solid #ccc;">重置模擬</button>
+        </div>
+    </div>
+
+    <div class="stage" id="stage">
+        <svg id="svgLines"></svg>
+        <div id="nodes"></div>
+    </div>
+
+    <div class="grid">
+        <div class="code-panel" id="codePanel"></div>
+        <div class="status-box">
+            <h4 style="margin:0; color:var(--primary)">🧠 邏輯執行狀態</h4>
+            <p id="stepDesc" style="font-size: 0.9rem; color:#475569; min-height:100px; line-height:1.6;">準備開始...</p>
+            <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+            <div style="font-size: 0.8rem;">
+                <b>複雜度分析:</b><br>
+                Time: $O(N)$ (One-pass)<br>
+                Space: $O(1)$
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-step" id="nextBtn" onclick="runStep()">下一步 (Step)</button>
+    </div>
+</div>
+
+<script>
+    let list = [], n = 2, slowIdx = 0, fastIdx = 0, phase = 0, sub = 0, lang = 'py', isDone = false;
+
+    const codes = {
+        py: [
+            `<span class="v">dummy</span> = <span class="t">ListNode</span>(<span class="n">0</span>, <span class="v">head</span>)`,
+            `<span class="v">slow</span> = <span class="v">fast</span> = <span class="v">dummy</span>`,
+            `<span class="c"># 1. Fast 先前進 n 步</span>`,
+            `<span class="k">for</span> <span class="v">_</span> <span class="k">in</span> <span class="f">range</span>(<span class="v">n</span>):`,
+            `    <span class="v">fast</span> = <span class="v">fast</span>.<span class="v">next</span>`,
+            `<span class="c"># 2. 同步移動直到 fast 到底</span>`,
+            `<span class="k">while</span> <span class="v">fast</span>.<span class="v">next</span>:`,
+            `    <span class="v">slow</span>, <span class="v">fast</span> = <span class="v">slow</span>.<span class="v">next</span>, <span class="v">fast</span>.<span class="v">next</span>`,
+            `<span class="c"># 3. 刪除節點</span>`,
+            `<span class="v">slow</span>.<span class="v">next</span> = <span class="v">slow</span>.<span class="v">next</span>.<span class="v">next</span>`,
+            `<span class="k">return</span> <span class="v">dummy</span>.<span class="v">next</span>`
+        ],
+        cpp: [
+            `<span class="t">ListNode</span>* <span class="v">dummy</span> = <span class="k">new</span> <span class="t">ListNode</span>(<span class="n">0</span>, <span class="v">head</span>);`,
+            `<span class="t">ListNode</span>* <span class="v">slow</span> = <span class="v">dummy</span>; <span class="t">ListNode</span>* <span class="v">fast</span> = <span class="v">dummy</span>;`,
+            `<span class="c">// 1. Fast 先走 n 步</span>`,
+            `<span class="k">for</span> (<span class="t">int</span> <span class="v">i</span> = <span class="n">0</span>; <span class="v">i</span> < <span class="v">n</span>; ++<span class="v">i</span>) {`,
+            `    <span class="v">fast</span> = <span class="v">fast</span>-><span class="v">next</span>;`,
+            `}`,
+            `<span class="c">// 2. 同步移動</span>`,
+            `<span class="k">while</span> (<span class="v">fast</span>-><span class="v">next</span>) {`,
+            `    <span class="v">slow</span> = <span class="v">slow</span>-><span class="v">next</span>; <span class="v">fast</span> = <span class="v">fast</span>-><span class="v">next</span>;`,
+            `}`,
+            `<span class="c">// 3. 刪除目標節點</span>`,
+            `<span class="v">slow</span>-><span class="v">next</span> = <span class="v">slow</span>-><span class="v">next</span>-><span class="v">next</span>;`,
+            `<span class="k">return</span> <span class="v">dummy</span>-><span class="v">next</span>;`
+        ]
+    };
+
+    function setLang(l) {
+        lang = l;
+        document.getElementById('pyTab').classList.toggle('active', l==='py');
+        document.getElementById('cppTab').classList.toggle('active', l==='cpp');
+        init();
+    }
+
+    function init() {
+        n = parseInt(document.getElementById('nInput').value);
+        list = [
+            { val: 'D', next: 1, x: 60, y: 150, isDummy: true },
+            { val: '1', next: 2, x: 160, y: 150 },
+            { val: '2', next: 3, x: 260, y: 150 },
+            { val: '3', next: 4, x: 360, y: 150 },
+            { val: '4', next: 5, x: 460, y: 150 },
+            { val: '5', next: null, x: 560, y: 150 }
+        ];
+        slowIdx = 0; fastIdx = 0; phase = 0; sub = 0; isDone = false;
+        document.getElementById('nextBtn').disabled = false;
+        renderCode(); render();
+        updateUI(0, "初始化", "建立 Dummy Node。這是為了處理刪除頭節點的特殊情況。");
+    }
+
+    function renderCode() {
+        document.getElementById('codePanel').innerHTML = codes[lang].map((l, i) => `<div class="line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function runStep() {
+        if (isDone) return;
+        if (phase === 0) { // Fast forward N
+            if (sub < n) {
+                fastIdx = list[fastIdx].next;
+                sub++;
+                updateUI(lang==='py'?4:4, "Fast 領先中", `Fast 先前進第 ${sub} 步，製造與 Slow 的間距。`);
+            } else {
+                phase = 1; runStep();
+            }
+        } else if (phase === 1) { // Move together
+            if (list[fastIdx].next !== null) {
+                slowIdx = list[slowIdx].next;
+                fastIdx = list[fastIdx].next;
+                updateUI(lang==='py'?7:8, "保持距離移動", "Slow 與 Fast 同步移動。當 Fast 到達末尾，Slow 會在目標的前一個。");
+            } else {
+                phase = 2; runStep();
+            }
+        } else if (phase === 2) { // Delete
+            const targetIdx = list[slowIdx].next;
+            list[slowIdx].next = list[targetIdx].next;
+            updateUI(lang==='py'?9:11, "執行刪除", `將 Slow 的 next 跳過下一個節點。倒數第 ${n} 個節點已被移除。`);
+            isDone = true;
+            document.getElementById('nextBtn').disabled = true;
+        }
+        render();
+    }
+
+    function updateUI(line, title, desc) {
+        document.querySelectorAll('.line').forEach(l => l.classList.remove('active-line'));
+        if(document.getElementById('l'+line)) document.getElementById('l'+line).classList.add('active-line');
+        document.getElementById('stepDesc').innerHTML = `<b>${title}</b><br>${desc}`;
+    }
+
+    function render() {
+        const nodes = document.getElementById('nodes');
+        nodes.innerHTML = '';
+        list.forEach((n, i) => {
+            const div = document.createElement('div');
+            div.className = 'node' + (n.isDummy ? ' dummy-node' : '');
+            div.style.left = n.x + 'px'; div.style.top = n.y + 'px';
+            div.innerText = n.val;
+            if (i === slowIdx) div.innerHTML += `<div class="ptr-label" style="background:var(--slow)">slow</div>`;
+            if (i === fastIdx) div.innerHTML += `<div class="ptr-label" style="background:var(--fast)">fast</div>`;
+            nodes.appendChild(div);
+        });
+        drawArrows();
+    }
+
+    function drawArrows() {
+        const svg = document.getElementById('svgLines');
+        svg.innerHTML = '<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="26" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#cbd5e0"/></marker></defs>';
+        list.forEach((n, i) => {
+            if (n.next !== null) {
+                const target = list[n.next];
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                let d = `M ${n.x+24} ${n.y+24} L ${target.x+24} ${target.y+24}`;
+                path.setAttribute("d", d); path.setAttribute("stroke", "#cbd5e0"); path.setAttribute("stroke-width", "2.5");
+                path.setAttribute("fill", "none"); path.setAttribute("marker-end", "url(#arr)");
+                svg.appendChild(path);
+            }
+        });
+    }
+    init();
+</script>
+</body>
+</html>
