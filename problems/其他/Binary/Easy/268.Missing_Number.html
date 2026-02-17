@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Missing Number Pro Visualizer</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.2);
+            --type: #79c0ff;
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        .container { max-width: 1850px; margin: auto; display: grid; grid-template-columns: 350px 1fr 480px; gap: 20px; height: 95vh; }
+        
+        /* Side Panel Styling */
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 10px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+        .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); margin-right: 5px; }
+
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .viz-area { background: var(--card); border-radius: 8px; padding: 30px; border: 1px solid #333; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; }
+        
+        .box-row { display: flex; gap: 8px; margin: 10px 0; }
+        .box { width: 55px; height: 65px; border: 1px solid #30363d; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #21262d; transition: all 0.3s; }
+        .box.active { border-color: var(--energy); background: rgba(210, 153, 34, 0.15); transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .box.found { border-color: var(--atlantic); color: var(--atlantic); opacity: 0.6; }
+        .box.missing { border-color: var(--danger); background: rgba(248, 81, 73, 0.1); border-width: 2px; }
+        
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; }
+        .editor-header { background: #161b22; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; }
+        select { background: #0d1117; color: var(--accent); border: 1px solid #30363d; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        
+        .ln { white-space: pre; padding: 0 15px 0 65px; position: relative; line-height: 1.8; font-size: 13px; display: block; }
+        .ln-num { position: absolute; left: 0; width: 50px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+        .tp { color: var(--type); }
+        
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; align-items: center; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        #math-display { font-family: 'Consolas', monospace; font-size: 16px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; width: 85%; text-align: center; border: 1px dashed #444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <b style="color:var(--accent); font-size:20px;">268. Missing Number</b>
+            <select id="algoSelect" onchange="init()">
+                <option value="xor">1. Bitwise XOR</option>
+                <option value="math">2. Math Summation</option>
+                <option value="hash">3. Hash Set</option>
+                <option value="sort">4. Sorting</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn" id="nextBtn" onclick="next()">下一步 Step 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置 Reset</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent); font-size:15px;">📖 題目描述</b><br>
+            給定一個包含 <code>n</code> 個相異數字的陣列 <code>nums</code>，範圍在 <code>[0, n]</code>。找出那唯一缺失的數字。
+        </div>
+
+        <div id="dynamicSideContent">
+            </div>
+
+        <div class="info-card">
+            <b style="color:var(--energy); font-size:14px;">💡 範例</b>
+            <div class="ex-box">
+                <b>Input:</b> [3, 0, 1] (n=3)<br>
+                <b>Range:</b> [0, 1, 2, 3]<br>
+                <b>Missing:</b> 2
+            </div>
+        </div>
+
+        <div id="complexInfo" class="info-card"></div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area">
+            <div id="viz-content" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
+            <div id="math-display"></div>
+        </div>
+        <div id="log" style="color:var(--accent); font-size:14px; font-weight:bold; text-align:center; min-height:20px;"></div>
+    </div>
+
+    <div class="editor">
+        <div class="editor-header">
+            <span style="font-size:12px; color:var(--dim)">Implementation</span>
+            <select id="langSelect" onchange="renderCode()">
+                <option value="python">Python</option>
+                <option value="c">C (Standard)</option>
+            </select>
+        </div>
+        <div id="codeView" style="padding-top:15px;"></div>
+    </div>
+</div>
+
+<script>
+const algoData = {
+    xor: {
+        title: "🧠 XOR 解法原理",
+        desc: "利用 <code>a ^ a = 0</code>。將 0~n 的索引與陣列值全部 XOR，成對的抵消後，剩下的即為缺失值。",
+        time: "O(n)", space: "O(1)",
+        py: ["def missingNumber(nums):", "    res = len(nums)", "    for i, num in enumerate(nums):", "        res ^= i ^ num", "    return res"],
+        c: ["int missingNumber(int* nums, int n) {", "    int res = n;", "    for (int i = 0; i < n; i++) {", "        res ^= i ^ nums[i];", "    }", "    return res;", "}"],
+        map: {1:1, 2:2, 3:3, 4:4}
+    },
+    math: {
+        title: "➕ 數學求和法",
+        desc: "預期總和減去實際總和。這裡採用 <code>res += i - nums[i]</code> 的迭代差值法來避免溢位。",
+        time: "O(n)", space: "O(1)",
+        py: ["def missingNumber(nums):", "    res = len(nums)", "    for i in range(len(nums)):", "        res += i - nums[i]", "    return res"],
+        c: ["int missingNumber(int* nums, int n) {", "    int res = n;", "    for (int i = 0; i < n; i++) {", "        res += i - nums[i];", "    }", "    return res;", "}"],
+        map: {1:1, 2:2, 3:3, 4:4}
+    },
+    hash: {
+        title: "🗂️ Hash Set 法",
+        desc: "先將陣列存入集合（Set），再巡一遍 0~n 檢查誰不在集合中。這最符合直覺但需額外空間。",
+        time: "O(n)", space: "O(n)",
+        py: ["def missingNumber(nums):", "    num_set = set(nums)", "    for i in range(len(nums) + 1):", "        if i not in num_set:", "            return i"],
+        c: ["int missingNumber(int* nums, int n) {", "    int hash[n+1]; // 模擬 Hash Table", "    memset(hash, 0, sizeof(hash));", "    for(int i=0; i<n; i++) hash[nums[i]] = 1;", "    for(int i=0; i<=n; i++) if(!hash[i]) return i;", "}"],
+        map: {1:1, 2:2, 3:3, 4:4}
+    },
+    sort: {
+        title: "🔢 排序法",
+        desc: "排序後，檢查 <code>nums[i]</code> 是否等於 <code>i</code>。如果不等，該 <code>i</code> 即為缺失數字。",
+        time: "O(n log n)", space: "O(1)",
+        py: ["def missingNumber(nums):", "    nums.sort()", "    for i in range(len(nums)):", "        if nums[i] != i:", "            return i", "    return len(nums)"],
+        c: ["int missingNumber(int* nums, int n) {", "    qsort(nums, n, sizeof(int), cmp);", "    for (int i = 0; i < n; i++) {", "        if (nums[i] != i) return i;", "    }", "    return n;", "}"],
+        map: {1:1, 2:2, 3:3, 4:4, 5:5}
+    }
+};
+
+let nums = [3, 0, 1];
+let currentStep = 0;
+let it;
+
+function init() {
+    const type = document.getElementById('algoSelect').value;
+    const data = algoData[type];
+    
+    // 更新左側動態資訊
+    document.getElementById('dynamicSideContent').innerHTML = `
+        <div class="info-card">
+            <b style="color:var(--atlantic); font-size:15px;">${data.title}</b><br>
+            ${data.desc}
+        </div>`;
+    document.getElementById('complexInfo').innerHTML = `<span class="tag">Time: ${data.time}</span><span class="tag">Space: ${data.space}</span>`;
+    
+    nums = [3, 0, 1];
+    currentStep = 1;
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('log').innerText = "點擊下一步開始...";
+    document.getElementById('math-display').innerText = "";
+    document.getElementById('viz-content').innerHTML = "";
+    
+    renderCode();
+    it = getGenerator(type);
+}
+
+function renderCode() {
+    const type = document.getElementById('algoSelect').value;
+    const lang = document.getElementById('langSelect').value;
+    const config = algoData[type];
+    const codeArr = config[lang === 'python' ? 'py' : 'c'];
+    
+    document.getElementById('codeView').innerHTML = codeArr.map((line, i) => {
+        const active = (i === config.map[currentStep]) ? 'ln-active' : '';
+        const fmt = line.replace(/def|int|for|in|return|if|set|enumerate/g, '<span class="kw">$&</span>');
+        return `<div class="ln ${active}"><span class="ln-num">${i}</span>${fmt}</div>`;
+    }).join('');
+}
+
+function createBox(label, val, className="") {
+    return `<div class="box ${className}"><span class="label">${label}</span><span class="val">${val}</span></div>`;
+}
+
+// Generators 邏輯與之前相同，僅微調視覺化輸出以對應新樣式
+function* xorGen() {
+    let res = 3;
+    const viz = document.getElementById('viz-content');
+    const math = document.getElementById('math-display');
+    currentStep = 1;
+    math.innerText = `Initial res = n = 3`;
+    yield { m: "初始化結果 res = 3 (n)" };
+    for(let i=0; i<3; i++) {
+        currentStep = 2;
+        viz.innerHTML = `<div class="box-row">${createBox('Index i', i, 'active')} ${createBox('Nums[i]', nums[i], 'active')}</div>`;
+        yield { m: `輪詢索引 ${i} 與值 ${nums[i]}` };
+        const old = res; res ^= i ^ nums[i]; currentStep = 3;
+        math.innerHTML = `${old} <span style="color:var(--keyword)">XOR</span> ${i} <span style="color:var(--keyword)">XOR</span> ${nums[i]} = <b style="color:var(--accent)">${res}</b>`;
+        yield { m: `執行 XOR 抵消運算` };
+    }
+    currentStep = 4; yield { m: `最終剩下缺失數字: ${res}` };
+}
+
+function* mathGen() {
+    let res = 3;
+    const math = document.getElementById('math-display');
+    currentStep = 1; math.innerText = `Initial res = 3`; yield { m: "初始化為 n" };
+    for(let i=0; i<3; i++) {
+        currentStep = 2; yield { m: `處理步驟 i=${i}` };
+        const old = res; res += (i - nums[i]); currentStep = 3;
+        math.innerHTML = `${old} + (${i} - ${nums[i]}) = <b style="color:var(--energy)">${res}</b>`;
+        yield { m: `計算 (索引 - 數值) 並累加至結果` };
+    }
+    currentStep = 4; yield { m: `完成，結果為 ${res}` };
+}
+
+function* hashGen() {
+    const viz = document.getElementById('viz-content');
+    currentStep = 1; yield { m: "建立 HashSet" };
+    let s = new Set(nums); currentStep = 2;
+    viz.innerHTML = `<div class="box-row">${nums.map(n => createBox('Set', n, 'found')).join('')}</div>`;
+    yield { m: "已將陣列內容存入 Set" };
+    for(let i=0; i<=3; i++) {
+        currentStep = 3; viz.innerHTML += `<div class="box-row">${createBox('Check', i, 'active')}</div>`;
+        if(!s.has(i)) {
+            currentStep = 4; viz.innerHTML += `<div class="box-row">${createBox('MISSING', i, 'missing')}</div>`;
+            yield { m: `查無此數！答案是 ${i}` }; return;
+        }
+        yield { m: `檢查數字 ${i}... 存在於 Set` };
+    }
+}
+
+function* sortGen() {
+    const viz = document.getElementById('viz-content');
+    currentStep = 1; 
+    viz.innerHTML = `<div class="box-row">${nums.map(n => createBox('Num', n)).join('')}</div>`;
+    yield { m: "排序前狀態" };
+    nums.sort();
+    viz.innerHTML = `<div class="box-row">${nums.map(n => createBox('Sorted', n, 'found')).join('')}</div>`;
+    yield { m: "陣列排序完成 (n log n)" };
+    for(let i=0; i<3; i++) {
+        currentStep = 2;
+        viz.innerHTML = `<div class="box-row">${createBox('i', i, 'active')} vs ${createBox('nums[i]', nums[i], 'active')}</div>`;
+        if(nums[i] !== i) {
+            currentStep = 3; yield { m: `不匹配！缺失數字為 ${i}` }; return;
+        }
+        yield { m: `匹配：i=${i}` };
+    }
+    currentStep = 4; yield { m: `巡完皆匹配，答案為 n=3` };
+}
+
+function getGenerator(type) {
+    if(type === 'xor') return xorGen();
+    if(type === 'math') return mathGen();
+    if(type === 'hash') return hashGen();
+    if(type === 'sort') return sortGen();
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) { document.getElementById('nextBtn').disabled = true; return; }
+    document.getElementById('log').innerText = `> ${s.value.m}`;
+    renderCode();
+}
+
+init();
+</script>
+</body>
+</html>

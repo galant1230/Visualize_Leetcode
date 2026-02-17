@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Sum of Two Integers - Pure Logic</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.2);
+            --type: #79c0ff;
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        .container { max-width: 1850px; margin: auto; display: grid; grid-template-columns: 350px 1fr 480px; gap: 20px; height: 95vh; }
+        
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 10px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+        .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); margin-right: 5px; }
+
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .viz-area { background: var(--card); border-radius: 8px; padding: 30px; border: 1px solid #333; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; }
+        
+        .bit-row { display: flex; gap: 4px; margin: 5px 0; }
+        .bit-cell { width: 32px; height: 42px; border: 1px solid #30363d; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #21262d; font-weight: bold; transition: all 0.2s; }
+        .bit-cell.is-one { color: var(--accent); border-color: var(--accent); background: rgba(88, 166, 255, 0.05); }
+        .bit-cell.carry { border-color: var(--danger); background: rgba(248, 81, 73, 0.15); color: var(--danger); }
+        .label { width: 100px; color: var(--dim); font-size: 12px; display: flex; align-items: center; font-weight: bold; }
+
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; }
+        .editor-header { background: #161b22; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; }
+        select { background: #0d1117; color: var(--accent); border: 1px solid #30363d; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        
+        .ln { white-space: pre; padding: 0 15px 0 65px; position: relative; line-height: 1.8; font-size: 13px; display: block; }
+        .ln-num { position: absolute; left: 0; width: 50px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+        
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; align-items: center; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        #math-display { font-family: 'Consolas', monospace; font-size: 14px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; width: 90%; margin-top: 15px; border: 1px dashed #444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <b style="color:var(--accent); font-size:20px;">371. Sum of Two Integers (Pure Version)</b>
+        </div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn" style="background:#21262d" onclick="prevStep()">⬅️ 上一步 Prev</button>
+            <button class="btn" id="nextBtn" onclick="nextStep()">下一步 Next 🧭</button>
+            <button class="btn" style="background:#30363d" onclick="init()">🔄 重置</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent); font-size:15px;">📖 題目描述</b><br>
+            不使用 <code>+</code> 或 <code>-</code> 運算子，計算兩數之和。
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--energy); font-size:15px;">📋 Examples</b>
+            <div class="ex-box">
+                <b>Example 1:</b> Input: a=1, b=2 → Out: 3
+            </div>
+            <div class="ex-box">
+                <b>Example 2:</b> Input: a=2, b=3 → Out: 5
+            </div>
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--atlantic); font-size:14px;">⚡️ 核心三部曲 (純邏輯版)</b><br>
+            1. <b>a ^ b</b>: 計算加法<br>
+            2. <b>a & b</b>: 找出進位位元<br>
+            3. <b><< 1</b>: 移動進位
+        </div>
+        
+        <div class="info-card" style="border: 1px solid var(--energy);">
+            <b style="color:var(--energy);">⏳ 當前狀態</b><br>
+            <div id="trace-data" style="font-family: monospace; font-size:12px; margin-top:5px;"></div>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area">
+            <div id="viz-content" style="width:100%;"></div>
+            <div id="math-display"></div>
+        </div>
+        <div id="log" style="color:var(--accent); font-size:14px; font-weight:bold; text-align:center; min-height:20px;"></div>
+    </div>
+
+    <div class="editor">
+        <div class="editor-header">
+            <span style="font-size:12px; color:var(--dim)">Implementation (No Mask)</span>
+            <select id="langSelect" onchange="renderCode()">
+                <option value="python">Python (Clean)</option>
+                <option value="c">C (Standard)</option>
+            </select>
+        </div>
+        <div id="codeView" style="padding-top:15px;"></div>
+    </div>
+</div>
+
+<script>
+const codes = {
+    python: {
+        steps: [
+            "def getSum(a: int, b: int) -> int:",
+            "    while b != 0:",
+            "        carry = (a & b) << 1",
+            "        a = a ^ b",
+            "        b = carry",
+            "    return a"
+        ],
+        map: {1:1, 2:1, 3:2, 4:3, 5:4, 6:5},
+        highlight: (l) => l.replace(/def|int|while|return/g, '<span class="kw">$&</span>')
+    },
+    c: {
+        steps: [
+            "int getSum(int a, int b) {",
+            "    while (b != 0) {",
+            "        unsigned int carry = (unsigned int)(a & b) << 1;",
+            "        a = a ^ b;",
+            "        b = carry;",
+            "    }",
+            "    return a;",
+            "}"
+        ],
+        map: {1:1, 2:1, 3:2, 4:3, 5:4, 6:6},
+        highlight: (l) => l.replace(/int|unsigned|while|return/g, '<span class="kw">$&</span>')
+    }
+};
+
+let history = [];
+let state = { a: 2, b: 3, carry: 0, stepIdx: 1, log: "開始運算 a=2, b=3" };
+
+function init() {
+    state = { a: 2, b: 3, carry: 0, stepIdx: 1, log: "初始化數據" };
+    history = [];
+    document.getElementById('nextBtn').disabled = false;
+    updateUI();
+}
+
+function updateUI() {
+    renderCode();
+    updateViz(state.a, state.b, state.carry);
+    document.getElementById('log').innerText = `> ${state.log}`;
+    document.getElementById('trace-data').innerHTML = `a: ${state.a} | b: ${state.b} | c: ${state.carry}`;
+}
+
+function renderCode() {
+    const lang = document.getElementById('langSelect').value;
+    const config = codes[lang];
+    document.getElementById('codeView').innerHTML = config.steps.map((line, i) => {
+        const active = (i === config.map[state.stepIdx]) ? 'ln-active' : '';
+        return `<div class="ln ${active}"><span class="ln-num">${i}</span>${config.highlight(line)}</div>`;
+    }).join('');
+}
+
+function toBin8(num) {
+    return (num >>> 0).toString(2).padStart(8, '0').slice(-8);
+}
+
+function updateViz(valA, valB, carry) {
+    const viz = document.getElementById('viz-content');
+    const binA = toBin8(valA);
+    const binB = toBin8(valB);
+    const binC = toBin8(carry);
+    const row = (label, bin, cls="") => `<div class="bit-row"><div class="label">${label}</div>${[...bin].map(b => `<div class="bit-cell ${b==='1'?'is-one':''} ${cls}">${b}</div>`).join('')}</div>`;
+
+    viz.innerHTML = `${row('A', binA)} ${row('B', binB)} <div style="border-bottom: 1px solid #444; margin: 10px 0; width: 90%;"></div> ${row('Carry', binC, 'carry')}`;
+    document.getElementById('math-display').innerHTML = `<b>a = a ^ b</b>: ${valA ^ valB} | <b>b = (a & b) << 1</b>: ${carry}`;
+}
+
+function nextStep() {
+    history.push(JSON.parse(JSON.stringify(state)));
+    if (state.stepIdx === 1 || state.stepIdx === 5) {
+        if (state.b === 0) { state.stepIdx = 6; state.log = "完成！"; document.getElementById('nextBtn').disabled = true; }
+        else { state.stepIdx = 2; state.log = "進入迴圈判斷..."; }
+    } else if (state.stepIdx === 2) {
+        state.carry = (state.a & state.b) << 1;
+        state.stepIdx = 3; state.log = "計算進位 carry";
+    } else if (state.stepIdx === 3) {
+        state.a = state.a ^ state.b;
+        state.stepIdx = 4; state.log = "執行 XOR";
+    } else if (state.stepIdx === 4) {
+        state.b = state.carry;
+        state.carry = 0;
+        state.stepIdx = 5; state.log = "更新 b 並準備下一輪";
+    }
+    updateUI();
+}
+
+function prevStep() {
+    if (history.length > 0) {
+        state = history.pop();
+        document.getElementById('nextBtn').disabled = false;
+        updateUI();
+    }
+}
+
+init();
+</script>
+</body>
+</html>

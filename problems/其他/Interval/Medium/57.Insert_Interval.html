@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Insert Interval - Wider Layout</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        
+        /* 重新調整欄位比例：左側稍窄，中右側拉寬 */
+        .container { 
+            max-width: 1850px; 
+            margin: auto; 
+            display: grid; 
+            grid-template-columns: 350px 1.2fr 1fr; 
+            gap: 20px; 
+            height: 95vh; 
+        }
+
+        /* 左側：精簡資訊 */
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 8px; margin-top: 5px; font-size: 12px; color: var(--dim); }
+        .tag { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); margin-right: 5px; }
+
+        /* 中間：視覺化 (拉寬) */
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .viz-area { background: var(--card); border-radius: 8px; padding: 40px 20px; border: 1px solid #333; position: relative; min-height: 280px; }
+        .timeline { position: absolute; height: 2px; background: #30363d; left: 30px; right: 30px; top: 150px; }
+        
+        .interval { 
+            position: absolute; height: 35px; border-radius: 6px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 12px; font-weight: bold; border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .interval.orig { background: #21262d; color: var(--dim); top: 95px; }
+        .interval.new { background: rgba(210, 153, 34, 0.3); border-color: var(--energy); color: var(--energy); top: 40px; z-index: 10; }
+        .interval.result { background: var(--atlantic); border-color: #3fb950; color: white; top: 175px; }
+        .interval.active { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); z-index: 11; transform: scaleY(1.05); }
+        .interval.merging { background: var(--danger); border-color: #f85149; }
+
+        /* 右側：IDE (拉寬) */
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .code-header { background: #161b22; padding: 12px 20px; border-bottom: 1px solid #30363d; font-size: 13px; color: var(--dim); display: flex; justify-content: space-between; }
+        .ln { white-space: pre; padding: 0 15px 0 65px; position: relative; line-height: 2.0; font-size: 15px; }
+        .ln-num { position: absolute; left: 0; width: 50px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn:hover { background: #388bfd; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:20px;">LeetCode 57. Insert Interval <span style="font-weight: normal; color: var(--dim); font-size: 14px;">(Standard Solution)</span></div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn" id="nextBtn" onclick="next()">下一步 Step 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置範例</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent)">📖 題目描述</b><br>
+            在已排序且無重疊的區間 <code>intervals</code> 中插入 <code>newInterval</code>，並保持結果有序且合併所有重疊部分。
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--energy)">💡 範例 Ex 2</b>
+            <div class="ex-box">
+                <b>Input:</b> [[1,2],[3,5],[6,7],[8,10],[12,16]]<br>
+                <b>New:</b> [4,8]<br>
+                <b>Output:</b> [[1,2],[3,10],[12,16]]
+            </div>
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--atlantic)">🧠 思路：三段式處理</b><br>
+            1. <b>Before:</b> <code>end < new.start</code> (加入結果)<br>
+            2. <b>During:</b> 重疊時更新 <code>new</code> 邊界<br>
+            3. <b>After:</b> <code>start > new.end</code> (加入 <code>new</code> 後加剩餘項)
+        </div>
+
+        <div class="info-card">
+            <span class="tag">Time: O(N)</span><span class="tag">Space: O(N)</span>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area" id="vizArea">
+            <div class="timeline"></div>
+        </div>
+        <div class="viz-area" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            <div style="font-size:11px; color:var(--dim); letter-spacing: 2px; text-transform: uppercase;">Result List Buffer</div>
+            <div id="resVal" style="font-size:28px; font-weight:bold; color:var(--atlantic); margin-top:12px; letter-spacing: 1px;">[]</div>
+            <div id="log" style="color:var(--accent); font-size:15px; margin-top:20px; font-weight: bold; background: rgba(88,166,255,0.05); padding: 8px 15px; border-radius: 20px;"></div>
+        </div>
+    </div>
+
+    <div class="editor">
+        <div class="code-header">
+            <span>insert_interval.py</span>
+            <span style="color: var(--atlantic)">● Python 3</span>
+        </div>
+        <div id="codeView" class="code-body" style="padding-top: 15px;"></div>
+    </div>
+</div>
+
+<script>
+const codeLines = [
+    "res = []",
+    "for interval in intervals:",
+    "    if interval[1] < newInterval[0]:",
+    "        res.append(interval)",
+    "    elif interval[0] > newInterval[1]:",
+    "        res.append(newInterval)",
+    "        newInterval = interval",
+    "    else:",
+    "        newInterval[0] = min(newInterval[0], interval[0])",
+    "        newInterval[1] = max(newInterval[1], interval[1])",
+    "res.append(newInterval)"
+];
+
+const testIntervals = [[1,2],[3,5],[6,7],[8,10],[12,16]];
+const testNew = [4,8];
+let it;
+const SCALE = 35; // 拉寬後增加比例尺
+
+function init() {
+    const viz = document.getElementById('vizArea');
+    viz.innerHTML = '<div class="timeline"></div>';
+    document.getElementById('nextBtn').disabled = false;
+    
+    testIntervals.forEach((int, idx) => {
+        const el = document.createElement('div');
+        el.className = 'interval orig';
+        el.id = `int-${idx}`;
+        el.style.left = `${int[0] * SCALE + 40}px`;
+        el.style.width = `${(int[1] - int[0]) * SCALE + 5}px`;
+        el.innerText = `[${int[0]},${int[1]}]`;
+        viz.appendChild(el);
+    });
+
+    const nEl = document.createElement('div');
+    nEl.className = 'interval new';
+    nEl.id = 'new-int';
+    nEl.style.left = `${testNew[0] * SCALE + 40}px`;
+    nEl.style.width = `${(testNew[1] - testNew[0]) * SCALE + 5}px`;
+    nEl.style.opacity = "1";
+    nEl.innerText = `NEW:[${testNew[0]},${testNew[1]}]`;
+    viz.appendChild(nEl);
+
+    document.getElementById('codeView').innerHTML = codeLines.map((l, i) => {
+        const formatted = l.replace(/for|in|if|elif|else|append|min|max/g, '<span class="kw">$&</span>');
+        return `<div class="ln" id="ln-${i}"><span class="ln-num">${i+1}</span>${formatted}</div>`;
+    }).join('');
+
+    it = insertLogic(testIntervals, testNew);
+    document.getElementById('resVal').innerText = "[]";
+    document.getElementById('log').innerText = "點擊「下一步」開始線性掃描";
+}
+
+function* insertLogic(intervals, newInt) {
+    let res = [];
+    let currentNew = [...newInt];
+
+    for (let i = 0; i < intervals.length; i++) {
+        let interval = intervals[i];
+        yield { ln: 1, i, m: `正在檢查第 ${i+1} 個區間: [${interval}]`, currentNew };
+
+        if (interval[1] < currentNew[0]) {
+            res.push(interval);
+            yield { ln: 3, i, res: [...res], m: `⬅️ 左側不重疊，將 [${interval}] 送入結果`, currentNew };
+        } 
+        else if (interval[0] > currentNew[1]) {
+            res.push([...currentNew]);
+            const oldNew = [...currentNew];
+            currentNew = [...interval];
+            yield { ln: 5, i, res: [...res], m: `➡️ 右側不重疊！存入合併區間 [${oldNew}]，現在處理下一個 [${interval}]`, currentNew };
+        } 
+        else {
+            currentNew[0] = Math.min(currentNew[0], interval[0]);
+            currentNew[1] = Math.max(currentNew[1], interval[1]);
+            yield { ln: 8, i, currentNew: [...currentNew], merging: true, m: `🔄 發現重疊！合併範圍更新為 [${currentNew[0]}, ${currentNew[1]}]` };
+        }
+    }
+    res.push(currentNew);
+    yield { ln: 10, res: [...res], currentNew, isFinal: true, m: "✨ 全部完成！將最後一個區間歸位。" };
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) {
+        document.getElementById('nextBtn').disabled = true;
+        document.getElementById('log').innerHTML = "<span style='color:var(--atlantic)'>✅ 成功！結果已正確合併。</span>";
+        return;
+    }
+    const { ln, i, res, currentNew, merging, isFinal, m } = s.value;
+
+    document.querySelectorAll('.ln').forEach(e => e.classList.remove('ln-active'));
+    document.getElementById(`ln-${ln}`).classList.add('ln-active');
+    document.querySelectorAll('.interval').forEach(e => e.classList.remove('active', 'merging'));
+    
+    if (i !== undefined) {
+        const target = document.getElementById(`int-${i}`);
+        if(target) {
+            target.classList.add('active');
+            if (merging) target.classList.add('merging');
+        }
+    }
+
+    const nEl = document.getElementById('new-int');
+    nEl.style.left = `${currentNew[0] * SCALE + 40}px`;
+    nEl.style.width = `${(currentNew[1] - currentNew[0]) * SCALE + 5}px`;
+    nEl.innerText = `NEW:[${currentNew[0]},${currentNew[1]}]`;
+    if(isFinal) nEl.style.opacity = "0";
+
+    if (res) {
+        document.getElementById('resVal').innerText = JSON.stringify(res).replace(/,/g, ', ');
+        document.querySelectorAll('.interval.result').forEach(e => e.remove());
+        res.forEach(int => {
+            const rEl = document.createElement('div');
+            rEl.className = 'interval result';
+            rEl.style.left = `${int[0] * SCALE + 40}px`;
+            rEl.style.width = `${(int[1] - int[0]) * SCALE + 5}px`;
+            rEl.innerText = `[${int[0]},${int[1]}]`;
+            document.getElementById('vizArea').appendChild(rEl);
+        });
+    }
+    document.getElementById('log').innerText = `> ${m}`;
+}
+
+init();
+</script>
+</body>
+</html>

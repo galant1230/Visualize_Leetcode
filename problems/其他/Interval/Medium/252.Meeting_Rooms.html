@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Meeting Rooms Visualizer</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        
+        .container { 
+            max-width: 1850px; 
+            margin: auto; 
+            display: grid; 
+            grid-template-columns: 350px 1.2fr 480px; 
+            gap: 20px; 
+            height: 95vh; 
+        }
+
+        /* 左側面板 */
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 10px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+        .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); margin-right: 5px; }
+
+        /* 中間視覺化區 */
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
+        .viz-area { 
+            background: var(--card); border-radius: 8px; padding: 40px 20px; border: 1px solid #333; 
+            position: relative; min-height: 320px; overflow-x: auto;
+        }
+        .timeline { position: absolute; height: 2px; background: #333; left: 20px; right: 20px; top: 160px; }
+        
+        .interval { 
+            position: absolute; height: 40px; border-radius: 6px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 12px; font-weight: bold; border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .interval.orig { background: #21262d; color: var(--dim); }
+        .interval.safe { background: var(--atlantic); border-color: #3fb950; color: white; top: 138px !important; }
+        .interval.conflict { background: var(--danger); border-color: #ff7b72; color: white; top: 138px !important; animation: shake 0.3s infinite; }
+        .interval.active { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); z-index: 11; }
+
+        @keyframes shake {
+            0% { transform: translateX(0); } 25% { transform: translateX(5px); } 50% { transform: translateX(-5px); } 75% { transform: translateX(5px); } 100% { transform: translateX(0); }
+        }
+
+        /* 右側代碼區 */
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; width: 480px; }
+        .code-header { background: #161b22; padding: 12px 20px; border-bottom: 1px solid #30363d; font-size: 13px; color: var(--dim); }
+        .ln { white-space: pre; padding: 0 15px 0 65px; position: relative; line-height: 2.2; font-size: 15px; }
+        .ln-num { position: absolute; left: 0; width: 50px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        #resStatus { font-size: 28px; font-weight: bold; margin-top: 10px; text-align: center; }
+        .status-true { color: var(--atlantic); }
+        .status-false { color: var(--danger); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:20px;">252. Meeting Rooms <span style="font-size:13px; font-weight:normal; color:var(--dim); ml-2">Conflict Detection</span></div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn" id="nextBtn" onclick="next()">開始排序 🔄</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent); font-size:15px;">📖 題目描述</b><br>
+            給予一組會議時間區間 <code>intervals</code>，判斷一個人是否能參加所有會議（即區間是否互不重疊）。
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--energy); font-size:15px;">💡 範例解析</b>
+            <div class="ex-box">
+                <b>Input:</b> [[0,30],[5,10],[15,20]]<br>
+                <b>Output:</b> <span style="color:var(--danger)">false</span><br>
+                <i>*解釋: [0,30] 與 [5,10] 衝突。</i>
+            </div>
+            <div class="ex-box">
+                <b>Input:</b> [[7,10],[2,4]]<br>
+                <b>Output:</b> <span style="color:var(--atlantic)">true</span>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--atlantic); font-size:15px;">🧠 解題思路</b><br>
+            1. <b>排序：</b> 按照會議的 <b>開始時間</b> (start) 進行排序。<br>
+            2. <b>檢查：</b> 比較第 <code>i</code> 個會議的開始時間是否小於第 <code>i-1</code> 個會議的結束時間。<br>
+            3. <b>結果：</b> 若小於，則代表重疊，回傳 <code>false</code>。
+        </div>
+
+        <div class="info-card">
+            <span class="tag">Time: O(N log N)</span><span class="tag">Space: O(1)</span>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area" id="vizArea">
+            <div class="timeline"></div>
+        </div>
+        <div class="viz-area" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            <div style="font-size:11px; color:var(--dim); letter-spacing: 2px;">CAN ATTEND ALL?</div>
+            <div id="resStatus">-</div>
+            <div id="log" style="color:var(--accent); font-size:14px; margin-top:15px; font-weight: bold; background: rgba(88,166,255,0.05); padding: 8px 15px; border-radius: 20px; text-align: center; min-width: 80%;"></div>
+        </div>
+    </div>
+
+    <div class="editor">
+        <div class="code-header"><span>can_attend_meetings.py</span></div>
+        <div id="codeView" class="code-body" style="padding-top: 15px;"></div>
+    </div>
+</div>
+
+<script>
+const codeLines = [
+    "intervals.sort(key=lambda x: x[0])",
+    "for i in range(1, len(intervals)):",
+    "    if intervals[i][0] < intervals[i-1][1]:",
+    "        return False",
+    "return True"
+];
+
+const testData = [[0,30],[5,10],[15,20]];
+let it;
+const SCALE = 12; // 調整比例尺以適應 0-30 的範例
+
+function init() {
+    const viz = document.getElementById('vizArea');
+    viz.innerHTML = '<div class="timeline"></div>';
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('nextBtn').innerText = "開始排序 🔄";
+    document.getElementById('resStatus').innerText = "-";
+    document.getElementById('resStatus').className = "";
+
+    testData.forEach((int, idx) => {
+        const el = document.createElement('div');
+        el.className = 'interval orig';
+        el.id = `int-${idx}`;
+        el.style.left = `${int[0] * SCALE + 50}px`;
+        el.style.width = `${(int[1] - int[0]) * SCALE}px`;
+        el.style.top = `${60 + (idx * 30)}px`;
+        el.innerText = `[${int[0]},${int[1]}]`;
+        viz.appendChild(el);
+    });
+
+    document.getElementById('codeView').innerHTML = codeLines.map((l, i) => {
+        const formatted = l.replace(/for|in|if|return|lambda|sort|range|len|key/g, '<span class="kw">$&</span>');
+        return `<div class="ln" id="ln-${i}"><span class="ln-num">${i+1}</span>${formatted}</div>`;
+    }).join('');
+
+    it = logic();
+    document.getElementById('log').innerText = "原始輸入展示。點擊按鈕執行排序。";
+}
+
+function* logic() {
+    yield { ln: 0, m: "依照開始時間 (Start) 排序會議..." };
+    
+    const sortedIndices = [0, 1, 2]; // 此例剛好是這個順序
+    sortedIndices.forEach((origIdx, sortedPos) => {
+        const el = document.getElementById(`int-${origIdx}`);
+        el.style.top = "110px";
+        el.style.transitionDelay = `${sortedPos * 0.1}s`;
+    });
+
+    for (let i = 1; i < testData.length; i++) {
+        yield { ln: 1, m: `檢查第 ${i} 與第 ${i-1} 個會議是否重疊...` };
+        
+        const prev = testData[i-1];
+        const curr = testData[i];
+
+        const prevEl = document.getElementById(`int-${i-1}`);
+        const currEl = document.getElementById(`int-${i}`);
+        
+        prevEl.classList.add('active');
+        currEl.classList.add('active');
+
+        if (curr[0] < prev[1]) {
+            yield { ln: 2, m: `❌ 衝突！${curr[0]} < ${prev[1]}。`, conflict: [i-1, i] };
+            document.getElementById('resStatus').innerText = "FALSE";
+            document.getElementById('resStatus').className = "status-false";
+            yield { ln: 3, m: "無法參加所有會議，回傳 False。" };
+            return;
+        } else {
+            yield { ln: 2, m: `✅ 沒重疊 (${curr[0]} >= ${prev[1]})`, safe: i-1 };
+            prevEl.classList.remove('active');
+            prevEl.classList.add('safe');
+        }
+    }
+    
+    document.getElementById('resStatus').innerText = "TRUE";
+    document.getElementById('resStatus').className = "status-true";
+    yield { ln: 4, m: "所有會議均不重疊，回傳 True。" };
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) {
+        document.getElementById('nextBtn').disabled = true;
+        return;
+    }
+    
+    document.getElementById('nextBtn').innerText = "下一步 🧭";
+    const { ln, m, conflict, safe } = s.value;
+
+    document.querySelectorAll('.ln').forEach(e => e.classList.remove('ln-active'));
+    document.getElementById(`ln-${ln}`).classList.add('ln-active');
+
+    if (conflict) {
+        conflict.forEach(idx => document.getElementById(`int-${idx}`).classList.add('conflict'));
+    }
+    if (safe !== undefined) {
+        document.getElementById(`int-${safe}`).classList.add('safe');
+    }
+
+    document.getElementById('log').innerText = `> ${m}`;
+}
+
+init();
+</script>
+</body>
+</html>

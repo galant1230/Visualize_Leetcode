@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Meeting Rooms II - Pressure Monitor</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.15);
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        
+        .container { 
+            max-width: 1850px; margin: auto; 
+            display: grid; grid-template-columns: 350px 1.2fr 480px; gap: 20px; height: 95vh; 
+        }
+
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow: hidden; }
+        .viz-area { 
+            background: var(--card); border-radius: 8px; padding: 40px 20px; border: 1px solid #333; 
+            position: relative; min-height: 300px; overflow: hidden;
+        }
+        .timeline { position: absolute; height: 2px; background: #333; left: 20px; right: 20px; top: 250px; }
+        
+        /* 會議室區間樣式 */
+        .interval { 
+            position: absolute; height: 35px; border-radius: 6px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 11px; font-weight: bold; border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .room-0 { background: var(--pacific); color: white; }
+        .room-1 { background: var(--energy); color: white; }
+        .room-2 { background: var(--danger); color: white; }
+
+        /* 壓力表 */
+        .monitor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 10px; }
+        .monitor-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #30363d; text-align: center; }
+        .monitor-val { font-size: 36px; font-weight: bold; line-height: 1; margin: 10px 0; }
+
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; width: 480px; }
+        .ln { white-space: pre; padding: 0 15px 0 65px; position: relative; line-height: 1.8; font-size: 14px; }
+        .ln-num { position: absolute; left: 0; width: 50px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:20px;">253. Meeting Rooms II <span style="font-size:13px; color:var(--dim);">Real-time Monitor</span></div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn" id="nextBtn" onclick="next()">下一步 Step 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent)">📊 核心計數邏輯</b><br>
+            我們使用兩個變數：<br>
+            1. <code>count</code>: 當前正在進行的會議數。<br>
+            2. <code>res</code>: 歷史中 <code>count</code> 出現過的最大值。
+        </div>
+        <div class="info-card">
+            <b style="color:var(--energy)">💡 策略：</b><br>
+            當新的會議開始 (Start)，如果前一個會議還沒結束 (End)，我們就必須多佔用一個房間。
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area" id="vizArea">
+            <div class="timeline"></div>
+        </div>
+        
+        <div class="monitor-grid">
+            <div class="monitor-card">
+                <div style="font-size:11px; color:var(--dim)">CURRENT OCCUPANCY (count)</div>
+                <div id="currCount" class="monitor-val" style="color:var(--accent)">0</div>
+                <div style="font-size:11px; color:var(--dim)">當前佔用</div>
+            </div>
+            <div class="monitor-card" style="border-color: var(--energy)">
+                <div style="font-size:11px; color:var(--dim)">MAX ROOMS NEEDED (res)</div>
+                <div id="maxCount" class="monitor-val" style="color:var(--energy)">0</div>
+                <div style="font-size:11px; color:var(--dim)">最終答案</div>
+            </div>
+        </div>
+        <div id="log" style="color:var(--accent); font-size:14px; font-weight: bold; text-align: center; padding: 10px;"></div>
+    </div>
+
+    <div class="editor">
+        <div style="background: #161b22; padding: 10px; font-size: 13px; color: var(--dim)">Algorithm: Two Pointers</div>
+        <div id="codeView" style="padding-top: 15px;"></div>
+    </div>
+</div>
+
+<script>
+const testData = [[0,30],[5,10],[15,20]];
+const SCALE = 12;
+let it;
+
+const codeLines = [
+    "starts = sorted([i[0] for i in intervals])",
+    "ends = sorted([i[1] for i in intervals])",
+    "res, count = 0, 0",
+    "s, e = 0, 0",
+    "while s < len(intervals):",
+    "    if starts[s] < ends[e]:",
+    "        count += 1",
+    "        s += 1",
+    "    else:",
+    "        count -= 1",
+    "        e += 1",
+    "    res = max(res, count)",
+    "return res"
+];
+
+function init() {
+    const viz = document.getElementById('vizArea');
+    viz.innerHTML = '<div class="timeline"></div>';
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('currCount').innerText = "0";
+    document.getElementById('maxCount').innerText = "0";
+    
+    testData.forEach((int, idx) => {
+        const el = document.createElement('div');
+        el.className = 'interval';
+        el.id = `int-${idx}`;
+        el.style.left = `${int[0] * SCALE + 50}px`;
+        el.style.width = `${(int[1] - int[0]) * SCALE}px`;
+        el.style.top = "260px";
+        el.style.backgroundColor = "#21262d";
+        el.innerText = `[${int[0]},${int[1]}]`;
+        viz.appendChild(el);
+    });
+
+    document.getElementById('codeView').innerHTML = codeLines.map((l, i) => {
+        const formatted = l.replace(/while|if|else|return|sorted|max/g, '<span class="kw">$&</span>');
+        return `<div class="ln" id="ln-${i}"><span class="ln-num">${i+1}</span>${formatted}</div>`;
+    }).join('');
+
+    it = runAlgorithm();
+}
+
+function* runAlgorithm() {
+    const starts = testData.map(i => i[0]).sort((a,b) => a-b);
+    const ends = testData.map(i => i[1]).sort((a,b) => a-b);
+    let res = 0, count = 0, s = 0, e = 0;
+    let roomStack = [];
+
+    yield { ln: 0, m: "排序開始與結束時間。" };
+    yield { ln: 2, m: "初始化 count 與 res 為 0。" };
+
+    while (s < testData.length) {
+        if (starts[s] < ends[e]) {
+            count++;
+            const targetIdx = testData.findIndex(i => i[0] === starts[s]);
+            const roomNum = roomStack.length;
+            roomStack.push(targetIdx);
+            
+            yield { 
+                ln: 6, 
+                curr: count, 
+                m: `➕ 會議開始 (${starts[s]})，count 增加。`, 
+                active: targetIdx, 
+                room: roomNum 
+            };
+            s++;
+        } else {
+            count--;
+            const releasedIdx = testData.findIndex(i => i[1] === ends[e]);
+            roomStack = roomStack.filter(idx => idx !== releasedIdx);
+            
+            yield { 
+                ln: 10, 
+                curr: count, 
+                m: `➖ 會議結束 (${ends[e]})，count 減少。`, 
+                release: releasedIdx 
+            };
+            e++;
+        }
+        res = Math.max(res, count);
+        yield { ln: 11, res: res, m: `更新歷史峰值 res = ${res}` };
+    }
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) { document.getElementById('nextBtn').disabled = true; return; }
+    const { ln, m, curr, res, active, room, release } = s.value;
+
+    document.querySelectorAll('.ln').forEach(el => el.classList.remove('ln-active'));
+    document.getElementById(`ln-${ln}`).classList.add('ln-active');
+
+    if (curr !== undefined) document.getElementById('currCount').innerText = curr;
+    if (res !== undefined) document.getElementById('maxCount').innerText = res;
+    
+    if (active !== undefined) {
+        const el = document.getElementById(`int-${active}`);
+        el.className = `interval room-${room}`;
+        el.style.top = `${180 - room * 50}px`;
+    }
+    if (release !== undefined) {
+        document.getElementById(`int-${release}`).style.opacity = "0.2";
+    }
+    document.getElementById('log').innerText = `> ${m}`;
+}
+init();
+</script>
+</body>
+</html>

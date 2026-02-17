@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>49. Group Anagrams 視覺化 Dashboard</title>
+  <style>
+    :root {
+      --primary: #007acc; --success: #2ecc71; --warning: #f39c12;
+      --danger: #e74c3c; --dark: #2c3e50; --bg: #f4f7f9;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--dark); }
+    .dashboard { max-width: 1100px; margin: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .full-width { grid-column: span 2; }
+    h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.25rem; }
+    
+    /* 題目與範例區 */
+    .problem-info { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; margin-bottom: 10px; }
+    .example-box { background: #f8f9fa; padding: 10px; border-left: 4px solid var(--warning); font-family: monospace; font-size: 0.9rem; }
+
+    /* 複雜度看板 */
+    .analysis-board { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
+    .stat-card { background: #eef2f7; padding: 12px; border-radius: 8px; border-left: 5px solid var(--primary); }
+    .stat-card b { color: var(--danger); font-size: 1.1rem; }
+
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    select, input { padding: 8px 15px; border: 2px solid #ddd; border-radius: 25px; outline: none; }
+    button { padding: 8px 25px; border: none; border-radius: 25px; cursor: pointer; background: var(--primary); color: white; font-weight: bold; }
+    button:disabled { background: #ccc; }
+
+    .box-container { display: flex; justify-content: center; gap: 8px; margin: 15px 0; min-height: 50px; flex-wrap: wrap; }
+    .word-box { padding: 8px 15px; border: 2px solid #dee2e6; border-radius: 8px; font-weight: bold; background: white; transition: 0.3s; }
+    .word-box.active { border-color: var(--warning); background: #fff8e1; transform: scale(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .word-box.processed { opacity: 0.4; border-style: dashed; }
+
+    .code-window { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 0.85rem; line-height: 1.6; min-height: 280px; }
+    .line { padding: 2px 10px; border-radius: 4px; border-left: 4px solid transparent; white-space: pre; }
+    .line.active { background: #3e4451; border-left-color: var(--success); color: white; }
+
+    .res-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 15px; }
+    .res-card { background: #f8f9fa; padding: 12px; border-radius: 8px; border-top: 4px solid var(--primary); }
+    .res-key { font-family: monospace; font-weight: bold; color: var(--danger); font-size: 0.85rem; margin-bottom: 5px; }
+    
+    .status-msg { font-weight: bold; color: var(--primary); text-align: center; margin-bottom: 10px; min-height: 1.5rem; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  <div class="card full-width">
+    <h2>49. 將字母異位詞分組 (Group Anagrams)</h2>
+    <div class="problem-info">
+      <div>
+        <p><strong>題目描述：</strong></p>
+        <p>給定一個字串陣列 <code>strs</code>，請將 <strong>字母異位詞</strong> 分組在一起。您可以按任意順序返回結果列表。</p>
+        <p><strong>字母異位詞</strong> 是由重新排列源單字的字母產生的單字，通常恰好使用所有原始字母一次。</p>
+      </div>
+      <div class="example-box">
+        <b>範例 1：</b><br>
+        輸入: strs = ["eat","tea","tan","ate","nat","bat"]<br>
+        輸出: [["bat"],["nat","tan"],["ate","eat","tea"]]
+      </div>
+    </div>
+    
+    <div class="analysis-board">
+      <div class="stat-card">
+        時間複雜度：<b>O(n * k log k)</b><br>
+        <small>n 為字串數，k 為最長字串長度。每個字串排序需 k log k。</small>
+      </div>
+      <div class="stat-card">
+        空間複雜度：<b>O(n * k)</b><br>
+        <small>需要一個字典來存儲所有的字串分組。</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="card full-width" style="background: transparent; box-shadow: none; padding: 0;">
+    <div class="controls">
+      切換解法：
+      <select id="algoType" onchange="initSim()">
+        <option value="sol1">Sol 1: 標準排序版 (res)</option>
+        <option value="sol2">Sol 2: 帶註釋排序版 (res, sorted_string)</option>
+      </select>
+      測試數據: <input type="text" id="inputStrs" value="eat, tea, tan, ate, nat, bat" style="width: 250px;">
+      <button onclick="initSim()">重置</button>
+      <button id="nextBtn" onclick="runNextStep()">下一步 (Step)</button>
+    </div>
+  </div>
+
+  <div class="card full-width">
+    <div class="status-msg" id="statusMsg">準備就緒</div>
+    <div class="box-container" id="inputBoxes"></div>
+    <div class="res-grid" id="resGrid"></div>
+  </div>
+
+  <div class="card">
+    <h2>Python 程式碼實作</h2>
+    <div class="code-window" id="codeDisplay"></div>
+  </div>
+
+  <div class="card">
+    <h2>解題筆記</h2>
+    <ul style="font-size: 0.9rem; line-height: 1.8;">
+      <li><strong>Key 的選擇：</strong> 字母異位詞排序後會完全相同。</li>
+      <li><strong>"".join(sorted(s))：</strong> 這是 Python 中將字串排序並轉回字串的標準寫法。</li>
+      <li><strong>defaultdict(list)：</strong> 避免每次都要判斷 Key 是否在字典中，直接 <code>.append()</code> 即可。</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const algoCodes = {
+  sol1: [
+    "class Solution:",
+    "    def groupAnagrams(self, strs: List[str]) -> List[List[str]]:",
+    "        res = defaultdict(list)",
+    "        for s in strs:",
+    "            sortedS = ''.join(sorted(s))",
+    "            res[sortedS].append(s)",
+    "        return list(res.values())"
+  ],
+  sol2: [
+    "class Solution:",
+    "    def groupAnagrams(self, strs: List[str]) -> List[List[str]]:",
+    "        res = defaultdict(list)",
+    "        for s in strs:",
+    "            # 'a', 'b', 'c' - > \"a,b,c\"",
+    "            sorted_string = \"\".join(sorted(s))",
+    "            res[sorted_string].append(s)",
+    "        ",
+    "        return list(res.values())"
+  ]
+};
+
+let currentIdx = 0, strs = [], res = {}, finished = false, subStep = 0;
+
+function initSim() {
+  const algoIdx = document.getElementById('algoType').value;
+  strs = document.getElementById('inputStrs').value.split(',').map(s => s.trim()).filter(s => s !== "");
+  currentIdx = 0; res = {}; finished = false; subStep = 0;
+  document.getElementById('nextBtn').disabled = false;
+  
+  document.getElementById('codeDisplay').innerHTML = algoCodes[algoIdx].map((line, idx) => 
+    `<div class="line" id="line-${idx}">${line}</div>`
+  ).join('');
+
+  renderInput();
+  renderGroups();
+  document.getElementById('statusMsg').innerText = "點擊「下一步」開始處理。";
+}
+
+function renderInput() {
+  document.getElementById('inputBoxes').innerHTML = strs.map((s, i) => `<div class="word-box" id="word-${i}">${s}</div>`).join('');
+}
+
+function renderGroups() {
+  const container = document.getElementById('resGrid');
+  const keys = Object.keys(res);
+  if (keys.length === 0) { container.innerHTML = ""; return; }
+  container.innerHTML = keys.map(key => `
+    <div class="res-card">
+      <div class="res-key">Key: "${key}"</div>
+      <div style="display:flex; gap:5px; flex-wrap:wrap;">
+        ${res[key].map(v => `<span style="background:var(--primary);color:white;padding:2px 8px;border-radius:4px;font-size:0.8rem;">${v}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function runNextStep() {
+  const algo = document.getElementById('algoType').value;
+  const msg = document.getElementById('statusMsg');
+  clearLineHighlights();
+
+  if (currentIdx === 0 && subStep === 0) {
+    highlight(2);
+    msg.innerText = "初始化字典 res = {}";
+    subStep = 1; return;
+  }
+
+  if (currentIdx < strs.length) {
+    const word = strs[currentIdx];
+    document.querySelectorAll('.word-box').forEach(b => b.classList.remove('active'));
+    document.getElementById(`word-${currentIdx}`).classList.add('active');
+
+    if (subStep === 1) {
+        if (algo === 'sol1') { highlight(3); highlight(4); }
+        else { highlight(3); highlight(4); highlight(5); }
+        const key = word.split('').sort().join('');
+        msg.innerText = `處理 "${word}"：排序後得到 Key "${key}"`;
+        subStep = 2;
+    } else {
+        if (algo === 'sol1') highlight(5);
+        else highlight(6);
+        const key = word.split('').sort().join('');
+        if (!res[key]) res[key] = [];
+        res[key].push(word);
+        msg.innerText = `將 "${word}" 存入對應的分組中。`;
+        
+        document.getElementById(`word-${currentIdx}`).classList.remove('active');
+        document.getElementById(`word-${currentIdx}`).classList.add('processed');
+        renderGroups();
+        currentIdx++;
+        subStep = 1;
+    }
+  } else {
+    if (algo === 'sol1') highlight(6);
+    else highlight(8);
+    msg.innerText = "完成！回傳所有分組的列表。";
+    document.getElementById('nextBtn').disabled = true;
+  }
+}
+
+function highlight(idx) { document.getElementById(`line-${idx}`).classList.add('active'); }
+function clearLineHighlights() { document.querySelectorAll('.line').forEach(l => l.classList.remove('active')); }
+
+initSim();
+</script>
+
+</body>
+</html>

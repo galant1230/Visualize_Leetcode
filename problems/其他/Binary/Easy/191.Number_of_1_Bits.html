@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Number of 1 Bits Visualizer</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.2);
+            --type: #79c0ff;
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        
+        .container { 
+            max-width: 1850px; margin: auto; 
+            display: grid; grid-template-columns: 350px 1fr 480px; gap: 20px; height: 95vh; 
+        }
+
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 10px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+        .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); margin-right: 5px; }
+
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .viz-area { 
+            background: var(--card); border-radius: 8px; padding: 40px 20px; border: 1px solid #333; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px;
+        }
+
+        .bit-row { display: flex; gap: 4px; margin: 10px 0; }
+        .bit-cell {
+            width: 35px; height: 45px; display: flex; align-items: center; justify-content: center;
+            background: #21262d; border: 1px solid #30363d; border-radius: 4px; font-weight: bold; font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        .bit-cell.is-one { color: var(--accent); border-color: var(--accent); }
+        .bit-cell.eliminating { background: var(--danger); border-color: #ff7b72; transform: scale(1.15); color: white; z-index: 5; }
+
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; }
+        .editor-header { 
+            background: #161b22; padding: 10px 15px; display: flex; justify-content: space-between; 
+            align-items: center; border-bottom: 1px solid #30363d; 
+        }
+        select { background: #0d1117; color: var(--accent); border: 1px solid #30363d; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+
+        .ln { white-space: pre; padding: 0 15px 0 65px; position: relative; line-height: 1.8; font-size: 14px; display: block; }
+        .ln-num { position: absolute; left: 0; width: 50px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+        .tp { color: var(--type); }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        #math-display { font-family: 'Consolas', monospace; text-align: right; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px dashed #444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:20px;">191. Number of 1 Bits <span style="font-size:13px; color:var(--dim);">Brian Kernighan's Magic</span></div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn" id="nextBtn" onclick="next()">下一步 Step 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置 Reset</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent); font-size:15px;">📖 題目描述</b><br>
+            編寫一個函數，輸入一個無符號整數，回傳其二進位表示中數字為 '1' 的個數（Hamming weight）。
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--energy); font-size:15px;">💡 範例解析</b>
+            <div class="ex-box">
+                <b>Input:</b> 11 (二進位 <code>1011</code>)<br>
+                <b>Output:</b> 3
+            </div>
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--atlantic); font-size:15px;">🧠 核心技巧：n & (n - 1)</b><br>
+            當我們執行 <code>n & (n - 1)</code> 時，會將 <code>n</code> 二進位中最右邊的那個 <code>1</code> 變成 <code>0</code>。<br><br>
+            <b>優勢：</b>運算次數只等於 <code>1</code> 的個數。
+        </div>
+
+        <div class="info-card">
+            <span class="tag">Time: O(1)</span> (最多 32 次)
+            <span class="tag">Space: O(1)</span>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area">
+            <div style="font-size:11px; color:var(--dim); margin-bottom:10px;">BINARY STATUS (LOWER 12 BITS)</div>
+            <div id="bitGrid" class="bit-row"></div>
+            
+            <div id="math-display">
+                <div id="math-n" style="color:var(--dim)"></div>
+                <div id="math-minus" style="color:var(--dim)"></div>
+                <div id="math-res" style="color:var(--accent); border-top: 1px solid #444; margin-top:5px; padding-top:5px;"></div>
+            </div>
+        </div>
+        
+        <div style="background:var(--card); padding:20px; border-radius:12px; text-align:center; border:1px solid #30363d;">
+            <div style="font-size:11px; color:var(--dim)">TOTAL "1" BITS COUNT</div>
+            <div id="countDisplay" style="font-size:48px; font-weight:bold; color:var(--energy);">0</div>
+        </div>
+        <div id="log" style="color:var(--accent); font-size:14px; font-weight:bold; text-align:center; padding:10px; min-height:20px;"></div>
+    </div>
+
+    <div class="editor">
+        <div class="editor-header">
+            <span style="font-size:13px; color:var(--dim)">Solution Code</span>
+            <select id="langSelect" onchange="renderCode()">
+                <option value="python">Python</option>
+                <option value="c">C (Standard)</option>
+            </select>
+        </div>
+        <div id="codeView" style="padding-top:15px;"></div>
+    </div>
+</div>
+
+<script>
+const codes = {
+    python: {
+        steps: [
+            "def hammingWeight(n: int) -> int:",
+            "    count = 0",
+            "    while n != 0:",
+            "        n = n & (n - 1)",
+            "        count += 1",
+            "    return count"
+        ],
+        map: { 1:1, 2:2, 3:3, 4:4, 5:5 },
+        highlight: (l) => l.replace(/def|int|while|return/g, '<span class="kw">$&</span>')
+    },
+    c: {
+        steps: [
+            "int hammingWeight(uint32_t n) {",
+            "    int count = 0;",
+            "    while (n != 0) {",
+            "        n &= (n - 1);",
+            "        count++;",
+            "    }",
+            "    return count;",
+            "}"
+        ],
+        map: { 1:1, 2:2, 3:3, 4:4, 5:6 },
+        highlight: (l) => l.replace(/int|uint32_t|while|return/g, '<span class="tp">$&</span>')
+    }
+};
+
+let n = 11;
+let currentStep = 0;
+let it;
+
+function init() {
+    n = 11;
+    currentStep = 1;
+    document.getElementById('countDisplay').innerText = "0";
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('math-n').innerText = "";
+    document.getElementById('math-minus').innerText = "";
+    document.getElementById('math-res').innerText = "";
+    document.getElementById('log').innerText = "";
+    
+    renderCode();
+    renderBits(n);
+    it = bitLogic();
+}
+
+function renderCode() {
+    const lang = document.getElementById('langSelect').value;
+    const config = codes[lang];
+    const view = document.getElementById('codeView');
+    
+    view.innerHTML = config.steps.map((line, i) => {
+        const activeClass = (i === config.map[currentStep]) ? 'ln-active' : '';
+        return `<div class="ln ${activeClass}" id="ln-${i}"><span class="ln-num">${i}</span>${config.highlight(line)}</div>`;
+    }).join('');
+}
+
+function toBin(num) {
+    return (num >>> 0).toString(2).padStart(12, '0');
+}
+
+function renderBits(num, elimIdx = -1) {
+    const grid = document.getElementById('bitGrid');
+    grid.innerHTML = '';
+    const bin = toBin(num);
+    [...bin].forEach((bit, i) => {
+        const div = document.createElement('div');
+        div.className = 'bit-cell' + (bit === '1' ? ' is-one' : '');
+        // 考慮到 toBin 固定的 12 位元長度來定位消去的視覺效果
+        if (elimIdx !== -1 && i === (12 - bin.length + elimIdx)) div.classList.add('eliminating');
+        div.innerText = bit;
+        grid.appendChild(div);
+    });
+}
+
+function* bitLogic() {
+    let count = 0;
+    currentStep = 1;
+    yield { m: `初始化變數 count = 0` };
+
+    while (n !== 0) {
+        currentStep = 2;
+        yield { m: `檢查 n 是否為 0 (目前 n = ${n})` };
+        
+        const oldN = n;
+        const nMinus1 = n - 1;
+        const binStr = oldN.toString(2);
+        const lastOneIdx = binStr.lastIndexOf('1');
+        const realIdxIn12 = 12 - binStr.length + lastOneIdx;
+        
+        document.getElementById('math-n').innerText = `n     : ${toBin(oldN)}`;
+        document.getElementById('math-minus').innerText = `n - 1 : ${toBin(nMinus1)}`;
+        document.getElementById('math-res').innerText = `RESULT: ${toBin(oldN & nMinus1)}`;
+
+        currentStep = 3;
+        yield { m: `執行 n & (n - 1)，消去最後一個位元 1`, elim: lastOneIdx };
+        
+        n = n & nMinus1;
+        count++;
+        currentStep = 4;
+        renderBits(n);
+        document.getElementById('countDisplay').innerText = count;
+        yield { m: `成功消去，count 累加至 ${count}` };
+    }
+    currentStep = 5;
+    yield { m: `n 已歸零，結束迴圈並回傳結果 ${count}` };
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) { 
+        document.getElementById('nextBtn').disabled = true; 
+        return; 
+    }
+    
+    const { m, elim } = s.value;
+    document.getElementById('log').innerText = `> ${m}`;
+    if (elim !== undefined) renderBits(n, elim);
+    renderCode();
+}
+
+init();
+</script>
+</body>
+</html>

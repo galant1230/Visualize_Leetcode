@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Reverse Bits Visualizer</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.2);
+            --type: #79c0ff;
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        
+        .container { 
+            max-width: 1850px; margin: auto; 
+            display: grid; grid-template-columns: 350px 1fr 480px; gap: 20px; height: 95vh; 
+        }
+
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 10px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+        .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); margin-right: 5px; }
+
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .viz-area { 
+            background: var(--card); border-radius: 8px; padding: 20px; border: 1px solid #333; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px;
+        }
+
+        .bit-row { display: flex; gap: 2px; margin: 5px 0; }
+        .bit-cell {
+            width: 24px; height: 35px; display: flex; align-items: center; justify-content: center;
+            background: #21262d; border: 1px solid #30363d; border-radius: 3px; font-weight: bold; font-size: 14px;
+            transition: all 0.2s;
+        }
+        .bit-cell.is-one { color: var(--accent); border-color: var(--accent); }
+        .bit-cell.active-bit { background: var(--energy); color: black; border-color: var(--energy); }
+        .bit-label { font-size: 10px; color: var(--dim); margin-bottom: 4px; align-self: flex-start; margin-left: 20px;}
+
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; }
+        .editor-header { 
+            background: #161b22; padding: 10px 15px; display: flex; justify-content: space-between; 
+            align-items: center; border-bottom: 1px solid #30363d; 
+        }
+        select { background: #0d1117; color: var(--accent); border: 1px solid #30363d; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+
+        .ln { white-space: pre; padding: 0 15px 0 65px; position: relative; line-height: 1.8; font-size: 14px; display: block; }
+        .ln-num { position: absolute; left: 0; width: 50px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+        .tp { color: var(--type); }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        #math-display { font-family: 'Consolas', monospace; font-size: 13px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px dashed #444; width: 90%; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:20px;">190. Reverse Bits <span style="font-size:13px; color:var(--dim);">Bit Manipulation Mastery</span></div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn" id="nextBtn" onclick="next()">下一步 Step 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置 Reset</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent); font-size:15px;">📖 題目描述</b><br>
+            顛倒給定的 32 位無符號整數的位元。
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--energy); font-size:15px;">💡 核心邏輯</b><br>
+            1. 建立 <code>res = 0</code>。<br>
+            2. 迭代 32 次：<br>
+            &nbsp;&nbsp; - 將 <code>res</code> 左移一格（空出最後一位）。<br>
+            &nbsp;&nbsp; - 取出 <code>n</code> 的最後一位 <code>(n & 1)</code>。<br>
+            &nbsp;&nbsp; - 用 <code>|</code> 加入 <code>res</code>。<br>
+            &nbsp;&nbsp; - 將 <code>n</code> 右移一格。
+        </div>
+
+        <div class="info-card">
+            <span class="tag">Time: O(1)</span> (固定 32 次)
+            <span class="tag">Space: O(1)</span>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area">
+            <div class="bit-label">INPUT N (Source)</div>
+            <div id="inputGrid" class="bit-row"></div>
+            
+            <div style="margin: 20px 0; color: var(--dim); font-size: 20px;">⬇️ Extraction & Injection ⬇️</div>
+            
+            <div class="bit-label">RESULT (Reversed)</div>
+            <div id="resGrid" class="bit-row"></div>
+            
+            <div id="math-display">
+                <div id="math-step">準備開始...</div>
+                <div id="math-calc" style="color:var(--accent); margin-top:5px; font-family: monospace;"></div>
+            </div>
+        </div>
+        
+        <div id="log" style="color:var(--accent); font-size:14px; font-weight:bold; text-align:center; padding:10px; min-height:20px;"></div>
+    </div>
+
+    <div class="editor">
+        <div class="editor-header">
+            <span style="font-size:13px; color:var(--dim)">Solution Code</span>
+            <select id="langSelect" onchange="renderCode()">
+                <option value="python">Python</option>
+                <option value="c">C (Standard)</option>
+            </select>
+        </div>
+        <div id="codeView" style="padding-top:15px;"></div>
+    </div>
+</div>
+
+<script>
+const codes = {
+    python: {
+        steps: [
+            "def reverseBits(n: int) -> int:",
+            "    res = 0",
+            "    for _ in range(32):",
+            "        res = (res << 1) | (n & 1)",
+            "        n >>= 1",
+            "    return res"
+        ],
+        map: { 1:1, 2:2, 3:3, 4:4, 5:5 },
+        highlight: (l) => l.replace(/def|int|for|in|range|return/g, '<span class="kw">$&</span>')
+    },
+    c: {
+        steps: [
+            "uint32_t reverseBits(uint32_t n) {",
+            "    uint32_t res = 0;",
+            "    for (int i = 0; i < 32; i++) {",
+            "        res = (res << 1) | (n & 1);",
+            "        n >>= 1;",
+            "    }",
+            "    return res;",
+            "}"
+        ],
+        map: { 1:1, 2:2, 3:3, 4:4, 5:6 },
+        highlight: (l) => l.replace(/uint32_t|int|for|return/g, '<span class="tp">$&</span>')
+    }
+};
+
+let n_val = 43261596; // 範例數字
+let res_val = 0;
+let loop_count = 0;
+let currentStep = 0;
+let it;
+
+function init() {
+    n_val = 43261596;
+    res_val = 0;
+    loop_count = 0;
+    currentStep = 1;
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('math-step').innerText = "初始化 res = 0";
+    document.getElementById('math-calc').innerText = "";
+    
+    renderCode();
+    renderBits();
+    it = algoLogic();
+}
+
+function renderCode() {
+    const lang = document.getElementById('langSelect').value;
+    const config = codes[lang];
+    const view = document.getElementById('codeView');
+    view.innerHTML = config.steps.map((line, i) => {
+        const activeClass = (i === config.map[currentStep]) ? 'ln-active' : '';
+        return `<div class="ln ${activeClass}"><span class="ln-num">${i}</span>${config.highlight(line)}</div>`;
+    }).join('');
+}
+
+function toBin32(num) {
+    return (num >>> 0).toString(2).padStart(32, '0');
+}
+
+function renderBits(activeN = -1, activeRes = -1) {
+    const iGrid = document.getElementById('inputGrid');
+    const rGrid = document.getElementById('resGrid');
+    iGrid.innerHTML = '';
+    rGrid.innerHTML = '';
+
+    const bN = toBin32(n_val);
+    const bR = toBin32(res_val);
+
+    for(let i=0; i<32; i++) {
+        const dN = document.createElement('div');
+        dN.className = 'bit-cell' + (bN[i] === '1' ? ' is-one' : '');
+        if (i === 31) dN.classList.add('active-bit'); // 強調最後一位
+        dN.innerText = bN[i];
+        iGrid.appendChild(dN);
+
+        const dR = document.createElement('div');
+        dR.className = 'bit-cell' + (bR[i] === '1' ? ' is-one' : '');
+        if (i === 31 && activeRes !== -1) dR.classList.add('active-bit');
+        dR.innerText = bR[i];
+        rGrid.appendChild(dR);
+    }
+}
+
+function* algoLogic() {
+    currentStep = 1;
+    yield { m: "初始化結果變數 res = 0" };
+
+    for (loop_count = 0; loop_count < 32; loop_count++) {
+        currentStep = 2;
+        yield { m: `第 ${loop_count + 1} 次迭代` };
+        
+        const bit = n_val & 1;
+        const oldRes = res_val;
+        res_val = ((res_val << 1) | bit) >>> 0;
+        
+        document.getElementById('math-step').innerHTML = `取出 n 的最後一位：<b>${bit}</b>`;
+        document.getElementById('math-calc').innerHTML = 
+            `res = (${oldRes.toString(2)} << 1) | ${bit}<br>= ${res_val.toString(2).padStart(32, '0')}`;
+
+        currentStep = 3;
+        renderBits(-1, 31);
+        yield { m: `將位元 ${bit} 填入 res 的最右側` };
+        
+        n_val = n_val >>> 1;
+        currentStep = 4;
+        renderBits();
+        yield { m: `n 右移一格，準備處理下一個位元` };
+    }
+    
+    currentStep = 5;
+    yield { m: "32 位元處理完畢，回傳結果。" };
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) { document.getElementById('nextBtn').disabled = true; return; }
+    document.getElementById('log').innerText = `> ${s.value.m}`;
+    renderCode();
+}
+
+init();
+</script>
+</body>
+</html>

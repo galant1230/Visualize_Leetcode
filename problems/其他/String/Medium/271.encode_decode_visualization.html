@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>📌 Encode and Decode Strings 視覺化 Dashboard</title>
+  <style>
+    :root {
+      --primary: #007acc; --success: #2ecc71; --warning: #f39c12;
+      --danger: #e74c3c; --dark: #2c3e50; --bg: #f4f7f9;
+    }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--dark); }
+    .dashboard { max-width: 1100px; margin: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .full-width { grid-column: span 2; }
+    h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.25rem; }
+    
+    /* 題目資訊 */
+    .problem-header { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+    .example-box { background: #f8f9fa; padding: 12px; border-left: 4px solid var(--warning); font-family: monospace; font-size: 0.9rem; }
+
+    /* 控制面板 */
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    select, input { padding: 8px 15px; border: 2px solid #ddd; border-radius: 25px; outline: none; }
+    button { padding: 8px 25px; border: none; border-radius: 25px; cursor: pointer; background: var(--primary); color: white; font-weight: bold; }
+    button:disabled { background: #ccc; }
+
+    /* 視覺化區域 */
+    .viz-container { min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; border: 1px dashed #ccc; border-radius: 8px; padding: 20px; }
+    .char-strip { display: flex; gap: 4px; font-family: 'Consolas', monospace; font-size: 1.4rem; }
+    .char-unit { 
+      width: 40px; height: 50px; border-bottom: 3px solid #ddd; 
+      display: flex; align-items: center; justify-content: center; position: relative; 
+    }
+    .ptr { position: absolute; font-size: 0.75rem; font-weight: bold; top: 55px; }
+    .ptr-i { color: var(--danger); }
+    .ptr-j { color: var(--primary); top: 75px; }
+    .highlight-chunk { background: #d4edda; border-bottom-color: var(--success); }
+
+    /* 代碼視窗 */
+    .code-window { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 0.85rem; line-height: 1.6; min-height: 300px; }
+    .line { padding: 2px 10px; border-radius: 4px; border-left: 4px solid transparent; white-space: pre; }
+    .line.active { background: #3e4451; border-left-color: var(--success); color: white; }
+
+    .status-msg { font-weight: bold; color: var(--primary); text-align: center; margin-bottom: 15px; height: 1.2rem; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  <div class="card full-width">
+    <h2>📌 Encode and Decode Strings (系統設計基礎)</h2>
+    <div class="problem-header">
+      <div>
+        <p>設計一個演算法，將字串列表轉換為單一字串（Encode），並能準確還原（Decode）。</p>
+        <p><strong>關鍵技巧：</strong> 使用 <code>長度 + "#"</code> 作為前綴，精確定位每個字串的邊界。</p>
+      </div>
+      <div class="example-box">
+        Input: ["neet", "code"]<br>
+        Encoded: "4#neet4#code"<br>
+        Output: ["neet", "code"]
+      </div>
+    </div>
+  </div>
+
+  <div class="card full-width" style="background: transparent; box-shadow: none; padding: 0;">
+    <div class="controls">
+      選擇操作：
+      <select id="modeSelect" onchange="initSim()">
+        <option value="encode">🔹 Encode (編碼)</option>
+        <option value="decode">🔸 Decode (解碼)</option>
+      </select>
+      輸入: <input type="text" id="inputData" value="neet, code, love" style="width: 250px;">
+      <button onclick="initSim()">重置</button>
+      <button id="nextBtn" onclick="runStep()">下一步 (Step)</button>
+    </div>
+  </div>
+
+  <div class="card full-width">
+    <div class="status-msg" id="statusMsg">準備就緒</div>
+    <div class="viz-container" id="vizArea"></div>
+    <div id="resultDisplay" style="margin-top:20px; text-align:center; font-family: monospace; font-weight:bold;"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="codeTitle">Python 實作</h2>
+    <div class="code-window" id="codeDisplay"></div>
+  </div>
+
+  <div class="card">
+    <h2>💡 核心筆記</h2>
+    <ul id="noteList" style="font-size: 0.9rem; line-height: 1.8;"></ul>
+  </div>
+</div>
+
+<script>
+const configs = {
+  encode: {
+    title: "Encode 實作",
+    code: [
+      "def encode(self, strs):",
+      "    res = \"\"",
+      "    for s in strs:",
+      "        res += str(len(s)) + \"#\" + s",
+      "    return res"
+    ],
+    notes: [
+      "每個字串前加上長度與 # 分隔符。",
+      "時間複雜度 O(N)，N 為總字元數。",
+      "這確保了即使內容有 # 也不會混淆。"
+    ]
+  },
+  decode: {
+    title: "Decode 實作",
+    code: [
+      "def decode(self, s):",
+      "    res, i = [], 0",
+      "    while i < len(s):",
+      "        j = i",
+      "        while s[j] != \"#\":",
+      "            j += 1",
+      "        length = int(s[i:j])",
+      "        res.append(s[j + 1 : j + 1 + length])",
+      "        i = j + 1 + length",
+      "    return res"
+    ],
+    notes: [
+      "i 指向長度數字的開頭。",
+      "j 負責跑去前面找第一個出現的 #。",
+      "int(s[i:j]) 取得長度，然後直接『切片』抓取字串。"
+    ]
+  }
+};
+
+let i = 0, j = 0, currentData = "", mode = "encode", stepIdx = 0, listData = [];
+
+function initSim() {
+  mode = document.getElementById('modeSelect').value;
+  const rawInput = document.getElementById('inputData').value;
+  const cfg = configs[mode];
+  
+  // 更新介面
+  document.getElementById('codeTitle').innerText = cfg.title;
+  document.getElementById('codeDisplay').innerHTML = cfg.code.map((l, idx) => `<div class="line" id="l${idx}">${l}</div>`).join('');
+  document.getElementById('noteList').innerHTML = cfg.notes.map(n => `<li>${n}</li>`).join('');
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('resultDisplay').innerText = "";
+  
+  // 初始化數據
+  if (mode === 'encode') {
+    listData = rawInput.split(',').map(s => s.trim());
+    currentData = "";
+    stepIdx = 0;
+    document.getElementById('statusMsg').innerText = "點擊下一步開始編碼字串列表";
+  } else {
+    // 假設輸入已經是編碼過的，若不是則自動幫他編一個
+    if (!rawInput.includes('#')) {
+      listData = rawInput.split(',').map(s => s.trim());
+      currentData = listData.map(s => s.length + "#" + s).join('');
+    } else {
+      currentData = rawInput.replace(/\s/g, '');
+    }
+    i = 0; j = 0; stepIdx = 0;
+    document.getElementById('statusMsg').innerText = "雙指針準備解碼字串";
+  }
+  render();
+}
+
+function render() {
+  const area = document.getElementById('vizArea');
+  if (mode === 'encode') {
+    area.innerHTML = `<div class="char-strip">${listData.map((s, idx) => 
+      `<div style="padding: 5px 10px; border: 2px solid ${idx === stepIdx ? 'var(--warning)' : '#eee'}; border-radius: 4px; margin: 0 5px;">${s}</div>`
+    ).join(' ➔ ')}</div>`;
+  } else {
+    area.innerHTML = `<div class="char-strip">${currentData.split('').map((char, idx) => `
+      <div class="char-unit" id="c${idx}">
+        ${char}
+        ${idx === i ? '<div class="ptr ptr-i">i</div>' : ''}
+        ${idx === j ? '<div class="ptr ptr-j">j</div>' : ''}
+      </div>
+    `).join('')}</div>`;
+  }
+}
+
+function runStep() {
+  clearHighlight();
+  const msg = document.getElementById('statusMsg');
+  
+  if (mode === 'encode') {
+    if (stepIdx < listData.length) {
+      highlight(2); highlight(3);
+      const word = listData[stepIdx];
+      const encodedPart = word.length + "#" + word;
+      currentData += encodedPart;
+      msg.innerText = `編碼 "${word}" ➔ "${encodedPart}"`;
+      document.getElementById('resultDisplay').innerText = "目前結果: " + currentData;
+      stepIdx++;
+      render();
+    } else {
+      highlight(4);
+      msg.innerText = "編碼完成！";
+      document.getElementById('nextBtn').disabled = true;
+    }
+  } else {
+    // Decode Step
+    if (i < currentData.length) {
+      if (currentData[j] !== "#") {
+        highlight(3); highlight(4); highlight(5);
+        j++;
+        msg.innerText = `j 尋找 '#'... (索引 ${j})`;
+      } else if (stepIdx === 0) { // 剛找到 #
+        highlight(6);
+        const len = parseInt(currentData.substring(i, j));
+        msg.innerText = `找到 '#'！長度為 ${len}`;
+        stepIdx = 1;
+      } else { // 執行切片
+        highlight(7); highlight(8);
+        const len = parseInt(currentData.substring(i, j));
+        const word = currentData.substring(j + 1, j + 1 + len);
+        // 高亮顯示切出的部分
+        for(let k=j+1; k < j+1+len; k++) document.getElementById(`c${k}`).classList.add('highlight-chunk');
+        msg.innerText = `截取單字: "${word}"`;
+        i = j + 1 + len;
+        j = i;
+        stepIdx = 0;
+      }
+      render();
+    } else {
+      highlight(9);
+      msg.innerText = "解碼完成！";
+      document.getElementById('nextBtn').disabled = true;
+    }
+  }
+}
+
+function highlight(id) { document.getElementById('l' + id).classList.add('active'); }
+function clearHighlight() { document.querySelectorAll('.line').forEach(l => l.classList.remove('active')); }
+
+initSim();
+</script>
+</body>
+</html>

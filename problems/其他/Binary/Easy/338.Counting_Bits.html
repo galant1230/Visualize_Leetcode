@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Counting Bits Visualizer</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --energy: #d29922; --danger: #f85149;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --keyword: #ff7b72; --hl: rgba(88, 166, 255, 0.2);
+            --type: #79c0ff;
+        }
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow: hidden; }
+        
+        .container { 
+            max-width: 1850px; margin: auto; 
+            display: grid; grid-template-columns: 350px 1fr 480px; gap: 20px; height: 95vh; 
+        }
+
+        .side-panel { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: #010409; border: 1px solid #30363d; padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .ex-box { background: #161b22; border-left: 3px solid var(--accent); padding: 10px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+        .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: rgba(88, 166, 255, 0.1); color: var(--accent); margin-right: 5px; }
+
+        .main-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .viz-area { 
+            background: var(--card); border-radius: 8px; padding: 30px; border: 1px solid #333; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 350px;
+        }
+
+        /* DP Table Styling */
+        .dp-container { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; justify-content: center; }
+        .dp-box { 
+            width: 50px; height: 60px; border: 1px solid #30363d; border-radius: 6px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #21262d; transition: all 0.3s;
+        }
+        .dp-box.active { border-color: var(--accent); background: var(--hl); transform: translateY(-5px); }
+        .dp-idx { font-size: 10px; color: var(--dim); }
+        .dp-val { font-size: 20px; font-weight: bold; color: var(--energy); }
+
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; }
+        .editor-header { 
+            background: #161b22; padding: 10px 15px; display: flex; justify-content: space-between; 
+            align-items: center; border-bottom: 1px solid #30363d; 
+        }
+        select { background: #0d1117; color: var(--accent); border: 1px solid #30363d; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+
+        .ln { white-space: pre; padding: 0 15px 0 65px; position: relative; line-height: 1.8; font-size: 14px; display: block; }
+        .ln-num { position: absolute; left: 0; width: 50px; text-align: right; color: #484f58; padding-right: 15px; border-right: 1px solid #30363d; }
+        .ln-active { background: var(--hl); border-left: 4px solid var(--accent); }
+        .kw { color: var(--keyword); }
+        .tp { color: var(--type); }
+
+        .toolbar { grid-column: span 3; background: var(--card); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #30363d; }
+        .btn { background: var(--pacific); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        #math-display { font-family: 'Consolas', monospace; font-size: 14px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px dashed #444; width: 80%; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div style="font-weight:bold; color:var(--accent); font-size:20px;">338. Counting Bits <span style="font-size:13px; color:var(--dim);">Dynamic Programming + Bit Manipulation</span></div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn" id="nextBtn" onclick="next()">下一步 Step 🧭</button>
+            <button class="btn" style="background:#21262d" onclick="init()">重置 Reset</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="info-card">
+            <b style="color:var(--accent); font-size:15px;">📖 題目描述</b><br>
+            給定一個整數 <code>n</code>，回傳一個長度為 <code>n + 1</code> 的陣列 <code>ans</code>，使得 <code>ans[i]</code> 是數字 <code>i</code> 的二進位表示中 1 的個數。
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--energy); font-size:15px;">💡 範例解析</b>
+            <div class="ex-box">
+                <b>Input:</b> n = 5<br>
+                <b>Output:</b> [0,1,1,2,1,2]
+            </div>
+        </div>
+
+        <div class="info-card">
+            <b style="color:var(--atlantic); font-size:15px;">🧠 DP 轉移公式</b><br>
+            利用 <code>i & (i - 1)</code>：<br>
+            <code>dp[i] = dp[i & (i - 1)] + 1</code><br><br>
+            <b>原理：</b><code>i & (i - 1)</code> 會移除 <code>i</code> 最右邊的 1，所以 <code>i</code> 的 1 個數就是「移除後那個數字的 1 個數」再加 1。
+        </div>
+
+        <div class="info-card">
+            <span class="tag">Time: O(n)</span>
+            <span class="tag">Space: O(n)</span>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="viz-area">
+            <div style="font-size:11px; color:var(--dim); margin-bottom:10px;">DP STATE VISUALIZATION</div>
+            <div id="dpGrid" class="dp-container"></div>
+            
+            <div id="math-display">
+                <div id="math-text">準備開始...</div>
+                <div id="math-calc" style="color:var(--accent); margin-top:5px; font-weight:bold;"></div>
+            </div>
+        </div>
+        
+        <div id="log" style="color:var(--accent); font-size:14px; font-weight:bold; text-align:center; padding:10px; min-height:20px;"></div>
+    </div>
+
+    <div class="editor">
+        <div class="editor-header">
+            <span style="font-size:13px; color:var(--dim)">Solution Code</span>
+            <select id="langSelect" onchange="renderCode()">
+                <option value="python">Python</option>
+                <option value="c">C (Standard)</option>
+            </select>
+        </div>
+        <div id="codeView" style="padding-top:15px;"></div>
+    </div>
+</div>
+
+<script>
+const codes = {
+    python: {
+        steps: [
+            "def countBits(n: int) -> List[int]:",
+            "    ans = [0] * (n + 1)",
+            "    for i in range(1, n + 1):",
+            "        ans[i] = ans[i & (i - 1)] + 1",
+            "    return ans"
+        ],
+        map: { 1:1, 2:2, 3:3, 4:4 },
+        highlight: (l) => l.replace(/def|int|for|in|range|return/g, '<span class="kw">$&</span>')
+    },
+    c: {
+        steps: [
+            "int* countBits(int n, int* returnSize) {",
+            "    int* ans = (int*)calloc(n + 1, sizeof(int));",
+            "    *returnSize = n + 1;",
+            "    for (int i = 1; i <= n; i++) {",
+            "        ans[i] = ans[i & (i - 1)] + 1;",
+            "    }",
+            "    return ans;",
+            "}"
+        ],
+        map: { 1:1, 2:3, 3:4, 4:6 },
+        highlight: (l) => l.replace(/int|sizeof|for|return|calloc/g, '<span class="tp">$&</span>')
+    }
+};
+
+let n_limit = 7;
+let dp = [];
+let currentStep = 0;
+let it;
+
+function init() {
+    dp = new Array(n_limit + 1).fill('?');
+    dp[0] = 0;
+    currentStep = 1;
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('math-text').innerText = "初始化 dp[0] = 0";
+    document.getElementById('math-calc').innerText = "";
+    
+    renderCode();
+    renderDP();
+    it = algoLogic();
+}
+
+function renderCode() {
+    const lang = document.getElementById('langSelect').value;
+    const config = codes[lang];
+    const view = document.getElementById('codeView');
+    view.innerHTML = config.steps.map((line, i) => {
+        const activeClass = (i === config.map[currentStep]) ? 'ln-active' : '';
+        return `<div class="ln ${activeClass}"><span class="ln-num">${i}</span>${config.highlight(line)}</div>`;
+    }).join('');
+}
+
+function renderDP(activeIdx = -1) {
+    const grid = document.getElementById('dpGrid');
+    grid.innerHTML = '';
+    dp.forEach((val, i) => {
+        const div = document.createElement('div');
+        div.className = 'dp-box' + (i === activeIdx ? ' active' : '');
+        div.innerHTML = `<span class="dp-idx">i=${i}</span><span class="dp-val">${val}</span>`;
+        grid.appendChild(div);
+    });
+}
+
+function* algoLogic() {
+    currentStep = 1;
+    yield { m: "步驟 1: 初始化結果陣列 (ans[0] = 0)" };
+
+    for (let i = 1; i <= n_limit; i++) {
+        currentStep = 2;
+        yield { m: `迴圈：現在計算 i = ${i} 的 1 個數` };
+        
+        const prevIdx = i & (i - 1);
+        const result = dp[prevIdx] + 1;
+        
+        document.getElementById('math-text').innerHTML = 
+            `i = ${i} (${i.toString(2)})<br>` +
+            `i & (i - 1) = ${prevIdx} (${prevIdx.toString(2)})`;
+        document.getElementById('math-calc').innerText = 
+            `dp[${i}] = dp[${prevIdx}] + 1 = ${dp[prevIdx]} + 1 = ${result}`;
+
+        currentStep = 3;
+        dp[i] = result;
+        renderDP(i);
+        yield { m: `查表得知 dp[${prevIdx}] 為 ${dp[prevIdx]}，故 dp[${i}] = ${result}` };
+    }
+    
+    currentStep = 4;
+    yield { m: "完成！回傳所有數字的位元統計陣列。" };
+}
+
+function next() {
+    const s = it.next();
+    if (s.done) { document.getElementById('nextBtn').disabled = true; return; }
+    document.getElementById('log').innerText = `> ${s.value.m}`;
+    renderCode();
+}
+
+init();
+</script>
+</body>
+</html>
