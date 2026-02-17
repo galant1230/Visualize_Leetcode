@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>Blind 75 Visualizer | Dev Edition</title>
+  <style>
+    :root {
+      --bg: #1e1e1e; --sidebar: #252526; --card: #2d2d2d; --border: #3e3e42;
+      --text: #cccccc; --blue: #007acc; --easy: #4fc3f7; --medium: #ffb74d; --hard: #ef5350;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+    
+    /* Sidebar & Search */
+    aside { width: 280px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .search-box { padding: 15px; border-bottom: 1px solid var(--border); }
+    #globalSearch { width: 100%; background: #3c3c3c; border: 1px solid var(--border); color: white; padding: 6px 10px; font-size: 13px; box-sizing: border-box; }
+    
+    .nav-scroll { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+    aside h2 { font-size: 11px; margin: 20px 15px 5px; color: var(--blue); text-transform: uppercase; letter-spacing: 0.5px; }
+    aside a { display: block; padding: 6px 25px; color: #abb2bf; text-decoration: none; font-size: 13px; cursor: pointer; }
+    aside a:hover, aside a.active { background: #37373d; color: white; }
+
+    main { flex: 1; padding: 30px; overflow-y: auto; }
+    .topic-section { display: none; }
+    .topic-section.active { display: block; }
+    
+    /* Typography & Tables */
+    .category-title { font-size: 22px; color: #fff; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    .sub-title { font-size: 16px; color: var(--blue); margin: 25px 0 10px; }
+    
+    .dashboard-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 25px; }
+    .dashboard-table th, .dashboard-table td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+    .dashboard-table th { background: #2d2d2d; color: #858585; font-weight: normal; }
+    
+    /* 縮小後的題號樣式 */
+    .id-col { width: 50px; color: #569cd6; font-family: 'Consolas', monospace; font-size: 11px; } 
+    
+    .diff-badge { font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: bold; text-transform: uppercase; }
+    .easy { color: var(--easy); border: 1px solid var(--easy); }
+    .medium { color: var(--medium); border: 1px solid var(--medium); }
+    .hard { color: var(--hard); border: 1px solid var(--hard); }
+    
+    .btn-view { color: white; background: var(--blue); text-decoration: none; font-size: 11px; padding: 3px 8px; border-radius: 2px; }
+    
+    /* Search Result List */
+    #search-results-list { list-style: none; padding: 0; }
+    #search-results-list li { padding: 10px; border: 1px solid var(--border); margin-bottom: 5px; background: var(--card); border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+  </style>
+</head>
+<body>
+
+<aside>
+  <div class="search-box">
+    <input type="text" id="globalSearch" placeholder="搜尋題號或關鍵字..." onkeyup="doSearch()">
+  </div>
+  <div class="nav-scroll">
+    <a onclick="showSection('home')" class="active" id="nav-home">🏠 Blind 75 Dashboard</a>
+    <h2>Data Structure</h2>
+    <a onclick="showSection('array')">Array & Hashing</a>
+    <a onclick="showSection('stack')">Stack</a>
+    <a onclick="showSection('linkedlist')">Linked List</a>
+    <a onclick="showSection('tree')">Trees</a>
+    <a onclick="showSection('graph')">Graph</a>
+    <a onclick="showSection('heap')">Heap</a>
+    <a onclick="showSection('matrix')">Matrix</a>
+    <a onclick="showSection('tries')">Tries</a>
+    <h2>Algorithm</h2>
+    <a onclick="showSection('twopointers')">Two Pointers</a>
+    <a onclick="showSection('slidingwindow')">Sliding Window</a>
+    <a onclick="showSection('binarysearch')">Binary Search</a>
+    <a onclick="showSection('dp')">Dynamic Programming</a>
+    <a onclick="showSection('backtracking')">Backtracking</a>
+    <a onclick="showSection('greedy')">Greedy</a>
+    <h2>Others</h2>
+    <a onclick="showSection('bit')">Bit Manipulation</a>
+    <a onclick="showSection('intervals')">Intervals</a>
+  </div>
+</aside>
+
+<main>
+  <section id="home" class="topic-section active">
+    <div class="category-title">Blind 75 Complete Plan</div>
+    <div id="home-content"></div>
+  </section>
+
+  <section id="search-section" class="topic-section">
+    <div class="category-title">搜尋結果</div>
+    <div id="search-results-list"></div>
+  </section>
+
+  <div id="dynamic-sections"></div>
+</main>
+
+<script>
+  const blind75Data = [
+    // Array (9)
+    { id: '1', cat: 'array', name: 'Two Sum', diff: 'easy', path: 'problems/資料結構/Array/Easy/1.Two_Sum.html' },
+    { id: '217', cat: 'array', name: 'Contains Duplicate', diff: 'easy', path: 'problems/資料結構/Array/Easy/217.Contains_Duplicate.html' },
+    { id: '242', cat: 'array', name: 'Valid Anagram', diff: 'easy', path: 'problems/資料結構/Hash_Table/easy/242.Valid_Anagram.html' },
+    { id: '49', cat: 'array', name: 'Group Anagrams', diff: 'medium', path: 'problems/其他/String/Medium/49.group_anagrams_visual.html' },
+    { id: '347', cat: 'array', name: 'Top K Frequent Elements', diff: 'medium', path: 'problems/資料結構/Array/Medium/347.Top_K_Frequent_Elements.html' },
+    { id: '238', cat: 'array', name: 'Product of Array Except Self', diff: 'medium', path: 'problems/資料結構/Array/Medium/238.Product_of_Array_Except_Self.html' },
+    { id: '271', cat: 'array', name: 'Encode and Decode Strings', diff: 'medium', path: 'problems/其他/String/Medium/271.encode_decode_visualization.html' },
+    { id: '128', cat: 'array', name: 'Longest Consecutive Sequence', diff: 'medium', path: 'problems/資料結構/Hash_Table/medium/128.Longest_Consecutive_Sequence.html' },
+    { id: '36', cat: 'array', name: 'Valid Sudoku', diff: 'medium', path: '#' },
+    // Two Pointers (3)
+    { id: '125', cat: 'twopointers', name: 'Valid Palindrome', diff: 'easy', path: 'problems/演算法/Double_Pointer/Easy/125.valid_palindrome.html' },
+    { id: '15', cat: 'twopointers', name: '3Sum', diff: 'medium', path: 'problems/演算法/Double_Pointer/Medium/15.3Sum.html' },
+    { id: '11', cat: 'twopointers', name: 'Container With Most Water', diff: 'medium', path: 'problems/演算法/Double_Pointer/Medium/11.Container_Most_Water.html' },
+    // Sliding Window (4)
+    { id: '121', cat: 'slidingwindow', name: 'Best Time to Buy/Sell Stock', diff: 'easy', path: 'problems/資料結構/Array/Easy/121.Best_Time_to_Buy_and_Sell_Stock.html' },
+    { id: '3', cat: 'slidingwindow', name: 'Longest Substring Without Repeating', diff: 'medium', path: 'problems/演算法/Sliding_Window/Medium/3.longest_substring_visual.html' },
+    { id: '424', cat: 'slidingwindow', name: 'Longest Repeating Character Replacement', diff: 'medium', path: 'problems/其他/String/Medium/424.character_replacement_visual.html' },
+    { id: '76', cat: 'slidingwindow', name: 'Minimum Window Substring', diff: 'hard', path: 'problems/演算法/Sliding_Window/Hard/76.min_window_substring_visual.html' },
+    // Stack (1)
+    { id: '20', cat: 'stack', name: 'Valid Parentheses', diff: 'easy', path: 'problems/資料結構/Stack/Easy/20.Valid_Parentheses.html' },
+    // Binary Search (2)
+    { id: '153', cat: 'binarysearch', name: 'Find Minimum in Rotated Array', diff: 'medium', path: 'problems/演算法/Binary_Search/Medium/153.Find_Min_Rotated.html' },
+    { id: '33', cat: 'binarysearch', name: 'Search in Rotated Sorted Array', diff: 'medium', path: 'problems/演算法/Binary_Search/Medium/33.Search_Rotated.html' },
+    // Linked List (6)
+    { id: '206', cat: 'linkedlist', name: 'Reverse Linked List', diff: 'easy', path: 'problems/資料結構/Linked_list/Easy/206.Reverse_Linked_List.html' },
+    { id: '21', cat: 'linkedlist', name: 'Merge Two Sorted Lists', diff: 'easy', path: 'problems/資料結構/Linked_list/Easy/21.Merge_Two_Sorted_List.html' },
+    { id: '141', cat: 'linkedlist', name: 'Linked List Cycle', diff: 'easy', path: 'problems/資料結構/Linked_list/Easy/141.Linked_List_Cycle.html' },
+    { id: '143', cat: 'linkedlist', name: 'Reorder List', diff: 'medium', path: 'problems/資料結構/Linked_list/Medium/143.Reorder_List.html' },
+    { id: '19', cat: 'linkedlist', name: 'Remove Nth Node From End', diff: 'medium', path: 'problems/資料結構/Linked_list/Medium/19.Remove_Nth_Node.html' },
+    { id: '23', cat: 'linkedlist', name: 'Merge K Sorted Lists', diff: 'hard', path: 'problems/資料結構/Linked_list/Hard/23.Merge_k_Sorted_Lists.html' },
+    // Trees (12)
+    { id: '226', cat: 'tree', name: 'Invert Binary Tree', diff: 'easy', path: 'problems/資料結構/Tree/Easy/226.invert_binary_tree_visualizer.html' },
+    { id: '104', cat: 'tree', name: 'Maximum Depth of Binary Tree', diff: 'easy', path: 'problems/資料結構/Tree/Easy/104.max_depth_binary_tree.html' },
+    { id: '100', cat: 'tree', name: 'Same Tree', diff: 'easy', path: 'problems/資料結構/Tree/Easy/100.same_tree_visualizer.html' },
+    { id: '572', cat: 'tree', name: 'Subtree of Another Tree', diff: 'easy', path: 'problems/資料結構/Tree/Easy/572.Subtree_DFS_Visualizer.html' },
+    { id: '235', cat: 'tree', name: 'Lowest Common Ancestor of a BST', diff: 'medium', path: 'problems/資料結構/Tree/Medium/235_LCA_BST_Visualizer.html' },
+    { id: '102', cat: 'tree', name: 'Binary Tree Level Order Traversal', diff: 'medium', path: 'problems/資料結構/Tree/Medium/102_binary_tree_bfs.html' },
+    { id: '98', cat: 'tree', name: 'Validate Binary Search Tree', diff: 'medium', path: 'problems/資料結構/Tree/Medium/098.Validate_BST.html' },
+    { id: '230', cat: 'tree', name: 'Kth Smallest Element in a BST', diff: 'medium', path: 'problems/資料結構/Tree/Medium/230_Kth_Smallest_BST.html' },
+    { id: '105', cat: 'tree', name: 'Construct Binary Tree (Pre/In)', diff: 'medium', path: 'problems/資料結構/Tree/Medium/105.Build_Tree.html' },
+    { id: '124', cat: 'tree', name: 'Binary Tree Max Path Sum', diff: 'hard', path: 'problems/資料結構/Tree/Hard/124.Binary_Tree_Max_Sum.html' },
+    { id: '297', cat: 'tree', name: 'Serialize/Deserialize Binary Tree', diff: 'hard', path: 'problems/資料結構/Tree/Hard/297_Serialize_Deserialize.html' },
+    { id: '103', cat: 'tree', name: 'Binary Tree Zigzag', diff: 'medium', path: '#' },
+    // Tries (3)
+    { id: '208', cat: 'tries', name: 'Implement Trie', diff: 'medium', path: 'problems/資料結構/Tries/Medium/208.trie_visualizer.html' },
+    { id: '211', cat: 'tries', name: 'Add and Search Word', diff: 'medium', path: 'problems/資料結構/Tries/Medium/211.Design_Add_and_Search.html' },
+    { id: '212', cat: 'tries', name: 'Word Search II', diff: 'hard', path: 'problems/資料結構/Tries/Hard/212.Word_Search_II.html' },
+    // Heap (3)
+    { id: '347', cat: 'heap', name: 'Top K Frequent Elements', diff: 'medium', path: '#' },
+    { id: '215', cat: 'heap', name: 'Kth Largest Element', diff: 'medium', path: '#' },
+    { id: '295', cat: 'heap', name: 'Median from Data Stream', diff: 'hard', path: 'problems/資料結構/Heap/Hard/295.Find_Median.html' },
+    // Backtracking (2)
+    { id: '39', cat: 'backtracking', name: 'Combination Sum', diff: 'medium', path: 'problems/演算法/Backtracking/Medium/39.Combination_Sum.html' },
+    { id: '79', cat: 'backtracking', name: 'Word Search', diff: 'medium', path: 'problems/演算法/Backtracking/Medium/79.Word_Search.html' },
+    // Graph (6)
+    { id: '200', cat: 'graph', name: 'Number of Islands', diff: 'medium', path: 'problems/資料結構/Graph/Medium/200.Number_of_Islands.html' },
+    { id: '133', cat: 'graph', name: 'Clone Graph', diff: 'medium', path: 'problems/資料結構/Graph/Medium/133.Clone_Graph.html' },
+    { id: '417', cat: 'graph', name: 'Pacific Atlantic Water Flow', diff: 'medium', path: 'problems/資料結構/Graph/Medium/417.Pacific_Atlantic.html' },
+    { id: '207', cat: 'graph', name: 'Course Schedule', diff: 'medium', path: 'problems/資料結構/Graph/Medium/207.Course_Schedule.html' },
+    { id: '261', cat: 'graph', name: 'Graph Valid Tree', diff: 'medium', path: 'problems/資料結構/Graph/Medium/261.Graph_Valid_Tree.html' },
+    { id: '323', cat: 'graph', name: 'Number of Connected Components', diff: 'medium', path: 'problems/資料結構/Graph/Medium/323.html' },
+    // DP (12)
+    { id: '70', cat: 'dp', name: 'Climbing Stairs', diff: 'easy', path: 'problems/演算法/Dynamic_Programming/Easy/70.Climbing_Stairs.html' },
+    { id: '198', cat: 'dp', name: 'House Robber', diff: 'medium', path: 'problems/演算法/Dynamic_Programming/Medium/198.HouseRobber.html' },
+    { id: '213', cat: 'dp', name: 'House Robber II', diff: 'medium', path: 'problems/演算法/Dynamic_Programming/Medium/213.HouseRobberII.html' },
+    { id: '5', cat: 'dp', name: 'Longest Palindromic Substring', diff: 'medium', path: 'problems/演算法/Dynamic_Programming/Medium/5.longest_palindromic.html' },
+    { id: '647', cat: 'dp', name: 'Palindromic Substrings', diff: 'medium', path: 'problems/演算法/Dynamic_Programming/Medium/647.palindromic_substrings.html' },
+    { id: '91', cat: 'dp', name: 'Decode Ways', diff: 'medium', path: 'problems/演算法/Dynamic_Programming/Medium/91.DecodeWays.html' },
+    { id: '322', cat: 'dp', name: 'Coin Change', diff: 'medium', path: 'problems/演算法/Dynamic_Programming/Medium/322.Coin_Change.html' },
+    { id: '152', cat: 'dp', name: 'Maximum Product Subarray', diff: 'medium', path: 'problems/演算法/Dynamic_Programming/Medium/152.Maximum_Product.html' },
+    { id: '139', cat: 'dp', name: 'Word Break', diff: 'medium', path: 'problems/演算法/Dynamic_Programming/Medium/139.WordBreak.html' },
+    { id: '300', cat: 'dp', name: 'Longest Increasing Subsequence', diff: 'medium', path: 'problems/演算法/Dynamic_Programming/Medium/300.Longest_Increasing.html' },
+    { id: '62', cat: 'dp', name: 'Unique Paths', diff: 'medium', path: 'problems/演算法/Dynamic_Programming/Medium/62.UniquePaths.html' },
+    { id: '1143', cat: 'dp', name: 'Longest Common Subsequence', diff: 'medium', path: 'problems/演算法/Dynamic_Programming/Medium/1143.LCS.html' },
+    // Greedy (2)
+    { id: '53', cat: 'greedy', name: 'Maximum Subarray', diff: 'medium', path: 'problems/演算法/Greedy/Medium/53.Maximum_Subarray.html' },
+    { id: '55', cat: 'greedy', name: 'Jump Game', diff: 'medium', path: 'problems/演算法/Greedy/Medium/55.JumpGame.html' },
+    // Intervals (5)
+    { id: '57', cat: 'intervals', name: 'Insert Interval', diff: 'medium', path: 'problems/其他/Interval/Medium/57.Insert_Interval.html' },
+    { id: '56', cat: 'intervals', name: 'Merge Intervals', diff: 'medium', path: 'problems/其他/Interval/Medium/56.Merge_Intervals.html' },
+    { id: '435', cat: 'intervals', name: 'Non-overlapping Intervals', diff: 'medium', path: 'problems/其他/Interval/Medium/435.Non_overlapping.html' },
+    { id: '252', cat: 'intervals', name: 'Meeting Rooms', diff: 'easy', path: 'problems/其他/Interval/Medium/252.Meeting_Rooms.html' },
+    { id: '253', cat: 'intervals', name: 'Meeting Rooms II', diff: 'medium', path: 'problems/其他/Interval/Medium/253.Meeting_Rooms_II.html' },
+    // Matrix (3)
+    { id: '48', cat: 'matrix', name: 'Rotate Image', diff: 'medium', path: 'problems/資料結構/Matrix/Medium/48.Rotate_Image.html' },
+    { id: '54', cat: 'matrix', name: 'Spiral Matrix', diff: 'medium', path: 'problems/資料結構/Matrix/Medium/54.spiral_matrix.html' },
+    { id: '73', cat: 'matrix', name: 'Set Matrix Zeroes', diff: 'medium', path: 'problems/資料結構/Matrix/Medium/73.Set_Matrix_Zeroes.html' },
+    // Bit Manipulation (5)
+    { id: '191', cat: 'bit', name: 'Number of 1 Bits', diff: 'easy', path: 'problems/其他/Binary/Easy/191.Number_of_1_Bits.html' },
+    { id: '338', cat: 'bit', name: 'Counting Bits', diff: 'easy', path: 'problems/其他/Binary/Easy/338.Counting_Bits.html' },
+    { id: '190', cat: 'bit', name: 'Reverse Bits', diff: 'easy', path: 'problems/其他/Binary/Easy/190.Reverse_Bits.html' },
+    { id: '268', cat: 'bit', name: 'Missing Number', diff: 'easy', path: 'problems/其他/Binary/Easy/268.Missing_Number.html' },
+    { id: '371', cat: 'bit', name: 'Sum of Two Integers', diff: 'medium', path: 'problems/其他/Binary/Medium/371.Sum_of_Two_Integers.html' }
+  ];
+
+  const categoryNames = { 'array': 'Array', 'stack': 'Stack', 'twopointers': 'Two Pointers', 'slidingwindow': 'Sliding Window', 'binarysearch': 'Binary Search', 'linkedlist': 'Linked List', 'tree': 'Trees', 'tries': 'Tries', 'heap': 'Heap', 'backtracking': 'Backtracking', 'graph': 'Graph', 'dp': 'DP', 'greedy': 'Greedy', 'intervals': 'Intervals', 'matrix': 'Matrix', 'bit': 'Bit' };
+
+  function init() {
+    const home = document.getElementById('home-content');
+    Object.keys(categoryNames).forEach(k => {
+      const ps = blind75Data.filter(p => p.cat === k);
+      if(!ps.length) return;
+      home.innerHTML += `<div class="sub-title">📂 ${categoryNames[k]}</div><table class="dashboard-table"><thead><tr><th>LC#</th><th>Name</th><th>Diff</th><th>Action</th></tr></thead><tbody>${ps.map(p => `<tr><td class="id-col">${p.id}</td><td>${p.name}</td><td><span class="diff-badge ${p.diff}">${p.diff}</span></td><td><a href="${p.path}" class="btn-view">View</a></td></tr>`).join('')}</tbody></table>`;
+      
+      const sec = document.createElement('section'); sec.id = k; sec.className = 'topic-section';
+      let sHtml = `<div class="category-title">${categoryNames[k]}</div>`;
+      ['easy', 'medium', 'hard'].forEach(lv => {
+        const lps = ps.filter(p => p.diff === lv);
+        if(lps.length) sHtml += `<div style="color:var(--${lv}); font-size:12px; margin:15px 0 5px; font-weight:bold;">${lv.toUpperCase()}</div><table class="dashboard-table"><tbody>${lps.map(p => `<tr><td class="id-col">${p.id}</td><td>${p.name}</td><td><a href="${p.path}" class="btn-view">Start</a></td></tr>`).join('')}</tbody></table>`;
+      });
+      sec.innerHTML = sHtml; document.getElementById('dynamic-sections').appendChild(sec);
+    });
+  }
+
+  function showSection(id) {
+    document.querySelectorAll('.topic-section').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('aside a').forEach(a => a.classList.remove('active'));
+    if(event && event.currentTarget.id !== 'globalSearch') event.currentTarget.classList.add('active');
+  }
+
+  function doSearch() {
+    const q = document.getElementById('globalSearch').value.toLowerCase();
+    const resultsList = document.getElementById('search-results-list');
+    if(!q) { showSection('home'); return; }
+    
+    showSection('search-section');
+    const filtered = blind75Data.filter(p => p.id.includes(q) || p.name.toLowerCase().includes(q));
+    resultsList.innerHTML = filtered.map(p => `<li><div><span class="id-col">#${p.id}</span> <b>${p.name}</b> <small>(${categoryNames[p.cat]})</small></div><a href="${p.path}" class="btn-view">View</a></li>`).join('') || '<p>查無結果</p>';
+  }
+
+  init();
+</script>
+</body>
+</html>
