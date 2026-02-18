@@ -1,6 +1,6 @@
 # 🚀 LeetCode Blind 75 Visualizer
 
-這是一個專為 **Blind 75** 題目設計的互動式學習控制台。透過視覺化演算法的執行過程，幫助開發者更直觀地理解資料結構與動態規劃、圖論等複雜概念。
+這是一個專為 **Blind 75** 題目設計的互動式學習控制台。透過視覺化演算法的執行過程，幫助使用者更直觀地理解資料結構與動態規劃、圖論等複雜概念。
 
 > **Learn LeetCode Blind 75 by [Visualizer](https://galant1230.github.io/Visualize_Leetcode/)** > 專注於理解，而不僅僅是背誦code 。
 
