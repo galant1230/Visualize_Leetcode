@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Happy String Lab - Full Debugger</title>
+    <style>
+        :root { --primary: #00d2ff; --accent: #3a7bd5; --success: #00ff88; --danger: #ff4b2b; --bg: #0a0a0a; --panel: #161616; --text: #ececec; --code-bg: #1e1e1e; }
+        
+        body { 
+            font-family: 'Consolas', 'Segoe UI', sans-serif; 
+            margin: 0; 
+            background: var(--bg); 
+            color: var(--text); 
+            height: 100vh; 
+            display: grid; 
+            grid-template-columns: 300px 1fr 380px; 
+            grid-template-rows: 1fr 300px 40px; /* 底部留出 40px */
+            gap: 15px; 
+            padding: 15px 15px 0 15px; 
+            overflow: hidden; 
+        }
+
+        /* 通用卡片樣式 */
+        .card { background: var(--panel); border: 1px solid #333; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .panel-header { background: #222; padding: 10px 15px; font-size: 13px; font-weight: bold; color: var(--primary); border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+
+        /* 左側：題目與範例 */
+        #left-col { grid-row: 1 / 3; display: flex; flex-direction: column; gap: 10px; }
+        .info-section { padding: 15px; overflow-y: auto; }
+        .info-title { font-size: 16px; font-weight: bold; color: var(--primary); margin-bottom: 10px; }
+        .example-box { background: #000; padding: 10px; border-radius: 5px; font-size: 12px; border-left: 3px solid var(--accent); margin-top: 10px; }
+        .status-pill { background: #222; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid var(--success); color: var(--success); font-size: 18px; }
+
+        /* 中間：樹與 Log */
+        #mid-tree { grid-column: 2; grid-row: 1; position: relative; }
+        #mid-log { grid-column: 2; grid-row: 2; background: #000; }
+        #log-container { flex-grow: 1; padding: 15px; overflow-y: auto; font-size: 14px; color: #00ff41; line-height: 1.6; }
+
+        /* 右側：Code 與 Stack */
+        #right-code { grid-column: 3; grid-row: 1; background: var(--code-bg); }
+        #right-stack { grid-column: 3; grid-row: 2; }
+        
+        /* 代碼高亮 */
+        .code-line { padding: 2px 15px; font-size: 13px; white-space: pre; color: #d4d4d4; border-left: 3px solid transparent; }
+        .active-line { background: #37373d; color: var(--primary); border-left: 3px solid var(--primary); }
+
+        /* Stack 樣式 */
+        #stack-container { flex-grow: 1; display: flex; flex-direction: column-reverse; padding: 12px; gap: 6px; overflow-y: auto; }
+        .stack-frame { background: linear-gradient(135deg, var(--accent), #1a2a6c); color: white; padding: 10px; border-radius: 5px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); }
+
+        /* UI 元件 */
+        .controls { padding: 10px; display: flex; gap: 10px; }
+        button { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        svg { width: 100%; height: 100%; }
+
+        /* D3 樣式 */
+        .link { fill: none; stroke: #333; stroke-width: 2px; }
+        .link.active { stroke: var(--primary); stroke-width: 4px; }
+        .node circle { fill: #111; stroke: #555; stroke-width: 2px; }
+        .node.visiting circle { stroke: var(--primary); fill: #003344; stroke-width: 4px; }
+        .node text { fill: #fff; font-size: 10px; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div id="left-col">
+    <div class="card" style="flex-grow: 1;">
+        <div class="panel-header">題目敘述</div>
+        <div class="info-section">
+            <div class="info-title">1415. 快樂字串</div>
+            <p style="font-size: 13px; line-height: 1.5;">「快樂字串」是由 ['a', 'b', 'c'] 組成且相鄰字元不重複的字串。找出長度 <b>n</b> 的字典序第 <b>k</b> 個。</p>
+            <div class="info-title" style="margin-top:20px;">範例說明</div>
+            <div class="example-box">
+                n = 3, k = 9<br>
+                1. aba, 2. abc, 3. aca...<br>
+                8. bcb, <b style="color:var(--danger)">9. cab (Target)</b>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="panel-header">當前狀態</div>
+        <div class="info-section">
+            <div class="status-pill">
+                Count: <span id="stat-count">0</span><br>
+                Result: <span id="stat-ans">-</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="mid-tree" class="card">
+    <div class="panel-header">
+        DECISION TREE
+        <div class="controls">
+            <button id="btn-next">下一步 Step ></button>
+            <button onclick="location.reload()" style="background:#444">重置</button>
+        </div>
+    </div>
+    <svg id="canvas"></svg>
+</div>
+
+<div id="mid-log" class="card">
+    <div class="panel-header">執行日誌 (LOG)</div>
+    <div id="log-container"></div>
+</div>
+
+<div id="right-code" class="card">
+    <div class="panel-header">PYTHON CODE 高亮</div>
+    <div style="padding: 10px 0;">
+        <div id="L1" class="code-line">def backtrack(path):</div>
+        <div id="L2" class="code-line">    if len(path) == n:</div>
+        <div id="L3" class="code-line">        count += 1</div>
+        <div id="L4" class="code-line">        if count == k:</div>
+        <div id="L5" class="code-line">            ans = path</div>
+        <div id="L6" class="code-line">        return</div>
+        <div id="L7" class="code-line">    for char in 'abc':</div>
+        <div id="L8" class="code-line">        if not path or path[-1] != char:</div>
+        <div id="L9" class="code-line">            backtrack(path + char)</div>
+    </div>
+</div>
+
+<div id="right-stack" class="card">
+    <div class="panel-header">CALL STACK (直式)</div>
+    <div id="stack-container"></div>
+</div>
+
+<div style="grid-column: 1 / 4; grid-row: 3;"></div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const n = 3, k = 9;
+const steps = [];
+let _c = 0, _r = "";
+
+function solve(path, stack) {
+    const curStack = [...stack, `backtrack("${path}")` ];
+    steps.push({ line: 2, path, stack: curStack, log: `檢查長度: "${path || '空'}"` });
+    if (path.length === n) {
+        _c++;
+        steps.push({ line: 3, path, stack: curStack, log: `找到第 ${_c} 個快樂字串`, count: _c });
+        steps.push({ line: 4, path, stack: curStack, log: `判斷 ${_c} == ${k}?` });
+        if (_c === k) {
+            _r = path;
+            steps.push({ line: 5, path, stack: curStack, log: `[MATCH] 找到目標！ans = "${path}"`, ans: path });
+        }
+        steps.push({ line: 6, path, stack: curStack, log: `Return 返回上一層` });
+        return;
+    }
+    if (_r) return;
+    steps.push({ line: 7, path, stack: curStack, log: `嘗試 abc 分支` });
+    for (let char of ['a', 'b', 'c']) {
+        const ok = !path || path[path.length-1] !== char;
+        steps.push({ line: 8, path, stack: curStack, log: `試加 '${char}': ${ok?'成功':'失敗(重複)'}` });
+        if (ok) {
+            steps.push({ line: 9, path, stack: curStack, log: `遞迴進入 backtrack("${path+char}")` });
+            solve(path + char, curStack);
+            if (_r) return;
+        }
+    }
+}
+solve("", []);
+
+// D3 樹狀圖渲染
+const treeData = { name: "", children: [] };
+const build = (node, d) => {
+    if (d === n) return;
+    ['a', 'b', 'c'].forEach(c => {
+        if (node.name === "" || node.name[node.name.length-1] !== c) {
+            const child = { name: node.name + c, children: [] };
+            node.children.push(child); build(child, d + 1);
+        }
+    });
+};
+build(treeData, 0);
+const root = d3.hierarchy(treeData);
+const treeLayout = d3.tree().size([window.innerWidth * 0.45, 280]);
+treeLayout(root);
+
+const svg = d3.select("#canvas").append("g").attr("transform", "translate(40, 40)");
+svg.selectAll(".link").data(root.links()).enter().append("path").attr("class", "link").attr("id", d => "link-" + d.target.data.name).attr("d", d3.linkVertical().x(d => d.x).y(d => d.y));
+const nodes = svg.selectAll(".node").data(root.descendants()).enter().append("g").attr("class", "node").attr("id", d => "node-" + (d.data.name || "ROOT")).attr("transform", d => `translate(${d.x},${d.y})`);
+nodes.append("circle").attr("r", 15);
+nodes.append("text").attr("dy", 4).attr("text-anchor", "middle").text(d => d.data.name || "R");
+
+let cur = 0;
+document.getElementById('btn-next').onclick = () => {
+    if (cur >= steps.length) return;
+    const s = steps[cur];
+    
+    // Code 高亮
+    document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active-line'));
+    document.getElementById('L' + s.line).classList.add('active-line');
+
+    // Log (往下長)
+    const logBox = document.getElementById('log-container');
+    const div = document.createElement('div');
+    div.textContent = `> Line ${s.line}: ${s.log}`;
+    logBox.appendChild(div);
+    logBox.scrollTop = logBox.scrollHeight;
+
+    // Stack (直式)
+    const stackBox = document.getElementById('stack-container');
+    stackBox.innerHTML = "";
+    s.stack.forEach(f => {
+        const frame = document.createElement('div');
+        frame.className = 'stack-frame';
+        frame.textContent = f;
+        stackBox.appendChild(frame);
+    });
+
+    // 狀態
+    if (s.count) document.getElementById('stat-count').textContent = s.count;
+    if (s.ans) document.getElementById('stat-ans').textContent = s.ans;
+    
+    // 樹狀圖
+    d3.selectAll(".node").classed("visiting", false);
+    d3.select("#node-" + (s.path || "ROOT")).classed("visiting", true).classed("visited", true);
+    if (s.path) d3.select("#link-" + s.path).classed("active", true).style("stroke", "var(--primary)");
+
+    cur++;
+};
+</script>
+</body>
+</html>

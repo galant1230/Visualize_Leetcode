@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>1899. Merge Triplets Debugger</title>
+  <style>
+    :root {
+      --bg: #0d1117; --panel: #161b22; --border: #30363d;
+      --text: #c9d1d9; --blue: #66d9ef; --purple: #ae81ff;
+      --orange: #fd971f; --green: #a6e22e; --red: #f92672;
+      --vscode-bg: #272822; 
+      --kw: #66d9ef; --fn: #e6db74; --vr: #f8f8f2; --nm: #ae81ff; --st: #e6db74; --cm: #75715e;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', 'Consolas', sans-serif; }
+    body { background: #010409; color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+    /* --- 左側 (25%) --- */
+    .sidebar-l { width: 25%; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: #0d1117; overflow-y: auto; }
+    .section-header { padding: 12px 16px; font-size: 13px; font-weight: bold; color: #8b949e; border-bottom: 1px solid var(--border); background: #161b22; text-transform: uppercase; }
+    .p-header { padding: 20px 16px; border-bottom: 1px solid var(--border); }
+    .p-title { font-size: 22px; color: #fff; font-weight: 600; margin-bottom: 10px; }
+    .p-desc { font-size: 15px; line-height: 1.6; color: #d1d5db; margin-bottom: 15px; }
+    .p-constraints { font-size: 13px; color: #8b949e; background: #161b22; padding: 10px; border-radius: 4px; }
+
+    .complexity-box { padding: 20px 16px; border-bottom: 1px solid var(--border); }
+    .tag { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: bold; margin-bottom: 10px; }
+    .tag-time { background: rgba(166, 226, 46, 0.1); color: var(--green); border: 1px solid var(--green); }
+    .tag-space { background: rgba(102, 217, 239, 0.1); color: var(--blue); border: 1px solid var(--blue); }
+
+    .tc-area { padding: 16px; flex: 1; }
+    .tc-item { padding: 14px; margin-bottom: 12px; background: #161b22; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+    .tc-item.active { border-color: var(--blue); background: rgba(102, 217, 239, 0.05); }
+    .tc-label { font-size: 13px; font-weight: bold; color: var(--blue); margin-bottom: 6px; }
+
+    /* --- 中間 (45%) --- */
+    .main-arena { width: 45%; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+    .viz-top { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #010409; gap: 30px; }
+    
+    .target-display { display: flex; gap: 10px; padding: 15px; background: rgba(253, 151, 31, 0.1); border: 1px dashed var(--orange); border-radius: 8px; }
+    .triplet { display: flex; gap: 5px; background: #161b22; padding: 8px; border-radius: 6px; border: 1px solid var(--border); transition: 0.3s; }
+    .triplet.valid { border-color: var(--green); box-shadow: 0 0 10px rgba(166, 226, 46, 0.2); }
+    .triplet.invalid { opacity: 0.3; border-color: var(--red); }
+    .cell { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 4px; border: 1px solid #30363d; font-size: 16px; }
+    .cell.match { background: var(--green); color: #000; }
+
+    .progress-set { display: flex; gap: 15px; margin-top: 20px; }
+    .check-box { width: 60px; height: 60px; border: 2px solid #30363d; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.5s; }
+    .check-box.done { border-color: var(--green); color: var(--green); background: rgba(166, 226, 46, 0.1); }
+
+    .viz-bottom { height: 150px; background: #0d1117; padding: 15px; border-top: 1px solid var(--border); overflow-y: auto; font-family: 'Consolas', monospace; font-size: 14px; color: var(--green); }
+    .playback-bar { height: 70px; background: #161b22; display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .p-btn { padding: 10px 18px; border-radius: 6px; border: 1px solid #49483e; background: #3e3d32; color: #fff; cursor: pointer; font-size: 14px; }
+
+    /* --- 右側 (30%) --- */
+    .sidebar-r { width: 30%; background: var(--vscode-bg); display: flex; flex-direction: column; }
+    .line { display: block; padding-left: 60px; line-height: 1.7; font-size: 16px; position: relative; white-space: pre; color: #f8f8f2; font-family: 'Consolas', monospace; }
+    .line.active { background: #49483e; }
+    .line.active::before { content: ''; position: absolute; left: 0; width: 5px; height: 100%; background: var(--blue); }
+    .line-num { position: absolute; left: 0; width: 40px; text-align: right; color: #90908a; padding-right: 20px; font-size: 14px; }
+    .c-kw { color: var(--kw); } .c-fn { color: var(--fn); } .c-vr { color: var(--vr); } .c-nm { color: var(--nm); }
+    .var-monitor { flex: 1; border-top: 1px solid #49483e; padding: 15px; background: #272822; }
+    .var-row { display: flex; justify-content: space-between; font-size: 15px; padding: 8px 0; border-bottom: 1px solid #3e3d32; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-l">
+  <div class="section-header">Description</div>
+  <div class="p-header">
+    <div class="p-title">1899. Merge Triplets</div>
+    <div class="p-desc">
+      給定一組 triplets 和一個 target。你可以選取任意數量的 triplet 並執行更新：<code>res[i] = max(res[i], triplet[i])</code>。判斷是否能得到 target。
+    </div>
+    <div class="p-constraints">
+      • triplets[i].length == 3<br>
+      • target.length == 3<br>
+      • 1 <= triplets.length <= 10^5
+    </div>
+  </div>
+
+  <div class="section-header">Complexity Analysis</div>
+  <div class="complexity-box">
+    <div class="tag tag-time">Time: O(N)</div>
+    <div class="tag tag-space">Space: O(1)</div>
+    <div class="logic-desc">
+      Greedy 思路：遍歷所有 triplet，如果一個 triplet 的三個數字都沒有超過 target 對應位置的數字，它就是「安全」的。我們將所有安全 triplet 的最大值合併，看最終是否等於 target。
+    </div>
+  </div>
+
+  <div class="section-header">Test Cases</div>
+  <div class="tc-area">
+    <div id="tc1" class="tc-item active" onclick="changeTC(1)">
+      <div class="tc-label">Example 1</div>
+      <div style="font-size:12px; color:#8b949e">triplets = [[2,5,3],[1,8,4],[1,7,5]], target = [2,7,5]</div>
+    </div>
+    <div id="tc2" class="tc-item" onclick="changeTC(2)">
+      <div class="tc-label">Example 2</div>
+      <div style="font-size:12px; color:#8b949e">triplets = [[3,4,5],[4,5,6]], target = [3,2,5]</div>
+    </div>
+  </div>
+</div>
+
+<div class="main-arena">
+  <div class="viz-top">
+    <div style="font-size:13px; color:#8b949e">TARGET TRIPLET</div>
+    <div id="targetBox" class="target-display"></div>
+    
+    <div style="font-size:13px; color:#8b949e">CURRENT SCANNING</div>
+    <div id="currentTriplet" class="triplet"></div>
+
+    <div style="font-size:13px; color:#8b949e">POSITIONS REACHED</div>
+    <div id="progressSet" class="progress-set">
+      <div id="p0" class="check-box">0</div>
+      <div id="p1" class="check-box">1</div>
+      <div id="p2" class="check-box">2</div>
+    </div>
+  </div>
+  <div class="viz-bottom" id="logBox"></div>
+  <div class="playback-bar">
+    <button class="p-btn" onclick="reset()">Reset</button>
+    <button class="p-btn" onclick="prev()">Prev</button>
+    <button class="p-btn" id="playBtn" onclick="togglePlay()">Play</button>
+    <button class="p-btn" onclick="next()" style="border-color:var(--blue); color:var(--blue)">Next</button>
+  </div>
+</div>
+
+<div class="sidebar-r">
+  <div class="section-header">solution.py (VS Code)</div>
+  <div id="codeArea" class="code-area"></div>
+  <div class="section-header">Variables Monitor</div>
+  <div id="varMonitor" class="var-monitor"></div>
+</div>
+
+<script>
+let currentTC = { 
+  triplets: [[2,5,3],[1,8,4],[1,7,5]], 
+  target: [2,7,5], id: 1 
+};
+let steps = [], curStep = 0, isPlaying = false, timer = null;
+
+const codeLines = [
+  { t: '<span class="c-kw">class</span> <span class="c-fn">Solution</span>(object):', i:0 },
+  { t: '  <span class="c-kw">def</span> <span class="c-fn">mergeTriplets</span>(self, triplets, target):', i:1 },
+  { t: '    <span class="c-vr">good</span> = <span class="c-fn">set</span>()', i:2 },
+  { t: '    <span class="c-kw">for</span> <span class="c-vr">t</span> <span class="c-kw">in</span> triplets:', i:2 },
+  { t: '      <span class="c-kw">if</span> t[<span class="c-nm">0</span>] > target[<span class="c-nm">0</span>] <span class="c-kw">or</span> t[<span class="c-nm">1</span>] > target[<span class="c-nm">1</span>] <span class="c-kw">or</span> t[<span class="c-nm">2</span>] > target[<span class="c-nm">2</span>]:', i:3 },
+  { t: '        <span class="c-kw">continue</span>', i:4 },
+  { t: '      <span class="c-kw">for</span> <span class="c-vr">i</span>, <span class="c-vr">v</span> <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(t):', i:3 },
+  { t: '        <span class="c-kw">if</span> v == target[i]:', i:4 },
+  { t: '          good.<span class="c-fn">add</span>(i)', i:5 },
+  { t: '    <span class="c-kw">return</span> <span class="c-fn">len</span>(good) == <span class="c-nm">3</span>', i:2 }
+];
+
+function generateSteps(triplets, target) {
+  let s = [], good = new Set();
+  s.push({ ln: 2, good: new Set(), t: null, log: "初始化 good set。" });
+  
+  for (let idx = 0; idx < triplets.length; idx++) {
+    let t = triplets[idx];
+    s.push({ ln: 3, good: new Set(good), t, log: `檢查 triplet: [${t}]` });
+    
+    if (t[0] > target[0] || t[1] > target[1] || t[2] > target[2]) {
+      s.push({ ln: 4, good: new Set(good), t, log: "其中一項超過 target，跳過此組。", invalid: true });
+      s.push({ ln: 5, good: new Set(good), t, log: "跳過中..." });
+    } else {
+      s.push({ ln: 6, good: new Set(good), t, log: "此組安全，檢查是否有匹配數值。" });
+      for (let i = 0; i < 3; i++) {
+        if (t[i] === target[i]) {
+          good.add(i);
+          s.push({ ln: 8, good: new Set(good), t, log: `位置 ${i} 匹配成功！加入 good set。`, matchIdx: i });
+        }
+      }
+    }
+  }
+  s.push({ ln: 9, good: new Set(good), t: null, log: `結束遍歷。good set 長度: ${good.size}`, finished: true });
+  return s;
+}
+
+function update() {
+  const step = steps[curStep];
+  document.querySelectorAll('.line').forEach((l, idx) => l.classList.toggle('active', idx === step.ln));
+  
+  // Target Box
+  document.getElementById('targetBox').innerHTML = currentTC.target.map(v => `<div class="cell" style="border-color:var(--orange)">${v}</div>`).join('');
+  
+  // Current Triplet
+  const ct = document.getElementById('currentTriplet');
+  if (step.t) {
+    ct.style.display = 'flex';
+    ct.className = `triplet ${step.invalid ? 'invalid' : 'valid'}`;
+    ct.innerHTML = step.t.map((v, i) => `<div class="cell ${v===currentTC.target[i] && !step.invalid ? 'match' : ''}">${v}</div>`).join('');
+  } else {
+    ct.style.display = 'none';
+  }
+
+  // Progress
+  [0,1,2].forEach(i => {
+    const el = document.getElementById(`p${i}`);
+    el.className = `check-box ${step.good.has(i) ? 'done' : ''}`;
+    el.innerText = step.good.has(i) ? '✓' : i;
+  });
+
+  document.getElementById('varMonitor').innerHTML = `
+    <div class="var-row"><span>good_set</span><span>{${Array.from(step.good).join(',')}}</span></div>
+    <div class="var-row"><span>triplet</span><span>${step.t ? '['+step.t+']' : '--'}</span></div>
+  `;
+
+  const logBox = document.getElementById('logBox');
+  const div = document.createElement('div'); div.innerHTML = `> ${step.log}`;
+  logBox.appendChild(div); logBox.scrollTop = logBox.scrollHeight;
+}
+
+function changeTC(id) {
+  currentTC = id === 1 ? 
+    { triplets: [[2,5,3],[1,8,4],[1,7,5]], target: [2,7,5], id: 1 } : 
+    { triplets: [[3,4,5],[4,5,6]], target: [3,2,5], id: 2 };
+  document.getElementById('tc1').classList.toggle('active', id === 1);
+  document.getElementById('tc2').classList.toggle('active', id === 2);
+  reset();
+}
+
+function reset() {
+  steps = generateSteps(currentTC.triplets, currentTC.target); curStep = 0; isPlaying = false; clearInterval(timer);
+  document.getElementById('logBox').innerHTML = ''; update();
+}
+function next() { if (curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { if (curStep > 0) { curStep--; update(); } }
+function togglePlay() {
+  isPlaying = !isPlaying;
+  document.getElementById('playBtn').innerText = isPlaying ? "Pause" : "Play";
+  if (isPlaying) timer = setInterval(() => { if(curStep < steps.length - 1) next(); else togglePlay(); }, 700);
+  else clearInterval(timer);
+}
+
+document.getElementById('codeArea').innerHTML = codeLines.map((l, i) => `<div class="line"><span class="line-num">${i+1}</span><span style="margin-left:${l.i*20}px">${l.t}</span></div>`).join('');
+reset();
+</script>
+</body>
+</html>

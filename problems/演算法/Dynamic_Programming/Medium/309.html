@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 309. 股票買賣含冷凍期 - 演算法實驗室</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #8b949e;
+        }
+        body { 
+            background: #010409; color: var(--text); 
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0;
+        }
+        
+        .widget-card {
+            width: 1280px; height: 920px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column; overflow: hidden;
+            margin-bottom: 20px; /* 讓底部與視窗邊緣保持距離 */
+        }
+
+        /* 上方區域：題目與約束 */
+        .problem-header {
+            padding: 20px 25px; border-bottom: 1px solid var(--border);
+            background: #0d1117;
+        }
+        .problem-title { font-size: 22px; font-weight: bold; color: var(--blue); margin-bottom: 8px; }
+        .problem-desc { font-size: 14px; line-height: 1.6; color: #c9d1d9; }
+        .constraints { margin-top: 10px; display: flex; gap: 20px; font-size: 12px; color: var(--orange); }
+
+        .main-content { display: grid; grid-template-columns: 320px 1fr; flex: 1; overflow: hidden; }
+        
+        .sidebar { padding: 20px; border-right: 1px solid var(--border); background: rgba(0,0,0,0.2); overflow-y: auto; }
+        .analysis-card { margin-bottom: 20px; }
+        .analysis-card h4 { color: var(--blue); margin-bottom: 10px; border-left: 3px solid var(--blue); padding-left: 8px; }
+        .complexity-tag { 
+            display: inline-block; padding: 4px 8px; border-radius: 4px; 
+            background: var(--highlight); border: 1px solid var(--blue);
+            font-family: monospace; font-size: 13px; color: var(--blue); margin-bottom: 10px; margin-right: 5px;
+        }
+        .logic-text { font-size: 13px; line-height: 1.6; color: var(--text); }
+
+        /* 代碼區 */
+        .workspace { display: flex; flex-direction: column; overflow: hidden; }
+        .editor-container { background: #0d1117; flex: 1; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; }
+        .tabs { background: #010409; display: flex; border-bottom: 1px solid var(--border); }
+        .tab { padding: 12px 25px; font-size: 13px; color: var(--comment); border-right: 1px solid var(--border); cursor: pointer; font-family: monospace; }
+        .tab.active { background: var(--panel); color: var(--text); border-top: 2px solid var(--orange); }
+        
+        .editor { padding: 20px; font-family: 'Fira Code', 'Consolas', monospace; font-size: 14px; line-height: 1.5; overflow-y: auto; flex: 1; }
+        .line { display: block; padding-left: 50px; position: relative; opacity: 0.35; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 10px; color: #484f58; width: 30px; text-align: right; }
+
+        /* 下方視覺化與日誌區 */
+        .bottom-section { height: 350px; display: grid; grid-template-columns: 1fr 350px; background: #010409; padding-bottom: 15px; }
+        .viz-area { padding: 20px; overflow-x: auto; }
+        .testcase-tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        
+        .tc-btn { padding: 6px 15px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; }
+        .tc-btn.active { border-color: var(--green); color: var(--green); background: rgba(63, 185, 80, 0.1); }
+        .btn-reset { border-color: var(--red); color: var(--red); margin-right: auto; }
+        .btn-reset:hover { background: rgba(248, 81, 73, 0.1); }
+
+        .dp-table { border-collapse: collapse; font-family: 'Consolas', monospace; font-size: 12px; width: 100%; }
+        .dp-table th, .dp-table td { border: 1px solid var(--border); padding: 8px; text-align: center; }
+        .dp-table .active-col { background: var(--highlight); border: 2px solid var(--blue); }
+        .val-num { color: var(--blue); font-weight: bold; }
+
+        .terminal { border-left: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; background: #0d1117; }
+        .log-header { font-size: 11px; color: var(--green); margin-bottom: 8px; font-weight: bold; display: flex; justify-content: space-between; }
+        .log-box { flex: 1; font-size: 12px; line-height: 1.6; overflow-y: auto; color: #8b949e; scroll-behavior: smooth; border: 1px solid var(--border); border-radius: 4px; padding: 10px; background: #010409; }
+        .log-entry { margin-bottom: 6px; border-left: 2px solid #30363d; padding-left: 8px; }
+        .log-entry.latest { border-left-color: var(--blue); color: var(--text); }
+        
+        .controls-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+        
+        /* 代碼著色 */
+        .kw { color: var(--purple); } .fn { color: var(--blue); } .num { color: var(--orange); } .op { color: #ff7b72; } .cmt { color: var(--comment); }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="problem-header">
+        <div class="problem-title">309. Best Time to Buy and Sell Stock with Cooldown</div>
+        <div class="problem-desc">
+            給定 <code>prices</code> 陣列。計算最大利潤。賣出股票後，<b>隔天無法買入</b>（需過一天冷凍期）。
+        </div>
+        <div class="constraints">
+            <span>● O(n) Time</span>
+            <span>● O(n) or O(1) Space</span>
+            <span>● Cooldown: 1 Day</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="sidebar">
+            <div class="analysis-card">
+                <h4>複雜度分析</h4>
+                <div id="compAnalysis"></div>
+            </div>
+            <div class="analysis-card">
+                <h4>狀態定義</h4>
+                <div class="logic-text" id="logicDesc"></div>
+            </div>
+        </div>
+
+        <div class="workspace">
+            <div class="editor-container">
+                <div class="tabs">
+                    <div class="tab active" id="tab-2d" onclick="switchAlgo('2d')">Standard_2D_DP.py</div>
+                    <div class="tab" id="tab-opt" onclick="switchAlgo('opt')">Space_Optimized.py</div>
+                </div>
+                <div id="codeEditor" class="editor"></div>
+            </div>
+            
+            <div class="bottom-section">
+                <div class="viz-area">
+                    <div class="testcase-tabs">
+                        <button class="tc-btn btn-reset" onclick="resetSimulator()">重置狀態</button>
+                        <button class="tc-btn active tc-item" onclick="setTC([1,2,3,0,2], 0)">Ex 1: [1,2,3,0,2]</button>
+                        <button class="tc-btn tc-item" onclick="setTC([1], 1)">Ex 2: [1]</button>
+                    </div>
+                    <div id="tableContainer">
+                        <table class="dp-table" id="dpTable"></table>
+                    </div>
+                </div>
+                <div class="terminal">
+                    <div class="log-header">
+                        <span>> 歷史執行日誌</span>
+                        <span id="stepCount" style="color: var(--comment);">Step: 0/0</span>
+                    </div>
+                    <div id="logBox" class="log-box"></div>
+                    <div class="controls-footer">
+                        <div>
+                            <button onclick="prev()">上一步</button>
+                            <button onclick="next()" style="color: var(--green); border-color: var(--green); font-weight: bold;">下一步 (F10)</button>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 11px; color: var(--comment);">利潤：</span>
+                            <span id="finalRes" style="color: var(--orange); font-size: 18px; font-weight: bold;">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let curAlgo = '2d', curStep = 0, prices = [1,2,3,0,2], steps = [];
+
+const algos = {
+    '2d': {
+        comp: `<div class="complexity-tag">Time: O(n)</div><div class="complexity-tag">Space: O(n)</div>`,
+        logic: `<b>dp[i][0]</b>: 第 i 天不持有股票。<br><b>dp[i][1]</b>: 第 i 天持有股票。<br><br>買入轉移須從 <b>dp[i-2][0]</b> 開始。`,
+        code: [
+            `<span class="kw">def</span> <span class="fn">maxProfit</span>(prices):`,
+            `    n <span class="op">=</span> <span class="fn">len</span>(prices)`,
+            `    dp <span class="op">=</span> [[<span class="num">0</span>] <span class="op">*</span> <span class="num">2</span> <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(n)]`,
+            `    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n):`,
+            `        <span class="kw">if</span> i <span class="op">-</span> <span class="num">1</span> <span class="op">==</span> <span class="op">-</span><span class="num">1</span>:`,
+            `            dp[i][<span class="num">0</span>], dp[i][<span class="num">1</span>] <span class="op">=</span> <span class="num">0</span>, <span class="op">-</span>prices[i]`,
+            `            <span class="kw">continue</span>`,
+            `        <span class="kw">if</span> i <span class="op">-</span> <span class="num">2</span> <span class="op">==</span> <span class="op">-</span><span class="num">1</span>:`,
+            `            dp[i][<span class="num">0</span>] <span class="op">=</span> <span class="fn">max</span>(dp[i<span class="op">-</span><span class="num">1</span>][<span class="num">0</span>], dp[i<span class="op">-</span><span class="num">1</span>][<span class="num">1</span>] <span class="op">+</span> prices[i])`,
+            `            dp[i][<span class="num">1</span>] <span class="op">=</span> <span class="fn">max</span>(dp[i<span class="op">-</span><span class="num">1</span>][<span class="num">1</span>], <span class="op">-</span>prices[i])`,
+            `            <span class="kw">continue</span>`,
+            `        dp[i][<span class="num">0</span>] <span class="op">=</span> <span class="fn">max</span>(dp[i<span class="op">-</span><span class="num">1</span>][<span class="num">0</span>], dp[i<span class="op">-</span><span class="num">1</span>][<span class="num">1</span>] <span class="op">+</span> prices[i])`,
+            `        dp[i][<span class="num">1</span>] <span class="op">=</span> <span class="fn">max</span>(dp[i<span class="op">-</span><span class="num">1</span>][<span class="num">1</span>], dp[i<span class="op">-</span><span class="num">2</span>][<span class="num">0</span>] <span class="op">-</span> prices[i])`,
+            `    <span class="kw">return</span> dp[n<span class="op">-</span><span class="num">1</span>][<span class="num">0</span>]`
+        ],
+        gen: (p) => {
+            let n = p.length;
+            let dp = Array.from({length: n}, () => [0, 0]);
+            let s = [{l: 3, msg: "初始化 DP 表", dp: JSON.parse(JSON.stringify(dp)), i: -1}];
+            for(let i=0; i<n; i++) {
+                if(i===0) {
+                    dp[i][0] = 0; dp[i][1] = -p[i];
+                    s.push({l: 6, msg: `第0天: dp[0][0]=0, dp[0][1]=${-p[i]}`, i, dp: JSON.parse(JSON.stringify(dp))});
+                } else if(i===1) {
+                    dp[i][0] = Math.max(dp[i-1][0], dp[i-1][1] + p[i]);
+                    dp[i][1] = Math.max(dp[i-1][1], -p[i]);
+                    s.push({l: 9, msg: `第1天: dp[1][0]=max(0, ${-p[0]}+${p[1]})`, i, dp: JSON.parse(JSON.stringify(dp))});
+                } else {
+                    dp[i][0] = Math.max(dp[i-1][0], dp[i-1][1] + p[i]);
+                    dp[i][1] = Math.max(dp[i-1][1], dp[i-2][0] - p[i]);
+                    s.push({l: 12, msg: `第${i}天: 買入參考 dp[${i-2}][0]`, i, dp: JSON.parse(JSON.stringify(dp))});
+                }
+            }
+            s.push({l: 14, msg: `完成! 最大利潤 ${dp[n-1][0]}`, i: n-1, dp: JSON.parse(JSON.stringify(dp)), res: dp[n-1][0]});
+            return s;
+        }
+    },
+    'opt': {
+        comp: `<div class="complexity-tag">Time: O(n)</div><div class="complexity-tag">Space: O(1)</div>`,
+        logic: `空間優化版。我們不需要整個矩陣，只需紀錄前兩天的狀態值。`,
+        code: [
+            `<span class="kw">def</span> <span class="fn">maxProfit</span>(prices):`,
+            `    n <span class="op">=</span> <span class="fn">len</span>(prices)`,
+            `    dp_i_0, dp_i_1 <span class="op">=</span> <span class="num">0</span>, <span class="fn">float</span>(<span class="num">'-inf'</span>)`,
+            `    dp_pre_0 <span class="op">=</span> <span class="num">0</span>`,
+            `    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n):`,
+            `        temp <span class="op">=</span> dp_i_0`,
+            `        dp_i_0 <span class="op">=</span> <span class="fn">max</span>(dp_i_0, dp_i_1 <span class="op">+</span> prices[i])`,
+            `        dp_i_1 <span class="op">=</span> <span class="fn">max</span>(dp_i_1, dp_pre_0 <span class="op">-</span> prices[i])`,
+            `        dp_pre_0 <span class="op">=</span> temp`,
+            `    <span class="kw">return</span> dp_i_0`
+        ],
+        gen: (p) => {
+            let n = p.length;
+            let i0 = 0, i1 = -Infinity, pre0 = 0;
+            let s = [{l: 3, msg: "初始化優化變數", i0:0, i1:'-inf', pre0:0, i: -1}];
+            for(let i=0; i<n; i++) {
+                let old_i0 = i0;
+                i1 = Math.max(i1===-Infinity?-p[i]:i1, pre0 - p[i]);
+                i0 = Math.max(i0, i1 + p[i]);
+                pre0 = old_i0;
+                s.push({l: 7, msg: `第${i}天: dp_i_0=${i0}, dp_i_1=${i1}`, i, i0, i1, pre0});
+            }
+            s.push({l: 10, msg: "結果: " + i0, i: n-1, i0, i1, pre0, res: i0});
+            return s;
+        }
+    }
+};
+
+function switchAlgo(a) {
+    curAlgo = a;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`tab-${a}`).classList.add('active');
+    document.getElementById('compAnalysis').innerHTML = algos[a].comp;
+    document.getElementById('logicDesc').innerHTML = algos[a].logic;
+    resetSimulator();
+}
+
+function setTC(arr, idx) {
+    prices = arr;
+    document.querySelectorAll('.tc-item').forEach((b, i) => i === idx ? b.classList.add('active') : b.classList.remove('active'));
+    resetSimulator();
+}
+
+function resetSimulator() {
+    steps = algos[curAlgo].gen(prices);
+    curStep = 0;
+    document.getElementById('logBox').innerHTML = ''; // 清除歷史
+    document.getElementById('codeEditor').innerHTML = algos[curAlgo].code.map((l, i) => `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    update();
+}
+
+function update() {
+    const step = steps[curStep];
+    const lines = document.querySelectorAll('.line');
+    lines.forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    // 日誌歷史紀錄與自動滾動
+    const logBox = document.getElementById('logBox');
+    const newEntry = document.createElement('div');
+    newEntry.className = 'log-entry latest';
+    newEntry.innerText = `[Step ${curStep}] ${step.msg}`;
+    
+    // 移除之前的最新樣式
+    const oldLatest = logBox.querySelector('.latest');
+    if (oldLatest) oldLatest.classList.remove('latest');
+    
+    logBox.appendChild(newEntry);
+    logBox.scrollTop = logBox.scrollHeight;
+
+    document.getElementById('stepCount').innerText = `Step: ${curStep}/${steps.length-1}`;
+    document.getElementById('finalRes').innerText = step.res !== undefined ? step.res : '...';
+
+    const table = document.getElementById('dpTable');
+    if (curAlgo === '2d') {
+        let html = `<tr><th>Day ($)</th>` + prices.map((p, i) => `<th class="${step.i===i?'active-col':''}">${i}<br>$${p}</th>`).join('') + `</tr>`;
+        html += `<tr><td>dp[i][0]</td>` + step.dp.map((d, i) => `<td class="${step.i===i?'active-col':''}"><span class="val-num">${d[0]}</span></td>`).join('') + `</tr>`;
+        html += `<tr><td>dp[i][1]</td>` + step.dp.map((d, i) => `<td class="${step.i===i?'active-col':''}"><span class="val-num">${d[1]}</span></td>`).join('') + `</tr>`;
+        table.innerHTML = html;
+    } else {
+        table.innerHTML = `<tr><th>變數</th><th>數值</th><th>說明</th></tr>
+            <tr><td>dp_i_0</td><td class="val-num">${step.i0}</td><td>目前不持有最大獲利</td></tr>
+            <tr><td>dp_i_1</td><td class="val-num">${step.i1}</td><td>目前持有最大獲利</td></tr>
+            <tr><td>dp_pre_0</td><td class="val-num">${step.pre0}</td><td>i-2 天之利潤</td></tr>`;
+    }
+}
+
+function next() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { 
+    if(curStep > 0) { 
+        curStep--; 
+        // 倒退時重新繪製日誌
+        const logBox = document.getElementById('logBox');
+        logBox.removeChild(logBox.lastChild);
+        const entries = logBox.querySelectorAll('.log-entry');
+        if (entries.length > 0) entries[entries.length-1].classList.add('latest');
+        
+        // 更新非日誌部分
+        const step = steps[curStep];
+        const lines = document.querySelectorAll('.line');
+        lines.forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+        document.getElementById('stepCount').innerText = `Step: ${curStep}/${steps.length-1}`;
+        document.getElementById('finalRes').innerText = step.res !== undefined ? step.res : '...';
+        updateTableOnly(step);
+    } 
+}
+
+function updateTableOnly(step) {
+    const table = document.getElementById('dpTable');
+    if (curAlgo === '2d') {
+        let html = `<tr><th>Day ($)</th>` + prices.map((p, i) => `<th class="${step.i===i?'active-col':''}">${i}<br>$${p}</th>`).join('') + `</tr>`;
+        html += `<tr><td>dp[i][0]</td>` + step.dp.map((d, i) => `<td class="${step.i===i?'active-col':''}"><span class="val-num">${d[0]}</span></td>`).join('') + `</tr>`;
+        html += `<tr><td>dp[i][1]</td>` + step.dp.map((d, i) => `<td class="${step.i===i?'active-col':''}"><span class="val-num">${d[1]}</span></td>`).join('') + `</tr>`;
+        table.innerHTML = html;
+    } else {
+        table.innerHTML = `<tr><th>變數</th><th>數值</th><th>說明</th></tr>
+            <tr><td>dp_i_0</td><td class="val-num">${step.i0}</td><td>目前不持有最大獲利</td></tr>
+            <tr><td>dp_i_1</td><td class="val-num">${step.i1}</td><td>目前持有最大獲利</td></tr>
+            <tr><td>dp_pre_0</td><td class="val-num">${step.pre0}</td><td>i-2 天之利潤</td></tr>`;
+    }
+}
+
+document.addEventListener('keydown', (e) => { if(e.key === 'F10') next(); });
+switchAlgo('2d');
+</script>
+</body>
+</html>

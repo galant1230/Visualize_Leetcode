@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>39. Combination Sum - Interactive Decision Tree</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --node-bg: #2d0d42;
+      --green: #50fa7b;
+      --cyan: #8be9fd;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+
+    /* 雙欄布局：左欄寬度 580px，右欄寬度彈性縮窄 */
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 580px 1fr; gap: 14px; }
+    @media (max-width: 1200px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    /* 加寬加高 Python 程式碼區塊 */
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.88rem; overflow-x: auto; max-height: 450px; }
+    .code-line { padding: 4px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.5; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    /* 拉長版 Call Stack 區塊 */
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; min-height: 160px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 6px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 6px 10px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* 控制與動態狀態 */
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .candidates-list { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .cand-chip { padding: 3px 8px; background: #222; border: 1px solid var(--border); border-radius: 4px; font-family: monospace; font-size: 0.8rem; }
+    .cand-chip.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.2); font-weight: bold; color: var(--orange); }
+
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; }
+    .path-tag { background: var(--blue); color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 0.78rem; font-weight: bold; margin-right: 4px; display: inline-block; }
+
+    /* 高度加長 (480px)、寬度收窄的 SVG 決策樹畫布 */
+    .tree-wrapper { background: #080808; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; height: 480px; overflow: auto; }
+    svg.tree-svg { min-width: 450px; min-height: 600px; width: 100%; height: 100%; display: block; }
+
+    .tree-node circle { fill: var(--node-bg); stroke: #5b21b6; stroke-width: 2px; transition: all 0.3s; }
+    .tree-node text.target-text { fill: #fff; font-family: monospace; font-size: 11px; font-weight: bold; text-anchor: middle; dominant-baseline: central; }
+    .tree-node text.path-text { fill: #8a8a8a; font-family: monospace; font-size: 9px; text-anchor: middle; }
+    
+    .tree-node.active circle { fill: #4c1d95; stroke: var(--orange); stroke-width: 3px; filter: drop-shadow(0px 0px 8px var(--orange)); }
+    .tree-node.success circle { fill: #064e3b; stroke: var(--green); stroke-width: 3px; filter: drop-shadow(0px 0px 8px var(--green)); }
+    .tree-node.pruned circle { fill: #4c0519; stroke: var(--hard); stroke-width: 2px; opacity: 0.8; }
+    .tree-node.visited circle { fill: #1f1135; stroke: #4c1d95; }
+
+    .tree-link { stroke: #2a2a2a; stroke-width: 1.5px; transition: stroke 0.3s; }
+    .tree-link.active-link { stroke: var(--orange); stroke-width: 2px; }
+
+    .results-box { background: #141414; border: 1px solid var(--green); background: rgba(80, 250, 123, 0.05); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-height: 55px; }
+    .res-item { background: rgba(80, 250, 123, 0.15); border: 1px solid var(--green); color: var(--green); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; display: inline-block; margin-right: 4px; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 60px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">39. Combination Sum</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <!-- 切換 Preset 區塊：包含完整的 Ex 1, Ex 2, Ex 3 -->
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: [2, 3, 6, 7], target = 7</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: [2, 3, 5], target = 8</button>
+    <button class="tab-btn" onclick="setPreset(2)">Ex 3: [2], target = 1</button>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄 (寬度 580px)：題目描述、完整範例細節、複雜度、加寬加高 Python 代碼、拉長 Call Stack -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與詳細範例</div>
+        <div class="problem-desc">
+          給定一個無重複元素的整數陣列 <code>candidates</code> 和一個目標整數 <code>target</code>，找出所有和為 <code>target</code> 的唯一組合（可重複選取數字）。
+        </div>
+
+        <div class="example-box" id="ex-display"></div>
+
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val">O(N^(T/M))</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val">O(T/M)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (DFS 遞迴歷程)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄 (寬度彈性縮窄)：核心三要素、加長版樹狀畫布、Path & Candidates -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="idea-box">
+          <div class="idea-title">💡 回溯法 (Backtracking) 核心三要素</div>
+          <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+            <li><b>Choice (選擇)</b>：從當前 <code>start</code> 索引開始選擇，避免產生重複組合。</li>
+            <li><b>Base Cases (邊界)</b>：<code>target == 0</code> (成功存入) 或 <code>target < 0</code> (剪枝返回)。</li>
+            <li><b>Backtrack (撤銷)</b>：執行 <code>path.pop()</code>，退回上一層試探其他可能。</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🌳 遞迴決策樹 (Decision Tree Visualization)</span>
+          <span style="font-size:0.7rem; color:var(--text-dim);">🟡 當前 | 🟢 成功 | 🔴 剪枝</span>
+        </div>
+
+        <!-- 高度加長至 480px 的樹狀圖畫布 -->
+        <div class="tree-wrapper" id="tree-wrapper">
+          <svg class="tree-svg" id="tree-svg"></svg>
+        </div>
+
+        <!-- 狀態與路徑卡片 -->
+        <div class="path-container">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Candidates & Pointer:</span>
+            <div class="candidates-list" id="candidates-list"></div>
+          </div>
+
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Path: </span>
+              <span id="path-tags-display">[]</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Remaining Target: </span>
+              <span id="rem-target-display" style="font-weight: bold; color: var(--orange);">7</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-box">
+          <span style="font-size: 0.78rem; color: var(--green); font-weight: bold;">Collected Valid Solutions (res):</span>
+          <div id="results-list"></div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">步驟說明 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeLines = [
+      `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">combinationSum</span>(<span class="self">self</span>, candidates: List[int], target: int) -> List[List[int]]:`,
+      `        res = []`,
+      `        <span class="kw">def</span> <span class="fn">backtrack</span>(start, target, path):`,
+      `            <span class="kw">if</span> target == 0:  <span class="cm"># 1. 找到有效解答</span>`,
+      `                res.append(list(path))`,
+      `                <span class="kw">return</span>`,
+      `            <span class="kw">if</span> target < 0:   <span class="cm"># 2. 超過目標，剪枝退出</span>`,
+      `                <span class="kw">return</span>`,
+      `            <span class="kw">for</span> i <span class="kw">in</span> range(start, len(candidates)):`,
+      `                path.append(candidates[i])`,
+      `                backtrack(i, target - candidates[i], path)`,
+      `                path.pop()  <span class="cm"># 3. 回溯撤銷</span>`,
+      `        backtrack(0, target, [])`,
+      `        <span class="kw">return</span> res`
+    ];
+
+    // 完整的 3 個 LeetCode 範例資料與詳細 Text 說明
+    const presets = [
+      {
+        title: "Example 1",
+        candidates: [2, 3, 6, 7],
+        target: 7,
+        output: "[[2, 2, 3], [7]]",
+        explanation: "2 and 3 are candidates, and 2 + 2 + 3 = 7 (2 can be used multiple times).<br>7 is a candidate, and 7 = 7.<br>These are the only two combinations."
+      },
+      {
+        title: "Example 2",
+        candidates: [2, 3, 5],
+        target: 8,
+        output: "[[2, 2, 2, 2], [2, 3, 3], [3, 5]]",
+        explanation: "Possible combinations summing to 8 using [2, 3, 5]."
+      },
+      {
+        title: "Example 3",
+        candidates: [2],
+        target: 1,
+        output: "[]",
+        explanation: "The minimum candidate is 2, which is greater than target 1. No valid combination."
+      }
+    ];
+
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+    let treeNodes = [];
+    let treeLinks = [];
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      let expHTML = p.explanation ? `<div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>` : '';
+      
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input:</b> candidates = [${p.candidates.join(', ')}], target = ${p.target}</div>
+        <div><b>Output:</b> ${p.output}</div>
+        ${expHTML}
+      `;
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codeLines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    // 建構適應縮寬、長度加長 (縱向高瘦型) 的決策樹結構
+    function buildTreeStructure() {
+      const p = presets[currentPreset];
+      treeNodes = [];
+      treeLinks = [];
+      let seq = 0;
+
+      let leafX = 30;
+      const levelY = 75; // 增加層級間距，拉長縱向視覺效果
+
+      function traverse(target, path, startIdx, level) {
+        let id = "node_" + (seq++);
+        let node = { id, target, path: [...path], level, x: 0, y: (level + 1) * levelY, children: [] };
+        treeNodes.push(node);
+
+        if (target <= 0) {
+          node.x = leafX;
+          leafX += 45;
+          return node;
+        }
+
+        for (let i = startIdx; i < p.candidates.length; i++) {
+          let c = p.candidates[i];
+          if (target - c >= -4) {
+            let child = traverse(target - c, [...path, c], i, level + 1);
+            node.children.push(child.id);
+            treeLinks.push({ source: id, target: child.id });
+          }
+        }
+
+        if (node.children.length === 0) {
+          node.x = leafX;
+          leafX += 45;
+        } else {
+          let firstChild = treeNodes.find(n => n.id === node.children[0]);
+          let lastChild = treeNodes.find(n => n.id === node.children[node.children.length - 1]);
+          node.x = (firstChild.x + lastChild.x) / 2;
+        }
+
+        return node;
+      }
+
+      traverse(p.target, [], 0, 0);
+    }
+
+    function buildSteps() {
+      history = [];
+      buildTreeStructure();
+
+      const p = presets[currentPreset];
+      const candidates = p.candidates;
+      const initialTarget = p.target;
+
+      let res = [];
+      let path = [];
+      let currentStack = [];
+      let nodeStatusMap = {};
+
+      function pushFrame(fnName, args) { currentStack.push({ fnName, args }); }
+      function popFrame() { currentStack.pop(); }
+
+      function findNodeId(currTarget, currPath) {
+        let n = treeNodes.find(node => node.target === currTarget && JSON.stringify(node.path) === JSON.stringify(currPath));
+        return n ? n.id : "node_0";
+      }
+
+      history.push({
+        line: 2, phase: "【初始化】",
+        desc: `建立解答陣列 res = []，準備進入 backtrack(start=0, target=${initialTarget}, path=[])`,
+        stack: [], candidates, activeIdx: -1, path: [], target: initialTarget, res: [],
+        activeNodeId: "node_0", nodeStatusMap: {}
+      });
+
+      function backtrack(start, target) {
+        pushFrame("backtrack", `start=${start}, target=${target}`);
+        let nodeId = findNodeId(target, path);
+        nodeStatusMap[nodeId] = "active";
+
+        history.push({
+          line: 3, phase: `【Enter DFS】Target = ${target}`,
+          desc: `進入 DFS 節點 (target=${target}, path=[${path.join(',')}])`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          candidates, activeIdx: start, path: [...path], target, res: JSON.parse(JSON.stringify(res)),
+          activeNodeId: nodeId, nodeStatusMap: JSON.parse(JSON.stringify(nodeStatusMap))
+        });
+
+        if (target === 0) {
+          res.push([...path]);
+          nodeStatusMap[nodeId] = "success";
+          history.push({
+            line: 4, phase: "🎯 【Base Case 1】target == 0 (成功!)",
+            desc: `找到和為 ${initialTarget} 的組合 [${path.join(', ')}]！存入結果 res。`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            candidates, activeIdx: start, path: [...path], target, res: JSON.parse(JSON.stringify(res)),
+            activeNodeId: nodeId, nodeStatusMap: JSON.parse(JSON.stringify(nodeStatusMap))
+          });
+          popFrame();
+          return;
+        }
+
+        if (target < 0) {
+          nodeStatusMap[nodeId] = "pruned";
+          history.push({
+            line: 7, phase: "💥 【Base Case 2】target < 0 (剪枝)",
+            desc: `target = ${target} < 0，超過目標金額，停止搜尋並返回上一層。`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            candidates, activeIdx: start, path: [...path], target, res: JSON.parse(JSON.stringify(res)),
+            activeNodeId: nodeId, nodeStatusMap: JSON.parse(JSON.stringify(nodeStatusMap))
+          });
+          popFrame();
+          return;
+        }
+
+        for (let i = start; i < candidates.length; i++) {
+          let cand = candidates[i];
+          path.push(cand);
+
+          history.push({
+            line: 10, phase: `➕ 【Choice】嘗試數字 +${cand}`,
+            desc: `選取 candidates[${i}] = ${cand}，準備遞迴走訪子節點 target = ${target - cand}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            candidates, activeIdx: i, path: [...path], target, res: JSON.parse(JSON.stringify(res)),
+            activeNodeId: nodeId, nodeStatusMap: JSON.parse(JSON.stringify(nodeStatusMap))
+          });
+
+          backtrack(i, target - cand);
+
+          path.pop();
+          nodeStatusMap[nodeId] = "visited";
+          history.push({
+            line: 12, phase: `↩️ 【Backtrack】撤銷/彈出數字`,
+            desc: `從子樹回溯，恢復 path = [${path.join(', ')}]，繼續測試下一候選數`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            candidates, activeIdx: i, path: [...path], target, res: JSON.parse(JSON.stringify(res)),
+            activeNodeId: nodeId, nodeStatusMap: JSON.parse(JSON.stringify(nodeStatusMap))
+          });
+        }
+
+        popFrame();
+      }
+
+      backtrack(0, initialTarget);
+    }
+
+    function renderTree(activeNodeId, nodeStatusMap) {
+      const svg = document.getElementById('tree-svg');
+      svg.innerHTML = '';
+
+      if (treeNodes.length === 0) return;
+
+      let maxX = Math.max(...treeNodes.map(n => n.x)) + 40;
+      let maxY = Math.max(...treeNodes.map(n => n.y)) + 50;
+      svg.setAttribute("width", Math.max(maxX, 420));
+      svg.setAttribute("height", Math.max(maxY, 550));
+
+      treeLinks.forEach(link => {
+        let src = treeNodes.find(n => n.id === link.source);
+        let tgt = treeNodes.find(n => n.id === link.target);
+        if (!src || !tgt || !nodeStatusMap[tgt.id]) return;
+
+        let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", src.x);
+        line.setAttribute("y1", src.y);
+        line.setAttribute("x2", tgt.x);
+        line.setAttribute("y2", tgt.y);
+        
+        let isCurrent = (tgt.id === activeNodeId || src.id === activeNodeId);
+        line.setAttribute("class", `tree-link ${isCurrent ? 'active-link' : ''}`);
+        svg.appendChild(line);
+      });
+
+      treeNodes.forEach(node => {
+        let status = nodeStatusMap[node.id];
+        if (!status && node.id !== "node_0") return;
+
+        let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        let cls = "tree-node";
+        if (node.id === activeNodeId) cls += " active";
+        else if (status === "success") cls += " success";
+        else if (status === "pruned") cls += " pruned";
+        else if (status === "visited") cls += " visited";
+
+        g.setAttribute("class", cls);
+        g.setAttribute("transform", `translate(${node.x}, ${node.y})`);
+
+        let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("r", "14");
+
+        let targetText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        targetText.setAttribute("class", "target-text");
+        targetText.textContent = node.target;
+
+        let pathText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        pathText.setAttribute("class", "path-text");
+        pathText.setAttribute("y", "22");
+        pathText.textContent = node.path.length > 0 ? `(${node.path.join(',')})` : '0';
+
+        g.appendChild(circle);
+        g.appendChild(targetText);
+        g.appendChild(pathText);
+        svg.appendChild(g);
+      });
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = stackData.length === 0 
+        ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Stack Empty</div>`
+        : stackData.map(f => `
+            <div class="stack-frame">
+              <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.75rem;">(${f.args})</span></div>
+            </div>
+          `).join('');
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      const candEl = document.getElementById('candidates-list');
+      candEl.innerHTML = (state.candidates || []).map((c, i) => `
+        <div class="cand-chip ${i === state.activeIdx ? 'active' : ''}">i=${i}: <b>${c}</b></div>
+      `).join('');
+
+      const pathEl = document.getElementById('path-tags-display');
+      pathEl.innerHTML = (!state.path || state.path.length === 0) 
+        ? `<span style="color: var(--text-dim);">[]</span>`
+        : state.path.map(val => `<span class="path-tag">${val}</span>`).join('');
+
+      const targetEl = document.getElementById('rem-target-display');
+      targetEl.innerText = state.target !== undefined ? state.target : "-";
+      targetEl.style.color = state.target < 0 ? "var(--hard)" : (state.target === 0 ? "var(--green)" : "var(--orange)");
+
+      const resEl = document.getElementById('results-list');
+      resEl.innerHTML = (!state.res || state.res.length === 0)
+        ? `<span style="color: var(--text-dim); font-size: 0.75rem;">[]</span>`
+        : state.res.map(arr => `<span class="res-item">[${arr.join(', ')}]</span>`).join('');
+
+      renderTree(state.activeNodeId, state.nodeStatusMap || {});
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

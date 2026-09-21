@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>45. Jump Game II Debugger - V2.7</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --vscode-bg: #1e1e1e; --line-active: #2d2d30;
+            /* VS Code Dark+ Syntax */
+            --kw: #c586c0; --fn: #dcdcaa; --vr: #9cdcfe; --nm: #b5cea8; --st: #ce9178; --cm: #6a9955;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #010409; color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+        /* --- 左側 (25%): Problem & Metrics --- */
+        .sidebar-l { width: 25%; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--bg); }
+        .section-header { padding: 10px 16px; font-size: 11px; font-weight: bold; color: #8b949e; border-bottom: 1px solid var(--border); background: #161b22; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .p-content { padding: 16px; border-bottom: 1px solid var(--border); overflow-y: auto; }
+        .p-title { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 8px; }
+        .constraints { font-size: 11px; color: #8b949e; background: #000; padding: 10px; border-radius: 4px; border: 1px solid #333; margin-top: 10px; }
+
+        .complexity-analysis { padding: 16px; flex: 1; border-bottom: 1px solid var(--border); }
+        .comp-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 8px; border: 1px solid var(--border); }
+        .logic-summary { font-size: 12px; line-height: 1.6; color: #8b949e; }
+
+        .testcase-picker { padding: 16px; background: #0d1117; }
+        .tc-btn { width: 100%; padding: 10px; margin-bottom: 8px; background: #21262d; border: 1px solid var(--border); color: var(--text); cursor: pointer; border-radius: 6px; text-align: left; font-size: 12px; transition: 0.2s; }
+        .tc-btn:hover { background: #30363d; }
+        .tc-btn.active { border-color: var(--blue); background: rgba(88, 166, 255, 0.1); }
+
+        /* --- 中間 (45%): Visualization Arena --- */
+        .main-arena { width: 45%; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+        .viz-top { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #010409; position: relative; }
+        
+        .jump-array { display: flex; gap: 12px; align-items: flex-end; padding-bottom: 50px; }
+        .jump-box { width: 52px; height: 52px; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--panel); position: relative; transition: 0.2s; }
+        .jump-box.pos-active { border-color: var(--green); border-width: 2px; box-shadow: 0 0 15px rgba(63, 185, 80, 0.3); transform: scale(1.05); }
+        .jump-box.scanning { border-color: var(--blue); background: rgba(88, 166, 255, 0.1); }
+        .jump-box.in-range { border-bottom: 4px solid var(--orange); }
+        .box-val { font-size: 22px; font-weight: bold; }
+        .box-idx { font-size: 10px; color: #8b949e; margin-top: 4px; }
+
+        .viz-bottom { height: 160px; background: #0d1117; padding: 12px; border-top: 1px solid var(--border); overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 11px; }
+        .playback-bar { height: 65px; background: #161b22; display: flex; align-items: center; justify-content: center; gap: 15px; border-top: 1px solid var(--border); }
+        .p-btn { padding: 8px 16px; border-radius: 6px; border: 1px solid #30363d; background: #21262d; color: #c9d1d9; cursor: pointer; font-size: 12px; font-weight: 600; }
+        .p-btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+
+        /* --- 右側 (30%): VS Code Editor --- */
+        .sidebar-r { width: 30%; background: var(--vscode-bg); display: flex; flex-direction: column; }
+        .code-area { flex: 1.5; padding-top: 10px; overflow-y: auto; font-family: 'Consolas', 'Courier New', monospace; }
+        .line { display: block; padding-left: 55px; line-height: 1.6; font-size: 13px; position: relative; white-space: pre; color: #d4d4d4; }
+        .line.active { background: #2d2d30; }
+        .line.active::before { content: ''; position: absolute; left: 0; width: 5px; height: 100%; background: #007acc; }
+        .line-num { position: absolute; left: 0; width: 40px; text-align: right; color: #858585; padding-right: 15px; user-select: none; }
+        
+        /* Syntax Highlighting */
+        .c-kw { color: var(--kw); } .c-fn { color: var(--fn); } .c-vr { color: var(--vr); } 
+        .c-nm { color: var(--nm); } .c-cm { color: var(--cm); } .c-st { color: var(--st); }
+
+        .var-monitor { flex: 1; border-top: 1px solid var(--border); background: #1e1e1e; padding: 12px; }
+        .var-row { display: flex; justify-content: space-between; font-family: 'Fira Code', monospace; font-size: 11px; padding: 6px 0; border-bottom: 1px solid #2d2d2d; }
+        .log-entry { margin-bottom: 4px; border-left: 2px solid var(--border); padding-left: 8px; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="sidebar-l">
+    <div class="section-header">Problem Description</div>
+    <div class="p-content">
+        <div class="p-title">45. Jump Game II</div>
+        <div class="logic-summary">
+            給定一個數組，<code>nums[i]</code> 表示最大跳躍距離。目標是用最少的跳躍次數到達最後一個位置。
+        </div>
+        <div class="constraints">
+            • 1 ≤ nums.length ≤ 10⁴<br>
+            • 0 ≤ nums[i] ≤ 1000<br>
+            • 保證可以抵達終點
+        </div>
+    </div>
+    
+    <div class="section-header">Complexity Analysis</div>
+    <div class="complexity-analysis">
+        <div class="comp-tag" style="color:var(--green); background:rgba(63,185,80,0.1)">Time: O(n)</div>
+        <div class="comp-tag" style="color:var(--blue); background:rgba(88,166,255,0.1)">Space: O(1)</div>
+        <div class="logic-summary">
+            <b>Greedy Logic:</b><br>
+            每次在目前跳躍範圍內「預判」下一跳。我們掃描所有可達點，選出一個能帶我們去到最遠地方的點作為落腳點。
+        </div>
+    </div>
+
+    <div class="section-header">Test Cases</div>
+    <div class="testcase-picker">
+        <button class="tc-btn active" onclick="changeTC(0)">Case 1: [2, 3, 1, 1, 4]</button>
+        <button class="tc-btn" onclick="changeTC(1)">Case 2: [2, 3, 0, 1, 4]</button>
+    </div>
+</div>
+
+<div class="main-arena">
+    <div class="viz-top">
+        <div id="arrayDisplay" class="jump-array"></div>
+        <div id="stepCounter" style="position:absolute; top:20px; right:20px; font-size:12px; color:#8b949e;">Step: 0</div>
+    </div>
+    <div class="viz-bottom" id="logBox"></div>
+    <div class="playback-bar">
+        <button class="p-btn" onclick="reset()">重置</button>
+        <button class="p-btn" onclick="prev()">上一步</button>
+        <button class="p-btn" id="playBtn" onclick="togglePlay()">自動播放</button>
+        <button class="p-btn" onclick="next()" style="color:var(--blue); border-color:var(--blue)">下一步 (F10)</button>
+    </div>
+</div>
+
+<div class="sidebar-r">
+    <div class="section-header">solution.py</div>
+    <div class="code-area" id="codeArea"></div>
+    <div class="section-header">Variables Monitor</div>
+    <div class="var-monitor" id="varMonitor"></div>
+</div>
+
+<script>
+const TEST_CASES = [[2, 3, 1, 1, 4], [2, 3, 0, 1, 4]];
+let currentNums = TEST_CASES[0];
+let steps = [], curStep = 0, isPlaying = false, timer = null;
+
+const codeLines = [
+    { t: '<span class="c-kw">class</span> <span class="c-fn">Solution</span>:', i: 0 },
+    { t: '    <span class="c-kw">def</span> <span class="c-fn">jump</span>(<span class="c-vr">self</span>, <span class="c-vr">nums</span>: List[int]) -> int:', i: 1 },
+    { t: '        <span class="c-vr">n</span> = <span class="c-fn">len</span>(nums)', i: 2 },
+    { t: '        <span class="c-vr">count_jump</span> = <span class="c-nm">0</span>', i: 2 },
+    { t: '        <span class="c-vr">pos</span> = <span class="c-nm">0</span>', i: 2 },
+    { t: ' ', i: 0 },
+    { t: '        <span class="c-kw">while</span> <span class="c-vr">pos</span> < <span class="c-vr">n</span> - <span class="c-nm">1</span>:', i: 2 },
+    { t: '            <span class="c-kw">if</span> <span class="c-vr">pos</span> + <span class="c-vr">nums</span>[pos] >= <span class="c-vr">n</span> - <span class="c-nm">1</span>:', i: 3 },
+    { t: '                <span class="c-cm"># 這一跳就可以跳到終點</span>', i: 4 },
+    { t: '                <span class="c-vr">count_jump</span> += <span class="c-nm">1</span>', i: 4 },
+    { t: '                <span class="c-kw">break</span>', i: 4 },
+    { t: ' ', i: 0 },
+    { t: '            <span class="c-cm"># 看下一跳內所有點中，誰能跳最遠</span>', i: 3 },
+    { t: '            <span class="c-vr">best_jump</span> = <span class="c-vr">pos</span> + <span class="c-nm">1</span>', i: 3 },
+    { t: '            <span class="c-vr">farthest</span> = <span class="c-nm">0</span>', i: 3 },
+    { t: '            <span class="c-kw">for</span> <span class="c-vr">i</span> <span class="c-kw">in</span> <span class="c-fn">range</span>(pos + <span class="c-nm">1</span>, pos + nums[pos] + <span class="c-nm">1</span>):', i: 3 },
+    { t: '                <span class="c-kw">if</span> <span class="c-vr">i</span> + <span class="c-vr">nums</span>[i] > <span class="c-vr">farthest</span>:', i: 4 },
+    { t: '                    <span class="c-vr">farthest</span> = <span class="c-vr">i</span> + <span class="c-vr">nums</span>[i]', i: 5 },
+    { t: '                    <span class="c-vr">best_jump</span> = <span class="c-vr">i</span>', i: 5 },
+    { t: ' ', i: 0 },
+    { t: '            <span class="c-vr">pos</span> = <span class="c-vr">best_jump</span>', i: 3 },
+    { t: '            <span class="c-vr">count_jump</span> += <span class="c-nm">1</span>', i: 3 },
+    { t: ' ', i: 0 },
+    { t: '        <span class="c-kw">return</span> <span class="c-vr">count_jump</span>', i: 2 }
+];
+
+function generateSteps(nums) {
+    let s = []; let n = nums.length;
+    let count = 0, pos = 0;
+    
+    s.push({ ln: 2, count, pos, best: 0, f: 0, i: null, log: "開始執行，取得陣列長度 n" });
+    s.push({ ln: 3, count, pos, best: 0, f: 0, i: null, log: "初始化 count_jump = 0" });
+    s.push({ ln: 4, count, pos, best: 0, f: 0, i: null, log: "初始化目前位置 pos = 0" });
+
+    while (pos < n - 1) {
+        s.push({ ln: 6, count, pos, best: 0, f: 0, i: null, log: `進入迴圈: 目前位置 ${pos} < 終點 ${n-1}` });
+        
+        if (pos + nums[pos] >= n - 1) {
+            count++;
+            s.push({ ln: 9, count, pos, best: 0, f: pos + nums[pos], i: null, log: "目前跳躍能力可覆蓋終點！" });
+            s.push({ ln: 10, count, pos, best: 0, f: pos + nums[pos], i: null, log: "跳躍次數 +1 並跳出迴圈" });
+            break;
+        }
+
+        let best = pos + 1, farthest = 0;
+        s.push({ ln: 13, count, pos, best, f: farthest, i: null, log: "初始化下一跳搜尋點 best_jump" });
+        s.push({ ln: 14, count, pos, best, f: farthest, i: null, log: "初始化目前最遠距離 farthest = 0" });
+
+        for (let i = pos + 1; i <= pos + nums[pos]; i++) {
+            s.push({ ln: 15, count, pos, best, f: farthest, i, log: `掃描範圍內索引 i=${i}` });
+            if (i + nums[i] > farthest) {
+                farthest = i + nums[i];
+                best = i;
+                s.push({ ln: 17, count, pos, best, f: farthest, i, log: `找到更遠潛力點！i=${i} 可達 ${farthest}` });
+            }
+        }
+        pos = best; count++;
+        s.push({ ln: 20, count, pos, best, f: farthest, i: null, log: `確認落腳點為索引 ${pos}` });
+        s.push({ ln: 21, count, pos, best, f: farthest, i: null, log: `完成一跳，count_jump = ${count}` });
+    }
+    s.push({ ln: 23, count, pos, best: 0, f: 0, i: null, log: `回傳最終結果: ${count}` });
+    return s;
+}
+
+function update() {
+    const step = steps[curStep];
+    document.querySelectorAll('.line').forEach((l, idx) => l.classList.toggle('active', idx === step.ln));
+    
+    // Array Viz
+    document.getElementById('arrayDisplay').innerHTML = currentNums.map((v, idx) => {
+        let cls = 'jump-box';
+        if (idx === step.pos) cls += ' pos-active';
+        if (idx === step.i) cls += ' scanning';
+        if (idx > step.pos && idx <= step.pos + currentNums[step.pos]) cls += ' in-range';
+        return `<div class="${cls}"><span class="box-val">${v}</span><span class="box-idx">${idx}</span></div>`;
+    }).join('');
+
+    // Info & Monitor
+    document.getElementById('stepCounter').innerText = `Step: ${curStep} / ${steps.length - 1}`;
+    document.getElementById('varMonitor').innerHTML = `
+        <div class="var-row"><span class="c-vr">count_jump</span><span>${step.count}</span></div>
+        <div class="var-row"><span class="c-vr">pos</span><span>${step.pos}</span></div>
+        <div class="var-row"><span class="c-vr">best_jump</span><span>${step.best || '--'}</span></div>
+        <div class="var-row"><span class="c-vr">farthest</span><span>${step.f || '--'}</span></div>
+    `;
+
+    // Logs
+    const logBox = document.getElementById('logBox');
+    const log = document.createElement('div');
+    log.className = 'log-entry';
+    log.innerHTML = `<span style="color:#858585">></span> ${step.log}`;
+    logBox.appendChild(log); logBox.scrollTop = logBox.scrollHeight;
+}
+
+function changeTC(idx) {
+    currentNums = TEST_CASES[idx];
+    document.querySelectorAll('.tc-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+    reset();
+}
+
+function reset() { 
+    steps = generateSteps(currentNums); curStep = 0; 
+    isPlaying = false; clearInterval(timer);
+    document.getElementById('playBtn').innerText = "自動播放";
+    document.getElementById('logBox').innerHTML = '<div style="color:var(--green)">> Trace started.</div>';
+    update(); 
+}
+
+function next() { if (curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { if (curStep > 0) { curStep--; update(); } }
+function togglePlay() {
+    isPlaying = !isPlaying;
+    document.getElementById('playBtn').innerText = isPlaying ? "暫停" : "自動播放";
+    if (isPlaying) timer = setInterval(() => { if(curStep < steps.length - 1) next(); else togglePlay(); }, 600);
+    else clearInterval(timer);
+}
+
+document.getElementById('codeArea').innerHTML = codeLines.map((l, i) => `<div class="line"><span class="line-num">${i}</span><span style="margin-left:${l.i*22}px">${l.t}</span></div>`).join('');
+document.addEventListener('keydown', (e) => { if(e.key === 'F10') next(); });
+reset();
+</script>
+</body>
+</html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Subsets Ultimate Visualizer | Backtrack Log Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --vscode-bg: #1e1e1e;
+            --vscode-side: #252526;
+            --vscode-accent: #007acc;
+            --vscode-text: #d4d4d4;
+            --highlight: rgba(0, 122, 204, 0.3);
+            --success: #4ec9b0;
+            --error: #f48771;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--vscode-bg); color: var(--vscode-text); margin: 0; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; font-size: 12px; }
+        .kw { color: #569cd6; } .fn { color: #dcdcaa; } .var { color: #9cdcfe; } .num { color: #b5cea8; } .cm { color: #6a9955; }
+        .active-line { background-color: var(--highlight); border-left: 3px solid var(--vscode-accent); transition: all 0.1s; }
+        
+        .node-circle { transition: all 0.3s ease; fill: #333; stroke: #555; stroke-width: 2; }
+        .node-circle.active { fill: var(--vscode-accent); stroke: #fff; filter: drop-shadow(0 0 8px var(--vscode-accent)); }
+        .node-circle.saved { fill: #1e3a1e; stroke: var(--success); stroke-width: 3; }
+        .edge-line { stroke: #444; stroke-width: 1.5; transition: 0.3s; }
+        .edge-line.active { stroke: var(--vscode-accent); stroke-width: 2.5; }
+
+        /* Log 動畫 */
+        .log-entry { animation: slideIn 0.2s ease-out; border-left: 2px solid #444; padding-left: 8px; margin-bottom: 4px; font-size: 10px; }
+        .log-push { border-left-color: var(--vscode-accent); color: #9cdcfe; }
+        .log-pop { border-left-color: var(--error); color: var(--error); opacity: 0.8; }
+        .log-append { border-left-color: var(--success); color: var(--success); font-weight: bold; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+<div class="h-10 bg-[#333] flex items-center justify-between border-b border-[#111]">
+    <div class="flex h-full items-center">
+        <button id="tab-v1" onclick="switchVer('v1')" class="h-full px-4 flex items-center gap-2 text-[11px] bg-[#252526] text-white border-t-2 border-blue-500">
+            <span class="text-blue-400">PY</span> subsets_loop.py
+        </button>
+        <button id="tab-v2" onclick="switchVer('v2')" class="h-full px-4 flex items-center gap-2 text-[11px] bg-[#1e1e1e] text-gray-500 border-t-2 border-transparent hover:bg-[#2a2d2e]">
+            <span class="text-blue-400">PY</span> subsets_binary.py
+        </button>
+    </div>
+    <div class="flex gap-2 px-4">
+        <div class="w-2.5 h-2.5 rounded-full bg-[#ff5f56]"></div>
+        <div class="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]"></div>
+        <div class="w-2.5 h-2.5 rounded-full bg-[#27c93f]"></div>
+    </div>
+</div>
+
+<div class="flex-1 flex overflow-hidden">
+    
+    <div class="w-1/4 bg-[#252526] border-r border-[#333] flex flex-col">
+        <div class="p-5 border-b border-[#111]">
+            <h2 class="text-blue-400 font-bold text-lg mb-2">78. Subsets</h2>
+            <div class="text-[11px] text-gray-400 leading-relaxed space-y-2">
+                <p>找出所有子集。利用前序遍歷位置收集結果，確保每個節點路徑都被記錄。</p>
+                <div class="flex gap-2 mt-2">
+                    <span class="px-2 py-0.5 rounded bg-green-900/30 text-green-400 text-[9px] border border-green-500/30 font-mono">Time O(N·2ᴺ)</span>
+                    <span class="px-2 py-0.5 rounded bg-blue-900/30 text-blue-400 text-[9px] border border-blue-500/30 font-mono">Space O(N)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-5 border-b border-[#111]">
+            <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Variables Watcher</h3>
+            <div class="space-y-2 font-mono text-[11px]">
+                <div class="bg-[#1e1e1e] p-2 rounded border border-[#333]">
+                    <div class="text-blue-300 text-[9px] mb-1">SUBSET (track)</div>
+                    <div id="w-track" class="text-orange-400 font-bold">[]</div>
+                </div>
+                <div class="flex justify-between px-2">
+                    <span class="text-gray-500">index / i:</span>
+                    <span id="w-idx" class="text-green-300">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-5 bg-[#2d2d2d] mt-auto">
+            <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Test Cases</h3>
+            <div class="flex gap-2">
+                <button id="tc-1" onclick="updateNums([1,2,3], 'tc-1')" class="flex-1 py-2 bg-[#0e639c] text-white text-[11px] rounded font-bold border border-blue-400/50">[1,2,3]</button>
+                <button id="tc-2" onclick="updateNums([1,2], 'tc-2')" class="flex-1 py-2 bg-[#1e1e1e] text-gray-400 text-[11px] rounded font-bold">[1,2]</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col bg-[#1e1e1e] relative border-r border-[#333]">
+        <div class="flex-1 relative">
+            <svg id="tree-svg" class="w-full h-full"></svg>
+            <div id="append-alert" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-600 text-white px-5 py-2 rounded-full font-bold text-xs opacity-0 transition-all duration-300 z-50">
+                res.append(subset)
+            </div>
+        </div>
+
+        <div class="h-20 bg-[#252526] border-t border-[#333] px-6 flex items-center justify-between">
+            <div class="flex gap-2">
+                <button onclick="prev()" class="w-9 h-9 flex items-center justify-center bg-[#3e3e42] hover:bg-[#505055] rounded transition">
+                    <svg class="w-5 h-5" fill="white" viewBox="0 0 20 20"><path d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"/></svg>
+                </button>
+                <button id="auto-btn" onclick="toggleAuto()" class="px-6 bg-[#0e639c] hover:bg-[#1177bb] rounded text-[11px] font-bold text-white transition tracking-widest">AUTO PLAY</button>
+                <button onclick="next()" class="w-9 h-9 flex items-center justify-center bg-[#3e3e42] hover:bg-[#505055] rounded transition">
+                    <svg class="w-5 h-5" fill="white" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10l-3.293-3.293a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414z"/></svg>
+                </button>
+                <button onclick="reset()" class="ml-4 px-4 bg-[#444] hover:bg-[#555] rounded text-[11px] font-bold text-gray-300 transition">RESET</button>
+            </div>
+            <div class="text-right">
+                <div id="step-info" class="text-[9px] text-gray-500 font-mono mb-1 uppercase">Step: 0 / 0</div>
+                <div class="w-32 bg-[#1e1e1e] h-1 rounded-full overflow-hidden border border-[#333]">
+                    <div id="prog-bar" class="bg-blue-500 h-full w-0"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-1/3 bg-[#252526] flex flex-col overflow-hidden">
+        <div id="code-area" class="flex-[3] overflow-y-auto p-4 code-font border-b border-[#333] custom-scroll"></div>
+
+        <div class="flex-[2] flex flex-col overflow-hidden bg-[#1e1e1e]">
+            <div class="px-4 py-2 bg-[#252526] flex justify-between items-center text-[10px] font-bold border-b border-[#333]">
+                <span class="text-gray-500 uppercase tracking-widest">Backtrack Log</span>
+                <span class="text-blue-500 font-mono">Real-time Stack</span>
+            </div>
+            <div id="backtrack-log" class="flex-1 overflow-y-auto p-4 font-mono custom-scroll">
+                </div>
+        </div>
+
+        <div class="flex-[2] flex flex-col overflow-hidden border-t border-[#333]">
+            <div class="px-4 py-2 bg-[#252526] flex justify-between items-center text-[10px] font-bold border-b border-[#333]">
+                <span class="text-gray-500 uppercase tracking-widest">Final Result (res)</span>
+                <span id="res-count" class="text-success font-mono">0</span>
+            </div>
+            <div id="res-list" class="flex-1 overflow-y-auto p-4 space-y-1 custom-scroll bg-[#1e1e1e]"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let nums = [1, 2, 3];
+let ver = 'v1';
+let cur = 0;
+let trace = [];
+let timer = null;
+
+const codeV1 = [
+    "class Solution:", "    def subsets(self, nums):", "        res, track = [], []", "        def backtrack(start):", "            res.append(list(track))", "", "            for i in range(start, len(nums)):", "                track.append(nums[i])", "                backtrack(i + 1)", "                track.pop()", "        backtrack(0)", "        return res"
+];
+
+const codeV2 = [
+    "class Solution:", "    def subsets(self, nums):", "        res, subset = [], []", "        def dfs(i):", "            if i >= len(nums):", "                res.append(subset.copy())", "                return", "            subset.append(nums[i])", "            dfs(i + 1)", "            subset.pop()", "            dfs(i + 1)", "        dfs(0)", "        return res"
+];
+
+function generateTrace() {
+    trace = [];
+    let res = [], track = [], logs = [];
+    if (ver === 'v1') {
+        function backtrack(s) {
+            res.push([...track]);
+            logs.push({ type: 'append', msg: `res.append(${JSON.stringify(track)})` });
+            trace.push({ ln: 5, idx: s, track: [...track], res: [...res], logs: [...logs], save: true });
+            
+            for (let i = s; i < nums.length; i++) {
+                track.push(nums[i]);
+                logs.push({ type: 'push', msg: `track.push(${nums[i]})` });
+                trace.push({ ln: 8, idx: s, i: i, track: [...track], res: [...res], logs: [...logs] });
+                
+                backtrack(i + 1);
+                
+                track.pop();
+                logs.push({ type: 'pop', msg: `track.pop()` });
+                trace.push({ ln: 10, idx: s, i: i, track: [...track], res: [...res], logs: [...logs] });
+            }
+        }
+        backtrack(0);
+    } else {
+        function dfs(i) {
+            trace.push({ ln: 4, idx: i, track: [...track], res: [...res], logs: [...logs] });
+            if (i >= nums.length) {
+                res.push([...track]);
+                logs.push({ type: 'append', msg: `Leaf reached! append(${JSON.stringify(track)})` });
+                trace.push({ ln: 6, idx: i, track: [...track], res: [...res], logs: [...logs], save: true });
+                return;
+            }
+            track.push(nums[i]);
+            logs.push({ type: 'push', msg: `Index ${i}: Choose ${nums[i]}` });
+            trace.push({ ln: 8, idx: i, track: [...track], res: [...res], logs: [...logs] });
+            dfs(i + 1);
+            
+            track.pop();
+            logs.push({ type: 'pop', msg: `Index ${i}: Unchoose ${nums[i]}` });
+            trace.push({ ln: 10, idx: i, track: [...track], res: [...res], logs: [...logs] });
+            dfs(i + 1);
+        }
+        dfs(0);
+    }
+}
+
+function drawTree() {
+    const svg = document.getElementById('tree-svg');
+    svg.innerHTML = '';
+    const w = svg.clientWidth || 600, h = svg.clientHeight || 400;
+    const nodes = [], edges = [];
+
+    if (ver === 'v1') {
+        function buildV1(s, path, x, y, gap) {
+            const id = `v1-${path.join('-') || 'root'}`;
+            nodes.push({ id, x, y, label: path.length ? path[path.length-1] : 'Ø' });
+            for (let i = s; i < nums.length; i++) {
+                const nPath = [...path, nums[i]], nX = x - (gap*(nums.length-s-1)/2) + (i-s)*gap;
+                edges.push({ from: id, to: `v1-${nPath.join('-')}` });
+                buildV1(i+1, nPath, nX, y + 70, gap * 0.45);
+            }
+        }
+        buildV1(0, [], w/2, 40, 220);
+    } else {
+        function buildV2(i, path, x, y, gap) {
+            const id = `v2-${i}-${path.join('-') || 's'+i}`;
+            nodes.push({ id, x, y, label: i < nums.length ? nums[i] : '✔' });
+            if (i < nums.length) {
+                edges.push({ from: id, to: `v2-${i+1}-${[...path, nums[i]].join('-')}` });
+                edges.push({ from: id, to: `v2-${i+1}-${path.join('-') || 's'+(i+1)}` });
+                buildV2(i+1, [...path, nums[i]], x - gap, y + 70, gap * 0.5);
+                buildV2(i+1, path, x + gap, y + 70, gap * 0.5);
+            }
+        }
+        buildV2(0, [], w/2, 40, 150);
+    }
+
+    edges.forEach(e => {
+        const f = nodes.find(n => n.id === e.from), t = nodes.find(n => n.id === e.to);
+        const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        l.setAttribute("x1", f.x); l.setAttribute("y1", f.y); l.setAttribute("x2", t.x); l.setAttribute("y2", t.y);
+        l.setAttribute("class", "edge-line"); l.id = `edge-${e.from}-${e.to}`;
+        svg.appendChild(l);
+    });
+
+    nodes.forEach(n => {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("cx", n.x); c.setAttribute("cy", n.y); c.setAttribute("r", 14);
+        c.setAttribute("class", "node-circle"); c.id = n.id;
+        const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        t.setAttribute("x", n.x); t.setAttribute("y", n.y + 4);
+        t.setAttribute("text-anchor", "middle"); t.setAttribute("class", "node-text");
+        t.textContent = n.label;
+        g.appendChild(c); g.appendChild(t); svg.appendChild(g);
+    });
+}
+
+function render() {
+    const s = trace[cur];
+    document.querySelectorAll('.active-line').forEach(el => el.classList.remove('active-line'));
+    const lineElement = document.getElementById(`ln-${s.ln}`);
+    if (lineElement) lineElement.classList.add('active-line');
+    
+    document.getElementById('w-track').innerText = JSON.stringify(s.track);
+    document.getElementById('w-idx').innerText = s.i !== undefined ? s.i : s.idx;
+    document.getElementById('step-info').innerText = `STEP: ${cur} / ${trace.length-1}`;
+    document.getElementById('prog-bar').style.width = `${(cur/(trace.length-1))*100}%`;
+
+    // 樹高亮
+    document.querySelectorAll('.node-circle').forEach(n => n.classList.remove('active', 'saved'));
+    document.querySelectorAll('.edge-line').forEach(e => e.classList.remove('active'));
+    const nid = ver === 'v1' ? `v1-${s.track.join('-') || 'root'}` : `v2-${s.idx}-${s.track.join('-') || (s.track.length===0 && s.idx>0 ? 's'+s.idx : 's0')}`;
+    const target = document.getElementById(nid);
+    if (target) { target.classList.add('active'); if (s.save) target.classList.add('saved'); }
+
+    // 更新 Log
+    const logContainer = document.getElementById('backtrack-log');
+    logContainer.innerHTML = s.logs.map(log => `
+        <div class="log-entry log-${log.type}">
+            <span class="opacity-50 text-[8px] mr-1">></span> ${log.msg}
+        </div>
+    `).join('');
+    logContainer.scrollTop = logContainer.scrollHeight;
+
+    // 更新 Result
+    const resList = document.getElementById('res-list');
+    resList.innerHTML = s.res.map((item, i) => `
+        <div class="bg-[#252526] p-1.5 rounded flex justify-between font-mono text-[10px] border border-[#333]">
+            <span class="text-gray-600">${i}</span>
+            <span class="text-orange-400 font-bold">${JSON.stringify(item)}</span>
+        </div>
+    `).join('');
+    document.getElementById('res-count').innerText = s.res.length;
+
+    if (s.save) showToast();
+}
+
+function showToast() {
+    const a = document.getElementById('append-alert');
+    a.style.opacity = '1'; a.style.transform = 'translate(-50%, -120%)';
+    setTimeout(() => { a.style.opacity = '0'; a.style.transform = 'translate(-50%, -50%)'; }, 600);
+}
+
+function highlight(t) {
+    return t.replace(/\b(class|def|if|return|for|in|range)\b/g, '<span class="kw">$1</span>')
+            .replace(/\b(self|res|subset|track|nums|start|i)\b/g, '<span class="var">$1</span>')
+            .replace(/#.*/g, '<span class="cm">$&</span>')
+            .replace(/\b(append|copy|list|pop|backtrack|dfs)\b/g, '<span class="fn">$1</span>');
+}
+
+function switchVer(v) {
+    ver = v; reset();
+    document.getElementById('tab-v1').className = v === 'v1' ? "h-full px-4 flex items-center gap-2 text-[11px] bg-[#252526] text-white border-t-2 border-blue-500" : "h-full px-4 flex items-center gap-2 text-[11px] bg-[#1e1e1e] text-gray-500 border-t-2 border-transparent";
+    document.getElementById('tab-v2').className = v === 'v2' ? "h-full px-4 flex items-center gap-2 text-[11px] bg-[#252526] text-white border-t-2 border-blue-500" : "h-full px-4 flex items-center gap-2 text-[11px] bg-[#1e1e1e] text-gray-500 border-t-2 border-transparent";
+}
+
+function reset() {
+    cur = 0;
+    if (timer) toggleAuto();
+    init();
+}
+
+function init() {
+    const code = ver === 'v1' ? codeV1 : codeV2;
+    document.getElementById('code-area').innerHTML = code.map((l, i) => `
+        <div id="ln-${i+1}" class="px-2 flex gap-4"><span class="text-gray-600 w-4 text-right select-none">${i+1}</span><span class="whitespace-pre">${highlight(l)}</span></div>
+    `).join('');
+    generateTrace(); drawTree(); render();
+}
+
+function next() { if (cur < trace.length-1) { cur++; render(); } }
+function prev() { if (cur > 0) { cur--; render(); } }
+function toggleAuto() {
+    const btn = document.getElementById('auto-btn');
+    if (timer) {
+        clearInterval(timer); timer = null;
+        btn.innerText = "AUTO PLAY"; btn.classList.replace('bg-red-700', 'bg-[#0e639c]');
+    } else {
+        btn.innerText = "STOP"; btn.classList.replace('bg-[#0e639c]', 'bg-red-700');
+        timer = setInterval(() => { if (cur < trace.length-1) next(); else toggleAuto(); }, 700);
+    }
+}
+
+function updateNums(newArr, btnId) {
+    nums = newArr;
+    document.querySelectorAll('.p-5 button').forEach(b => b.className = "flex-1 py-2 bg-[#1e1e1e] text-gray-400 text-[11px] rounded font-bold border border-transparent");
+    document.getElementById(btnId).className = "flex-1 py-2 bg-[#0e639c] text-white text-[11px] rounded font-bold border border-blue-400/50";
+    reset();
+}
+
+window.onload = init;
+</script>
+</body>
+</html>

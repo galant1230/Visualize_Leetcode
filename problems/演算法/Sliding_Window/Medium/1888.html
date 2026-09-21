@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>1888. Sliding Window Debugger</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; width: 1000px; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .array-container { display: flex; margin: 20px 0; position: relative; padding-bottom: 40px; overflow-x: auto; }
+        .cell { min-width: 40px; height: 40px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; font-weight: bold; position: relative; background: #fff; transition: 0.3s; }
+        .cell.active { background: #e3f2fd; border-color: #2196f3; }
+        .cell.target1 { background: #fff3e0; }
+        .cell.diff { background: #ffebee; color: #d32f2f; border-color: #ef9a9a; }
+        .window-box { position: absolute; height: 50px; border: 3px solid #4caf50; border-radius: 5px; pointer-events: none; transition: 0.3s; top: -5px; z-index: 10; }
+        .pointer { position: absolute; top: -30px; font-size: 20px; transition: 0.3s; }
+        .controls { margin-top: 30px; display: flex; gap: 10px; align-items: center; }
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; background: #2196f3; color: white; font-weight: bold; }
+        button:disabled { background: #ccc; }
+        .status-panel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius: 10px; }
+        .code-highlight { background: #2d2d2d; color: #ccc; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 14px; }
+        .line-active { background: #444; color: #fff; border-left: 3px solid #4caf50; padding-left: 5px; }
+        .val { color: #4caf50; font-weight: bold; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>1888. Sliding Window 互動調試器</h2>
+    <p>模擬輸入：<code>s = "111000"</code> (n=6)</p>
+    <p>target1：<code>s = "01*n"</code> (n=6)</p>
+    <p>target2：<code>s = "10*n"</code> (n=6)</p>
+    
+    <div class="array-container" id="s2-row">
+        <div id="window-marker" class="window-box" style="display:none;"></div>
+        <div id="i-pointer" class="pointer">⬇️</div>
+        </div>
+
+    <div class="status-panel">
+        <div>i: <span class="val" id="val-i">-</span></div>
+        <div>diff1: <span class="val" id="val-diff1">0</span></div>
+        <div>diff2: <span class="val" id="val-diff2">0</span></div>
+        <div>res (min): <span class="val" id="val-res">∞</span></div>
+    </div>
+
+    <div class="controls">
+        <button onclick="step()" id="btn-next">下一步 (Next Step)</button>
+        <button onclick="reset()" style="background:#666;">重置 (Reset)</button>
+        <span id="step-desc" style="color:#666; font-style:italic;">點擊下一步開始模擬...</span>
+    </div>
+
+    <div style="margin-top:20px;">
+        <div class="code-highlight" id="code-box">
+            <div id="line-1">for i in range(2 * n):</div>
+            <div id="line-2">&nbsp;&nbsp;if s2[i] != target1[i]: diff1 += 1</div>
+            <div id="line-3">&nbsp;&nbsp;if s2[i] != target2[i]: diff2 += 1</div>
+            <div id="line-4">&nbsp;&nbsp;if i >= n:</div>
+            <div id="line-5">&nbsp;&nbsp;&nbsp;&nbsp;if s2[i-n] != target1[i-n]: diff1 -= 1</div>
+            <div id="line-6">&nbsp;&nbsp;&nbsp;&nbsp;if s2[i-n] != target2[i-n]: diff2 -= 1</div>
+            <div id="line-7">&nbsp;&nbsp;if i >= n - 1: res = min(res, diff1, diff2)</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const s = "111000";
+    const n = s.length;
+    const s2 = s + s;
+    const t1 = "01".repeat(n);
+    const t2 = "10".repeat(n);
+    
+    let i = -1;
+    let diff1 = 0;
+    let diff2 = 0;
+    let res = Infinity;
+    let subStep = 0;
+
+    function init() {
+        const row = document.getElementById('s2-row');
+        for(let j=0; j<s2.length; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.id = 'cell-' + j;
+            cell.innerHTML = `<div>${s2[j]}</div><div style="font-size:8px; color:gray; position:absolute; bottom:2px;">${t1[j]}</div>`;
+            row.appendChild(cell);
+        }
+    }
+
+    function reset() {
+        location.reload();
+    }
+
+    function updateCode(lineId) {
+        document.querySelectorAll('.code-highlight div').forEach(el => el.className = '');
+        if(lineId) document.getElementById('line-' + lineId).className = 'line-active';
+    }
+
+    function step() {
+        if (subStep === 0) {
+            i++;
+            if (i >= 2 * n) {
+                document.getElementById('btn-next').disabled = true;
+                document.getElementById('step-desc').innerText = "模擬結束！最終結果: " + res;
+                return;
+            }
+            // Move pointer
+            const cellWidth = 42;
+            document.getElementById('i-pointer').style.left = (i * cellWidth + 10) + 'px';
+            document.getElementById('val-i').innerText = i;
+            
+            // In step
+            if (s2[i] !== t1[i]) diff1++;
+            if (s2[i] !== t2[i]) diff2++;
+            updateCode(2);
+            document.getElementById('step-desc').innerText = `處理索引 ${i}: 移入新字元 '${s2[i]}'`;
+            subStep = 1;
+        } else if (subStep === 1) {
+            if (i >= n) {
+                updateCode(5);
+                const outIdx = i - n;
+                if (s2[outIdx] !== t1[outIdx]) diff1--;
+                if (s2[outIdx] !== t2[outIdx]) diff2--;
+                document.getElementById('step-desc').innerText = `視窗長度超過 ${n}: 移出左側字元 '${s2[outIdx]}'`;
+            } else {
+                document.getElementById('step-desc').innerText = `視窗尚未填滿...`;
+            }
+            subStep = 2;
+        } else {
+            if (i >= n - 1) {
+                res = Math.min(res, diff1, diff2);
+                document.getElementById('val-res').innerText = res;
+                updateCode(7);
+                // Update Window UI
+                const win = document.getElementById('window-marker');
+                win.style.display = 'block';
+                win.style.left = ((i - n + 1) * 42) + 'px';
+                win.style.width = (n * 42) + 'px';
+            }
+            document.getElementById('step-desc').innerText = `計算當前視窗最小值`;
+            subStep = 0;
+        }
+
+        document.getElementById('val-diff1').innerText = diff1;
+        document.getElementById('val-diff2').innerText = diff2;
+        
+        // Highlight cells
+        for(let j=0; j<s2.length; j++) {
+            const el = document.getElementById('cell-' + j);
+            el.classList.remove('active', 'diff');
+            if (j === i) el.classList.add('active');
+            if (j <= i && j > i-n && s2[j] !== t1[j]) el.classList.add('diff');
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>

@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>322. Coin Change - Multi-Strategy Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; min-height: 100px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 6px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 5px 10px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .tree-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; height: 380px; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 12px; }
+    
+    .coins-container { display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; gap: 16px; padding: 20px; overflow-x: auto; }
+    .coin-item { background: #1e1e1e; border: 2px solid var(--border); border-radius: 50%; width: 80px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; transition: all 0.3s ease; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    .coin-item.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.2); box-shadow: 0 0 16px rgba(255, 161, 22, 0.5); transform: scale(1.15); }
+    .coin-val { font-weight: bold; color: var(--orange); font-size: 1.1rem; }
+
+    .memo-tree-container { position: relative; width: 100%; height: 100%; min-width: 500px; min-height: 350px; }
+
+    svg.tree-svg-canvas { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+    .tree-edge { stroke: #334155; stroke-width: 2.5; stroke-dasharray: 6; animation: dash 30s linear infinite; transition: all 0.4s ease; }
+    .tree-edge.active { stroke: var(--orange); stroke-width: 4; stroke-dasharray: none; filter: drop-shadow(0px 0px 6px var(--orange)); }
+    .tree-edge.completed { stroke: var(--green); stroke-dasharray: none; opacity: 0.8; }
+
+    .tree-node-group { cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .tree-node-circle { fill: #1e293b; stroke: #475569; stroke-width: 2.5; transition: all 0.3s ease; rx: 24px; ry: 24px; }
+    .tree-node-group.visiting .tree-node-circle { fill: #2e1065; stroke: var(--orange); stroke-width: 3.5; filter: drop-shadow(0 0 10px rgba(255, 161, 22, 0.6)); }
+    .tree-node-group.cached .tree-node-circle { fill: #3b0764; stroke: var(--purple); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5)); }
+    .tree-node-group.completed .tree-node-circle { fill: #064e3b; stroke: var(--green); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(80, 250, 123, 0.4)); }
+    .tree-node-group.pruned .tree-node-circle { fill: #450a0a; stroke: var(--red); stroke-width: 2.5; }
+
+    .tree-node-text-title { fill: #f8fafc; font-size: 13px; font-weight: bold; font-family: monospace; text-anchor: middle; }
+    .tree-node-text-sub { fill: #38bdf8; font-size: 11px; font-weight: bold; font-family: monospace; text-anchor: middle; }
+
+    .tree-legend { display: flex; gap: 12px; align-items: center; font-size: 0.72rem; }
+    .legend-item { display: flex; align-items: center; gap: 4px; color: var(--text-dim); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+    .dp-table { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; max-height: 140px; overflow-y: auto; padding: 2px; }
+    .table-item { background: #1e1e1e; border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; min-width: 42px; }
+    .table-item.active-curr { border-color: var(--orange); color: var(--orange); font-weight: bold; background: rgba(255, 161, 22, 0.15); transform: scale(1.08); }
+
+    .var-badge { font-family: monospace; padding: 2px 6px; border-radius: 4px; background: #222; border: 1px solid var(--border); font-size: 0.78rem; }
+    .var-badge.highlight { border-color: var(--orange); color: var(--orange); font-weight: bold; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 68px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">322. Coin Change</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Pure Recursion (DFS)</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. DP (Top-Down + Memo)</button>
+      <button class="algo-btn" onclick="setAlgo(2)">3. DP (Bottom-Up Table)</button>
+      <button class="algo-btn" onclick="setAlgo(3)">4. DP (Bottom-Up Optimized)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: coins=[1,2,5], amt=11</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: coins=[2], amt=3</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: coins=[1], amt=0</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個整數陣列 <b>coins</b> 表示不同面額的硬幣，以及一個整數 <b>amount</b> 表示總金額。<br>
+          計算並回傳可以湊成總金額所需的<b>最少硬幣個數</b>。如果硬幣組合無法湊出該金額，回傳 <b>-1</b>。<br>
+          每種面額的硬幣數量視為無限次使用。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(S^n)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(S)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="stack-title">📚 Call Stack (歷程紀錄)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 狀態與遞迴樹視覺化 (Tree Visualizer)</span>
+          <div class="tree-legend" id="legend-box">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--orange);"></span>Visiting</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--green);"></span>Computed</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--purple);"></span>Memoized</div>
+          </div>
+        </div>
+
+        <div class="tree-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Target: </span>
+              <span id="pos-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Choice/Coin: </span>
+              <span id="extra-display" style="font-weight: bold; color: var(--purple);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Return Min Coins: </span>
+              <span id="aux-display" class="var-badge highlight">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Global Min: </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.1rem; color: var(--green);">0</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current State / Result:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">步驟說明 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Pure Recursion (DFS)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">coinChange</span>(<span class="self">self</span>, coins: List[int], amount: int) -> int:`,
+       `        <span class="kw">def</span> <span class="fn">dfs</span>(rem):`,
+       `            <span class="kw">if</span> rem == <span class="cls">0</span>: <span class="kw">return</span> <span class="cls">0</span>`,
+       `            <span class="kw">if</span> rem < <span class="cls">0</span>: <span class="kw">return</span> float(<span class="string">'inf'</span>)`,
+       `            res = float(<span class="string">'inf'</span>)`,
+       `            <span class="kw">for</span> coin <span class="kw">in</span> coins:`,
+       `                res = min(res, <span class="cls">1</span> + dfs(rem - coin))`,
+       `            <span class="kw">return</span> res`,
+       `        ans = dfs(amount)`,
+       `        <span class="kw">return</span> ans <span class="kw">if</span> ans != float(<span class="string">'inf'</span>) <span class="kw">else</span> -<span class="cls">1</span>`],
+      
+      // 2. DP (Top-Down + Memo)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">coinChange</span>(<span class="self">self</span>, coins: List[int], amount: int) -> int:`,
+       `        memo = {}`,
+       `        <span class="kw">def</span> <span class="fn">dfs</span>(rem):`,
+       `            <span class="kw">if</span> rem == <span class="cls">0</span>: <span class="kw">return</span> <span class="cls">0</span>`,
+       `            <span class="kw">if</span> rem < <span class="cls">0</span>: <span class="kw">return</span> float(<span class="string">'inf'</span>)`,
+       `            <span class="kw">if</span> rem <span class="kw">in</span> memo: <span class="kw">return</span> memo[rem]`,
+       `            res = float(<span class="string">'inf'</span>)`,
+       `            <span class="kw">for</span> coin <span class="kw">in</span> coins:`,
+       `                res = min(res, <span class="cls">1</span> + dfs(rem - coin))`,
+       `            memo[rem] = res`,
+       `            <span class="kw">return</span> res`,
+       `        ans = dfs(amount)`,
+       `        <span class="kw">return</span> ans <span class="kw">if</span> ans != float(<span class="string">'inf'</span>) <span class="kw">else</span> -<span class="cls">1</span>`],
+
+      // 3. DP (Bottom-Up Table)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">coinChange</span>(<span class="self">self</span>, coins: List[int], amount: int) -> int:`,
+       `        dp = [float(<span class="string">'inf'</span>)] * (amount + <span class="cls">1</span>)`,
+       `        dp[<span class="cls">0</span>] = <span class="cls">0</span>`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="cls">1</span>, amount + <span class="cls">1</span>):`,
+       `            <span class="kw">for</span> c <span class="kw">in</span> coins:`,
+       `                <span class="kw">if</span> i - c >= <span class="cls">0</span>:`,
+       `                    dp[i] = min(dp[i], <span class="cls">1</span> + dp[i - c])`,
+       `        <span class="kw">return</span> dp[amount] <span class="kw">if</span> dp[amount] != float(<span class="string">'inf'</span>) <span class="kw">else</span> -<span class="cls">1</span>`],
+
+      // 4. DP (Bottom-Up Inner Loop Swap / Optimized)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">coinChange</span>(<span class="self">self</span>, coins: List[int], amount: int) -> int:`,
+       `        dp = [float(<span class="string">'inf'</span>)] * (amount + <span class="cls">1</span>)`,
+       `        dp[<span class="cls">0</span>] = <span class="cls">0</span>`,
+       `        <span class="kw">for</span> c <span class="kw">in</span> coins:`,
+       `            <span class="kw">for</span> i <span class="kw">in</span> range(c, amount + <span class="cls">1</span>):`,
+       `                dp[i] = min(dp[i], <span class="cls">1</span> + dp[i - c])`,
+       `        <span class="kw">return</span> dp[amount] <span class="kw">if</span> dp[amount] != float(<span class="string">'inf'</span>) <span class="kw">else</span> -<span class="cls">1</span>`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Pure Recursion (暴力搜尋 DFS)",
+        time: "O(S^n)", space: "O(S)",
+        idea: "<b>解法思路：</b>嘗試對剩餘金額 <code>rem</code> 使用每一種硬幣進行扣減，遞迴探索所有可能性。因為存在大量重複計算的子問題，時間複雜度為指數級。"
+      },
+      {
+        title: "2. Dynamic Programming (Top-Down + Memo)",
+        time: "O(n * S)", space: "O(S)",
+        idea: "<b>解法思路：</b>利用 <code>memo</code> 雜湊表記錄每個剩餘金額 <code>rem</code> 所需的最少硬幣數，一旦遭遇重複子問題即直接回傳快取結果。"
+      },
+      {
+        title: "3. Dynamic Programming (Bottom-Up 狀態轉移)",
+        time: "O(n * S)", space: "O(S)",
+        idea: "<b>解法思路：</b>建立大小為 <code>amount + 1</code> 的 DP 陣列。狀態轉移方程：<code>dp[i] = min(dp[i], 1 + dp[i - c])</code>，代表湊齊金額 i 所需的最少硬幣數。"
+      },
+      {
+        title: "4. Dynamic Programming (Coin-First Optimization)",
+        time: "O(n * S)", space: "O(S)",
+        idea: "<b>解法思路：</b>以硬幣面額為主迴圈（完全背包視角）更新 DP 陣列，降低分支檢查並提升快取友善度。"
+      }
+    ];
+
+    const presets = [
+      {
+        title: "Example 1", coins: [1, 2, 5], amount: 11, expected: 3,
+        explanation: "11 = 5 + 5 + 1 (3 coins)"
+      },
+      {
+        title: "Example 2", coins: [2], amount: 3, expected: -1,
+        explanation: "Only coin 2 available, cannot make amount 3."
+      },
+      {
+        title: "Example 3", coins: [1], amount: 0, expected: 0,
+        explanation: "Amount is 0, need 0 coins."
+      }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title} (coins = [${p.coins.join(', ')}], amount = ${p.amount})</div>
+        <div><b>Input:</b> coins = [${p.coins.join(', ')}], amount = ${p.amount} | <b>Output:</b> ${p.expected}</div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b><br>${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const { coins, amount } = presets[currentPreset];
+
+      if (amount === 0) {
+        history.push({
+          line: 3, phase: "⚡ 【Base Case】",
+          desc: `目標金額為 0，不需要任何硬幣，回傳 0`,
+          rem: 0, resVal: 0, stack: [], treeNodes: [], treeEdges: [], result: 0
+        });
+        return;
+      }
+
+      switch(currentAlgo) {
+        case 0: buildPureRecursionSteps(coins, amount); break;
+        case 1: buildTopDownSteps(coins, amount); break;
+        case 2: buildBottomUpSteps(coins, amount); break;
+        case 3: buildBottomUpOptSteps(coins, amount); break;
+      }
+    }
+
+    // 1. Pure Recursion
+    function buildPureRecursionSteps(coins, amount) {
+      const stack = [];
+      const treeNodes = [];
+      const treeEdges = [];
+      let counter = 0;
+
+      function dfs(rem, parentId = null, coinUsed = null) {
+        const nodeId = ++counter;
+        const nodeObj = { id: nodeId, val: rem, parentId, stepType: coinUsed ? `-${coinUsed}` : "", state: 'visiting', res: null };
+        treeNodes.push(nodeObj);
+        if (parentId) treeEdges.push({ from: parentId, to: nodeId, label: `-${coinUsed}` });
+
+        stack.push({ fnName: `dfs`, args: `rem=${rem}` });
+
+        history.push({
+          line: 2, phase: `⏬ 【DFS Call】dfs(rem=${rem})`,
+          desc: rem >= 0 ? `進入剩餘目標金額 rem=${rem}` : `目標金額溢出 (rem=${rem} < 0)`,
+          rem, coin: coinUsed, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        if (rem === 0) {
+          nodeObj.state = 'completed'; nodeObj.res = 0;
+          history.push({
+            line: 3, phase: `🏁 【Base Case Match】`, desc: `金額湊齊！回傳 0`,
+            rem: 0, resVal: 0, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+          stack.pop();
+          return 0;
+        }
+
+        if (rem < 0) {
+          nodeObj.state = 'pruned'; nodeObj.res = '∞';
+          history.push({
+            line: 4, phase: `❌ 【Invalid Path】`, desc: `金額為負值，無法達成，回傳 ∞`,
+            rem, resVal: "∞", stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+          stack.pop();
+          return Infinity;
+        }
+
+        let minCoins = Infinity;
+        for (let c of coins) {
+          let subRes = dfs(rem - c, nodeId, c);
+          if (subRes !== Infinity) {
+            minCoins = Math.min(minCoins, 1 + subRes);
+          }
+        }
+
+        nodeObj.state = minCoins === Infinity ? 'pruned' : 'completed';
+        nodeObj.res = minCoins === Infinity ? '∞' : minCoins;
+
+        history.push({
+          line: 8, phase: `🔙 【Return Min Coins】dfs(${rem}) = ${minCoins === Infinity ? '∞' : minCoins}`,
+          desc: `金額 ${rem} 選擇所有硬幣後之最小硬幣數: ${minCoins === Infinity ? '無法湊齊 (∞)' : minCoins}`,
+          rem, resVal: minCoins === Infinity ? -1 : minCoins, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        stack.pop();
+        return minCoins;
+      }
+
+      let ans = dfs(amount);
+      let finalRes = ans === Infinity ? -1 : ans;
+      history.push({
+        line: 10, phase: "🎉 【Complete】", desc: `計算完畢！最少硬幣數 = ${finalRes}`,
+        resVal: finalRes, stack: [], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: null, result: finalRes
+      });
+    }
+
+    // 2. DP Top-Down Memo
+    function buildTopDownSteps(coins, amount) {
+      const stack = [];
+      const treeNodes = [];
+      const treeEdges = [];
+      const memo = {};
+      let counter = 0;
+
+      function dfs(rem, parentId = null, coinUsed = null) {
+        const nodeId = ++counter;
+        const nodeObj = { id: nodeId, val: rem, parentId, stepType: coinUsed ? `-${coinUsed}` : "", state: 'visiting', res: null };
+        treeNodes.push(nodeObj);
+        if (parentId) treeEdges.push({ from: parentId, to: nodeId, label: `-${coinUsed}` });
+
+        stack.push({ fnName: `dfs`, args: `rem=${rem}` });
+
+        history.push({
+          line: 3, phase: `⏬ 【DFS Call】dfs(rem=${rem})`,
+          desc: rem >= 0 ? `檢查 Memo 與目標金額 rem=${rem}...` : `金額為負數 (rem=${rem})`,
+          rem, coin: coinUsed, cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        if (rem === 0) {
+          nodeObj.state = 'completed'; nodeObj.res = 0;
+          history.push({
+            line: 4, phase: `🏁 【Base Case】`, desc: `金額湊齊！回傳 0`,
+            rem: 0, resVal: 0, cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+          stack.pop();
+          return 0;
+        }
+
+        if (rem < 0) {
+          nodeObj.state = 'pruned'; nodeObj.res = '∞';
+          history.push({
+            line: 5, phase: `❌ 【Base Case】`, desc: `金額過大，回傳 ∞`,
+            rem, resVal: "∞", cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+          stack.pop();
+          return Infinity;
+        }
+
+        if (rem in memo) {
+          nodeObj.state = 'cached'; nodeObj.res = memo[rem] === Infinity ? '∞' : memo[rem];
+          history.push({
+            line: 6, phase: `🟪 【Memo Hit】memo[${rem}] = ${memo[rem] === Infinity ? '∞' : memo[rem]}`,
+            desc: `命中快取 memo[${rem}] = ${memo[rem] === Infinity ? '∞' : memo[rem]}`,
+            rem, resVal: memo[rem], cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+          stack.pop();
+          return memo[rem];
+        }
+
+        let minCoins = Infinity;
+        for (let c of coins) {
+          let subRes = dfs(rem - c, nodeId, c);
+          if (subRes !== Infinity) {
+            minCoins = Math.min(minCoins, 1 + subRes);
+          }
+        }
+
+        memo[rem] = minCoins;
+        nodeObj.state = minCoins === Infinity ? 'pruned' : 'completed';
+        nodeObj.res = minCoins === Infinity ? '∞' : minCoins;
+
+        history.push({
+          line: 10, phase: `💾 【Store Memo】memo[${rem}] = ${minCoins === Infinity ? '∞' : minCoins}`,
+          desc: `將金額 ${rem} 之解答寫入快取 memo[${rem}] = ${minCoins === Infinity ? '∞' : minCoins}`,
+          rem, resVal: minCoins, cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        stack.pop();
+        return minCoins;
+      }
+
+      let ans = dfs(amount);
+      let finalRes = ans === Infinity ? -1 : ans;
+      history.push({
+        line: 12, phase: "🎉 【Complete】", desc: `最終計算完畢！最少硬幣數 = ${finalRes}`,
+        resVal: finalRes, cache: { ...memo }, stack: [], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: null, result: finalRes
+      });
+    }
+
+    // 3. DP Bottom-Up Table (修正舊值取值時機)
+    function buildBottomUpSteps(coins, amount) {
+      const dp = new Array(amount + 1).fill(Infinity);
+      dp[0] = 0;
+
+      history.push({
+        line: 3, phase: "【Init DP Table】", desc: "初始化 dp[0] = 0，其餘全設為 ∞",
+        rem: 0, dp: [...dp], result: "Running..."
+      });
+
+      for (let i = 1; i <= amount; i++) {
+        for (let c of coins) {
+          if (i - c >= 0) {
+            let oldDpVal = dp[i]; // 取出更新前的舊值
+            let prev = dp[i - c];
+            let newCoins = prev !== Infinity ? prev + 1 : Infinity;
+            dp[i] = Math.min(dp[i], newCoins);
+
+            let oldStr = oldDpVal === Infinity ? '∞' : oldDpVal;
+            let subStr = prev === Infinity ? '∞' : (1 + prev);
+
+            history.push({
+              line: 7, phase: `➕ 【dp[${i}] 更新中】`,
+              desc: `滿足 i-c >= 0，嘗試硬幣 $${c}: min(舊值 ${oldStr}, 1 + dp[${i - c}] = ${subStr}) ➔ dp[${i}] = ${dp[i] === Infinity ? '∞' : dp[i]}`,
+              rem: i, coin: c, resVal: dp[i], dp: [...dp], result: "Running..."
+            });
+          }
+        }
+      }
+
+      let finalRes = dp[amount] === Infinity ? -1 : dp[amount];
+      history.push({
+        line: 8, phase: "🎉 【Complete】", desc: `DP 表格建置完畢！解答 = ${finalRes}`,
+        rem: amount, resVal: finalRes, dp: [...dp], result: finalRes
+      });
+    }
+
+    // 4. DP Bottom-Up Opt (修正舊值取值時機)
+    function buildBottomUpOptSteps(coins, amount) {
+      const dp = new Array(amount + 1).fill(Infinity);
+      dp[0] = 0;
+
+      history.push({
+        line: 3, phase: "【Init DP Table】", desc: "初始化 dp[0] = 0，其餘全設為 ∞",
+        rem: 0, dp: [...dp], result: "Running..."
+      });
+
+      for (let c of coins) {
+        for (let i = c; i <= amount; i++) {
+          let oldDpVal = dp[i]; // 取出更新前的舊值
+          let prev = dp[i - c];
+          let newCoins = prev !== Infinity ? prev + 1 : Infinity;
+          dp[i] = Math.min(dp[i], newCoins);
+
+          let oldStr = oldDpVal === Infinity ? '∞' : oldDpVal;
+          let subStr = prev === Infinity ? '∞' : (1 + prev);
+
+          history.push({
+            line: 6, phase: `🔄 【Coin $${c} 轉移】`,
+            desc: `對硬幣 $${c}，更新金額 ${i}: min(舊值 ${oldStr}, 1 + dp[${i - c}] = ${subStr}) ➔ dp[${i}] = ${dp[i] === Infinity ? '∞' : dp[i]}`,
+            rem: i, coin: c, resVal: dp[i], dp: [...dp], result: "Running..."
+          });
+        }
+      }
+
+      let finalRes = dp[amount] === Infinity ? -1 : dp[amount];
+      history.push({
+        line: 7, phase: "🎉 【Complete】", desc: `空間/循環優化完成！解答 = ${finalRes}`,
+        rem: amount, resVal: finalRes, dp: [...dp], result: finalRes
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const p = presets[currentPreset];
+
+      if (currentAlgo === 0 || currentAlgo === 1) {
+        // SVG Tree Visualizer
+        let nodes = state.treeNodes || [];
+        let edges = state.treeEdges || [];
+
+        wrapper.innerHTML = `
+          <div class="memo-tree-container" id="tree-container">
+            <svg class="tree-svg-canvas" id="tree-svg-root"></svg>
+          </div>`;
+
+        const svg = document.getElementById('tree-svg-root');
+        if (nodes.length === 0) return;
+
+        const nodeMap = {};
+        nodes.forEach(n => { nodeMap[n.id] = { ...n, children: [] }; });
+        let root = null;
+
+        nodes.forEach(n => {
+          if (n.parentId && nodeMap[n.parentId]) {
+            nodeMap[n.parentId].children.push(nodeMap[n.id]);
+          } else {
+            root = nodeMap[n.id];
+          }
+        });
+
+        let leafCounter = 0;
+        function assignX(node) {
+          if (!node.children || node.children.length === 0) {
+            leafCounter++;
+            node.x = leafCounter;
+          } else {
+            node.children.forEach(c => assignX(c));
+            const firstX = node.children[0].x;
+            const lastX = node.children[node.children.length - 1].x;
+            node.x = (firstX + lastX) / 2;
+          }
+        }
+        if (root) assignX(root);
+
+        function assignY(node, depth = 0) {
+          node.depth = depth;
+          if (node.children) {
+            node.children.forEach(c => assignY(c, depth + 1));
+          }
+        }
+        if (root) assignY(root);
+
+        const totalLeaves = Math.max(leafCounter, 1);
+        const maxDepth = Math.max(...Object.values(nodeMap).map(n => n.depth), 1);
+
+        const svgWidth = Math.max(wrapper.clientWidth - 30, totalLeaves * 65);
+        const svgHeight = Math.max(wrapper.clientHeight - 30, (maxDepth + 1) * 65 + 40);
+
+        svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+
+        const marginX = 40;
+        const marginY = 40;
+        const availableW = svgWidth - marginX * 2;
+        const availableH = svgHeight - marginY * 2;
+
+        const scaleX = totalLeaves > 1 ? availableW / (totalLeaves - 1) : availableW / 2;
+        const scaleY = maxDepth > 0 ? availableH / maxDepth : 0;
+
+        Object.values(nodeMap).forEach(n => {
+          n.px = totalLeaves > 1 ? marginX + (n.x - 1) * scaleX : svgWidth / 2;
+          n.py = marginY + n.depth * scaleY;
+        });
+
+        edges.forEach(e => {
+          const fromNode = nodeMap[e.from];
+          const toNode = nodeMap[e.to];
+          if (fromNode && toNode) {
+            const isEdgeActive = (state.activeNode === e.to);
+            const isCompleted = toNode.state === 'completed' || toNode.state === 'cached';
+            const midY = (fromNode.py + toNode.py) / 2;
+            const d = `M ${fromNode.px} ${fromNode.py} C ${fromNode.px} ${midY}, ${toNode.px} ${midY}, ${toNode.px} ${toNode.py}`;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('class', `tree-edge ${isEdgeActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`);
+            svg.appendChild(path);
+          }
+        });
+
+        Object.values(nodeMap).forEach(n => {
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          let cls = `tree-node-group ${n.state}`;
+          if (state.activeNode === n.id) cls += " visiting";
+          g.setAttribute('class', cls);
+          g.setAttribute('transform', `translate(${n.px}, ${n.py})`);
+
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          circle.setAttribute('x', -26); circle.setAttribute('y', -20);
+          circle.setAttribute('width', 52); circle.setAttribute('height', 40);
+          circle.setAttribute('class', 'tree-node-circle');
+          g.appendChild(circle);
+
+          const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          titleText.setAttribute('y', n.res !== null ? -4 : 4);
+          titleText.setAttribute('class', 'tree-node-text-title');
+          titleText.textContent = `rem=${n.val}`;
+          g.appendChild(titleText);
+
+          if (n.res !== null) {
+            const subText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            subText.setAttribute('y', 12);
+            subText.setAttribute('class', 'tree-node-text-sub');
+            subText.textContent = `${n.res}`;
+            g.appendChild(subText);
+          }
+          svg.appendChild(g);
+        });
+
+      } else {
+        // Coins Array Render
+        let html = `<div class="coins-container">`;
+        for (let idx = 0; idx < p.coins.length; idx++) {
+          const coinVal = p.coins[idx];
+          let isActive = (state.coin === coinVal);
+
+          html += `
+            <div class="coin-item ${isActive ? 'active' : ''}">
+              <div style="font-size:0.65rem; color:var(--text-dim);">COIN</div>
+              <div class="coin-val">$${coinVal}</div>
+            </div>
+          `;
+        }
+        html += `</div>`;
+        wrapper.innerHTML = html;
+      }
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      // Stack Panel
+      const stackBox = document.getElementById('stack-display');
+      if (currentAlgo === 0 || currentAlgo === 1) {
+        const stackData = state.stack || [];
+        stackBox.innerHTML = stackData.length === 0 
+          ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Call Stack Empty</div>`
+          : stackData.map(f => `
+              <div class="stack-frame">
+                <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.75rem;">(${f.args})</span></div>
+              </div>
+            `).join('');
+        document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+      } else {
+        stackBox.innerHTML = `<div style="color:var(--text-dim); text-align:center; margin:auto;">Iterative Method (No Dynamic Call Stack)</div>`;
+        document.getElementById('stackDepthHint').innerText = `Iterative`;
+      }
+
+      // Variable Display
+      document.getElementById('pos-display').innerText = state.rem !== undefined ? `rem=${state.rem}` : "-";
+      document.getElementById('extra-display').innerText = state.coin !== undefined ? `Coin $${state.coin}` : "-";
+      document.getElementById('aux-display').innerText = state.resVal !== undefined ? `${state.resVal === Infinity ? '∞' : state.resVal}` : "-";
+
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (state.cache) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Memo Cache:</span>
+            <div class="dp-table">
+              ${Object.keys(state.cache).length === 0 ? '<span style="color:#666; font-size:0.75rem;">{}</span>' : 
+                Object.entries(state.cache).map(([remKey, val]) => `
+                <div class="table-item ${state.rem == remKey ? 'active-curr' : ''}">
+                  <span style="font-size: 0.6rem; color: var(--text-dim);">rem ${remKey}</span>
+                  <span>${val === Infinity ? '∞' : val}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (state.dp) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">DP Table:</span>
+            <div class="dp-table">
+              ${state.dp.map((val, idx) => `
+                <div class="table-item ${state.rem === idx ? 'active-curr' : ''}">
+                  <span style="font-size: 0.6rem; color: var(--text-dim);">$${idx}</span>
+                  <span>${val === Infinity ? '∞' : val}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        dynPanel.innerHTML = '';
+      }
+
+      // Result Panel
+      const statusEl = document.getElementById('status-display');
+      statusEl.innerText = state.result !== "Running..." ? `${state.result}` : `${state.resVal !== undefined ? (state.resVal === Infinity ? '∞' : state.resVal) : '-'}`;
+
+      const resEl = document.getElementById('result-text');
+      resEl.innerText = state.result !== "Running..." ? `Min Coins Needed = ${state.result}` : "Computing...";
+      resEl.style.color = state.result !== "Running..." ? "var(--green)" : "var(--text-dim)";
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

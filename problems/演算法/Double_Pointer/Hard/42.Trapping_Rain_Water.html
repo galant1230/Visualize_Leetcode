@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>42. Trapping Rain Water 終極實驗室 V3</title>
+  <style>
+    :root {
+      --bg: #0a192f; --card: #112240; --primary: #64ffda;
+      --text: #ccd6f6; --water: #4e91f2; --bar: #333; --highlight: #f39c12;
+      --code-bg: #011627; --axis: #8892b0;
+      /* IDE Colors */
+      --py-kw: #c792ea; --py-func: #82aaff; --py-comment: #546e7a; --py-num: #f78c6c;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+    .main-grid { max-width: 1600px; margin: auto; display: grid; grid-template-columns: 1fr 550px; gap: 20px; }
+    .header-box { grid-column: span 2; background: var(--card); padding: 20px; border-radius: 12px; border-bottom: 3px solid var(--primary); }
+    
+    .tab-group { display: flex; gap: 8px; margin-top: 15px; }
+    .tab-btn { background: #233554; border: 1px solid var(--primary); color: var(--primary); padding: 8px 15px; cursor: pointer; border-radius: 6px; font-weight: bold; }
+    .tab-btn.active { background: var(--primary); color: var(--bg); }
+
+    /* 左側：題目與視覺化 */
+    .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #233554; margin-bottom: 20px; }
+    
+    .problem-section { display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px; margin-bottom: 15px; }
+    .info-box { background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; font-size: 0.85rem; }
+    .complexity-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #233554; color: var(--primary); font-family: monospace; font-size: 0.9rem; margin-top: 5px; }
+
+    /* 公式區 */
+    .logic-panel { background: rgba(100, 255, 218, 0.1); border: 1px solid var(--primary); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+    .formula { font-family: 'Consolas', monospace; color: var(--highlight); background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 4px; display: inline-block; margin-top: 8px; font-size: 0.95rem; }
+
+    /* 畫布 */
+    .viz-stage { background: #fff; border-radius: 8px; height: 280px; position: relative; padding: 40px; display: flex; align-items: flex-end; justify-content: space-between; }
+    .x-axis-line { position: absolute; left: 20px; right: 20px; bottom: 38px; border-bottom: 2px solid var(--axis); }
+
+    .col-group { position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+    .bar-entity { width: 85%; background: var(--bar); z-index: 5; position: relative; border: 1px solid #000; color: #fff; font-size: 11px; text-align: center; }
+    .water-body { position: absolute; bottom: 0; width: 85%; background: var(--water); z-index: 3; opacity: 0.7; transition: height 0.3s; }
+    .ptr-tag { position: absolute; top: -40px; background: var(--highlight); color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; z-index: 10; }
+    .idx-label { position: absolute; bottom: -25px; font-size: 11px; color: var(--axis); }
+
+    /* 右側：監控與代碼 */
+    .monitor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+    .monitor-card { background: #011627; border: 1px solid #1d2d44; padding: 12px; border-radius: 8px; text-align: center; }
+    .monitor-value { font-family: 'Consolas', monospace; font-size: 1.3rem; color: var(--primary); font-weight: bold; }
+
+    .code-window { background: var(--code-bg); padding: 18px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 13px; line-height: 1.6; color: #d6deeb; white-space: pre; height: 380px; border: 1px solid #1d2d44; overflow: auto; }
+    .kw { color: var(--py-kw); } .fn { color: var(--py-func); } .cm { color: var(--py-comment); } .nm { color: var(--py-num); }
+    .active-line { background: rgba(100, 255, 218, 0.15); border-left: 4px solid var(--primary); display: block; margin-left: -18px; padding-left: 14px; }
+
+    .btn-step { width: 100%; background: var(--highlight); color: white; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; font-size: 1.1rem; transition: 0.2s; }
+    .btn-step:hover { filter: brightness(1.1); }
+  </style>
+</head>
+<body>
+
+<div class="main-grid">
+  <div class="header-box">
+    <h2 style="margin:0">💧 Trapping Rain Water 終極實驗室</h2>
+    <div class="tab-group">
+      <button class="tab-btn" onclick="setAlgo('brute')">Brute Force</button>
+      <button class="tab-btn" onclick="setAlgo('prefix')">Prefix Arrays</button>
+      <button class="tab-btn" onclick="setAlgo('stack')">Monotonic Stack</button>
+      <button class="tab-btn active" onclick="setAlgo('twoPtr')">Two Pointers</button>
+    </div>
+  </div>
+
+  <div class="left-col">
+    <div class="card">
+      <div class="problem-section">
+        <div class="info-box">
+          <strong style="color:var(--primary)">題目敘述 (Description):</strong><br>
+          給定 n 個非負整數代表柱子高度，計算下雨後能接多少雨水。
+          每一格水量：<span style="color:var(--highlight)">min(LeftMax, RightMax) - Height</span>
+        </div>
+        <div class="info-box">
+          <strong style="color:var(--primary)">複雜度 (Complexity):</strong><br>
+          <div id="complexity-info">Time: O(n) | Space: O(1)</div>
+        </div>
+      </div>
+
+      <div class="logic-panel" id="logic-panel">
+        </div>
+
+      <div class="viz-stage" id="stage"><div class="x-axis-line"></div></div>
+    </div>
+
+    <div class="card" style="padding:15px">
+      <h4 style="margin:0 0 8px 0; color:var(--axis)">Example 1 & 2</h4>
+      <div style="font-size: 0.85rem; line-height: 1.4">
+        Ex 1: [0,1,0,2,1,0,1,3,2,1,2,1] → <b style="color:var(--primary)">6</b><br>
+        Ex 2: [4,2,0,3,2,5] → <b style="color:var(--primary)">9</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-col">
+    <div class="monitor-grid">
+      <div class="monitor-card"><div>Index (i/L)</div><div id="m-i" class="monitor-value">0</div></div>
+      <div class="monitor-card"><div>Left Max</div><div id="m-lmax" class="monitor-value">0</div></div>
+      <div class="monitor-card"><div>Right Max</div><div id="m-rmax" class="monitor-value">0</div></div>
+      <div class="monitor-card"><div>Result</div><div id="m-res" class="monitor-value">0</div></div>
+    </div>
+    
+    <div class="card" style="margin-bottom: 15px">
+      <button class="btn-step" onclick="step()">下一步 (Execute Step)</button>
+      <button onclick="reset()" style="width:100%; background:none; border:1px solid #4b6479; color:#8892b0; margin-top:8px; cursor:pointer; padding:6px; border-radius:4px; font-size:0.8rem">重置模擬</button>
+    </div>
+
+    <div class="code-window" id="code-box"></div>
+  </div>
+</div>
+
+<script>
+let heights = [0,1,0,2,1,0,1,3,2,1,2,1];
+let algo = 'twoPtr';
+let state = {};
+const scale = 55;
+
+const algoMeta = {
+  brute: {
+    title: "暴力法 (Brute Force)",
+    desc: "對每格暴力找左右 L/R Max",
+    formula: "Water[i] = min(max_left, max_right) - height[i]",
+    complexity: "Time: O(n²) | Space: O(1)"
+  },
+  prefix: {
+    title: "空間換時間 (Prefix Arrays)",
+    desc: "預存 L/R Max 陣列",
+    formula: "Water[i] = min(L_Prefix[i], R_Prefix[i]) - height[i]",
+    complexity: "Time: O(n) | Space: O(n)"
+  },
+  stack: {
+    title: "單調棧 (Monotonic Stack)",
+    desc: "橫向填水，維護單調遞減棧",
+    formula: "Volume = (min(H[i], H[left]) - H[top]) * Width",
+    complexity: "Time: O(n) | Space: O(n)"
+  },
+  twoPtr: {
+    title: "雙指標法 (Two Pointers)",
+    desc: "雙指標向中間靠攏，省去額外空間",
+    formula: "if LMax < RMax: res += LMax - height[L]",
+    complexity: "Time: O(n) | Space: O(1)"
+  }
+};
+
+const pyCodes = {
+  brute: `<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n):
+    leftMax = <span class="fn">max</span>(height[:i+<span class="nm">1</span>])
+    rightMax = <span class="fn">max</span>(height[i:])
+    res += <span class="fn">min</span>(leftMax, rightMax) - height[i]`,
+  prefix: `<span class="cm"># Step 1: Precompute Left Max</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n): L[i] = <span class="fn">max</span>(L[i-<span class="nm">1</span>], h[i])
+<span class="cm"># Step 2: Precompute Right Max</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n-<span class="nm">1</span>, -<span class="nm">1</span>, -<span class="nm">1</span>): R[i] = <span class="fn">max</span>(R[i+<span class="nm">1</span>], h[i])
+<span class="cm"># Step 3: Compute Result</span>
+res += <span class="fn">min</span>(L[i], R[i]) - h[i]`,
+  stack: `<span class="kw">while</span> stack <span class="kw">and</span> h[i] > h[stack[-<span class="nm">1</span>]]:
+    top = stack.<span class="fn">pop</span>()
+    <span class="kw">if not</span> stack: <span class="kw">break</span>
+    h_diff = <span class="fn">min</span>(h[i], h[stack[-<span class="nm">1</span>]]) - h[top]
+    w = i - stack[-<span class="nm">1</span>] - <span class="nm">1</span>
+    res += h_diff * w
+stack.<span class="fn">append</span>(i)`,
+  twoPtr: `<span class="kw">while</span> l < r:
+    <span class="kw">if</span> lMax < rMax:
+        l += <span class="nm">1</span>
+        lMax = <span class="fn">max</span>(lMax, h[l])
+        res += lMax - h[l]
+    <span class="kw">else</span>:
+        r -= <span class="nm">1</span>
+        rMax = <span class="fn">max</span>(rMax, h[r])
+        res += rMax - h[r]`
+};
+
+function setAlgo(key) {
+  algo = key;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(key.toLowerCase())));
+  reset();
+}
+
+function reset() {
+  const n = heights.length;
+  state = { i: 0, l: 0, r: n-1, res: 0, water: new Array(n).fill(0), finished: false,
+            lM: heights[0], rM: heights[n-1], stack: [], phase: 'L_SCAN',
+            l_arr: new Array(n).fill(0), r_arr: new Array(n).fill(0), curL: 0, curR: 0 };
+  
+  const meta = algoMeta[algo];
+  document.getElementById('complexity-info').innerText = meta.complexity;
+  document.getElementById('logic-panel').innerHTML = `
+    <div style="color:var(--primary); font-weight:bold">${meta.title}</div>
+    <div style="font-size:0.85rem; margin-top:4px">${meta.desc}</div>
+    <div class="formula">${meta.formula}</div>
+  `;
+  document.getElementById('code-box').innerHTML = pyCodes[algo].split('\n').map((l, idx) => `<span id="line-${idx}">${l}</span>`).join('\n');
+  render();
+}
+
+function updateUI(i, l, r, res) {
+  document.getElementById('m-i').innerText = i;
+  document.getElementById('m-lmax').innerText = l;
+  document.getElementById('m-rmax').innerText = r;
+  document.getElementById('m-res').innerText = res;
+}
+
+function render() {
+  const stage = document.getElementById('stage');
+  Array.from(stage.children).forEach(c => { if(c.className === 'col-group') stage.removeChild(c); });
+  heights.forEach((h, idx) => {
+    const group = document.createElement('div'); group.className = 'col-group';
+    const water = document.createElement('div'); water.className = 'water-body';
+    water.style.height = (h + state.water[idx]) * scale + 'px';
+    const bar = document.createElement('div'); bar.className = 'bar-entity';
+    bar.style.height = h * scale + 'px'; bar.innerText = h || '';
+    if (algo === 'twoPtr') {
+      if (idx === state.l) group.innerHTML += `<div class="ptr-tag">L</div>`;
+      if (idx === state.r) group.innerHTML += `<div class="ptr-tag" style="background:#2980b9">R</div>`;
+    } else if (idx === state.i) group.innerHTML += `<div class="ptr-tag">i</div>`;
+    group.append(water, bar, document.createRange().createContextualFragment(`<div class="idx-label">${idx}</div>`));
+    stage.appendChild(group);
+  });
+}
+
+function step() {
+  if (state.finished) return;
+  document.querySelectorAll('.code-window span').forEach(s => s.classList.remove('active-line'));
+
+  if (algo === 'twoPtr') {
+    if (state.l < state.r) {
+      if (state.lM < state.rM) {
+        document.getElementById('line-2').classList.add('active-line');
+        state.l++; state.lM = Math.max(state.lM, heights[state.l]);
+        let add = Math.max(0, state.lM - heights[state.l]);
+        state.water[state.l] = add; state.res += add;
+        updateUI(`L:${state.l}`, state.lM, state.rM, state.res);
+      } else {
+        document.getElementById('line-6').classList.add('active-line');
+        state.r--; state.rM = Math.max(state.rM, heights[state.r]);
+        let add = Math.max(0, state.rM - heights[state.r]);
+        state.water[state.r] = add; state.res += add;
+        updateUI(`R:${state.r}`, state.lM, state.rM, state.res);
+      }
+    } else state.finished = true;
+  }
+  else if (algo === 'prefix') {
+    const n = heights.length;
+    if (state.phase === 'L_SCAN') {
+      document.getElementById('line-1').classList.add('active-line');
+      state.curL = Math.max(state.curL, heights[state.i]);
+      state.l_arr[state.i] = state.curL;
+      updateUI(state.i, state.curL, '-', 0);
+      state.i++; if(state.i >= n) { state.phase = 'R_SCAN'; state.i = n-1; }
+    } else if (state.phase === 'R_SCAN') {
+      document.getElementById('line-3').classList.add('active-line');
+      state.curR = Math.max(state.curR, heights[state.i]);
+      state.r_arr[state.i] = state.curR;
+      updateUI(state.i, state.l_arr[state.i], state.curR, 0);
+      state.i--; if(state.i < 0) { state.phase = 'CALC'; state.i = 0; }
+    } else {
+      document.getElementById('line-5').classList.add('active-line');
+      let w = Math.min(state.l_arr[state.i], state.r_arr[state.i]) - heights[state.i];
+      state.water[state.i] = w; state.res += w;
+      updateUI(state.i, state.l_arr[state.i], state.r_arr[state.i], state.res);
+      state.i++; if(state.i >= n) state.finished = true;
+    }
+  }
+  else if (algo === 'stack') {
+    document.getElementById('line-0').classList.add('active-line');
+    if (state.i < heights.length) {
+      while (state.stack.length > 0 && heights[state.i] > heights[state.stack[state.stack.length - 1]]) {
+        let top = state.stack.pop();
+        if (state.stack.length === 0) break;
+        let leftIdx = state.stack[state.stack.length - 1];
+        let h_diff = Math.min(heights[state.i], heights[leftIdx]) - heights[top];
+        let width = state.i - leftIdx - 1;
+        for(let k = leftIdx + 1; k < state.i; k++) state.water[k] += h_diff;
+        state.res += h_diff * width;
+      }
+      state.stack.push(state.i);
+      updateUI(state.i, '-', '-', state.res);
+      state.i++;
+    } else state.finished = true;
+  }
+  else if (algo === 'brute') {
+    if (state.i < heights.length) {
+      document.getElementById('line-1').classList.add('active-line');
+      let lm = Math.max(...heights.slice(0, state.i+1));
+      let rm = Math.max(...heights.slice(state.i));
+      let w = Math.min(lm, rm) - heights[state.i];
+      state.water[state.i] = w; state.res += w;
+      updateUI(state.i, lm, rm, state.res);
+      state.i++;
+    } else state.finished = true;
+  }
+  render();
+}
+setAlgo('twoPtr');
+</script>
+</body>
+</html>

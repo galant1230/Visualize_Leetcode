@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Algorithm Lab Pro - Sorting Master</title>
+    <style>
+        :root {
+            --bg: #0b0f1a; --card: #161b2b; --accent: #22d3ee;
+            --land: #10b981; --water: #1e3a8a; --danger: #f43f5e;
+            --editor-bg: #0d1117; --text-gray: #94a3b8;
+        }
+        body { font-family: 'Fira Code', 'Consolas', monospace; background: var(--bg); color: #e2e8f0; margin: 0; padding: 20px; }
+        .dashboard { max-width: 1700px; margin: auto; display: grid; grid-template-columns: 350px 1fr 500px; gap: 20px; }
+
+        .header-box { grid-column: 1 / -1; background: var(--card); padding: 25px; border-radius: 12px; border-left: 6px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .meta-grid { display: flex; gap: 15px; margin-top: 15px; }
+        .tag { background: #0f172a; padding: 6px 14px; border-radius: 6px; border: 1px solid #334155; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .tag b { color: var(--accent); }
+
+        .panel { background: var(--card); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px; border: 1px solid #2d333b; }
+        input, select { background: #0b0f1a; border: 1px solid #334155; color: white; padding: 12px; border-radius: 6px; width: 100%; font-size: 14px; transition: 0.3s; }
+        input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 8px rgba(34, 211, 238, 0.3); }
+        
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn { padding: 12px; border-radius: 6px; cursor: pointer; border: none; font-weight: bold; text-transform: uppercase; transition: 0.2s; font-size: 13px; }
+        .btn-primary { background: var(--accent); color: #0b0f1a; }
+        .btn-primary:hover { opacity: 0.8; transform: translateY(-2px); }
+        .btn-secondary { background: #334155; color: white; }
+
+        .viz-container { background: #050505; border-radius: 12px; height: 420px; display: flex; align-items: flex-end; justify-content: center; gap: 12px; padding: 40px; border: 1px solid #334155; position: relative; overflow: hidden; }
+        .bar { width: 45px; background: linear-gradient(to top, var(--water), #3b82f6); border-radius: 6px 6px 0 0; position: relative; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bar-val { position: absolute; top: -30px; width: 100%; text-align: center; color: var(--accent); font-weight: bold; font-size: 14px; }
+        .bar.active { background: linear-gradient(to top, var(--danger), #ff7b72); box-shadow: 0 0 20px var(--danger); z-index: 10; }
+        .bar.dim { opacity: 0.15; filter: grayscale(80%); }
+
+        .tree-box { background: #0d1117; border-radius: 12px; border: 1px solid #334155; margin-top: 20px; padding: 15px; height: 230px; overflow-y: auto; }
+        .tree-entry { font-size: 12px; color: var(--text-gray); border-left: 1px solid #444; padding: 4px 12px; margin-bottom: 2px; transition: 0.2s; }
+        .tree-entry.active { color: var(--accent); border-left: 2px solid var(--accent); background: rgba(34, 211, 238, 0.05); }
+
+        .side-stack { display: flex; flex-direction: column; gap: 20px; height: 780px; }
+        .editor { flex: 2; background: var(--editor-bg); border-radius: 12px; border: 1px solid #30363d; display: flex; flex-direction: column; overflow: hidden; }
+        .code-header { background: #161b22; padding: 12px; font-size: 11px; border-bottom: 1px solid #30363d; color: var(--text-gray); letter-spacing: 1px; }
+        .code-content { flex: 1; overflow: auto; padding: 10px 0; scrollbar-width: thin; }
+        .code-line { white-space: pre; display: block; padding: 0 25px; line-height: 1.6; font-size: 12px; border-left: 4px solid transparent; color: #8b949e; }
+        .line-active { background: #232d3b; border-left-color: var(--accent); color: #f0f6fc; }
+
+        .log-box { flex: 1; background: #0d1117; border-radius: 12px; border: 1px solid #30363d; padding: 15px; overflow-y: auto; scrollbar-width: thin; }
+        .log-entry { font-size: 12px; margin-bottom: 10px; border-bottom: 1px solid #1f2937; padding-bottom: 8px; }
+        .log-vars { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+        .var-tag { color: #f43f5e; font-weight: bold; background: #2d161b; padding: 2px 8px; border-radius: 4px; font-size: 11px; border: 1px solid #4c1d24; }
+        .kw { color: #ff7b72; font-weight: bold; } .fn { color: #d2a8ff; } .num { color: #79c0ff; } .type { color: #f8e3a1; } .comment { color: #8b949e; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header-box">
+        <h2 id="algoName" style="margin:0; color:var(--accent); text-transform: uppercase; letter-spacing: 2px;">Algorithm Visualizer</h2>
+        <p id="algoIntro" style="font-size:14px; color:var(--text-gray); margin:12px 0; line-height:1.7; max-width: 1000px;"></p>
+        <div class="meta-grid">
+            <div class="tag">Average: <b id="t-avg"></b></div>
+            <div class="tag">Worst Case: <b id="t-worst"></b></div>
+            <div class="tag">Space Complexity: <b id="s-comp"></b></div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <label style="font-size:10px; color:var(--text-gray); font-weight: bold;">[ 1 ] INPUT DATA (CSV)</label>
+        <input type="text" id="userInput" value="45, 12, 89, 34, 7, 56, 21">
+        
+        <label style="font-size:10px; color:var(--text-gray); font-weight: bold;">[ 2 ] SELECT ALGORITHM</label>
+        <select id="algoSelect" onchange="init()">
+            <option value="bubble">Bubble Sort</option>
+            <option value="selection">Selection Sort</option>
+            <option value="insertion">Insertion Sort</option>
+            <option value="quick">Quick Sort (Divide & Conquer)</option>
+            <option value="merge">Merge Sort (Recursive Merge)</option>
+        </select>
+        
+        <label style="font-size:10px; color:var(--text-gray); font-weight: bold;">[ 3 ] TARGET LANGUAGE</label>
+        <select id="langSelect" onchange="renderCodeUI()">
+            <option value="python">Python 3.10</option>
+            <option value="c">C Language (C11)</option>
+        </select>
+
+        <button class="btn btn-secondary" style="margin-top:10px;" onclick="init()">🔃 RESET SYSTEM</button>
+        
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="changeStep(-1)">◀ PREV STEP</button>
+            <button class="btn btn-primary" onclick="changeStep(1)">NEXT STEP ▶</button>
+        </div>
+        <div style="text-align:center; font-size:26px; font-weight:bold; color:var(--accent); margin-top:10px;" id="counter">0 / 0</div>
+    </div>
+
+    <div>
+        <div class="viz-container" id="viz"></div>
+        <div class="tree-box" id="treeBox">
+            <div style="font-size:10px; color:var(--accent); margin-bottom:10px; font-weight: bold; letter-spacing: 1px;">RECURSION STACK & TREE</div>
+            <div id="treeContent"></div>
+        </div>
+    </div>
+
+    <div class="side-stack">
+        <div class="editor">
+            <div class="code-header">SOURCE CODE (INCLUDING HELPERS)</div>
+            <div class="code-content" id="codeBox"></div>
+        </div>
+        <div class="log-box" id="logBox"></div>
+    </div>
+</div>
+
+<script>
+const repo = {
+    bubble: {
+        name: "Bubble Sort (泡沫排序)", 
+        intro: "最基礎的交換排序。透過重複走訪數列，每次比較相鄰的兩個元素，若順序錯誤則交換。每一輪結束後，最大的元素會像氣泡一樣「浮」到數列的最右端。適合初學者理解排序與交換的概念。", 
+        avg: "O(n²)", worst: "O(n²)", space: "O(1)",
+        python: ["def bubble_sort(arr):", "  n = len(arr)", "  for i in range(n):", "    for j in range(0, n-i-1): # 比較相鄰元素", "      if arr[j] > arr[j+1]:", "        arr[j], arr[j+1] = arr[j+1], arr[j] # 交換"],
+        c: ["void bubbleSort(int arr[], int n) {", "  for (int i = 0; i < n-1; i++)", "    for (int j = 0; j < n-i-1; j++)", "      if (arr[j] > arr[j+1])", "        swap(&arr[j], &arr[j+1]);", "}"]
+    },
+    selection: {
+        name: "Selection Sort (選擇排序)", 
+        intro: "每次從「未排序部分」尋找最小（或最大）的元素，並將其存放到「已排序部分」的末尾。它的特點是交換次數非常少（最多 N-1 次），但比較次數依然是 O(n²)。觀察重點在於 min_idx 的動態更新。", 
+        avg: "O(n²)", worst: "O(n²)", space: "O(1)",
+        python: ["def selection_sort(arr):", "  for i in range(len(arr)):", "    min_idx = i # 假設目前是最小", "    for j in range(i+1, len(arr)):", "      if arr[j] < arr[min_idx]:", "        min_idx = j # 更新最小值索引", "    arr[i], arr[min_idx] = arr[min_idx], arr[i]"],
+        c: ["void selectionSort(int arr[], int n) {", "  for (int i = 0; i < n-1; i++) {", "    int min_idx = i;", "    for (int j = i+1; j < n; j++)", "      if (arr[j] < arr[min_idx]) min_idx = j;", "    swap(&arr[min_idx], &arr[i]);", "  }", "}"]
+    },
+    insertion: {
+        name: "Insertion Sort (插入排序)", 
+        intro: "將數列分為「已排序」與「未排序」兩部分。每次取出未排序的首個元素（Key），在已排序部分中從後往前掃描，找到合適位置並插入。在數列「幾乎有序」的情況下效率極高（趨近於 O(n)）。", 
+        avg: "O(n²)", worst: "O(n²)", space: "O(1)",
+        python: ["def insertion_sort(arr):", "  for i in range(1, len(arr)):", "    key = arr[i] # 待插入元素", "    j = i - 1", "    while j >= 0 and key < arr[j]:", "      arr[j+1] = arr[j] # 元素後移", "      j -= 1", "    arr[j+1] = key # 插入正確位置"],
+        c: ["void insertionSort(int arr[], int n) {", "  for (int i = 1; i < n; i++) {", "    int key = arr[i], j = i - 1;", "    while (j >= 0 && arr[j] > key) {", "      arr[j+1] = arr[j];", "      j = j - 1;", "    }", "    arr[j+1] = key;", "  }", "}"]
+    },
+    quick: {
+        name: "Quick Sort (快速排序)", 
+        intro: "採用分治法 (Divide & Conquer)。選定一個基準點 (Pivot)，將數列劃分為「小於 Pivot」與「大於 Pivot」兩部分，再對子數列遞迴執行。它是目前實務上最常用的排序演算法之一。觀察重點：Partition 過程中 Pivot 的最終位置。", 
+        avg: "O(n log n)", worst: "O(n²)", space: "O(log n)",
+        python: ["def quick_sort(arr, low, high):", "  if low < high:", "    pi = partition(arr, low, high)", "    quick_sort(arr, low, pi - 1)", "    quick_sort(arr, pi + 1, high)", "", "def partition(arr, low, high):", "  pivot = arr[high] # 選最後一個為 Pivot", "  i = low - 1", "  for j in range(low, high):", "    if arr[j] < pivot:", "      i += 1", "      arr[i], arr[j] = arr[j], arr[i]", "  arr[i+1], arr[high] = arr[high], arr[i+1]", "  return i + 1"],
+        c: ["void quickSort(int arr[], int low, int high) {", "  if (low < high) {", "    int pi = partition(arr, low, high);", "    quickSort(arr, low, pi - 1);", "    quickSort(arr, pi + 1, high);", "  }", "}", "int partition(int arr[], int low, int high) {", "  int pivot = arr[high], i = (low - 1);", "  for (int j = low; j <= high-1; j++) {", "    if (arr[j] < pivot) {", "      i++; swap(&arr[i], &arr[j]);", "    }", "  }", "  swap(&arr[i + 1], &arr[high]);", "  return (i + 1);", "}"]
+    },
+    merge: {
+        name: "Merge Sort (合併排序)", 
+        intro: "經典的遞迴分治法。將數列不斷從中切半，直到長度為 1，再將這些有序的子數列兩兩「合併」(Merge)。特點是保證穩定排序，且時間複雜度嚴格維持在 O(n log n)，但需要額外空間儲存暫存數列。", 
+        avg: "O(n log n)", worst: "O(n log n)", space: "O(n)",
+        python: ["def merge_sort(arr, l, r):", "  if l < r:", "    m = (l+r)//2", "    merge_sort(arr, l, m)", "    merge_sort(arr, m+1, r)", "    merge(arr, l, m, r)", "", "def merge(arr, l, m, r):", "  L = arr[l:m+1]; R = arr[m+1:r+1]", "  i = j = 0; k = l", "  while i < len(L) and j < len(R):", "    if L[i] <= R[j]:", "      arr[k] = L[i]; i += 1", "    else:", "      arr[k] = R[j]; j += 1", "    k += 1", "  while i < len(L): arr[k] = L[i]; i++; k++", "  while j < len(R): arr[k] = R[j]; j++; k++"],
+        c: ["void mergeSort(int arr[], int l, int r) {", "  if (l < r) {", "    int m = l + (r - l) / 2;", "    mergeSort(arr, l, m);", "    mergeSort(arr, m + 1, r);", "    merge(arr, l, m, r);", "  }", "}", "void merge(int arr[], int l, int m, int r) {", "  int n1 = m - l + 1, n2 = r - m;", "  int L[n1], R[n2];", "  for (int i = 0; i < n1; i++) L[i] = arr[l + i];", "  for (int j = 0; j < n2; j++) R[j] = arr[m+1+j];", "  int i = 0, j = 0, k = l;", "  while (i < n1 && j < n2) {", "    if (L[i] <= R[j]) arr[k] = L[i++];", "    else arr[k] = R[j++]; k++;", "  }", "  while (i < n1) arr[k++] = L[i++];", "  while (j < n2) arr[k++] = R[j++];", "}"]
+    }
+};
+
+let steps = [];
+let currentStep = 0;
+
+function init() {
+    const input = document.getElementById('userInput').value;
+    const data = input.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+    const type = document.getElementById('algoSelect').value;
+    
+    document.getElementById('logBox').innerHTML = '';
+    document.getElementById('treeContent').innerHTML = '';
+    steps = [];
+
+    if(type === 'bubble') buildBubble([...data]);
+    else if(type === 'selection') buildSelection([...data]);
+    else if(type === 'insertion') buildInsertion([...data]);
+    else if(type === 'quick') runQuick([...data], 0, data.length-1, 0, "Root");
+    else if(type === 'merge') runMerge([...data], 0, data.length-1, 0, "Root");
+
+    document.getElementById('algoName').innerText = repo[type].name;
+    document.getElementById('algoIntro').innerText = repo[type].intro;
+    document.getElementById('t-avg').innerText = repo[type].avg;
+    document.getElementById('t-worst').innerText = repo[type].worst;
+    document.getElementById('s-comp').innerText = repo[type].space;
+
+    currentStep = 0;
+    render();
+    renderCodeUI();
+}
+
+// --- Logic Generators ---
+function runQuick(arr, l, h, lv, side) {
+    steps.push({ a:[...arr], range:[l,h], vars:{l,h,lv}, line:0, msg:`QuickSort (${side}) 層級:${lv}`, tree:{lv, side, l, h} });
+    if (l < h) {
+        steps.push({ a:[...arr], range:[l,h], vars:{l,h}, line:2, msg:"呼叫 Partition 進行劃分" });
+        let pivot = arr[h], i = l - 1;
+        steps.push({ a:[...arr], range:[l,h], vars:{pivot, i}, line:8, msg:"[Partition] 設定基準點" });
+        for (let j = l; j < h; j++) {
+            steps.push({ a:[...arr], range:[l,h], vars:{pivot, i, j}, highlight:[j, h], line:10, msg:"比較 arr[j] 與 Pivot" });
+            if (arr[j] < pivot) {
+                i++; [arr[i], arr[j]] = [arr[j], arr[i]];
+                steps.push({ a:[...arr], range:[l,h], vars:{pivot, i, j}, highlight:[i, j], line:12, msg:"發現較小值，執行交換" });
+            }
+        }
+        [arr[i+1], arr[h]] = [arr[h], arr[i+1]];
+        let pi = i + 1;
+        steps.push({ a:[...arr], range:[l,h], vars:{pi}, highlight:[pi], line:15, msg:"Partition 完成，基準點歸位" });
+        runQuick(arr, l, pi - 1, lv + 1, "Left");
+        runQuick(arr, pi + 1, h, lv + 1, "Right");
+    }
+}
+
+function runMerge(arr, l, r, lv, side) {
+    steps.push({ a:[...arr], range:[l,r], vars:{l,r,lv}, line:0, msg:`MergeSort (${side}) 層級:${lv}`, tree:{lv, side, l, r} });
+    if (l < r) {
+        let m = Math.floor((l+r)/2);
+        steps.push({ a:[...arr], range:[l,r], vars:{m}, line:2, msg:"計算區間中間點" });
+        runMerge(arr, l, m, lv + 1, "Left");
+        runMerge(arr, m + 1, r, lv + 1, "Right");
+        
+        let L = arr.slice(l, m + 1), R = arr.slice(m + 1, r + 1);
+        let i = 0, j = 0, k = l;
+        steps.push({ a:[...arr], range:[l,r], vars:{l,m,r}, line:8, msg:"[Merge] 開始合併有序區段" });
+        while (i < L.length && j < R.length) {
+            steps.push({ a:[...arr], range:[l,r], vars:{i, j, k}, highlight:[k], line:14, msg:"比較子序列首個元素" });
+            if (L[i] <= R[j]) {
+                arr[k] = L[i++];
+                steps.push({ a:[...arr], range:[l,r], vars:{k, i}, highlight:[k], line:15, msg:"左側較小，填入主數列" });
+            } else {
+                arr[k] = R[j++];
+                steps.push({ a:[...arr], range:[l,r], vars:{k, j}, highlight:[k], line:16, msg:"右側較小，填入主數列" });
+            }
+            k++;
+        }
+        while (i < L.length) { arr[k++] = L[i++]; steps.push({ a:[...arr], range:[l,r], vars:{k, i}, highlight:[k], line:19, msg:"補齊左側剩餘元素" }); }
+        while (j < R.length) { arr[k++] = R[j++]; steps.push({ a:[...arr], range:[l,r], vars:{k, j}, highlight:[k], line:20, msg:"補齊右側剩餘元素" }); }
+    }
+}
+
+function buildBubble(arr) {
+    for(let i=0; i<arr.length; i++) {
+        for(let j=0; j<arr.length-i-1; j++) {
+            steps.push({ a:[...arr], vars:{i,j}, highlight:[j,j+1], line:3, msg:"比較相鄰兩個元素" });
+            if(arr[j] > arr[j+1]) { 
+                [arr[j], arr[j+1]] = [arr[j+1], arr[j]]; 
+                steps.push({ a:[...arr], vars:{i,j}, highlight:[j,j+1], line:5, msg:"左大於右，執行交換" }); 
+            }
+        }
+    }
+}
+
+function buildSelection(arr) {
+    for(let i=0; i<arr.length; i++) {
+        let min = i;
+        for(let j=i+1; j<arr.length; j++) {
+            steps.push({ a:[...arr], vars:{i,j,min}, highlight:[j,min], line:3, msg:"尋找區間內最小值索引" });
+            if(arr[j] < arr[min]) min = j;
+        }
+        [arr[i], arr[min]] = [arr[min], arr[i]];
+        steps.push({ a:[...arr], vars:{i,min}, highlight:[i,min], line:6, msg:"將最小值交換至已排序端" });
+    }
+}
+
+function buildInsertion(arr) {
+    for(let i=1; i<arr.length; i++) {
+        let key = arr[i], j = i-1;
+        steps.push({ a:[...arr], vars:{i,key}, highlight:[i], line:2, msg:`取出待插入元素 Key: ${key}` });
+        while(j >= 0 && arr[j] > key) { 
+            arr[j+1] = arr[j]; 
+            steps.push({ a:[...arr], vars:{j}, highlight:[j+1], line:4, msg:"大於 Key 的元素向後移動" });
+            j--; 
+        }
+        arr[j+1] = key; steps.push({ a:[...arr], vars:{i}, highlight:[j+1], line:7, msg:"將 Key 插入空位" });
+    }
+}
+
+function render() {
+    const s = steps[currentStep];
+    if(!s) return;
+    const viz = document.getElementById('viz');
+    viz.innerHTML = '';
+    const maxVal = Math.max(...s.a, 1);
+    s.a.forEach((v, idx) => {
+        const bar = document.createElement('div');
+        bar.className = 'bar' + (s.highlight?.includes(idx) ? ' active' : '');
+        if (s.range && (idx < s.range[0] || idx > s.range[1])) bar.classList.add('dim');
+        bar.style.height = `${(v/maxVal)*320}px`;
+        bar.innerHTML = `<div class="bar-val">${v}</div>`;
+        viz.appendChild(bar);
+    });
+
+    if (s.tree && s.line === 0) {
+        const node = document.createElement('div');
+        node.className = 'tree-entry active';
+        node.style.marginLeft = (s.tree.lv * 15) + "px";
+        node.innerHTML = `↳ [${s.tree.side}] 分段: ${s.tree.l} 至 ${s.tree.h}`;
+        document.getElementById('treeContent').appendChild(node);
+        document.getElementById('treeBox').scrollTop = document.getElementById('treeBox').scrollHeight;
+    }
+
+    const log = document.getElementById('logBox');
+    const varTags = Object.entries(s.vars).map(([k,v]) => `<span class="var-tag">${k}:${v}</span>`).join('');
+    log.innerHTML += `
+        <div class="log-entry">
+            <div style="color:var(--accent); font-weight:bold;">Step ${currentStep}: ${s.msg}</div>
+            <div class="log-vars">${varTags}</div>
+        </div>`;
+    log.scrollTop = log.scrollHeight;
+
+    document.getElementById('counter').innerText = `${currentStep} / ${steps.length-1}`;
+    document.querySelectorAll('.code-line').forEach((l, i) => l.classList.toggle('line-active', i === s.line));
+}
+
+function renderCodeUI() {
+    const type = document.getElementById('algoSelect').value;
+    const lang = document.getElementById('langSelect').value;
+    const code = repo[type][lang];
+    document.getElementById('codeBox').innerHTML = code.map(line => {
+        const h = line.replace(/def |for |if |while|return|else|elif|void|int/g, x => `<span class="kw">${x}</span>`)
+                     .replace(/\w+(?=\()/g, x => `<span class="fn">${x}</span>`)
+                     .replace(/\d+/g, x => `<span class="num">${x}</span>`)
+                     .replace(/int |void /g, x => `<span class="type">${x}</span>`)
+                     .replace(/#.*$/g, x => `<span class="comment">${x}</span>`);
+        return `<span class="code-line">${h || ' '}</span>`;
+    }).join('');
+}
+
+function changeStep(dir) {
+    if(currentStep + dir >= 0 && currentStep + dir < steps.length) {
+        currentStep += dir;
+        render();
+    }
+}
+
+init();
+</script>
+</body>
+</html>

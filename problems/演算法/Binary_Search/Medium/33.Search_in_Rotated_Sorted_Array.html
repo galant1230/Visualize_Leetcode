@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>33. Search in Rotated Sorted Array - Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-medium: #ffc01e;
+      --lc-blue: #007aff;
+      --lc-green: #2cbb5d;
+      --lc-red: #ff2d55;
+      --lc-purple: #af52de;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(255, 192, 30, 0.15);
+      color: var(--lc-medium);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    /* Approach Selector Tabs */
+    .approach-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 10px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+    }
+    .tab-btn {
+      background: #252525;
+      border: 1px solid var(--lc-border);
+      color: var(--lc-text-dim);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { background: #333; color: var(--lc-text); }
+    .tab-btn.active {
+      background: var(--lc-orange);
+      color: #000;
+      border-color: var(--lc-orange);
+    }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+    
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+      color: var(--lc-text);
+      margin-bottom: 8px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 2px; }
+
+    .complexity-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-green); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title {
+      font-weight: bold;
+      color: var(--lc-blue);
+      margin-bottom: 4px;
+    }
+
+    .boundary-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-purple);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .boundary-title {
+      font-weight: bold;
+      color: #d8b4fe;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .boundary-item {
+      margin-bottom: 8px;
+    }
+    .boundary-item:last-child { margin-bottom: 0; }
+    .boundary-tag {
+      background: rgba(175, 82, 222, 0.25);
+      color: #d8b4fe;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-weight: bold;
+    }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 480px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+    .num { color: #bd93f9; }
+    .cm { color: #6272a4; font-style: italic; }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .status-card .label { font-size: 0.7rem; color: var(--lc-text-dim); display: block; }
+    .status-card .value { font-size: 1rem; font-family: monospace; font-weight: bold; color: var(--lc-orange); }
+
+    .digits-container {
+      min-height: 120px;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      padding: 45px 15px 35px 15px;
+      margin-bottom: 12px;
+      overflow-x: auto;
+    }
+
+    .digit-box {
+      min-width: 42px;
+      height: 48px;
+      background: #2a2a2a;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      font-size: 1.1rem;
+      font-weight: bold;
+      position: relative;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .digit-box.in-range {
+      background: rgba(0, 122, 255, 0.15);
+      border-color: var(--lc-blue);
+      color: #fff;
+    }
+    .digit-box.active-scan {
+      border-color: var(--lc-orange);
+      background: rgba(255, 161, 22, 0.25);
+    }
+    .digit-box.target-found {
+      background: rgba(44, 187, 93, 0.25) !important;
+      border-color: var(--lc-green) !important;
+      color: var(--lc-green) !important;
+      transform: scale(1.08);
+    }
+
+    .pointer-tag {
+      position: absolute;
+      font-size: 0.65rem;
+      font-weight: bold;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: #fff;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .tag-left { top: -24px; background: var(--lc-green); }
+    .tag-mid { top: -46px; background: var(--lc-orange); }
+    .tag-right { bottom: -24px; background: var(--lc-red); }
+    .tag-scan { top: -24px; background: var(--lc-orange); }
+
+    .control-panel {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    input[type="text"], input[type="number"] {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      color: var(--lc-text);
+      padding: 7px 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    input:focus { border-color: var(--lc-orange); outline: none; }
+    
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 7px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-green); color: #fff; }
+    .btn-primary:hover { background: #28a745; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .result-banner {
+      background: rgba(44, 187, 93, 0.1);
+      border: 1px solid var(--lc-green);
+      color: var(--lc-green);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 10px;
+      display: none;
+    }
+    .result-banner.not-found {
+      background: rgba(255, 45, 85, 0.1);
+      border-color: var(--lc-red);
+      color: var(--lc-red);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">33. Search in Rotated Sorted Array</span>
+    <span class="lc-badge">Medium</span>
+    <span class="lc-tag">Array</span>
+    <span class="lc-tag">Binary Search</span>
+  </div>
+
+  <div class="approach-tabs">
+    <button class="tab-btn active" onclick="switchApproach(1)">1. Linear Scan (Brute Force)</button>
+    <button class="tab-btn" onclick="switchApproach(2)">2. One-Pass Binary Search (Check Sorted Half)</button>
+    <button class="tab-btn" onclick="switchApproach(3)">3. Two-Pass Binary Search (Find Min First)</button>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            已知經過旋轉的升序整數陣列 <code>nums</code> 與一個目標值 <code>target</code>。請在 <code>O(log n)</code> 時間複雜度內找出 <code>target</code> 在陣列中的索引，若不存在則回傳 <code>-1</code>。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> nums = [4,5,6,7,0,1,2], target = 0</div>
+            <div><strong>Output:</strong> 4</div>
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 2:</div>
+            <div><strong>Input:</strong> nums = [4,5,6,7,0,1,2], target = 3</div>
+            <div><strong>Output:</strong> -1</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span id="timeComp" class="complexity-val">O(n)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span id="spaceComp" class="complexity-val">O(1)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span id="codeTitle">🐍 Python3 程式碼</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="codeBox"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與邊界邏輯 (State Monitor)</div>
+        <div class="card-body">
+          <div class="approach-box">
+            <div id="approachTitle" class="approach-title">💡 解法說明</div>
+            <div id="approachDesc">說明文字載入中...</div>
+          </div>
+
+          <!-- 重構後的邊界與條件秘笈區塊 -->
+          <div class="boundary-box" id="boundaryBox">
+            <div class="boundary-title">🎯 邊界與條件秘笈 (l <= r vs. l < r)</div>
+            <div id="boundaryContent">
+              <!-- 動態載入邊界細節 -->
+            </div>
+          </div>
+
+          <!-- 變數面板 -->
+          <div class="status-grid">
+            <div class="status-card">
+              <span class="label">l (Left)</span>
+              <span id="stat-l" class="value" style="color: var(--lc-green);">-</span>
+            </div>
+            <div class="status-card">
+              <span class="label">m (Mid)</span>
+              <span id="stat-mid" class="value" style="color: var(--lc-orange);">-</span>
+            </div>
+            <div class="status-card">
+              <span class="label">r (Right)</span>
+              <span id="stat-r" class="value" style="color: var(--lc-red);">-</span>
+            </div>
+            <div class="status-card">
+              <span class="label">Target</span>
+              <span id="stat-target" class="value" style="color: #ff79c6;">-</span>
+            </div>
+          </div>
+
+          <!-- 陣列視覺化方塊 -->
+          <div class="digits-container" id="digitsBox"></div>
+
+          <!-- 控制選項 -->
+          <div class="control-panel">
+            <span style="font-size: 0.8rem; color: #aaa;">nums:</span>
+            <input type="text" id="arrInput" value="4,5,6,7,0,1,2" style="width: 140px;">
+            <span style="font-size: 0.8rem; color: #aaa;">target:</span>
+            <input type="number" id="targetInput" value="0" style="width: 50px;">
+            <button class="btn" onclick="initSim()">Reset</button>
+            <button id="prevBtn" class="btn" onclick="prevStep()" disabled>← Prev</button>
+            <button id="nextBtn" class="btn btn-primary" onclick="nextStep()">Step →</button>
+          </div>
+
+          <div id="finalBox" class="result-banner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentApproach = 1;
+    let nums = [4, 5, 6, 7, 0, 1, 2];
+    let target = 0;
+    let steps = [];
+    let currentStepIdx = 0;
+
+    const approachesData = {
+      1: {
+        title: "1. Linear Scan (Brute Force)",
+        desc: "逐一掃描陣列每一個元素。雖然簡單直觀，但時間複雜度為 O(n)，未利用題目旋轉遞增陣列的特性。",
+        boundary: `
+          <div class="boundary-item">• <span class="boundary-tag">線性遍歷：</span> 使用 <code>for i in range(n)</code>，無需計算邊界與中間點。</div>
+        `,
+        time: "O(n)",
+        space: "O(1)",
+        code: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>:' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">search</span>(<span class="self">self</span>, nums: List[<span class="kw">int</span>], target: <span class="kw">int</span>) -&gt; <span class="kw">int</span>:' },
+          { id: "l3", text: '        <span class="kw">for</span> i <span class="kw">in</span> <span class="kw">range</span>(<span class="kw">len</span>(nums)):' },
+          { id: "l4", text: '            <span class="kw">if</span> nums[i] == target:' },
+          { id: "l5", text: '                <span class="kw">return</span> i' },
+          { id: "l6", text: '        <span class="kw">return</span> -<span class="num">1</span>' }
+        ]
+      },
+      2: {
+        title: "2. One-Pass Binary Search (Check Sorted Half)",
+        desc: "利用 <code>nums[m]</code> 將陣列分為兩半，<strong>必定有一半是嚴格遞增有序的</strong>。先判斷哪一半有序，再檢查 <code>target</code> 是否落在該有序區間內。",
+        boundary: `
+          <div class="boundary-item">• <span class="boundary-tag">為何用 l &lt;= r ？</span> 因為目標是<strong>「搜尋特定 target」</strong>。維持雙閉區間 <code>[l, r]</code>，當區間縮到只剩 1 個元素 (<code>l == r</code>) 時，仍必須進迴圈檢查 <code>nums[m] == target</code>。退出條件為 <code>l &gt; r</code>（即全搜尋完未找到）。</div>
+          <div class="boundary-item">• <span class="boundary-tag">nums[l] &lt;= nums[m]</span>：用包含等於判斷左半段是否遞增（防範 <code>l == m</code> 的情況）。</div>
+          <div class="boundary-item">• <span class="boundary-tag">區間縮窄</span>：由於 <code>m</code> 點已檢查過非答案，所以一律移剔除 <code>m</code>：<code>r = m - 1</code> 或 <code>l = m + 1</code>。</div>
+        `,
+        time: "O(log n)",
+        space: "O(1)",
+        code: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>:' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">search</span>(<span class="self">self</span>, nums: List[<span class="kw">int</span>], target: <span class="kw">int</span>) -&gt; <span class="kw">int</span>:' },
+          { id: "l3", text: '        l, r = <span class="num">0</span>, <span class="kw">len</span>(nums) - <span class="num">1</span>' },
+          { id: "l4", text: '        <span class="kw">while</span> l &lt;= r: <span class="cm"># 搜尋特定值 target 必用 <=</span>' },
+          { id: "l5", text: '            m = (l + r) // <span class="num">2</span>' },
+          { id: "l6", text: '            <span class="kw">if</span> nums[m] == target: <span class="kw">return</span> m' },
+          { id: "l7", text: '            <span class="kw">if</span> nums[l] &lt;= nums[m]: <span class="cm"># 左半段有序</span>' },
+          { id: "l8", text: '                <span class="kw">if</span> nums[l] &lt;= target &lt; nums[m]:' },
+          { id: "l9", text: '                    r = m - <span class="num">1</span>' },
+          { id: "l10", text: '                <span class="kw">else</span>: l = m + <span class="num">1</span>' },
+          { id: "l11", text: '            <span class="kw">else</span>: <span class="cm"># 右半段有序</span>' },
+          { id: "l12", text: '                <span class="kw">if</span> nums[m] &lt; target &lt;= nums[r]:' },
+          { id: "l13", text: '                    l = m + <span class="num">1</span>' },
+          { id: "l14", text: '                <span class="kw">else</span>: r = m - <span class="num">1</span>' },
+          { id: "l15", text: '        <span class="kw">return</span> -<span class="num">1</span>' }
+        ]
+      },
+      3: {
+        title: "3. Two-Pass Binary Search (Find Min First)",
+        desc: "先用二分搜尋找到旋轉點（最小值索引 min_idx），將陣列還原為兩個完全單調遞增的區間，再對目標所在的單側進行標準二分搜尋。",
+        boundary: `
+          <div class="boundary-item">• <span class="boundary-tag">Phase 1 用 l &lt; r</span>：此階段目標是<strong>「找轉折點 (Pivot/ Min)」</strong>而非找特定值。我們持續縮小區間，當 <code>l == r</code> 時指針重合，該位置即為最小值，故不需 <code>=</code> 避免死迴圈。</div>
+          <div class="boundary-item">• <span class="boundary-tag">Phase 1 保留可能</span>：<code>r = m</code>（因為 <code>m</code> 有可能本身就是最小值）；<code>l = m + 1</code>（因為 <code>nums[m] &gt; nums[r]</code> 證明 <code>m</code> 絕不可能是最小值）。</div>
+          <div class="boundary-item">• <span class="boundary-tag">Phase 3 用 l &lt;= r</span>：定位區間後，回歸<strong>「搜尋 target」</strong>任務，因此又換回 <code>l &lt;= r</code> 雙閉區間模式。</div>
+        `,
+        time: "O(log n)",
+        space: "O(1)",
+        code: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>:' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">search</span>(<span class="self">self</span>, nums: List[<span class="kw">int</span>], target: <span class="kw">int</span>) -&gt; <span class="kw">int</span>:' },
+          { id: "l3", text: '        <span class="cm"># 1. 找最小值 Pivot (目標是找邊界/極值 ➔ 用 l < r)</span>' },
+          { id: "l4", text: '        l, r = <span class="num">0</span>, <span class="kw">len</span>(nums) - <span class="num">1</span>' },
+          { id: "l5", text: '        <span class="kw">while</span> l &lt; r:' },
+          { id: "l6", text: '            m = (l + r) // <span class="num">2</span>' },
+          { id: "l7", text: '            <span class="kw">if</span> nums[m] &gt; nums[r]: l = m + <span class="num">1</span>' },
+          { id: "l8", text: '            <span class="kw">else</span>: r = m' },
+          { id: "l9", text: '        pivot = l' },
+          { id: "l10", text: '        <span class="cm"># 2. 決定搜尋哪一側</span>' },
+          { id: "l11", text: '        l, r = <span class="num">0</span>, <span class="kw">len</span>(nums) - <span class="num">1</span>' },
+          { id: "l12", text: '        <span class="kw">if</span> target &gt;= nums[pivot] <span class="kw">and</span> target &lt;= nums[r]:' },
+          { id: "l13", text: '            l = pivot' },
+          { id: "l14", text: '        <span class="kw">else</span>: r = pivot - <span class="num">1</span>' },
+          { id: "l15", text: '        <span class="cm"># 3. 標準二分搜尋 (目標是找 target ➔ 用 l <= r)</span>' },
+          { id: "l16", text: '        <span class="kw">while</span> l &lt;= r:' },
+          { id: "l17", text: '            m = (l + r) // <span class="num">2</span>' },
+          { id: "l18", text: '            <span class="kw">if</span> nums[m] == target: <span class="kw">return</span> m' },
+          { id: "l19", text: '            <span class="kw">elif</span> nums[m] &lt; target: l = m + <span class="num">1</span>' },
+          { id: "l20", text: '            <span class="kw">else</span>: r = m - <span class="num">1</span>' },
+          { id: "l21", text: '        <span class="kw">return</span> -<span class="num">1</span>' }
+        ]
+      }
+    };
+
+    function switchApproach(appIdx) {
+      currentApproach = appIdx;
+      document.querySelectorAll(".tab-btn").forEach((btn, idx) => {
+        btn.classList.toggle("active", idx + 1 === appIdx);
+      });
+      initSim();
+    }
+
+    function generateSteps() {
+      steps = [];
+      if (currentApproach === 1) {
+        for (let i = 0; i < nums.length; i++) {
+          steps.push({ lineId: "l4", l: -1, r: -1, mid: i, hintText: `檢查 index ${i} (數值 ${nums[i]}) 是否等於 target (${target})` });
+          if (nums[i] === target) {
+            steps.push({ lineId: "l5", l: -1, r: -1, mid: i, isFinished: true, foundIdx: i, hintText: `🎯 找到目標值！回傳索引 ${i}` });
+            return;
+          }
+        }
+        steps.push({ lineId: "l6", l: -1, r: -1, mid: -1, isFinished: true, foundIdx: -1, hintText: `掃描結束，未找到 target (${target})，回傳 -1` });
+      } 
+      else if (currentApproach === 2) {
+        let l = 0, r = nums.length - 1;
+        steps.push({ lineId: "l3", l, r, mid: -1, hintText: `初始化雙指針：l = 0, r = ${r}` });
+
+        while (l <= r) {
+          steps.push({ lineId: "l4", l, r, mid: -1, hintText: `檢查迴圈條件：l(${l}) <= r(${r}) 成立` });
+          
+          let m = Math.floor((l + r) / 2);
+          steps.push({ lineId: "l5", l, r, mid: m, hintText: `計算中點 m = ${m} (數值 ${nums[m]})` });
+
+          if (nums[m] === target) {
+            steps.push({ lineId: "l6", l, r, mid: m, isFinished: true, foundIdx: m, hintText: `🎯 nums[m] == target (${target})！找到目標，回傳索引 ${m}` });
+            return;
+          }
+
+          if (nums[l] <= nums[m]) {
+            steps.push({ lineId: "l7", l, r, mid: m, hintText: `nums[l] (${nums[l]}) <= nums[m] (${nums[m]}) → 【左半段有序】` });
+            if (nums[l] <= target && target < nums[m]) {
+              r = m - 1;
+              steps.push({ lineId: "l9", l, r, mid: m, hintText: `Target (${target}) 落在左區間內，更新 r = m - 1 (${r})` });
+            } else {
+              l = m + 1;
+              steps.push({ lineId: "l10", l, r, mid: m, hintText: `Target (${target}) 不在左區間，往右尋找，更新 l = m + 1 (${l})` });
+            }
+          } else {
+            steps.push({ lineId: "l11", l, r, mid: m, hintText: `nums[l] (${nums[l]}) > nums[m] (${nums[m]}) → 【右半段有序】` });
+            if (nums[m] < target && target <= nums[r]) {
+              l = m + 1;
+              steps.push({ lineId: "l13", l, r, mid: m, hintText: `Target (${target}) 落在右區間內，更新 l = m + 1 (${l})` });
+            } else {
+              r = m - 1;
+              steps.push({ lineId: "l14", l, r, mid: m, hintText: `Target (${target}) 不在右區間，往左尋找，更新 r = m - 1 (${r})` });
+            }
+          }
+        }
+        steps.push({ lineId: "l15", l, r, mid: -1, isFinished: true, foundIdx: -1, hintText: `搜尋區間交錯 (l > r)，目標值不存在，回傳 -1` });
+      } 
+      else if (currentApproach === 3) {
+        let l = 0, r = nums.length - 1;
+        steps.push({ lineId: "l4", l, r, mid: -1, hintText: `Phase 1: 尋找 Pivot (最小值)。使用 while (l < r)` });
+
+        while (l < r) {
+          let m = Math.floor((l + r) / 2);
+          steps.push({ lineId: "l6", l, r, mid: m, hintText: `[找Pivot] 計算中點 m = ${m} (數值 ${nums[m]})` });
+          if (nums[m] > nums[r]) {
+            l = m + 1;
+            steps.push({ lineId: "l7", l, r, mid: m, hintText: `nums[m] > nums[r]，最小值在右側，更新 l = m + 1 (${l})` });
+          } else {
+            r = m;
+            steps.push({ lineId: "l8", l, r, mid: m, hintText: `nums[m] <= nums[r]，最小值可能就是 m 或在左側，更新 r = m (${r})` });
+          }
+        }
+
+        let pivot = l;
+        steps.push({ lineId: "l9", l, r, mid: -1, hintText: `Phase 1 結束！指針重合在 index ${pivot} (數值 ${nums[pivot]})` });
+
+        l = 0; r = nums.length - 1;
+        if (target >= nums[pivot] && target <= nums[r]) {
+          l = pivot;
+          steps.push({ lineId: "l13", l, r, mid: -1, hintText: `Phase 2: Target (${target}) >= nums[pivot]，鎖定右半區間 [${l}...${r}]` });
+        } else {
+          r = pivot - 1;
+          steps.push({ lineId: "l14", l, r, mid: -1, hintText: `Phase 2: Target (${target}) 不在右半區，鎖定左半區間 [${l}...${r}]` });
+        }
+
+        while (l <= r) {
+          let m = Math.floor((l + r) / 2);
+          steps.push({ lineId: "l17", l, r, mid: m, hintText: `Phase 3 [找Target]: 中點 m = ${m} (數值 ${nums[m]})` });
+          if (nums[m] === target) {
+            steps.push({ lineId: "l18", l, r, mid: m, isFinished: true, foundIdx: m, hintText: `🎯 找到目標值！回傳索引 ${m}` });
+            return;
+          } else if (nums[m] < target) {
+            l = m + 1;
+            steps.push({ lineId: "l19", l, r, mid: m, hintText: `nums[m] < target，往右尋找，更新 l = ${l}` });
+          } else {
+            r = m - 1;
+            steps.push({ lineId: "l20", l, r, mid: m, hintText: `nums[m] > target，往左尋找，更新 r = ${r}` });
+          }
+        }
+        steps.push({ lineId: "l21", l, r, mid: -1, isFinished: true, foundIdx: -1, hintText: `Phase 3 搜尋結束，未找到 target，回傳 -1` });
+      }
+    }
+
+    function initSim() {
+      const rawInput = document.getElementById("arrInput").value.trim();
+      nums = rawInput.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+      target = parseInt(document.getElementById("targetInput").value);
+
+      if (nums.length === 0 || isNaN(target)) {
+        alert("請輸入有效的整數陣列與 Target！");
+        return;
+      }
+
+      const appInfo = approachesData[currentApproach];
+      document.getElementById("approachTitle").innerText = appInfo.title;
+      document.getElementById("approachDesc").innerHTML = appInfo.desc;
+      document.getElementById("boundaryContent").innerHTML = appInfo.boundary;
+      document.getElementById("timeComp").innerText = appInfo.time;
+      document.getElementById("spaceComp").innerText = appInfo.space;
+
+      const codeBox = document.getElementById("codeBox");
+      codeBox.innerHTML = appInfo.code
+        .map(line => `<div class="code-line" id="${line.id}">${line.text}</div>`)
+        .join("");
+
+      generateSteps();
+      currentStepIdx = 0;
+      renderCurrentStep();
+    }
+
+    function renderCurrentStep() {
+      const state = steps[currentStepIdx];
+
+      document.getElementById("stat-l").innerText = state.l === -1 ? "-" : state.l;
+      document.getElementById("stat-r").innerText = state.r === -1 ? "-" : state.r;
+      document.getElementById("stat-mid").innerText = state.mid === -1 ? "-" : state.mid;
+      document.getElementById("stat-target").innerText = target;
+      document.getElementById("stepHint").innerText = state.hintText;
+
+      document.querySelectorAll(".code-line").forEach(el => el.classList.remove("active-line"));
+      const targetLine = document.getElementById(state.lineId);
+      if (targetLine) targetLine.classList.add("active-line");
+
+      renderDigitBoxes(state);
+
+      document.getElementById("prevBtn").disabled = (currentStepIdx === 0);
+      
+      const fb = document.getElementById("finalBox");
+      if (state.isFinished) {
+        if (state.foundIdx !== -1) {
+          fb.className = "result-banner";
+          fb.innerHTML = `Accepted | Target Found at Index: ${state.foundIdx}`;
+        } else {
+          fb.className = "result-banner not-found";
+          fb.innerHTML = `Result | Target Not Found in Array (-1)`;
+        }
+        fb.style.display = "block";
+        document.getElementById("nextBtn").disabled = true;
+      } else {
+        fb.style.display = "none";
+        document.getElementById("nextBtn").disabled = false;
+      }
+    }
+
+    function renderDigitBoxes(state) {
+      const boxContainer = document.getElementById("digitsBox");
+      boxContainer.innerHTML = "";
+
+      for (let i = 0; i < nums.length; i++) {
+        const box = document.createElement("div");
+        box.className = "digit-box";
+        box.innerText = nums[i];
+
+        if (currentApproach === 1) {
+          if (i === state.mid) {
+            box.classList.add("active-scan");
+            box.innerHTML += `<div class="pointer-tag tag-scan">scan</div>`;
+          }
+        } else {
+          if (i >= state.l && i <= state.r && state.l !== -1 && state.r !== -1) {
+            box.classList.add("in-range");
+          }
+          if (i === state.l) {
+            box.innerHTML += `<div class="pointer-tag tag-left">l</div>`;
+          }
+          if (i === state.mid) {
+            box.innerHTML += `<div class="pointer-tag tag-mid">m</div>`;
+          }
+          if (i === state.r) {
+            box.innerHTML += `<div class="pointer-tag tag-right">r</div>`;
+          }
+        }
+
+        if (state.isFinished && state.foundIdx === i) {
+          box.classList.add("target-found");
+        }
+
+        boxContainer.appendChild(box);
+      }
+    }
+
+    function nextStep() {
+      if (currentStepIdx < steps.length - 1) {
+        currentStepIdx++;
+        renderCurrentStep();
+      }
+    }
+
+    function prevStep() {
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        renderCurrentStep();
+      }
+    }
+
+    window.onload = initSim;
+  </script>
+</body>
+</html>

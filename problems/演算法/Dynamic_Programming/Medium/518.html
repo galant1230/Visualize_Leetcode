@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 518. Coin Change II - 演算法實驗室</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #8b949e;
+        }
+        body { 
+            background: #010409; color: var(--text); 
+            font-family: 'Consolas', 'Monaco', 'Microsoft JhengHei', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; overflow: hidden;
+        }
+        
+        .widget-card {
+            width: 1350px; height: 920px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            display: flex; overflow: hidden;
+        }
+
+        /* --- 左側面板 --- */
+        .sidebar {
+            width: 420px; display: flex; flex-direction: column;
+            border-right: 1px solid var(--border); background: #0d1117; flex-shrink: 0;
+        }
+        
+        .section { padding: 24px; border-bottom: 1px solid var(--border); }
+        .problem-title { font-size: 22px; font-weight: bold; color: var(--blue); margin-bottom: 12px; }
+        .problem-desc { font-size: 14px; line-height: 1.6; color: var(--text); }
+        
+        /* 動態指標區域 */
+        .metrics-area { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-top: 10px; }
+        .complexity-board { display: flex; gap: 10px; margin-bottom: 12px; }
+        .tag { padding: 4px 10px; border-radius: 4px; border: 1px solid var(--blue); background: var(--highlight); font-size: 13px; color: var(--blue); font-family: monospace; }
+        .logic-desc { font-size: 13px; line-height: 1.7; color: var(--comment); }
+        .logic-desc b { color: var(--purple); }
+
+        .testcase-section { flex: 1; display: flex; flex-direction: column; }
+        .tc-header { padding: 15px 24px 10px; font-size: 11px; font-weight: bold; color: var(--comment); letter-spacing: 1px; }
+        .tc-grid { padding: 0 24px; display: flex; flex-direction: column; gap: 8px; }
+        .tc-btn { padding: 12px; text-align: left; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; font-size: 13px; }
+        .tc-btn.active { border-color: var(--green); background: rgba(63, 185, 80, 0.15); color: var(--green); }
+        
+        .btn-reset { margin: auto 24px 24px; padding: 12px; border: 1px solid var(--red); color: var(--red); background: transparent; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        .btn-reset:hover { background: rgba(248, 81, 73, 0.1); }
+
+        /* --- 右側代碼與執行區 --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #010409; }
+        .editor-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .tabs { display: flex; background: #0d1117; border-bottom: 1px solid var(--border); }
+        .tab { padding: 14px 28px; font-size: 13px; color: var(--comment); border-right: 1px solid var(--border); cursor: pointer; }
+        .tab.active { background: var(--panel); color: var(--text); border-top: 2px solid var(--orange); }
+        
+        .editor { flex: 1; padding: 20px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.8; }
+        .line { display: block; padding-left: 50px; position: relative; opacity: 0.4; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 10px; width: 30px; text-align: right; color: #484f58; font-size: 12px; }
+
+        /* --- 下方固定 Log 與 Table --- */
+        .bottom-panel { height: 400px; display: grid; grid-template-columns: 1fr 360px; border-top: 1px solid var(--border); background: #0d1117; }
+        .viz-area { padding: 24px; overflow: auto; }
+        .dp-table { border-collapse: collapse; font-family: monospace; font-size: 13px; background: #010409; width: 100%; }
+        .dp-table th, .dp-table td { border: 1px solid var(--border); padding: 12px 8px; text-align: center; }
+        .active-cell { outline: 2px solid var(--blue); background: var(--highlight); }
+
+        .terminal { padding: 20px; display: flex; flex-direction: column; border-left: 1px solid var(--border); }
+        .log-box { 
+            height: 220px; overflow-y: auto; background: #010409; border: 1px solid var(--border); 
+            border-radius: 6px; padding: 12px; font-size: 12px; color: #8b949e; margin-bottom: 15px;
+            scroll-behavior: smooth; border-left: 4px solid var(--comment);
+        }
+        .log-entry { margin-bottom: 6px; padding-left: 8px; }
+        .log-entry.latest { color: var(--text); border-left: 3px solid var(--blue); background: rgba(56, 139, 253, 0.05); }
+
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+        .step-btn { padding: 10px 18px; background: var(--panel); border: 1px solid var(--border); color: var(--text); cursor: pointer; border-radius: 4px; font-weight: bold; }
+        
+        /* 代碼著色 */
+        .kw { color: var(--purple); } .fn { color: var(--blue); } .num { color: var(--orange); } .op { color: #ff7b72; } .cmt { color: var(--comment); font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="sidebar">
+        <div class="section">
+            <div class="problem-title">518. Coin Change II</div>
+            <div class="problem-desc">計算湊成總金額 <code>amount</code> 的所有硬幣組合數。每種硬幣可重複使用。</div>
+        </div>
+
+        <div class="section">
+            <div class="metrics-area">
+                <div class="complexity-board" id="metricsTags"></div>
+                <div class="logic-desc" id="logicText"></div>
+            </div>
+        </div>
+
+        <div class="testcase-section">
+            <div class="tc-header">TEST CASES</div>
+            <div class="tc-grid">
+                <button class="tc-btn active tc-item" onclick="setTC([1,2,5], 5, 0)">Ex 1: [1,2,5], amt=5</button>
+                <button class="tc-btn tc-item" onclick="setTC([2], 3, 1)">Ex 2: [2], amt=3</button>
+                <button class="tc-btn tc-item" onclick="setTC([10], 10, 2)">Ex 3: [10], amt=10</button>
+            </div>
+            <button class="btn-reset" onclick="resetSimulator()">RESET SIMULATOR</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="editor-container">
+            <div class="tabs">
+                <div class="tab active" id="tab-1d" onclick="switchAlgo('1d')">optimized_1d_dp.py</div>
+                <div class="tab" id="tab-2d" onclick="switchAlgo('2d')">standard_2d_dp.py</div>
+            </div>
+            <div id="codeEditor" class="editor"></div>
+        </div>
+
+        <div class="bottom-panel">
+            <div class="viz-area">
+                <table class="dp-table" id="dpTable"></table>
+            </div>
+            <div class="terminal">
+                <div style="font-size: 11px; color: var(--green); margin-bottom: 10px;">> STEP LOG</div>
+                <div id="logBox" class="log-box"></div>
+                <div class="controls">
+                    <button class="step-btn" onclick="prev()">Prev</button>
+                    <button class="step-btn" style="border-color: var(--green); color: var(--green);" onclick="next()">Next (F10)</button>
+                    <div style="text-align: right;">
+                        <span id="finalRes" style="color: var(--orange); font-size: 22px; font-weight: bold;">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let curAlgo = '1d', curStep = 0, coins = [1,2,5], amount = 5, steps = [];
+
+const algoData = {
+    '1d': {
+        tags: `<div class="tag">Time: O(N*M)</div><div class="tag">Space: O(M)</div>`,
+        logic: `<b>空間優化版：</b><br>使用一維陣列 <code>dp[j]</code> 表示湊齊金額 j 的組合數。外層遍歷硬幣可確保組合的「硬幣順序」固定，從而避免重複計算排列。`,
+        code: [
+            `<span class="kw">def</span> <span class="fn">change</span>(amount, coins):`,
+            `    dp <span class="op">=</span> [<span class="num">0</span>] <span class="op">*</span> (amount <span class="op">+</span> <span class="num">1</span>)`,
+            `    dp[<span class="num">0</span>] <span class="op">=</span> <span class="num">1</span>`,
+            `    `,
+            `    <span class="kw">for</span> coin <span class="kw">in</span> coins:`,
+            `        <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(coin, amount <span class="op">+</span> <span class="num">1</span>):`,
+            `            dp[j] <span class="op">+=</span> dp[j <span class="op">-</span> coin]`,
+            `            `,
+            `    <span class="kw">return</span> dp[amount]`
+        ],
+        gen: (c, a) => {
+            let dp = new Array(a + 1).fill(0);
+            let s = [{l: 2, msg: "初始化 DP 陣列為 0", dp: [...dp]}];
+            dp[0] = 1; s.push({l: 3, msg: "Base Case: 金額 0 組合數為 1", dp: [...dp], j: 0});
+            for (let coin of c) {
+                s.push({l: 5, msg: `選用硬幣: ${coin}`, dp: [...dp]});
+                for (let j = coin; j <= a; j++) {
+                    dp[j] += dp[j - coin];
+                    s.push({l: 7, msg: `金額 ${j}: 增加 dp[${j-coin}](${dp[j-coin]}) 組合 -> ${dp[j]}`, dp: [...dp], j: j, src: j-coin});
+                }
+            }
+            s.push({l: 9, msg: `計算完成: ${dp[a]}`, dp: [...dp], j: a, res: dp[a]});
+            return s;
+        }
+    },
+    '2d': {
+        tags: `<div class="tag">Time: O(N*M)</div><div class="tag">Space: O(N*M)</div>`,
+        logic: `<b>標準二維版：</b><br><code>dp[i][j]</code> 代表使用前 i 種硬幣湊出金額 j 的組合數。<br>狀態轉移：<br>不選硬幣 i: <code>dp[i-1][j]</code><br>選硬幣 i: <code>dp[i][j-coin]</code>`,
+        code: [
+            `<span class="kw">def</span> <span class="fn">change</span>(amount, coins):`,
+            `    n <span class="op">=</span> <span class="fn">len</span>(coins)`,
+            `    dp <span class="op">=</span> [[<span class="num">0</span>] * (amount + 1) <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(n + 1)]`,
+            `    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n + 1): dp[i][<span class="num">0</span>] <span class="op">=</span> <span class="num">1</span>`,
+            `    `,
+            `    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, n <span class="op">+</span> <span class="num">1</span>):`,
+            `        <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, amount <span class="op">+</span> <span class="num">1</span>):`,
+            `            coin <span class="op">=</span> coins[i-1]`,
+            `            dp[i][j] <span class="op">=</span> dp[i-1][j] + (dp[i][j-coin] <span class="kw">if</span> j >= coin <span class="kw">else</span> 0)`,
+            `    <span class="kw">return</span> dp[n][amount]`
+        ],
+        gen: (c, a) => {
+            let n = c.length;
+            let dp = Array.from({length: n + 1}, () => new Array(a + 1).fill(0));
+            for(let i=0; i<=n; i++) dp[i][0] = 1;
+            let s = [{l: 4, msg: "初始化：金額 0 的組合數為 1", dp: JSON.parse(JSON.stringify(dp))}];
+            for(let i=1; i<=n; i++) {
+                let coin = c[i-1];
+                for(let j=1; j<=a; j++) {
+                    dp[i][j] = dp[i-1][j] + (j >= coin ? dp[i][j-coin] : 0);
+                    s.push({l: 9, msg: `硬幣 ${coin}, 金額 ${j}: 組合數為 ${dp[i][j]}`, dp: JSON.parse(JSON.stringify(dp)), i: i, j: j});
+                }
+            }
+            s.push({l: 10, msg: `完成: ${dp[n][a]}`, dp: JSON.parse(JSON.stringify(dp)), i: n, j: a, res: dp[n][a]});
+            return s;
+        }
+    }
+};
+
+function switchAlgo(id) {
+    curAlgo = id;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`tab-${id}`).classList.add('active');
+    document.getElementById('metricsTags').innerHTML = algoData[id].tags;
+    document.getElementById('logicText').innerHTML = algoData[id].logic;
+    resetSimulator();
+}
+
+function setTC(cArr, am, idx) {
+    coins = cArr; amount = am;
+    document.querySelectorAll('.tc-item').forEach((b, i) => i === idx ? b.classList.add('active') : b.classList.remove('active'));
+    resetSimulator();
+}
+
+function resetSimulator() {
+    steps = algoData[curAlgo].gen(coins, amount);
+    curStep = 0;
+    document.getElementById('logBox').innerHTML = '';
+    document.getElementById('codeEditor').innerHTML = algoData[curAlgo].code.map((l, i) => `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    update();
+}
+
+function update() {
+    const step = steps[curStep];
+    const lines = document.querySelectorAll('.line');
+    lines.forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    const lb = document.getElementById('logBox');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry latest';
+    entry.innerText = `> ${step.msg}`;
+    if (lb.querySelector('.latest')) lb.querySelector('.latest').classList.remove('latest');
+    lb.appendChild(entry);
+    lb.scrollTop = lb.scrollHeight;
+
+    document.getElementById('finalRes').innerText = step.res !== undefined ? step.res : '...';
+
+    const table = document.getElementById('dpTable');
+    if (curAlgo === '1d') {
+        let h = `<tr><th>Amount (j)</th>` + Array.from({length: amount+1}, (_, k) => `<th class="${step.j===k?'active-cell':''}">${k}</th>`).join('') + `</tr>`;
+        let r = `<tr><td>dp[j]</td>` + step.dp.map((v, k) => `<td class="${step.j===k?'active-cell':(step.src===k?'source-cell':'')}">${v}</td>`).join('') + `</tr>`;
+        table.innerHTML = h + r;
+    } else {
+        let h = `<tr><th>i \\ j</th>` + Array.from({length: amount+1}, (_, k) => `<th>${k}</th>`).join('') + `</tr>`;
+        let b = step.dp.map((row, ri) => `<tr><td>${ri===0?'Init':coins[ri-1]}</td>` + row.map((v, ci) => `<td class="${step.i===ri && step.j===ci?'active-cell':''}">${v}</td>`).join('') + `</tr>`).join('');
+        table.innerHTML = h + b;
+    }
+}
+
+function next() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { 
+    if(curStep > 0) { 
+        curStep--; 
+        const lb = document.getElementById('logBox');
+        lb.removeChild(lb.lastChild);
+        if (lb.lastChild) lb.lastChild.classList.add('latest');
+        update();
+        lb.removeChild(lb.lastChild); // 避免 update 重複加 log
+    } 
+}
+
+document.addEventListener('keydown', (e) => { if(e.key === 'F10') next(); });
+switchAlgo('1d');
+</script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Destroyer - DFS Memory Debugger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --vscode-bg: #1e1e1e;
+            --vscode-sidebar: #252526;
+            --vscode-accent: #007acc;
+            --vscode-text: #d4d4d4;
+            --vscode-comment: #6a9955;
+            --vscode-keyword: #c586c0;
+            --vscode-func: #dcdcaa;
+            --vscode-num: #b5cea8;
+        }
+        body { background-color: var(--vscode-bg); color: var(--vscode-text); font-family: 'JetBrains Mono', monospace; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .code-keyword { color: var(--vscode-keyword); }
+        .code-func { color: var(--vscode-func); }
+        .code-comment { color: var(--vscode-comment); }
+        .code-num { color: var(--vscode-num); }
+        .line-highlight { background-color: rgba(0, 122, 204, 0.3); border-left: 3px solid var(--vscode-accent); }
+        .wall-active { background-color: #10b981 !important; transform: scaleY(1.8) !important; z-index: 50; box-shadow: 0 0 12px #10b981; }
+        .active-robot { filter: drop-shadow(0 0 15px #60a5fa); transform: scale(1.3) translateY(-10px) translateX(-50%) !important; z-index: 100; border: 2px solid #60a5fa !important; }
+        .console-line { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 6px 0; }
+        .scrollbar-hide::-webkit-scrollbar { width: 4px; }
+        .scrollbar-hide::-webkit-scrollbar-thumb { background: #3e3e42; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="h-10 bg-[#2d2d2d] flex items-center px-4 border-b border-[#3e3e42] justify-between">
+        <div class="flex items-center space-x-3 text-[11px]">
+            <span class="text-blue-400 font-bold">PYTHON 3.12</span>
+            <span class="opacity-80">robot_dfs_cache.py</span>
+        </div>
+        <div class="text-[10px] bg-blue-900/30 text-blue-300 px-2 py-0.5 rounded border border-blue-500/30">狀態: @cache dfs(i, j)</div>
+    </div>
+
+    <div class="flex-1 flex overflow-hidden">
+        <aside class="w-[28%] bg-[#252526] border-r border-[#3e3e42] p-5 flex flex-col space-y-5 overflow-y-auto scrollbar-hide">
+            
+            <section>
+                <h2 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-3 border-b border-blue-500/30 pb-1">題目敘述</h2>
+                <div class="text-[11px] text-gray-300 leading-relaxed space-y-2">
+                    <p>給定機器人座標 <code class="text-white">robots</code>、射程 <code class="text-white">distance</code> 與牆壁 <code class="text-white">walls</code>。</p>
+                    <p>每個機器人可選擇向左或向右發射，<b class="text-yellow-500">射線不能越過其他機器人的位置</b>。</p>
+                    <p>使用 <b class="text-blue-400">DFS + 記憶化搜尋</b>，從最後一個機器人往前推導，計算全局能摧毀的最大牆壁數。</p>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">測試案例</h2>
+                <div class="space-y-2">
+                    <button id="btn-0" onclick="changeCase(0)" class="w-full text-left text-[11px] bg-[#37373d] p-3 rounded border-l-4 border-blue-500 transition-all">
+                        <b>案例 1: 單一機器人</b><br>
+                        R:[4], D:[3], W:[1, 10]<br>
+                        <span class="text-blue-400">最佳解: 1</span>
+                    </button>
+                    <button id="btn-1" onclick="changeCase(1)" class="w-full text-left text-[11px] bg-[#37373d] p-3 rounded border-l-4 border-transparent hover:bg-[#45454d]">
+                        <b>案例 2: 雙機器人競合</b><br>
+                        R:[2, 10], D:[1, 5], W:[2, 5, 7]<br>
+                        <span class="text-blue-400">最佳解: 3</span>
+                    </button>
+                </div>
+            </section>
+
+            <div class="bg-[#1e1e1e] p-3 rounded border border-blue-900/30 mt-auto">
+                <h3 class="text-[10px] text-gray-500 mb-2 uppercase">Runtime Monitor</h3>
+                <div id="varMonitor" class="text-[10px] space-y-1 font-mono">
+                    <div class="flex justify-between"><span>索引 i (機器人):</span> <span id="v-i" class="text-white">-</span></div>
+                    <div class="flex justify-between"><span>狀態 j (方向):</span> <span id="v-j" class="text-yellow-400">-</span></div>
+                    <div class="border-t border-gray-800 my-1 pt-1 flex justify-between font-bold">
+                        <span class="text-green-500">Max Walls:</span> <span id="v-ans" class="text-green-400">0</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 bg-[#1e1e1e] flex flex-col relative">
+            <div id="vizContainer" class="flex-1 relative flex flex-col items-center justify-center p-10 select-none">
+                <div class="absolute top-10 left-10 text-[10px] text-gray-600 font-mono">
+                    CALL STACK: <span id="stack-path" class="text-blue-400">dfs(n-1, 1)</span>
+                </div>
+                <div id="axis" class="w-[90%] h-[1px] bg-gray-700 absolute top-1/2"></div>
+                <div id="stage" class="w-[90%] h-full relative flex items-center"></div>
+                <div id="rangeIndicator" class="absolute h-20 bg-blue-500/10 border-x-2 border-blue-500 hidden z-0 transition-all duration-300 pointer-events-none">
+                    <div id="rangeLabel" class="absolute -top-8 left-1/2 -translate-x-1/2 bg-blue-600 text-[9px] px-2 py-0.5 rounded shadow-lg font-bold text-white uppercase whitespace-nowrap"></div>
+                </div>
+            </div>
+
+            <div class="h-16 bg-[#252526] border-t border-[#3e3e42] flex items-center px-8 justify-between">
+                <div class="flex items-center space-x-3">
+                    <button onclick="reset()" class="px-4 py-1.5 bg-red-900/20 text-red-400 text-xs rounded border border-red-900/50 hover:bg-red-900/40 font-bold transition-all">RESET</button>
+                    <div class="flex items-center bg-[#1e1e1e] rounded p-1 border border-[#3e3e42] shadow-inner">
+                        <button onclick="stepBack()" class="px-3 py-1 hover:bg-[#37373d] text-xs rounded text-gray-400">BACK</button>
+                        <button id="playBtn" onclick="togglePlay()" class="px-10 py-1 bg-blue-600 font-bold hover:bg-blue-500 text-xs rounded mx-1 text-white transition-all">NEXT STEP</button>
+                        <button onclick="stepNext()" class="px-3 py-1 hover:bg-[#37373d] text-xs rounded text-gray-400">STEP</button>
+                    </div>
+                </div>
+                <span id="stepDisplay" class="text-[10px] opacity-40 font-mono tracking-widest uppercase">Initializing...</span>
+            </div>
+        </main>
+
+        <aside class="w-[37%] bg-[#252526] border-l border-[#3e3e42] flex flex-col">
+            <div class="flex-[6] overflow-y-auto p-5 text-[11px] font-['Fira_Code'] scrollbar-hide border-b border-[#3e3e42]">
+                <div id="codeArea"></div>
+            </div>
+            <div id="logArea" class="flex-[4] overflow-y-auto p-4 text-[10px] font-mono space-y-1.5 scrollbar-hide bg-[#1a1a1b]"></div>
+        </aside>
+    </div>
+
+    <script>
+        const testCases = [
+            { robots: [4], distance: [3], walls: [1, 10] },
+            { robots: [2, 10], distance: [1, 5], walls: [5, 7, 2] }
+        ];
+
+        const pythonCode = [
+            "@cache",
+            "def dfs(i, j):",
+            "    if i < 0: return 0",
+            "    curr_pos, curr_dist = arr[i]",
+            "    # 選項 1: 向左發射",
+            "    left_boundary = curr_pos - curr_dist",
+            "    if i > 0: left_boundary = max(left_boundary, arr[i-1][0] + 1)",
+            "    fire_left = dfs(i - 1, 0) + count_walls(left_boundary, curr_pos)",
+            "    # 選項 2: 向右發射",
+            "    right_boundary = curr_pos + curr_dist",
+            "    if i + 1 < n:",
+            "        if j == 0: right_boundary = min(right_boundary, next_pos - next_dist - 1)",
+            "        else:      right_boundary = min(right_boundary, next_pos - 1)",
+            "    fire_right = dfs(i - 1, 1) + count_walls(curr_pos, right_boundary)",
+            "    return max(fire_left, fire_right)"
+        ];
+
+        let state = { caseIdx: 0, currentStep: 0, steps: [] };
+
+        function generateTrace() {
+            const data = testCases[state.caseIdx];
+            const arr = data.robots.map((r, i) => [r, data.distance[i]]).sort((a,b) => a[0] - b[0]);
+            const walls = [...data.walls].sort((a,b) => a-b);
+            const n = arr.length;
+            let trace = [];
+
+            function runDFS(i, j) {
+                if (i < 0) {
+                    trace.push({ line: 2, msg: `觸及 Base Case (i < 0)，返回 0`, vars: { i, j } });
+                    return 0;
+                }
+
+                const curr_pos = arr[i][0];
+                const curr_dist = arr[i][1];
+                trace.push({ line: 3, msg: `進入 dfs(i=${i}, j=${j})，機器人座標: ${curr_pos}`, vars: { i, j }, robot: curr_pos });
+
+                // Fire Left
+                let l_lim = curr_pos - curr_dist;
+                if (i > 0) l_lim = Math.max(l_lim, arr[i-1][0] + 1);
+                let l_cnt = walls.filter(w => w >= l_lim && w <= curr_pos).length;
+                
+                trace.push({ line: 5, msg: `嘗試向左發射，界限: ${l_lim}`, vars: { i, j }, range: [l_lim, curr_pos], activeWalls: walls.filter(w => w >= l_lim && w <= curr_pos), robot: curr_pos, type: 'LEFT' });
+                let resL = runDFS(i - 1, 0) + l_cnt;
+
+                // Fire Right
+                let r_lim = curr_pos + curr_dist;
+                if (i + 1 < n) {
+                    const next_pos = arr[i+1][0];
+                    const next_dist = arr[i+1][1];
+                    if (j === 0) r_lim = Math.min(r_lim, next_pos - next_dist - 1);
+                    else r_lim = Math.min(r_lim, next_pos - 1);
+                }
+                let r_cnt = walls.filter(w => w > curr_pos && w <= r_lim).length;
+
+                trace.push({ line: 9, msg: `嘗試向右發射，界限: ${r_lim}`, vars: { i, j }, range: [curr_pos, r_lim], activeWalls: walls.filter(w => w > curr_pos && w <= r_lim), robot: curr_pos, type: 'RIGHT' });
+                let resR = runDFS(i - 1, 1) + r_cnt;
+
+                let best = Math.max(resL, resR);
+                trace.push({ line: 14, msg: `機器人 ${i} 決策完成: max(L:${resL}, R:${resR}) = ${best}`, vars: { i, j, best }, robot: curr_pos });
+                return best;
+            }
+
+            runDFS(n - 1, 1);
+            return trace;
+        }
+
+        function highlight(line) {
+            return line.replace(/#.*$/g, m => `<span class="code-comment">${m}</span>`)
+                       .replace(/\b(def|if|return|max|min|@cache)\b/g, m => `<span class="code-keyword">${m}</span>`)
+                       .replace(/\b(dfs|count_walls)\b/g, m => `<span class="code-func">${m}</span>`)
+                       .replace(/\b(curr_pos|curr_dist|i|j|fire_left|fire_right|right_boundary|left_boundary)\b/g, m => `<span class="code-var">${m}</span>`)
+                       .replace(/\b\d+\b/g, m => `<span class="code-num">${m}</span>`);
+        }
+
+        function renderCode() {
+            document.getElementById('codeArea').innerHTML = pythonCode.map((line, i) => `
+                <div id="line-${i}" class="whitespace-pre flex px-2 border-l-2 border-transparent">
+                    <span class="w-8 opacity-20 text-right mr-3 select-none text-[9px]">${i}</span>
+                    <span>${highlight(line)}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderStage() {
+            const data = testCases[state.caseIdx];
+            const stage = document.getElementById('stage');
+            stage.innerHTML = '';
+            const all = [...data.walls, ...data.robots];
+            const min = Math.min(...all) - 2, max = Math.max(...all) + 2;
+            const getX = (v) => ((v - min) / (max - min)) * 100;
+            
+            data.walls.forEach(w => {
+                const div = document.createElement('div');
+                div.id = `wall-${w}`;
+                div.className = "absolute w-[2px] h-6 bg-gray-600/50 -translate-y-1/2 transition-all";
+                div.style.left = getX(w) + '%'; div.style.top = '50%';
+                stage.appendChild(div);
+            });
+            data.robots.forEach(r => {
+                const div = document.createElement('div');
+                div.id = `robot-${r}`;
+                div.className = "absolute w-7 h-7 bg-[#2d2d2d] border border-gray-600 rounded flex items-center justify-center text-[10px] -translate-x-1/2 -translate-y-1/2 z-10 transition-all";
+                div.style.left = getX(r) + '%'; div.style.top = '50%';
+                div.innerHTML = "🤖";
+                stage.appendChild(div);
+            });
+        }
+
+        function updateUI() {
+            const step = state.steps[state.currentStep];
+            if (!step) return;
+
+            document.querySelectorAll('#codeArea > div').forEach(d => d.classList.remove('line-highlight'));
+            document.getElementById(`line-${step.line}`)?.classList.add('line-highlight');
+            
+            document.getElementById('v-i').innerText = step.vars.i;
+            document.getElementById('v-j').innerText = step.vars.j === 1 ? '1 (右)' : '0 (左)';
+            document.getElementById('v-ans').innerText = step.vars.best || '-';
+            document.getElementById('stack-path').innerText = `dfs(${step.vars.i}, ${step.vars.j})`;
+
+            const log = document.getElementById('logArea');
+            log.innerHTML += `<div class="console-line"><span class="text-blue-500 mr-2">▶</span>${step.msg}</div>`;
+            log.scrollTop = log.scrollHeight;
+
+            document.querySelectorAll('[id^="wall-"]').forEach(w => w.classList.remove('wall-active'));
+            document.querySelectorAll('[id^="robot-"]').forEach(r => r.classList.remove('active-robot'));
+            if (step.robot) document.getElementById(`robot-${step.robot}`)?.classList.add('active-robot');
+
+            const rangeEl = document.getElementById('rangeIndicator'), labelEl = document.getElementById('rangeLabel');
+            if (step.range) {
+                const data = testCases[state.caseIdx];
+                const all = [...data.walls, ...data.robots];
+                const min = Math.min(...all) - 2, max = Math.max(...all) + 2;
+                const getX = (v) => ((v - min) / (max - min)) * 100;
+                
+                rangeEl.style.display = 'block';
+                const x1 = getX(step.range[0]), x2 = getX(step.range[1]);
+                rangeEl.style.left = Math.min(x1, x2) + '%';
+                rangeEl.style.width = Math.max(0.5, Math.abs(x1-x2)) + '%';
+                rangeEl.style.top = 'calc(50% - 40px)';
+                labelEl.innerText = `${step.type}: [${step.range[0]}, ${step.range[1]}]`;
+                step.activeWalls?.forEach(w => document.getElementById(`wall-${w}`)?.classList.add('wall-active'));
+            } else { rangeEl.style.display = 'none'; }
+            
+            document.getElementById('stepDisplay').innerText = `Step ${state.currentStep + 1} / ${state.steps.length}`;
+        }
+
+        function changeCase(idx) { state.caseIdx = idx; reset(); }
+        function reset() { 
+            state.currentStep = 0; 
+            state.steps = generateTrace(); 
+            document.getElementById('logArea').innerHTML = ''; 
+            renderStage(); 
+            updateUI(); 
+        }
+        function stepNext() { if (state.currentStep < state.steps.length - 1) { state.currentStep++; updateUI(); } }
+        function stepBack() { if (state.currentStep > 0) { state.currentStep--; updateUI(); } }
+        function togglePlay() { stepNext(); }
+
+        renderCode();
+        reset();
+    </script>
+</body>
+</html>

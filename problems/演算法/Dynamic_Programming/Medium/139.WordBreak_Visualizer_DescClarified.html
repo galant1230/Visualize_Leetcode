@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>139. Word Break - Multi-Strategy Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 110px; max-height: 180px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .tree-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 200px; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+    
+    .string-container { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 10px; overflow-x: auto; }
+    .char-item { background: #1e1e1e; border: 2px solid var(--border); border-radius: 6px; width: 45px; height: 55px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; transition: all 0.25s ease; position: relative; }
+    .char-item.in-slice { border-color: var(--medium); background: rgba(255, 192, 30, 0.2); transform: scale(1.05); }
+    .char-item.matched { border-color: var(--green); background: rgba(80, 250, 123, 0.25); }
+    .char-val { font-weight: bold; color: #fff; font-size: 1.1rem; }
+    .char-idx { font-size: 0.65rem; color: var(--text-dim); position: absolute; top: 2px; }
+
+    .dict-container { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .dict-badge { font-family: monospace; padding: 2px 8px; border-radius: 4px; background: #222; border: 1px solid var(--border); font-size: 0.78rem; color: var(--text-dim); }
+    .dict-badge.active-word { border-color: var(--orange); color: var(--orange); font-weight: bold; background: rgba(255, 161, 22, 0.15); }
+    .dict-badge.hit { border-color: var(--green); color: var(--green); font-weight: bold; background: rgba(80, 250, 123, 0.15); }
+
+    .dp-table { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; padding: 2px; }
+    .table-item { background: #1e1e1e; border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; min-width: 48px; }
+    .table-item.true-val { border-color: var(--green); color: var(--green); font-weight: bold; background: rgba(80, 250, 123, 0.15); }
+    .table-item.active-curr { border-color: var(--orange); color: var(--orange); font-weight: bold; background: rgba(255, 161, 22, 0.25); transform: scale(1.1); box-shadow: 0 0 8px rgba(255, 161, 22, 0.4); }
+
+    .var-badge { font-family: monospace; padding: 3px 8px; border-radius: 4px; background: #222; border: 1px solid var(--border); font-size: 0.8rem; }
+    .var-badge.highlight { border-color: var(--orange); color: var(--orange); font-weight: bold; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">139. Word Break</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Bottom-Up DP Table</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. BFS (Queue Graph Search)</button>
+      <button class="algo-btn" onclick="setAlgo(2)">3. DFS + Memoization</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: "leetcode"</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: "applepenapple"</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: "catsandog" (False)</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個字串 <b>s</b> 與字典 <b>wordDict</b>，請判斷是否能將 <b>s</b> 拆分成一個或多個由字典單字構成的空白分隔序列。<br>
+          注意：字典中的單字可以<b>重複使用</b>。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(N * M * K)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(N)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Micro-steps Enabled</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 字串切片與動態狀態視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="tree-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Start Pointer (j): </span>
+              <span id="pos-j-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">End Pointer (i): </span>
+              <span id="pos-i-display" style="font-weight: bold; color: var(--purple);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Substring: </span>
+              <span id="slice-display" class="var-badge highlight">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Matched Word: </span>
+              <span id="match-display" style="font-weight: bold; color: var(--green);">-</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Status / Output:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Bottom-Up DP Table
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">wordBreak</span>(<span class="self">self</span>, s: str, wordDict: List[str]) -> bool:`,
+       `        word_set = set(wordDict)`,
+       `        dp = [False] * (len(s) + 1)`,
+       `        dp[0] = True  <span class="cm"># 空字串預設為可拼出</span>`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(1, len(s) + 1):`,
+       `            <span class="kw">for</span> j <span class="kw">in</span> range(i):`,
+       `                <span class="kw">if</span> dp[j] <span class="kw">and</span> s[j:i] <span class="kw">in</span> word_set:`,
+       `                    dp[i] = True`,
+       `                    <span class="kw">break</span>`,
+       `        <span class="kw">return</span> dp[len(s)]`],
+      
+      // 2. BFS
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">wordBreak</span>(<span class="self">self</span>, s: str, wordDict: List[str]) -> bool:`,
+       `        word_set = set(wordDict)`,
+       `        queue = collections.deque([0])`,
+       `        visited = set([0])`,
+       `        <span class="kw">while</span> queue:`,
+       `            start = queue.popleft()`,
+       `            <span class="kw">if</span> start == len(s): <span class="kw">return</span> True`,
+       `            <span class="kw">for</span> end <span class="kw">in</span> range(start + 1, len(s) + 1):`,
+       `                <span class="kw">if</span> end <span class="kw">not in</span> visited <span class="kw">and</span> s[start:end] <span class="kw">in</span> word_set:`,
+       `                    queue.append(end)`,
+       `                    visited.add(end)`,
+       `        <span class="kw">return</span> False`],
+
+      // 3. DFS + Memoization
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">wordBreak</span>(<span class="self">self</span>, s: str, wordDict: List[str]) -> bool:`,
+       `        word_set = set(wordDict)`,
+       `        memo = {}`,
+       `        <span class="kw">def</span> <span class="fn">dfs</span>(start):`,
+       `            <span class="kw">if</span> start == len(s): <span class="kw">return</span> True`,
+       `            <span class="kw">if</span> start <span class="kw">in</span> memo: <span class="kw">return</span> memo[start]`,
+       `            <span class="kw">for</span> end <span class="kw">in</span> range(start + 1, len(s) + 1):`,
+       `                <span class="kw">if</span> s[start:end] <span class="kw">in</span> word_set <span class="kw">and</span> dfs(end):`,
+       `                    memo[start] = True`,
+       `                    <span class="kw">return</span> True`,
+       `            memo[start] = False`,
+       `            <span class="kw">return</span> False`,
+       `        <span class="kw">return</span> dfs(0)`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Bottom-Up DP Table (遞推動態規劃)",
+        time: "O(N² * K)", space: "O(N)",
+        idea: "<b>解法思路：</b>定義 <code>dp[i]</code> 表示字串前 <code>i</code> 個字元 <code>s[0..i-1]</code> 是否能由字典拼出。若存在一個切分點 <code>j</code> 使得 <code>dp[j] == True</code> 且 <code>s[j..i-1]</code> 存在於字典，則 <code>dp[i] = True</code>。"
+      },
+      {
+        title: "2. BFS Graph Search (廣度優先圖搜尋)",
+        time: "O(N² * K)", space: "O(N)",
+        idea: "<b>解法思路：</b>把字串的索引視為圖的節點。從索引 0 開始，尋找能走到的下一個有效索引，利用 Queue 進行廣度搜尋，並用 Visited Set 避免重複造訪。"
+      },
+      {
+        title: "3. Memoized DFS (記憶化深度優先搜尋)",
+        time: "O(N² * K)", space: "O(N)",
+        idea: "<b>解法思路：</b>嘗試從前綴切出有效單字後递归檢查剩餘子字串。使用 <code>memo</code> 雜湊表記錄已經探索過的索引，避免重複無效遞迴。"
+      }
+    ];
+
+    const presets = [
+      {
+        title: "Example 1", s: "leetcode", wordDict: ["leet", "code"], expected: true,
+        explanation: "可拆分為 \"leet\" + \"code\"。"
+      },
+      {
+        title: "Example 2", s: "applepenapple", wordDict: ["apple", "pen"], expected: true,
+        explanation: "可拆分為 \"apple\" + \"pen\" + \"apple\" (單字可重複使用)。"
+      },
+      {
+        title: "Example 3", s: "catsandog", wordDict: ["cats", "dog", "sand", "and", "cat"], expected: false,
+        explanation: "無法用字典單字完整拼出 \"catsandog\"。"
+      }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title} (s = "${p.s}")</div>
+        <div><b>s:</b> "${p.s}" | <b>wordDict:</b> [${p.wordDict.map(w=>`"${w}"`).join(', ')}]</div>
+        <div><b>Expected Output:</b> <span style="color:${p.expected ? 'var(--green)':'var(--red)'}">${p.expected}</span></div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- Granular History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const { s, wordDict } = presets[currentPreset];
+
+      switch(currentAlgo) {
+        case 0: buildDPTableSteps(s, wordDict); break;
+        case 1: buildBFSSteps(s, wordDict); break;
+        case 2: buildDFSSteps(s, wordDict); break;
+      }
+    }
+
+    // 1. DP Table Step Builder
+    function buildDPTableSteps(s, wordDict) {
+      const n = s.length;
+      const wordSet = new Set(wordDict);
+      const dp = new Array(n + 1).fill(false);
+      dp[0] = true;
+
+      history.push({
+        line: 4, phase: "⚡ 【Step 1: 初始化 DP Array】",
+        desc: `建立長度為 ${n + 1} 的 DP 陣列。預設 <code>dp[0] = True</code>，代表長度 0 的空字串可由字典拼出。`,
+        i: 0, j: 0, slice: "", wordSet: [...wordDict], dp: [...dp], result: "Running..."
+      });
+
+      for (let i = 1; i <= n; i++) {
+        // Step Focus i
+        history.push({
+          line: 5, phase: `🔍 【Outer Loop: 檢查前綴長度 i = ${i}】`,
+          desc: `準備檢查前綴子字串 <code>s[0..${i-1}]</code> ("<b style='color:var(--orange);'>${s.slice(0, i)}</b>") 是否能被拆解。`,
+          i: i, j: -1, slice: s.slice(0, i), wordSet: [...wordDict], dp: [...dp], result: "Running..."
+        });
+
+        let foundMatch = false;
+        for (let j = 0; j < i; j++) {
+          let sub = s.slice(j, i);
+
+          // Step Check Substring
+          history.push({
+            line: 7, phase: `📐 【Inner Loop: 測試切分點 j = ${j}】`,
+            desc: `檢查前半段 <code>dp[${j}]</code> (${dp[j] ? 'True' : 'False'}) 且 後半段子字串 <code>s[${j}:${i}]</code> ("<b style='color:var(--medium);'>${sub}</b>") 是否存在於字典中。`,
+            i: i, j: j, slice: sub, wordSet: [...wordDict], dp: [...dp], activeWord: sub, result: "Running..."
+          });
+
+          if (dp[j] && wordSet.has(sub)) {
+            dp[i] = true;
+            foundMatch = true;
+
+            history.push({
+              line: 8, phase: `✅ 【Match Found! 更新 dp[${i}]】`,
+              desc: `找到有效拆解方案！<code>dp[${j}] == True</code> 且字典包含 "<b>${sub}</b>" ➔ <b style="color:var(--green);">更新 dp[${i}] = True</b>！`,
+              i: i, j: j, slice: sub, wordSet: [...wordDict], dp: [...dp], matchedWord: sub, hit: true, result: "Running..."
+            });
+            break;
+          } else if (dp[j] && !wordSet.has(sub)) {
+            history.push({
+              line: 7, phase: `❌ 【Miss: 單字不在字典中】`,
+              desc: `<code>dp[${j}] == True</code>，但後半段 "<b>${sub}</b>" 不在字典中。繼續尋找下一個切分點 j。`,
+              i: i, j: j, slice: sub, wordSet: [...wordDict], dp: [...dp], result: "Running..."
+            });
+          }
+        }
+
+        if (!foundMatch) {
+          history.push({
+            line: 5, phase: `⚠️ 【i = ${i} 無法拼出】`,
+            desc: `嘗試了所有 j (0..${i-1})，均無法將長度 ${i} 的前綴拼出 ➔ <code>dp[${i}]</code> 保持 <b>False</b>。`,
+            i: i, j: -1, slice: s.slice(0, i), wordSet: [...wordDict], dp: [...dp], result: "Running..."
+          });
+        }
+      }
+
+      const finalAns = dp[n];
+      history.push({
+        line: 10, phase: "🎉 【Complete: 演算法結束】",
+        desc: `計算完畢！回傳 <code>dp[${n}]</code> = <b style="color:${finalAns ? 'var(--green)':'var(--red)'}; font-size:1.1rem;">${finalAns}</b>`,
+        i: n, j: n, slice: "", wordSet: [...wordDict], dp: [...dp], result: finalAns
+      });
+    }
+
+    // 2. BFS Step Builder
+    function buildBFSSteps(s, wordDict) {
+      const n = s.length;
+      const wordSet = new Set(wordDict);
+      const queue = [0];
+      const visited = new Set([0]);
+
+      history.push({
+        line: 4, phase: "⚡ 【Step 1: 初始化 BFS Queue】",
+        desc: `將起點 <code>0</code> 加入 Queue，標記 <code>visited = {0}</code>。`,
+        queue: [...queue], visited: Array.from(visited), s, wordSet: [...wordDict], result: "Running..."
+      });
+
+      let found = false;
+
+      while (queue.length > 0) {
+        let start = queue.shift();
+
+        history.push({
+          line: 7, phase: `🔍 【BFS Node: 拿出起點 index ${start}】`,
+          desc: `從 Queue 出列起點 <code>start = ${start}</code>。剩餘 Queue: [${queue.join(', ')}]`,
+          start, queue: [...queue], visited: Array.from(visited), s, wordSet: [...wordDict], result: "Running..."
+        });
+
+        if (start === n) {
+          found = true;
+          history.push({
+            line: 8, phase: "🎉 【BFS Match Target!】",
+            desc: `指標已成功到達字串末端 <code>start == ${n}</code>！成功拼出整個字串！`,
+            start, queue: [...queue], visited: Array.from(visited), s, wordSet: [...wordDict], result: true
+          });
+          break;
+        }
+
+        for (let end = start + 1; end <= n; end++) {
+          let sub = s.slice(start, end);
+          let inVisited = visited.has(end);
+          let inDict = wordSet.has(sub);
+
+          history.push({
+            line: 9, phase: `📐 【嘗試邊 (Edge): ${start} ➔ ${end}】`,
+            desc: `測試子字串 <code>s[${start}:${end}]</code> ("<b style='color:var(--medium);'>${sub}</b>") 是否在字典中，且 end (${end}) 未造訪過。`,
+            start, end, slice: sub, queue: [...queue], visited: Array.from(visited), s, wordSet: [...wordDict], result: "Running..."
+          });
+
+          if (!inVisited && inDict) {
+            queue.push(end);
+            visited.add(end);
+
+            history.push({
+              line: 11, phase: `✅ 【有效轉移! Push Index ${end}】`,
+              desc: `"<b>${sub}</b>" 存在於字典！將 <code>end = ${end}</code> 加入 Queue 與 Visited 中！`,
+              start, end, slice: sub, matchedWord: sub, queue: [...queue], visited: Array.from(visited), s, wordSet: [...wordDict], result: "Running..."
+            });
+          }
+        }
+      }
+
+      if (!found) {
+        history.push({
+          line: 12, phase: "🎉 【Complete: 搜尋無法到達終點】",
+          desc: `Queue 已空且未到達終點 ${n}。回傳 <b style="color:var(--red); font-size:1.1rem;">False</b>`,
+          queue: [], visited: Array.from(visited), s, wordSet: [...wordDict], result: false
+        });
+      }
+    }
+
+    // 3. DFS + Memoization Step Builder
+    function buildDFSSteps(s, wordDict) {
+      const n = s.length;
+      const wordSet = new Set(wordDict);
+      const memo = {};
+
+      function dfs(start) {
+        history.push({
+          line: 5, phase: `📥 【DFS Call: dfs(${start})】`,
+          desc: `進入遞迴函數 <code>dfs(start=${start})</code>，處理剩餘字串 "<b>${s.slice(start)}</b>"。`,
+          start, memo: {...memo}, s, wordSet: [...wordDict], result: "Running..."
+        });
+
+        if (start === n) {
+          history.push({
+            line: 6, phase: "🎉 【DFS Base Case Reach!】",
+            desc: `到達字串末端 <code>start == ${n}</code>，成功拼出全部單字，回傳 <b>True</b>！`,
+            start, memo: {...memo}, s, wordSet: [...wordDict], result: "Running..."
+          });
+          return true;
+        }
+
+        if (start in memo) {
+          history.push({
+            line: 7, phase: `⚡ 【Memo Hit! 使用快取】`,
+            desc: `讀取快取 <code>memo[${start}]</code> = <b>${memo[start]}</b>，跳過重複計算。`,
+            start, memo: {...memo}, s, wordSet: [...wordDict], result: "Running..."
+          });
+          return memo[start];
+        }
+
+        for (let end = start + 1; end <= n; end++) {
+          let sub = s.slice(start, end);
+
+          history.push({
+            line: 8, phase: `📐 【DFS 測試切片: s[${start}:${end}]】`,
+            desc: `測試前綴 "<b>${sub}</b>" 是否在字典中...`,
+            start, end, slice: sub, memo: {...memo}, s, wordSet: [...wordDict], result: "Running..."
+          });
+
+          if (wordSet.has(sub)) {
+            history.push({
+              line: 9, phase: `✅ 【Dict Hit: "<b>${sub}</b>"】`,
+              desc: `"<b>${sub}</b>" 在字典中，準備進一步向下遞迴 <code>dfs(${end})</code>！`,
+              start, end, slice: sub, matchedWord: sub, memo: {...memo}, s, wordSet: [...wordDict], result: "Running..."
+            });
+
+            if (dfs(end)) {
+              memo[start] = true;
+              history.push({
+                line: 10, phase: `✏️ 【DFS Return True】`,
+                desc: `子問題返回 True，記錄 <code>memo[${start}] = True</code>，向上層回傳 True。`,
+                start, memo: {...memo}, s, wordSet: [...wordDict], result: "Running..."
+              });
+              return true;
+            }
+          }
+        }
+
+        memo[start] = false;
+        history.push({
+          line: 12, phase: `❌ 【DFS Return False】`,
+          desc: `從 <code>start=${start}</code> 出發的所有分支皆失敗，記錄 <code>memo[${start}] = False</code>。`,
+          start, memo: {...memo}, s, wordSet: [...wordDict], result: "Running..."
+        });
+        return false;
+      }
+
+      const ans = dfs(0);
+      history.push({
+        line: 14, phase: "🎉 【Complete: 演算法結束】",
+        desc: `DFS 執行結束！最終回傳結果: <b style="color:${ans ? 'var(--green)':'var(--red)'}; font-size:1.1rem;">${ans}</b>`,
+        start: 0, memo: {...memo}, s, wordSet: [...wordDict], result: ans
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const { s } = presets[currentPreset];
+
+      let html = `<div class="string-container">`;
+      for (let idx = 0; idx < s.length; idx++) {
+        let inSlice = false;
+        let isMatched = false;
+
+        if (currentAlgo === 0) { // DP
+          if (state.j >= 0 && idx >= state.j && idx < state.i) inSlice = true;
+          if (state.hit && idx >= state.j && idx < state.i) isMatched = true;
+        } else if (currentAlgo === 1) { // BFS
+          if (state.start !== undefined && state.end !== undefined && idx >= state.start && idx < state.end) inSlice = true;
+          if (state.matchedWord && idx >= state.start && idx < state.end) isMatched = true;
+        } else if (currentAlgo === 2) { // DFS
+          if (state.start !== undefined && state.end !== undefined && idx >= state.start && idx < state.end) inSlice = true;
+          if (state.matchedWord && idx >= state.start && idx < state.end) isMatched = true;
+        }
+
+        let cls = "";
+        if (isMatched) cls = "matched";
+        else if (inSlice) cls = "in-slice";
+
+        html += `
+          <div class="char-item ${cls}">
+            <span class="char-idx">${idx}</span>
+            <span class="char-val">${s[idx]}</span>
+          </div>
+        `;
+      }
+      html += `</div>`;
+
+      // WordDict Badges
+      const p = presets[currentPreset];
+      html += `<div style="margin-top:10px; font-size:0.75rem; color:var(--text-dim); font-weight:bold;">Dictionary Words:</div>`;
+      html += `<div class="dict-container">`;
+      p.wordDict.forEach(word => {
+        let isHit = state.matchedWord === word;
+        let isActive = state.slice === word;
+        let badgeCls = isHit ? 'hit' : (isActive ? 'active-word' : '');
+        html += `<div class="dict-badge ${badgeCls}">${word}</div>`;
+      });
+      html += `</div>`;
+
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack / Trace Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟 (Step):</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          <div><b>• 當前切片 (Substring):</b> <span style="color:var(--medium); font-weight:bold;">${state.slice ? `"${state.slice}"` : 'None'}</span></div>
+          <div><b>• 當前 Match 狀態:</b> ${state.matchedWord ? `<span style="color:var(--green); font-weight:bold;">"${state.matchedWord}" MATCHED!</span>` : 'Scanning...'}</div>
+        </div>
+      `;
+
+      // Variable Display Panel
+      if (currentAlgo === 0) {
+        document.getElementById('pos-j-display').innerText = state.j >= 0 ? `j = ${state.j}` : "-";
+        document.getElementById('pos-i-display').innerText = state.i !== undefined ? `i = ${state.i}` : "-";
+      } else if (currentAlgo === 1) {
+        document.getElementById('pos-j-display').innerText = state.start !== undefined ? `start = ${state.start}` : "-";
+        document.getElementById('pos-i-display').innerText = state.end !== undefined ? `end = ${state.end}` : "-";
+      } else {
+        document.getElementById('pos-j-display').innerText = state.start !== undefined ? `start = ${state.start}` : "-";
+        document.getElementById('pos-i-display').innerText = state.end !== undefined ? `end = ${state.end}` : "-";
+      }
+
+      document.getElementById('slice-display').innerText = state.slice ? `"${state.slice}"` : "-";
+      document.getElementById('match-display').innerText = state.matchedWord ? `"${state.matchedWord}"` : "-";
+
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (currentAlgo === 0 && state.dp) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">DP Table (dp[0..n]):</span>
+            <div class="dp-table">
+              ${state.dp.map((val, idx) => `
+                <div class="table-item ${val ? 'true-val' : ''} ${state.i === idx ? 'active-curr' : ''}">
+                  <span style="font-size: 0.6rem; color: var(--text-dim);">[${idx}]</span>
+                  <span>${val ? 'T' : 'F'}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (currentAlgo === 1 && state.queue) {
+        dynPanel.innerHTML = `
+          <div style="display:flex; gap:12px; font-family:monospace; font-size:0.82rem; padding:4px 0;">
+            <div><span style="color:var(--text-dim);">BFS Queue:</span> <span class="var-badge highlight">[${state.queue.join(', ')}]</span></div>
+            <div><span style="color:var(--text-dim);">Visited Set:</span> <span class="var-badge" style="border-color:var(--cyan); color:var(--cyan);">{${state.visited.join(', ')}}</span></div>
+          </div>
+        `;
+      } else if (currentAlgo === 2 && state.memo) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Memoization Cache:</span>
+            <div style="font-family:monospace; font-size:0.8rem; margin-top:2px;">
+              ${Object.keys(state.memo).length ? Object.entries(state.memo).map(([k,v])=>`<span class="var-badge" style="margin-right:4px;">memo[${k}] = ${v}</span>`).join('') : '<span style="color:#777;">{}</span>'}
+            </div>
+          </div>
+        `;
+      } else {
+        dynPanel.innerHTML = '';
+      }
+
+      // Result Panel
+      const resEl = document.getElementById('result-text');
+      resEl.innerHTML = state.result !== "Running..." ? `Can Word Break? <b style="color:${state.result ? 'var(--green)' : 'var(--red)'};">${state.result}</b>` : "Computing...";
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 329. Longest Increasing Path - 終極完成版</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #8b949e;
+            --tc1-cell: rgba(88, 166, 255, 0.08); --tc1-border: #58a6ff66;
+            --tc2-cell: rgba(210, 153, 34, 0.08); --tc2-border: #d2992266;
+        }
+        body { 
+            background: #010409; color: var(--text); 
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; overflow: hidden;
+        }
+        
+        .widget-card {
+            width: 1620px; height: 940px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            display: flex; overflow: hidden;
+        }
+
+        /* --- 左側面板 --- */
+        .sidebar {
+            width: 460px; display: flex; flex-direction: column;
+            border-right: 1px solid var(--border); background: #0d1117; flex-shrink: 0;
+            overflow-y: auto;
+        }
+        
+        .section { padding: 25px; border-bottom: 1px solid var(--border); }
+        .problem-num { color: var(--red); font-size: 14px; font-weight: bold; text-transform: uppercase; }
+        .problem-title { font-size: 24px; font-weight: bold; color: var(--text); margin: 8px 0; }
+        
+        .logic-card {
+            background: rgba(88, 166, 255, 0.05); border: 1px solid var(--border); border-radius: 8px;
+            padding: 15px; margin-top: 15px;
+        }
+        .card-title { font-size: 11px; font-weight: bold; color: var(--blue); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .logic-desc { font-size: 13.5px; line-height: 1.7; color: var(--text); }
+        .logic-desc b { color: var(--blue); }
+        
+        .complexity-box { margin-top: 12px; padding: 12px; background: #010409; border-radius: 6px; border-left: 4px solid var(--purple); }
+        .comp-item { display: flex; justify-content: space-between; font-family: 'Fira Code', monospace; font-size: 13px; margin-bottom: 5px; }
+
+        .tc-grid { padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .tc-btn { padding: 12px; text-align: left; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; transition: 0.2s; }
+        .tc-btn.active { border-color: var(--orange); background: rgba(210, 153, 34, 0.1); color: var(--orange); }
+
+        /* --- 右側內容區 --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #010409; }
+        .tabs { display: flex; background: #0d1117; border-bottom: 1px solid var(--border); }
+        .tab { padding: 12px 25px; font-size: 13px; color: var(--comment); border-right: 1px solid var(--border); font-family: 'Fira Code', monospace; }
+        .tab.active { background: var(--panel); color: var(--text); border-top: 2px solid var(--red); }
+        
+        .editor { flex: 1; padding: 20px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 13.5px; line-height: 1.6; }
+        .line { display: block; padding-left: 45px; position: relative; opacity: 0.3; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 5px; width: 30px; text-align: right; color: #484f58; font-size: 11px; }
+
+        /* --- 下方面板 --- */
+        .bottom-panel { height: 400px; display: grid; grid-template-columns: 1fr 540px; border-top: 1px solid var(--border); background: #0d1117; }
+        .viz-area { padding: 20px; display: flex; justify-content: center; align-items: center; gap: 40px; }
+        
+        .table-container { text-align: center; }
+        .table-label { font-size: 11px; color: var(--comment); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .grid-table { border-collapse: collapse; font-family: 'Fira Code', monospace; font-size: 18px; }
+        .grid-table td { border: 1px solid var(--border); width: 55px; height: 55px; text-align: center; transition: 0.2s; }
+        
+        .tc-0 td { background: var(--tc1-cell); border-color: var(--tc1-border); color: var(--blue); }
+        .tc-1 td { background: var(--tc2-cell); border-color: var(--tc2-border); color: var(--orange); }
+        
+        .active-cell { background: var(--red) !important; color: white !important; outline: 2px solid var(--red); font-weight: bold; z-index: 5; }
+        .path-cell { background: var(--green) !important; color: white !important; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); border-color: var(--green) !important; }
+
+        /* --- Terminal 區域 --- */
+        .terminal { padding: 15px; display: flex; flex-direction: column; border-left: 1px solid var(--border); height: 100%; box-sizing: border-box; overflow: hidden; }
+        
+        .result-banner {
+            background: rgba(63, 185, 80, 0.15); border: 1px solid var(--green); border-radius: 6px;
+            padding: 12px; margin-bottom: 12px; display: none; text-align: center;
+            font-family: 'Fira Code', monospace; font-size: 14px; color: var(--green);
+            font-weight: bold; animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .monitor-panel {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-shrink: 0;
+            background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px;
+        }
+        .monitor-item { display: flex; justify-content: space-between; font-size: 12px; font-family: 'Fira Code', monospace; }
+
+        .log-container {
+            flex: 1; display: flex; flex-direction: column;
+            background: #010409; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 12px;
+        }
+        .log-header { padding: 6px 12px; font-size: 10px; color: var(--comment); border-bottom: 1px solid var(--border); background: #161b22; }
+        .log-box { flex: 1; overflow-y: scroll; padding: 10px; font-size: 12.5px; color: #8b949e; line-height: 1.5; }
+        .log-entry { margin-bottom: 4px; border-bottom: 1px solid #161b2233; padding-bottom: 4px; }
+        .log-entry.latest { color: var(--text); border-left: 3px solid var(--green); padding-left: 8px; background: rgba(63, 185, 80, 0.05); }
+
+        .controls { display: flex; gap: 8px; flex-shrink: 0; }
+        .step-btn { flex: 1; padding: 10px; background: var(--panel); border: 1px solid var(--border); color: var(--text); cursor: pointer; border-radius: 6px; font-weight: bold; font-size: 13px; }
+        .btn-next { border-color: var(--green); color: var(--green); }
+        
+        .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .num { color: #79c0ff; } .op { color: #ff7b72; }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="sidebar">
+        <div class="section">
+            <div class="problem-num">LeetCode 329. Hard</div>
+            <div class="problem-title">Longest Increasing Path</div>
+            <p class="logic-desc">給定一個 <code>m x n</code> 整數矩陣，找出其中<b>最長遞增路徑</b>的長度。你可以向上下左右移動，但不能對角線移動或走出邊界。</p>
+        </div>
+
+        <div class="section">
+            <div class="logic-card">
+                <div class="card-title">解題邏輯：DFS + 記憶化</div>
+                <p class="logic-desc">
+                    1. 遍歷矩陣每個點作為起點。<br>
+                    2. 使用 <b>DFS</b> 遞歸探索四個方向。<br>
+                    3. <b>關鍵優化</b>：利用 <code>memo[r][c]</code> 記錄從該點出發的最長路徑。若之後再次拜訪，直接回傳結果，將時間複雜度從指數級降為線性。
+                </p>
+                <div class="complexity-box">
+                    <div class="comp-item"><span style="color:var(--comment)">Time Complexity:</span> <span style="color:var(--purple)">O(M × N)</span></div>
+                    <div class="comp-item"><span style="color:var(--comment)">Space Complexity:</span> <span style="color:var(--purple)">O(M × N)</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tc-grid">
+            <div class="card-title">測試案例切換</div>
+            <button class="tc-btn active tc-item" onclick="changeTC(0)">Case 1: [1, 2, 6, 9]</button>
+            <button class="tc-btn tc-item" onclick="changeTC(1)">Case 2: [3, 4, 5, 6]</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="tabs"><div class="tab active">solution.py</div></div>
+        <div id="codeEditor" class="editor"></div>
+
+        <div class="bottom-panel">
+            <div class="viz-area">
+                <div class="table-container">
+                    <div class="table-label">Matrix (Values)</div>
+                    <table class="grid-table" id="matrixTable"></table>
+                </div>
+                <div class="table-container">
+                    <div class="table-label">Memo (Cache)</div>
+                    <table class="grid-table" id="memoTable"></table>
+                </div>
+            </div>
+            
+            <div class="terminal">
+                <div id="resultBanner" class="result-banner"></div>
+
+                <div class="monitor-panel">
+                    <div class="monitor-item"><span class="mon-label">Position:</span> <span class="mon-val" id="mon-rc">-</span></div>
+                    <div class="monitor-item"><span class="mon-label">Current Val:</span> <span class="mon-val" style="color:var(--orange)" id="mon-val">-</span></div>
+                </div>
+
+                <div class="log-container">
+                    <div class="log-header">Execution Logs</div>
+                    <div id="logBox" class="log-box"></div>
+                </div>
+                
+                <div class="controls">
+                    <button class="step-btn" onclick="prev()">Prev</button>
+                    <button class="step-btn btn-next" onclick="next()">Next Step (F10)</button>
+                    <button class="step-btn" style="flex:0.3; border-color:var(--red); color:var(--red);" onclick="resetSimulator()">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const testCases = [
+    { matrix: [[9, 9, 4], [6, 6, 8], [2, 1, 1]], start: [2, 1], finalPath: [1, 2, 6, 9], cells: ["2,1", "2,0", "1,0", "0,0"] },
+    { matrix: [[3, 4, 5], [3, 2, 6], [2, 2, 1]], start: [0, 0], finalPath: [3, 4, 5, 6], cells: ["0,0", "0,1", "0,2", "1,2"] }
+];
+
+let curTC = 0, matrix = testCases[0].matrix, curStep = 0, steps = [];
+
+const codeLines = [
+    `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+    `    <span class="kw">def</span> <span class="fn">longestIncreasingPath</span>(<span class="kw">self</span>, matrix):`,
+    `        m, n <span class="op">=</span> <span class="fn">len</span>(matrix), <span class="fn">len</span>(matrix[<span class="num">0</span>])`,
+    `        memo <span class="op">=</span> [[<span class="num">0</span>] * n <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(m)]`,
+    `        <span class="kw">def</span> <span class="fn">dfs</span>(r, c):`,
+    `            <span class="kw">if</span> memo[r][c] <span class="op">!=</span> <span class="num">0</span>: <span class="kw">return</span> memo[r][c]`,
+    `            max_len <span class="op">=</span> <span class="num">1</span>`,
+    `            <span class="kw">for</span> dr, dc <span class="kw">in</span> [(<span class="num">0</span>, <span class="num">1</span>), (<span class="num">0</span>, <span class="op">-</span><span class="num">1</span>), (<span class="num">1</span>, <span class="num">0</span>), (<span class="op">-</span><span class="num">1</span>, <span class="num">0</span>)]:`,
+    `                nr, nc <span class="op">=</span> r <span class="op">+</span> dr, c <span class="op">+</span> dc`,
+    `                <span class="kw">if</span> <span class="num">0</span><span class="op">&lt;=</span>nr<span class="op">&lt;</span>m <span class="op">and</span> <span class="num">0</span><span class="op">&lt;=</span>nc<span class="op">&lt;</span>n <span class="op">and</span> matrix[nr][nc] <span class="op">></span> matrix[r][c]:`,
+    `                    max_len <span class="op">=</span> <span class="fn">max</span>(max_len, <span class="num">1</span> <span class="op">+</span> <span class="fn">dfs</span>(nr, nc))`,
+    `            memo[r][c] <span class="op">=</span> max_len`,
+    `            <span class="kw">return</span> max_len`,
+    `        <span class="kw">return</span> <span class="fn">max</span>(dfs(i, j) <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(m) <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(n))`
+];
+
+function generateSteps(mat, start) {
+    let R = mat.length, C = mat[0].length, memo = Array.from({length: R}, () => Array(C).fill(0)), s = [];
+    function runDfs(r, c) {
+        if (memo[r][c] !== 0) {
+            s.push({l: 6, r, c, val: mat[r][c], m: JSON.parse(JSON.stringify(memo)), msg: `記憶化命中: 直接回傳 memo[${r}][${c}]` });
+            return memo[r][c];
+        }
+        let max_len = 1;
+        s.push({l: 7, r, c, val: mat[r][c], m: JSON.parse(JSON.stringify(memo)), msg: `開始 DFS(${r}, ${c})，當前值 ${mat[r][c]}` });
+        for (let [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+            let nr = r + dr, nc = c + dc;
+            if (nr >= 0 && nr < R && nc >= 0 && nc < C && mat[nr][nc] > mat[r][c]) {
+                s.push({l: 11, r, c, val: mat[r][c], m: JSON.parse(JSON.stringify(memo)), msg: `找到遞增點: ${mat[nr][nc]} > ${mat[r][c]}` });
+                max_len = Math.max(max_len, 1 + runDfs(nr, nc));
+            }
+        }
+        memo[r][c] = max_len;
+        s.push({l: 12, r, c, val: mat[r][c], m: JSON.parse(JSON.stringify(memo)), isFinal: (r===start[0] && c===start[1]), msg: `遞歸結束，存入 memo[${r}][${c}] = ${max_len}` });
+        return max_len;
+    }
+    runDfs(start[0], start[1]);
+    return s;
+}
+
+function update() {
+    const step = steps[curStep];
+    const tc = testCases[curTC];
+    document.querySelectorAll('.line').forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    document.getElementById('mon-rc').innerText = `(${step.r}, ${step.c})`;
+    document.getElementById('mon-val').innerText = step.val;
+
+    const banner = document.getElementById('resultBanner');
+    let highlightList = [];
+    if (step.isFinal) {
+        banner.innerText = `The longest increasing path is [${tc.finalPath.join(', ')}]`;
+        banner.style.display = 'block';
+        highlightList = tc.cells;
+    } else {
+        banner.style.display = 'none';
+        highlightList = [];
+    }
+
+    const lb = document.getElementById('logBox');
+    lb.innerHTML = "";
+    for(let i=0; i<=curStep; i++) {
+        const div = document.createElement('div');
+        div.className = `log-entry ${i === curStep ? 'latest' : ''}`;
+        div.innerText = `> ${steps[i].msg}`;
+        lb.appendChild(div);
+    }
+    lb.scrollTop = lb.scrollHeight;
+
+    renderTable('matrixTable', matrix, step.r, step.c, highlightList);
+    renderTable('memoTable', step.m, -1, -1, [], true);
+}
+
+function renderTable(id, data, r, c, highlightCells = [], isM = false) {
+    const table = document.getElementById(id);
+    table.className = `grid-table tc-${curTC}`;
+    let h = "";
+    for (let i = 0; i < data.length; i++) {
+        h += "<tr>";
+        for (let j = 0; j < data[0].length; j++) {
+            let cls = (r === i && c === j) ? 'active-cell' : '';
+            if (highlightCells.includes(`${i},${j}`)) cls = 'path-cell';
+            let v = data[i][j];
+            h += `<td class="${cls}">${(isM && v === 0) ? '-' : v}</td>`;
+        }
+        h += "</tr>";
+    }
+    table.innerHTML = h;
+}
+
+function changeTC(idx) {
+    curTC = idx; matrix = testCases[idx].matrix;
+    document.querySelectorAll('.tc-item').forEach((b, i) => i === idx ? b.classList.add('active') : b.classList.remove('active'));
+    resetSimulator();
+}
+
+function resetSimulator() {
+    steps = generateSteps(matrix, testCases[curTC].start); curStep = 0;
+    document.getElementById('codeEditor').innerHTML = codeLines.map((l, i) => `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    update();
+}
+
+function next() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { if(curStep > 0) { curStep--; update(); } }
+document.addEventListener('keydown', (e) => { if(e.key === 'F10') next(); });
+resetSimulator();
+</script>
+</body>
+</html>

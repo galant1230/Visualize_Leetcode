@@ -1,0 +1,858 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>198. House Robber - Multi-Strategy Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; min-height: 100px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 6px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 5px 10px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .tree-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; height: 380px; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 12px; }
+    
+    .houses-container { display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; gap: 12px; padding: 20px; overflow-x: auto; }
+    .house-item { background: #1e1e1e; border: 2px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 8px; font-family: monospace; transition: all 0.3s ease; position: relative; min-width: 80px; min-height: 120px; }
+    .house-item.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.15); box-shadow: 0 0 12px rgba(255, 161, 22, 0.3); transform: translateY(-6px); }
+    .house-item.robbed { border-color: var(--green); background: rgba(80, 250, 123, 0.15); box-shadow: 0 0 10px rgba(80, 250, 123, 0.3); }
+    .house-item.skipped { border-color: var(--red); opacity: 0.5; }
+    .house-icon { font-size: 1.8rem; margin-bottom: 4px; }
+    .house-val { font-weight: bold; color: var(--orange); font-size: 1rem; }
+    .house-idx { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; }
+
+    .memo-tree-container { position: relative; width: 100%; height: 100%; min-width: 500px; min-height: 350px; }
+
+    /* Modern Tree SVG Styles */
+    svg.tree-svg-canvas { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+    .tree-edge { stroke: #334155; stroke-width: 2.5; stroke-dasharray: 6; animation: dash 30s linear infinite; transition: all 0.4s ease; }
+    .tree-edge.active { stroke: var(--orange); stroke-width: 4; stroke-dasharray: none; filter: drop-shadow(0px 0px 6px var(--orange)); }
+    .tree-edge.completed { stroke: var(--green); stroke-dasharray: none; opacity: 0.8; }
+    .tree-edge-label { fill: #94a3b8; font-size: 11px; font-weight: 600; font-family: monospace; text-anchor: middle; background: #0f172a; }
+
+    .tree-node-group { cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .tree-node-circle { fill: #1e293b; stroke: #475569; stroke-width: 2.5; transition: all 0.3s ease; rx: 24px; ry: 24px; }
+    .tree-node-group.visiting .tree-node-circle { fill: #2e1065; stroke: var(--orange); stroke-width: 3.5; filter: drop-shadow(0 0 10px rgba(255, 161, 22, 0.6)); }
+    .tree-node-group.cached .tree-node-circle { fill: #3b0764; stroke: var(--purple); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5)); }
+    .tree-node-group.completed .tree-node-circle { fill: #064e3b; stroke: var(--green); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(80, 250, 123, 0.4)); }
+    .tree-node-group.pruned .tree-node-circle { fill: #450a0a; stroke: var(--red); stroke-width: 2.5; }
+
+    .tree-node-text-title { fill: #f8fafc; font-size: 13px; font-weight: bold; font-family: monospace; text-anchor: middle; }
+    .tree-node-text-sub { fill: #38bdf8; font-size: 11px; font-weight: bold; font-family: monospace; text-anchor: middle; }
+    .tree-node-badge { fill: #0f172a; stroke: #334155; stroke-width: 1; }
+
+    .tree-legend { display: flex; gap: 12px; align-items: center; font-size: 0.72rem; }
+    .legend-item { display: flex; align-items: center; gap: 4px; color: var(--text-dim); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+    .dp-table { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .table-item { background: #1e1e1e; border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; min-width: 48px; }
+    .table-item.active-curr { border-color: var(--orange); color: var(--orange); font-weight: bold; background: rgba(255, 161, 22, 0.15); transform: scale(1.08); }
+
+    .var-badge { font-family: monospace; padding: 2px 6px; border-radius: 4px; background: #222; border: 1px solid var(--border); font-size: 0.78rem; }
+    .var-badge.highlight { border-color: var(--orange); color: var(--orange); font-weight: bold; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 68px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">198. House Robber</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Recursion</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. DP (Top-Down)</button>
+      <button class="algo-btn" onclick="setAlgo(2)">3. DP (Bottom-Up)</button>
+      <button class="algo-btn" onclick="setAlgo(3)">4. DP (Space Opt)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: [1,2,3,1]</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: [2,7,9,3,1]</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: [2,1,1,2]</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          你是一個專業的小偷，計劃偷竊沿街的房屋。每間房屋都藏有特定的金額 <code>nums[i]</code>。<br>
+          唯一的約束是<b>相鄰的房屋裝有防盜系統</b>，如果兩間相鄰房屋在同一晚被闖入，系統會自動報警。<br>
+          請計算在<b>不觸動報警系統</b>的情況下，今晚能夠偷竊到的<b>最高金額</b>。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(2^n)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(n)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="stack-title">📚 Call Stack (歷程紀錄)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card">
+        <!-- 動態替換 Idea Box 內容 -->
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 狀態與遞迴樹視覺化 (Tree Visualizer)</span>
+          <div class="tree-legend" id="legend-box">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--orange);"></span>Visiting</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--green);"></span>Computed</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--purple);"></span>Memoized</div>
+          </div>
+        </div>
+
+        <div class="tree-wrapper" id="vis-wrapper">
+          <!-- 動態切換樹狀圖 / 房屋佈局圖 -->
+        </div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="pos-label">Current House (i): </span>
+              <span id="pos-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="extra-label">Aux State: </span>
+              <span id="extra-display" style="font-weight: bold; color: var(--purple);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="aux-label">Return Value: </span>
+              <span id="aux-display" class="var-badge highlight">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Max Loot: </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.1rem; color: var(--green);">0</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- 動態渲染 DP Array / Cache Panel -->
+          </div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current State / Result:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">步驟說明 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Recursion
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">rob</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        <span class="kw">def</span> <span class="fn">dfs</span>(i):`,
+       `            <span class="kw">if</span> i >= len(nums):`,
+       `                <span class="kw">return</span> <span class="cls">0</span>`,
+       `            <span class="cm"># 決策：偷此家 dfs(i+2) 或 跳過 dfs(i+1)</span>`,
+       `            <span class="kw">return</span> max(dfs(i + <span class="cls">1</span>), nums[i] + dfs(i + <span class="cls">2</span>))`,
+       `        <span class="kw">return</span> dfs(<span class="cls">0</span>)`],
+      
+      // 2. DP (Top-Down)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">rob</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        memo = {}`,
+       `        <span class="kw">def</span> <span class="fn">dfs</span>(i):`,
+       `            <span class="kw">if</span> i >= len(nums): <span class="kw">return</span> <span class="cls">0</span>`,
+       `            <span class="kw">if</span> i <span class="kw">in</span> memo: <span class="kw">return</span> memo[i]`,
+       `            memo[i] = max(dfs(i + <span class="cls">1</span>), nums[i] + dfs(i + <span class="cls">2</span>))`,
+       `            <span class="kw">return</span> memo[i]`,
+       `        <span class="kw">return</span> dfs(<span class="cls">0</span>)`],
+
+      // 3. DP (Bottom-Up)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">rob</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        <span class="kw">if</span> <span class="kw">not</span> nums: <span class="kw">return</span> <span class="cls">0</span>`,
+       `        n = len(nums)`,
+       `        dp = [<span class="cls">0</span>] * (n + <span class="cls">1</span>)`,
+       `        dp[<span class="cls">1</span>] = nums[<span class="cls">0</span>]`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="cls">2</span>, n + <span class="cls">1</span>):`,
+       `            dp[i] = max(dp[i - <span class="cls">1</span>], dp[i - <span class="cls">2</span>] + nums[i - <span class="cls">1</span>])`,
+       `        <span class="kw">return</span> dp[n]`],
+
+      // 4. DP (Space Optimized)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">rob</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        rob1, rob2 = <span class="cls">0</span>, <span class="cls">0</span>`,
+       `        <span class="kw">for</span> n <span class="kw">in</span> nums:`,
+       `            temp = max(n + rob1, rob2)`,
+       `            rob1 = rob2`,
+       `            rob2 = temp`,
+       `        <span class="kw">return</span> rob2`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Pure Recursion (暴力遞迴)",
+        time: "O(2^n)", space: "O(n)",
+        idea: "<b>解法思路：</b>從第 <code>0</code> 間房屋開始探索。對每間房屋 <code>i</code> 有兩種決策：<br>1. <b>不偷</b>：收益為 <code>dfs(i+1)</code><br>2. <b>偷竊</b>：獲得 <code>nums[i]</code> 且必須跳過下一家 <code>dfs(i+2)</code><br>取兩者極大值。因存在巨大重疊子問題，時間複雜度呈指數級膨脹。"
+      },
+      {
+        title: "2. Dynamic Programming (Top-Down + Memo)",
+        time: "O(n)", space: "O(n)",
+        idea: "<b>解法思路：</b>在遞迴的過程中加入 <code>memo</code> 快取字典紀錄已計算過的房屋 index 子問題解答。當再度訪問 <code>i</code> 時直接回傳結果，將 O(2^n) 的樹剪枝為 O(n)。"
+      },
+      {
+        title: "3. Dynamic Programming (Bottom-Up)",
+        time: "O(n)", space: "O(n)",
+        idea: "<b>解法思路：</b>自底向上填表。定義 <code>dp[i]</code> 為前 <code>i</code> 間房屋能偷到的最大金額。狀態轉移方程：<code>dp[i] = max(dp[i-1], dp[i-2] + nums[i-1])</code>。"
+      },
+      {
+        title: "4. Dynamic Programming (Space Optimized)",
+        time: "O(n)", space: "O(1)",
+        idea: "<b>解法思路：</b>觀察 Bottom-Up 方程發現當前最大金額只與前兩項狀態有關。使用 <code>rob1</code> (前前項) 與 <code>rob2</code> (前項) 兩個滾動變數交替更新，將空間優化至 O(1)。"
+      }
+    ];
+
+    const presets = [
+      {
+        title: "Example 1", nums: [1, 2, 3, 1], expected: 4,
+        explanation: "Rob house 1 (money = 1) and then rob house 3 (money = 3).<br>Total amount you can rob = 1 + 3 = 4."
+      },
+      {
+        title: "Example 2", nums: [2, 7, 9, 3, 1], expected: 12,
+        explanation: "Rob house 1 (money = 2), rob house 3 (money = 9) and rob house 5 (money = 1).<br>Total amount you can rob = 2 + 9 + 1 = 12."
+      },
+      {
+        title: "Example 3", nums: [2, 1, 1, 2], expected: 4,
+        explanation: "Rob house 1 (money = 2) and rob house 4 (money = 2).<br>Total amount you can rob = 2 + 2 = 4."
+      }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title} (nums = [${p.nums.join(', ')}])</div>
+        <div><b>Input:</b> nums = [${p.nums.join(', ')}] | <b>Output:</b> ${p.expected}</div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b><br>${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const nums = presets[currentPreset].nums;
+
+      switch(currentAlgo) {
+        case 0: buildRecursionSteps(nums); break;
+        case 1: buildTopDownSteps(nums); break;
+        case 2: buildBottomUpSteps(nums); break;
+        case 3: buildSpaceOptSteps(nums); break;
+      }
+    }
+
+    // 1. Pure Recursion
+    function buildRecursionSteps(nums) {
+      const stack = [];
+      const treeNodes = [];
+      const treeEdges = [];
+      let counter = 0;
+
+      function dfs(i, parentId = null, stepType = "") {
+        const nodeId = ++counter;
+        const nodeObj = { id: nodeId, val: i, parentId, stepType, state: 'visiting', res: null };
+        treeNodes.push(nodeObj);
+        if (parentId) treeEdges.push({ from: parentId, to: nodeId, label: stepType });
+
+        stack.push({ fnName: "dfs", args: `i=${i}` });
+
+        history.push({
+          line: 2, phase: `⏬ 【DFS Call】dfs(${i})`,
+          desc: i < nums.length ? `到達第 ${i} 間房屋 (金額: $${nums[i]})，準備決策...` : `超出房屋範圍 (i=${i})`,
+          i, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        if (i >= nums.length) {
+          nodeObj.state = 'pruned';
+          nodeObj.res = 0;
+
+          history.push({
+            line: 4, phase: `🏁 【Boundary Base Case】`,
+            desc: `i=${i} >= len(nums)，無房屋可偷，傳回 0`,
+            i, resVal: 0, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+
+          stack.pop();
+          return 0;
+        }
+
+        let skipVal = dfs(i + 1, nodeId, "skip(+1)");
+        let robVal = nums[i] + dfs(i + 2, nodeId, "rob(+2)");
+        let maxVal = Math.max(skipVal, robVal);
+
+        nodeObj.state = 'completed';
+        nodeObj.res = maxVal;
+
+        history.push({
+          line: 6, phase: `🔙 【Max Decision】dfs(${i}) = ${maxVal}`,
+          desc: `第 ${i} 家比較：不偷=$${skipVal} vs 偷=$${nums[i]}+$${robVal - nums[i]}=$${robVal} => 取 max = $${maxVal}`,
+          i, resVal: maxVal, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        stack.pop();
+        return maxVal;
+      }
+
+      const res = dfs(0);
+      history.push({
+        line: 7, phase: "🎉 【Complete】", desc: `純遞迴搜尋完畢！最高偷竊金額 = $${res}`,
+        i: 0, resVal: res, stack: [], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: null, result: res
+      });
+    }
+
+    // 2. Top-Down (Memo)
+    function buildTopDownSteps(nums) {
+      const memo = {};
+      const stack = [];
+      const treeNodes = [];
+      const treeEdges = [];
+      let counter = 0;
+
+      function dfs(i, parentId = null, stepType = "") {
+        const nodeId = ++counter;
+        const nodeObj = { id: nodeId, val: i, parentId, stepType, state: 'visiting', res: null };
+        treeNodes.push(nodeObj);
+        if (parentId) treeEdges.push({ from: parentId, to: nodeId, label: stepType });
+
+        stack.push({ fnName: "dfs", args: `i=${i}` });
+
+        history.push({
+          line: 3, phase: `⏬ 【DFS Call】dfs(${i})`,
+          desc: i < nums.length ? `檢查第 ${i} 家狀態與 Memo 快取...` : `超越邊界 (i=${i})`,
+          i, cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        if (i >= nums.length) {
+          nodeObj.state = 'pruned'; nodeObj.res = 0;
+          history.push({
+            line: 4, phase: `🏁 【Base Case】`,
+            desc: `i=${i} >= len(nums)，傳回 0`,
+            i, resVal: 0, cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+          stack.pop();
+          return 0;
+        }
+
+        if (i in memo) {
+          nodeObj.state = 'cached'; nodeObj.res = memo[i];
+          history.push({
+            line: 5, phase: `🟪 【Memo Hit】memo[${i}] = $${memo[i]}`,
+            desc: `直接命中快取 memo[${i}] = $${memo[i]}，免去重複計算！`,
+            i, resVal: memo[i], cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+          stack.pop();
+          return memo[i];
+        }
+
+        let skipVal = dfs(i + 1, nodeId, "skip(+1)");
+        let robVal = nums[i] + dfs(i + 2, nodeId, "rob(+2)");
+        let maxVal = Math.max(skipVal, robVal);
+
+        memo[i] = maxVal;
+        nodeObj.state = 'completed'; nodeObj.res = maxVal;
+
+        history.push({
+          line: 6, phase: `💾 【Store Memo】memo[${i}] = $${maxVal}`,
+          desc: `寫入快取 memo[${i}] = max(不偷:$${skipVal}, 偷:$${robVal}) = $${maxVal}`,
+          i, resVal: maxVal, cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        stack.pop();
+        return maxVal;
+      }
+
+      const res = dfs(0);
+      history.push({
+        line: 8, phase: "🎉 【Complete】", desc: `Top-Down 記憶化搜尋完畢！最高金額 = $${res}`,
+        i: 0, resVal: res, cache: { ...memo }, stack: [], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: null, result: res
+      });
+    }
+
+    // 3. Bottom-Up DP
+    function buildBottomUpSteps(nums) {
+      const n = nums.length;
+      if (n === 0) {
+        history.push({ line: 2, phase: "⚡ 【Empty Input】", desc: "nums 為空，傳回 0", i: 0, dp: [0], result: 0 });
+        return;
+      }
+
+      const dp = new Array(n + 1).fill(0);
+      dp[1] = nums[0];
+
+      history.push({
+        line: 5, phase: "【Init Base DP】", desc: `初始化基礎狀態：dp[1] = nums[0] = $${nums[0]}`,
+        i: 1, dp: [...dp], result: "Running..."
+      });
+
+      for (let i = 2; i <= n; i++) {
+        const skip = dp[i - 1];
+        const rob = dp[i - 2] + nums[i - 1];
+        dp[i] = Math.max(skip, rob);
+
+        history.push({
+          line: 7, phase: `➕ 【Calculate dp[${i}]】`,
+          desc: `前 ${i} 家最大收益：max(不偷第${i}家:$${skip}, 偷第${i}家:$${dp[i-2]}+$${nums[i-1]}=$${rob}) => dp[${i}] = $${dp[i]}`,
+          i, currVal: dp[i], dp: [...dp], result: "Running..."
+        });
+      }
+
+      history.push({
+        line: 8, phase: "🎉 【Complete】", desc: `Bottom-Up DP 計算完畢！最高金額 = $${dp[n]}`,
+        i: n, dp: [...dp], result: dp[n]
+      });
+    }
+
+    // 4. Space Optimized
+    function buildSpaceOptSteps(nums) {
+      let rob1 = 0, rob2 = 0;
+
+      history.push({
+        line: 2, phase: "【Init Variables】", desc: `初始化 rob1 = 0 (前前項), rob2 = 0 (前項)`,
+        i: -1, rob1, rob2, result: "Running..."
+      });
+
+      for (let idx = 0; idx < nums.length; idx++) {
+        const val = nums[idx];
+        const temp = Math.max(val + rob1, rob2);
+        const oldRob1 = rob1;
+        const oldRob2 = rob2;
+
+        rob1 = rob2;
+        rob2 = temp;
+
+        history.push({
+          line: 5, phase: `🔄 【House ${idx} (Value: $${val})】`,
+          desc: `temp = max(偷:$${val}+$${oldRob1}, 不偷:$${oldRob2}) = $${temp} | rob1更新為$${rob1}, rob2更新為$${rob2}`,
+          i: idx, rob1, rob2, temp, result: "Running..."
+        });
+      }
+
+      history.push({
+        line: 7, phase: "🎉 【Complete】", desc: `滾動優化計算完畢！最高金額 = $${rob2}`,
+        i: nums.length - 1, rob1, rob2, result: rob2
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const p = presets[currentPreset];
+
+      if (currentAlgo === 0 || currentAlgo === 1) {
+        // SVG TREE VISUALIZATION
+        let nodes = state.treeNodes || [];
+        let edges = state.treeEdges || [];
+
+        wrapper.innerHTML = `
+          <div class="memo-tree-container" id="tree-container">
+            <svg class="tree-svg-canvas" id="tree-svg-root"></svg>
+          </div>`;
+
+        const svg = document.getElementById('tree-svg-root');
+        if (nodes.length === 0) return;
+
+        const nodeMap = {};
+        nodes.forEach(n => { nodeMap[n.id] = { ...n, children: [] }; });
+        let root = null;
+
+        nodes.forEach(n => {
+          if (n.parentId && nodeMap[n.parentId]) {
+            nodeMap[n.parentId].children.push(nodeMap[n.id]);
+          } else {
+            root = nodeMap[n.id];
+          }
+        });
+
+        let leafCounter = 0;
+        function assignX(node) {
+          if (!node.children || node.children.length === 0) {
+            leafCounter++;
+            node.x = leafCounter;
+          } else {
+            node.children.forEach(c => assignX(c));
+            const firstX = node.children[0].x;
+            const lastX = node.children[node.children.length - 1].x;
+            node.x = (firstX + lastX) / 2;
+          }
+        }
+        if (root) assignX(root);
+
+        function assignY(node, depth = 0) {
+          node.depth = depth;
+          if (node.children) {
+            node.children.forEach(c => assignY(c, depth + 1));
+          }
+        }
+        if (root) assignY(root);
+
+        const totalLeaves = Math.max(leafCounter, 1);
+        const maxDepth = Math.max(...Object.values(nodeMap).map(n => n.depth), 1);
+
+        const svgWidth = Math.max(wrapper.clientWidth - 30, totalLeaves * 75);
+        const svgHeight = Math.max(wrapper.clientHeight - 30, (maxDepth + 1) * 70 + 40);
+
+        svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+
+        const marginX = 45;
+        const marginY = 40;
+        const availableW = svgWidth - marginX * 2;
+        const availableH = svgHeight - marginY * 2;
+
+        const scaleX = totalLeaves > 1 ? availableW / (totalLeaves - 1) : availableW / 2;
+        const scaleY = maxDepth > 0 ? availableH / maxDepth : 0;
+
+        Object.values(nodeMap).forEach(n => {
+          n.px = totalLeaves > 1 ? marginX + (n.x - 1) * scaleX : svgWidth / 2;
+          n.py = marginY + n.depth * scaleY;
+        });
+
+        // Edges
+        edges.forEach(e => {
+          const fromNode = nodeMap[e.from];
+          const toNode = nodeMap[e.to];
+          if (fromNode && toNode) {
+            const isEdgeActive = (state.activeNode === e.to);
+            const isCompleted = toNode.state === 'completed' || toNode.state === 'cached';
+
+            const midY = (fromNode.py + toNode.py) / 2;
+            const d = `M ${fromNode.px} ${fromNode.py} C ${fromNode.px} ${midY}, ${toNode.px} ${midY}, ${toNode.px} ${toNode.py}`;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('class', `tree-edge ${isEdgeActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`);
+            svg.appendChild(path);
+
+            const labelX = (fromNode.px + toNode.px) / 2;
+            const labelY = midY;
+
+            const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bgRect.setAttribute('x', labelX - 22);
+            bgRect.setAttribute('y', labelY - 8);
+            bgRect.setAttribute('width', 44);
+            bgRect.setAttribute('height', 14);
+            bgRect.setAttribute('rx', 3);
+            bgRect.setAttribute('class', 'tree-node-badge');
+            svg.appendChild(bgRect);
+
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', labelX);
+            text.setAttribute('y', labelY + 3);
+            text.setAttribute('class', 'tree-edge-label');
+            text.textContent = e.label || '';
+            svg.appendChild(text);
+          }
+        });
+
+        // Nodes
+        Object.values(nodeMap).forEach(n => {
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          let cls = `tree-node-group ${n.state}`;
+          if (state.activeNode === n.id) cls += " visiting";
+          g.setAttribute('class', cls);
+          g.setAttribute('transform', `translate(${n.px}, ${n.py})`);
+
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          circle.setAttribute('x', -26);
+          circle.setAttribute('y', -22);
+          circle.setAttribute('width', 52);
+          circle.setAttribute('height', 44);
+          circle.setAttribute('class', 'tree-node-circle');
+          g.appendChild(circle);
+
+          const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          titleText.setAttribute('y', n.res !== null ? -4 : 4);
+          titleText.setAttribute('class', 'tree-node-text-title');
+          titleText.textContent = `i=${n.val}`;
+          g.appendChild(titleText);
+
+          if (n.res !== null) {
+            const subText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            subText.setAttribute('y', 13);
+            subText.setAttribute('class', 'tree-node-text-sub');
+            subText.textContent = `$${n.res}`;
+            g.appendChild(subText);
+          }
+
+          svg.appendChild(g);
+        });
+
+      } else {
+        // Houses Render for DP Iterative
+        let html = `<div class="houses-container">`;
+        for (let idx = 0; idx < p.nums.length; idx++) {
+          let cls = "house-item";
+          let isActive = false;
+
+          if (currentAlgo === 2) {
+            // Bottom-up: i represents DP size (1-based index)
+            isActive = (state.i === idx + 1);
+          } else {
+            // Space opt: i represents house index
+            isActive = (state.i === idx);
+          }
+
+          if (isActive) cls += " active";
+
+          html += `
+            <div class="${cls}">
+              <div class="house-icon">🏠</div>
+              <div class="house-val">$${p.nums[idx]}</div>
+              <div class="house-idx">House ${idx}</div>
+            </div>
+          `;
+        }
+        html += `</div>`;
+        wrapper.innerHTML = html;
+      }
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      // Stack Panel
+      const stackBox = document.getElementById('stack-display');
+      if (currentAlgo === 0 || currentAlgo === 1) {
+        const stackData = state.stack || [];
+        stackBox.innerHTML = stackData.length === 0 
+          ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Call Stack Empty</div>`
+          : stackData.map(f => `
+              <div class="stack-frame">
+                <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.75rem;">(${f.args})</span></div>
+              </div>
+            `).join('');
+        document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+      } else {
+        stackBox.innerHTML = `<div style="color:var(--text-dim); text-align:center; margin:auto;">Iterative Method (No Dynamic Call Stack)</div>`;
+        document.getElementById('stackDepthHint').innerText = `Iterative`;
+      }
+
+      // Variable Display
+      document.getElementById('pos-display').innerText = state.i !== undefined && state.i >= 0 ? state.i : "-";
+      document.getElementById('extra-display').innerText = state.rob1 !== undefined ? `rob1=$${state.rob1}` : (state.resVal !== undefined ? `$${state.resVal}` : "-");
+      document.getElementById('aux-display').innerText = state.rob2 !== undefined ? `rob2=$${state.rob2}` : "-";
+
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (state.cache) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Memo Cache:</span>
+            <div class="dp-table">
+              ${Object.keys(state.cache).length === 0 ? '<span style="color:#666; font-size:0.75rem;">{}</span>' : 
+                Object.entries(state.cache).map(([idx, val]) => `
+                <div class="table-item ${state.i == idx ? 'active-curr' : ''}">
+                  <span style="font-size: 0.6rem; color: var(--text-dim);">idx ${idx}</span>
+                  <span>$${val}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (state.dp) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">DP Table:</span>
+            <div class="dp-table">
+              ${state.dp.map((val, idx) => `
+                <div class="table-item ${state.i === idx ? 'active-curr' : ''}">
+                  <span style="font-size: 0.6rem; color: var(--text-dim);">${idx === 0 ? '0' : 'H1..' + idx}</span>
+                  <span>$${val}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        dynPanel.innerHTML = '';
+      }
+
+      // Result Panel
+      const statusEl = document.getElementById('status-display');
+      statusEl.innerText = state.result !== "Running..." ? `$${state.result}` : `$${state.currVal || state.resVal || state.rob2 || 0}`;
+
+      const resEl = document.getElementById('result-text');
+      resEl.innerText = state.result !== "Running..." ? `Max Money Robbed = $${state.result}` : "Computing...";
+      resEl.style.color = state.result !== "Running..." ? "var(--green)" : "var(--text-dim)";
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

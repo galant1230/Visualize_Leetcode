@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>15. 3Sum - Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-medium: #ffc01e;
+      --lc-blue: #007aff;
+      --lc-purple: #a855f7;
+      --lc-green: #2cbb5d;
+      --lc-red: #ff2d55;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(255, 192, 30, 0.15);
+      color: var(--lc-medium);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 20px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 6px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+      color: var(--lc-text);
+      margin-bottom: 8px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 2px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-medium); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 480px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    /* 自動換行，絕不使用橫向滑動條 */
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      padding: 32px 16px 25px 16px;
+      margin-bottom: 16px;
+    }
+
+    .array-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px 10px;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    .node {
+      width: 42px;
+      height: 42px;
+      background: #333;
+      border: 2px solid var(--lc-border);
+      color: white;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 1rem;
+      position: relative;
+      transition: all 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .node.ptr-i {
+      border-color: var(--lc-purple);
+      background: rgba(168, 85, 247, 0.25);
+    }
+    .node.ptr-l {
+      border-color: var(--lc-orange);
+      background: rgba(255, 161, 22, 0.25);
+    }
+    .node.ptr-r {
+      border-color: var(--lc-blue);
+      background: rgba(0, 122, 255, 0.25);
+    }
+    .node.matched {
+      border-color: var(--lc-green);
+      background: rgba(44, 187, 93, 0.25);
+    }
+
+    .ptr-container {
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 2px;
+      align-items: center;
+    }
+
+    .ptr-label {
+      font-size: 0.65rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: white;
+      white-space: nowrap;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .p-i { background: var(--lc-purple); }
+    .p-l { background: var(--lc-orange); }
+    .p-r { background: var(--lc-blue); }
+
+    .idx-label {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      color: var(--lc-text-dim);
+      font-family: monospace;
+    }
+
+    .info-panel {
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .calc-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1e1e1e;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #3e3e3e;
+    }
+
+    .ans-box {
+      background: #1e1e1e;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #3e3e3e;
+      color: var(--lc-green);
+      word-break: break-all;
+    }
+
+    .control-panel {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 7px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-medium); color: #000; }
+    .btn-primary:hover { background: #e0a800; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">15. 3Sum</span>
+    <span class="lc-badge">Medium</span>
+    <span class="lc-tag">Array</span>
+    <span class="lc-tag">Two Pointers</span>
+    <span class="lc-tag">Sorting</span>
+  </div>
+
+  <div class="config-tabs">
+    <div class="tab-group">
+      <button class="tab-btn active" id="algo-tp">排序 + 雙指標 (Sorting + Two Pointers)</button>
+    </div>
+    <div class="tab-group">
+      <button class="tab-btn active" id="lang-py">Python3</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個整數陣列 <code>nums</code>，傳回所有滿足 <code>i != j</code>、<code>i != k</code> 且 <code>j != k</code>，並且 <code>nums[i] + nums[j] + nums[k] == 0</code> 的三元組 <code>[nums[i], nums[j], nums[k]]</code>。<br>
+            解集合中<b>不可包含重複的三元組</b>。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> nums = [-1, 0, 1, 2, -1, -4]</div>
+            <div><strong>Output:</strong> [[-1, -1, 2], [-1, 0, 1]]</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val">O(n²)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val">O(1) / O(n)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span>🐍 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (State & Visualizer)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title">💡 解題思路</div>
+            <div>1. 先將陣列進行<b>升冪排序</b>。<br>2. 固定外層指標 <code>i</code>，將剩餘範圍轉化為 <b>Two Pointers</b> 求 <code>nums[l] + nums[r] == -nums[i]</code>。<br>3. 遇到重複元素時利用 <code>while</code> 迴圈跳過，避免解答重複。</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">準備開始模擬...</div>
+          </div>
+
+          <div class="stage" id="main-stage">
+            <div class="array-container" id="array-nodes"></div>
+          </div>
+
+          <div class="info-panel">
+            <div class="calc-row">
+              <span style="color: var(--lc-text-dim);">當前三元組和 (Total):</span>
+              <span id="calc-expr" style="font-weight: bold; color: var(--lc-orange);">-</span>
+            </div>
+            <div>
+              <div style="color: var(--lc-text-dim); margin-bottom: 4px;">解答集合 (answer):</div>
+              <div class="ans-box" id="ans-box">[]</div>
+            </div>
+          </div>
+
+          <div class="control-panel" style="margin-top: 16px;">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const rawNums = [-1, 0, 1, 2, -1, -4];
+    let currentStep = 0;
+    let history = [];
+
+    const pyCodeLines = [
+      `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">threeSum</span>(<span class="self">self</span>, nums: List[int]) -&gt; List[List[int]]:`,
+      `        nums.sort()`,
+      `        answer = []`,
+      `        <span class="kw">for</span> i <span class="kw">in</span> range(len(nums) - 2):`,
+      `            <span class="kw">if</span> i &gt; 0 <span class="kw">and</span> nums[i] == nums[i - 1]:`,
+      `                <span class="kw">continue</span>`,
+      `            l, r = i + 1, len(nums) - 1`,
+      `            <span class="kw">while</span> l &lt; r:`,
+      `                total = nums[i] + nums[l] + nums[r]`,
+      `                <span class="kw">if</span> total &lt; 0:`,
+      `                    l += 1`,
+      `                <span class="kw">elif</span> total &gt; 0:`,
+      `                    r -= 1`,
+      `                <span class="kw">else</span>:`,
+      `                    triplet = [nums[i], nums[l], nums[r]]`,
+      `                    answer.append(triplet)`,
+      `                    <span class="kw">while</span> l &lt; r <span class="kw">and</span> nums[l] == triplet[1]:`,
+      `                        l += 1`,
+      `                    <span class="kw">while</span> l &lt; r <span class="kw">and</span> nums[r] == triplet[2]:`,
+      `                        r -= 1`,
+      `        <span class="kw">return</span> answer`
+    ];
+
+    function buildHistory() {
+      history = [];
+      let nums = [...rawNums];
+      let answer = [];
+
+      // Step 1: 原始陣列
+      history.push({
+        line: 1,
+        title: "傳入原始陣列",
+        desc: `nums = [${nums.join(', ')}]`,
+        nums: [...nums], i: -1, l: -1, r: -1, total: null, answer: JSON.parse(JSON.stringify(answer))
+      });
+
+      // Step 2: nums.sort()
+      nums.sort((a, b) => a - b);
+      history.push({
+        line: 2,
+        title: "執行 nums.sort()",
+        desc: `排序後陣列：[${nums.join(', ')}]，初始化 answer = []。`,
+        nums: [...nums], i: -1, l: -1, r: -1, total: null, answer: JSON.parse(JSON.stringify(answer))
+      });
+
+      for (let i = 0; i < nums.length - 2; i++) {
+        // Step: for i
+        history.push({
+          line: 4,
+          title: `固定外層指標 i = ${i} (nums[i] = ${nums[i]})`,
+          desc: `檢查是否與前一個元素重複。`,
+          nums: [...nums], i, l: -1, r: -1, total: null, answer: JSON.parse(JSON.stringify(answer))
+        });
+
+        if (i > 0 && nums[i] === nums[i - 1]) {
+          history.push({
+            line: 5,
+            title: `跳過重複元素 nums[${i}] == nums[${i-1}] (${nums[i]})`,
+            desc: `觸發 continue，避免產生重複的三元組。`,
+            nums: [...nums], i, l: -1, r: -1, total: null, answer: JSON.parse(JSON.stringify(answer))
+          });
+          continue;
+        }
+
+        let l = i + 1;
+        let r = nums.length - 1;
+
+        history.push({
+          line: 7,
+          title: `初始化雙指標 l = ${l}, r = ${r}`,
+          desc: `準備進行內部雙指標夾擠搜尋。`,
+          nums: [...nums], i, l, r, total: null, answer: JSON.parse(JSON.stringify(answer))
+        });
+
+        while (l < r) {
+          let total = nums[i] + nums[l] + nums[r];
+
+          history.push({
+            line: 9,
+            title: `計算 total = ${nums[i]} + ${nums[l]} + ${nums[r]} = ${total}`,
+            desc: `評估 total (${total}) 與 0 的關係。`,
+            nums: [...nums], i, l, r, total, answer: JSON.parse(JSON.stringify(answer)), isMatch: total === 0
+          });
+
+          if (total < 0) {
+            history.push({
+              line: 10,
+              title: `total < 0 (${total} < 0) ➔ l += 1`,
+              desc: `總和太小，將左指標 l 向右移動以增大總和。`,
+              nums: [...nums], i, l, r, total, answer: JSON.parse(JSON.stringify(answer))
+            });
+            l++;
+          } else if (total > 0) {
+            history.push({
+              line: 12,
+              title: `total > 0 (${total} > 0) ➔ r -= 1`,
+              desc: `總和太大，將右指標 r 向左移動以減小總和。`,
+              nums: [...nums], i, l, r, total, answer: JSON.parse(JSON.stringify(answer))
+            });
+            r--;
+          } else {
+            let triplet = [nums[i], nums[l], nums[r]];
+            answer.push(triplet);
+
+            history.push({
+              line: 16,
+              title: `🎯 找到合格三元組！`,
+              desc: `將 [${triplet.join(', ')}] 加入 answer。準備跳過重複元素。`,
+              nums: [...nums], i, l, r, total, answer: JSON.parse(JSON.stringify(answer)), isMatch: true
+            });
+
+            let oldL = nums[l];
+            while (l < r && nums[l] === triplet[1]) {
+              l++;
+            }
+            history.push({
+              line: 17,
+              title: `跳過左側重複元素 (等於 ${triplet[1]})`,
+              desc: `l 移動至索引 ${l}`,
+              nums: [...nums], i, l, r, total, answer: JSON.parse(JSON.stringify(answer))
+            });
+
+            let oldR = nums[r];
+            while (l < r && nums[r] === triplet[2]) {
+              r--;
+            }
+            history.push({
+              line: 19,
+              title: `跳過右側重複元素 (等於 ${triplet[2]})`,
+              desc: `r 移動至索引 ${r}`,
+              nums: [...nums], i, l, r, total, answer: JSON.parse(JSON.stringify(answer))
+            });
+          }
+        }
+      }
+
+      history.push({
+        line: 21,
+        title: "搜尋完成，回傳 answer",
+        desc: `最終解答：${JSON.stringify(answer)}`,
+        nums: [...nums], i: -1, l: -1, r: -1, total: null, answer: JSON.parse(JSON.stringify(answer)), isFinal: true
+      });
+    }
+
+    function resetSim() {
+      buildHistory();
+      currentStep = 0;
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateLineHighlight(state.line);
+      document.getElementById('step-title').innerText = state.title;
+      document.getElementById('step-desc').innerText = state.desc;
+      document.getElementById('stepHint').innerText = state.title.toUpperCase();
+
+      renderStage(state);
+      renderCalcAndAns(state);
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = pyCodeLines
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateLineHighlight(line) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if (document.getElementById('l' + line)) {
+        document.getElementById('l' + line).classList.add('active-line');
+      }
+    }
+
+    function renderStage(state) {
+      const container = document.getElementById('array-nodes');
+      container.innerHTML = '';
+
+      state.nums.forEach((val, idx) => {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.innerText = val;
+
+        let ptrLabels = [];
+        if (idx === state.i) {
+          node.classList.add('ptr-i');
+          ptrLabels.push('<div class="ptr-label p-i">i</div>');
+        }
+        if (idx === state.l) {
+          node.classList.add('ptr-l');
+          ptrLabels.push('<div class="ptr-label p-l">L</div>');
+        }
+        if (idx === state.r) {
+          node.classList.add('ptr-r');
+          ptrLabels.push('<div class="ptr-label p-r">R</div>');
+        }
+
+        if (state.isMatch && (idx === state.i || idx === state.l || idx === state.r)) {
+          node.className = 'node matched';
+        }
+
+        if (ptrLabels.length > 0) {
+          node.innerHTML += `<div class="ptr-container">${ptrLabels.join('')}</div>`;
+        }
+
+        node.innerHTML += `<div class="idx-label">[${idx}]</div>`;
+        container.appendChild(node);
+      });
+    }
+
+    function renderCalcAndAns(state) {
+      const calcEl = document.getElementById('calc-expr');
+      if (state.total !== null && state.i >= 0 && state.l >= 0 && state.r >= 0) {
+        const vi = state.nums[state.i];
+        const vl = state.nums[state.l];
+        const vr = state.nums[state.r];
+        calcEl.innerHTML = `${vi} + ${vl} + ${vr} = <span style="color: ${state.total === 0 ? 'var(--lc-green)' : 'var(--lc-orange)'}">${state.total}</span>`;
+      } else {
+        calcEl.innerText = '-';
+      }
+
+      document.getElementById('ans-box').innerText = JSON.stringify(state.answer);
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

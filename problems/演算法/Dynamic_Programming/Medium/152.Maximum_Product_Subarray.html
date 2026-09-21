@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>152. Maximum Product Subarray - Micro-Step Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 110px; max-height: 180px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .tree-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; height: 200px; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 12px; }
+    
+    .array-container { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 20px; overflow-x: auto; }
+    .array-item { background: #1e1e1e; border: 2px solid var(--border); border-radius: 8px; width: 70px; height: 75px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; transition: all 0.25s ease; position: relative; }
+    .array-item.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.25); transform: scale(1.12); box-shadow: 0 0 14px rgba(255, 161, 22, 0.5); }
+    .array-item.active-prefix { border-color: var(--cyan); background: rgba(139, 233, 253, 0.25); transform: scale(1.05); }
+    .array-item.active-suffix { border-color: var(--purple); background: rgba(139, 92, 246, 0.25); transform: scale(1.05); }
+    .array-val { font-weight: bold; color: #fff; font-size: 1.15rem; }
+    .array-idx { font-size: 0.65rem; color: var(--text-dim); position: absolute; top: 4px; }
+
+    .dp-table { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; max-height: 140px; overflow-y: auto; padding: 2px; }
+    .table-item { background: #1e1e1e; border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; font-family: monospace; font-size: 0.78rem; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+    .table-item.active-curr { border-color: var(--orange); color: var(--orange); font-weight: bold; background: rgba(255, 161, 22, 0.2); transform: scale(1.08); box-shadow: 0 0 8px rgba(255, 161, 22, 0.3); }
+
+    .var-badge { font-family: monospace; padding: 3px 8px; border-radius: 4px; background: #222; border: 1px solid var(--border); font-size: 0.8rem; }
+    .var-badge.highlight { border-color: var(--orange); color: var(--orange); font-weight: bold; }
+    .var-badge.updated { border-color: var(--green); color: var(--green); font-weight: bold; animation: pulse 0.4s ease; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">152. Maximum Product Subarray</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. DP (Max & Min Arrays)</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. DP (Space Optimized O(1))</button>
+      <button class="algo-btn" onclick="setAlgo(2)">3. Prefix & Suffix Scan</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: [2, 3, -2, 4]</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: [-2, 0, -1]</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: [-2, 3, -4]</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個整數陣列 <b>nums</b>，請找出一個具有最大乘積的連續子陣列，並回傳該子陣列的<b>最大乘積</b>。<br>
+          核心關鍵：<b>負數與負數相乘會翻轉為正數</b>，因此必須同時追蹤當前的「最大乘積」與「最小乘積」。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(N)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 細節追蹤 (Detailed Step Trace)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Micro-steps Enabled</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 陣列與動態狀態視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="tree-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Index (i): </span>
+              <span id="pos-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Value (v): </span>
+              <span id="extra-display" style="font-weight: bold; color: var(--purple);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Global Max (ans): </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.15rem; color: var(--green);">0</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Status / Output:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. DP (Max & Min DP Tables)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">maxProduct</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        n = len(nums)`,
+       `        max_dp = [0] * n`,
+       `        min_dp = [0] * n`,
+       `        max_dp[0] = min_dp[0] = ans = nums[0]`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(1, n):`,
+       `            v = nums[i]`,
+       `            max_dp[i] = max(v, v * max_dp[i-1], v * min_dp[i-1])`,
+       `            min_dp[i] = min(v, v * max_dp[i-1], v * min_dp[i-1])`,
+       `            ans = max(ans, max_dp[i])`,
+       `        <span class="kw">return</span> ans`],
+      
+      // 2. DP Space Optimized O(1)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">maxProduct</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        cur_max = cur_min = ans = nums[0]`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(1, len(nums)):`,
+       `            v = nums[i]`,
+       `            <span class="kw">if</span> v < 0:`,
+       `                cur_max, cur_min = cur_min, cur_max`,
+       `            cur_max = max(v, v * cur_max)`,
+       `            cur_min = min(v, v * cur_min)`,
+       `            ans = max(ans, cur_max)`,
+       `        <span class="kw">return</span> ans`],
+
+      // 3. Prefix & Suffix Scan
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">maxProduct</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        n = len(nums)`,
+       `        prefix = suffix = 0`,
+       `        ans = nums[0]`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(n):`,
+       `            prefix = (prefix <span class="kw">or</span> 1) * nums[i]`,
+       `            suffix = (suffix <span class="kw">or</span> 1) * nums[n - 1 - i]`,
+       `            ans = max(ans, prefix, suffix)`,
+       `        <span class="kw">return</span> ans`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. DP Table (維護最大值與最小值 DP 陣列)",
+        time: "O(N)", space: "O(N)",
+        idea: "<b>解法思路：</b>因為負負得正，當前的最大乘積可能由「舊最大值 × 當前值」或「舊最小值 × 當前值」產生。因此同步記錄 <code>max_dp[i]</code> 與 <code>min_dp[i]</code>。"
+      },
+      {
+        title: "2. DP Space Optimized (空間優化 O(1))",
+        time: "O(N)", space: "O(1)",
+        idea: "<b>解法思路：</b>狀態僅依賴於前一個位置，僅需 <code>cur_max</code> 與 <code>cur_min</code>。當遇到負數時，先<b>交換</b>兩者，再進行乘積計算。"
+      },
+      {
+        title: "3. Prefix & Suffix Double Scanning (前後向累乘掃描)",
+        time: "O(N)", space: "O(1)",
+        idea: "<b>解法思路：</b>最大連續乘積必定是由前綴或後綴（遇到 0 則重置為 1）所組成。由左至右與由右至左各掃描一次，取最大值。"
+      }
+    ];
+
+    const presets = [
+      {
+        title: "Example 1", nums: [2, 3, -2, 4], expected: 6,
+        explanation: "[2, 3] 擁有最大乘積 6。"
+      },
+      {
+        title: "Example 2", nums: [-2, 0, -1], expected: 0,
+        explanation: "結果不能為 2，因為 [-2, -1] 不是連續子陣列。"
+      },
+      {
+        title: "Example 3", nums: [-2, 3, -4], expected: 24,
+        explanation: "整個陣列 [-2, 3, -4] 相乘為 (-2) * 3 * (-4) = 24。"
+      }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title} (nums = [${p.nums.join(', ')}])</div>
+        <div><b>Input:</b> nums = [${p.nums.join(', ')}] | <b>Output:</b> ${p.expected}</div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- Granular History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const { nums } = presets[currentPreset];
+
+      switch(currentAlgo) {
+        case 0: buildDPTableSteps(nums); break;
+        case 1: buildDPOptSteps(nums); break;
+        case 2: buildPrefixSuffixSteps(nums); break;
+      }
+    }
+
+    // 1. DP Table (超細化步驟)
+    function buildDPTableSteps(nums) {
+      const n = nums.length;
+      const maxDp = new Array(n).fill('-');
+      const minDp = new Array(n).fill('-');
+
+      maxDp[0] = nums[0];
+      minDp[0] = nums[0];
+      let ans = nums[0];
+
+      // Init Step
+      history.push({
+        line: 5, phase: "⚡ 【Step 1: 初始化 Base Case】",
+        desc: `設置起點 index 0: max_dp[0] = ${nums[0]}, min_dp[0] = ${nums[0]}，初始全域 ans = ${ans}`,
+        idx: 0, val: nums[0], maxDp: [...maxDp], minDp: [...minDp], ans, result: "Running..."
+      });
+
+      for (let i = 1; i < n; i++) {
+        let v = nums[i];
+        let prevMax = maxDp[i-1];
+        let prevMin = minDp[i-1];
+
+        // Step A: Focus Index
+        history.push({
+          line: 6, phase: `🔍 【Index ${i}: 準備處理元素】`,
+          desc: `移至 index ${i}，當前數值 v = ${v}。前一位置 max_dp[${i-1}] = ${prevMax}, min_dp[${i-1}] = ${prevMin}`,
+          idx: i, val: v, maxDp: [...maxDp], minDp: [...minDp], ans, result: "Running..."
+        });
+
+        // Step B: Calculate Candidates
+        let c1 = v;
+        let c2 = v * prevMax;
+        let c3 = v * prevMin;
+        let newMax = Math.max(c1, c2, c3);
+        let newMin = Math.min(c1, c2, c3);
+
+        history.push({
+          line: 8, phase: `📐 【Index ${i}: 計算 3 個候選值】`,
+          desc: `計算候選值：<br>1) 獨自成為新子陣列: ${c1}<br>2) v × 前最大: ${v} × ${prevMax} = ${c2}<br>3) v × 前最小: ${v} × ${prevMin} = ${c3}`,
+          idx: i, val: v, maxDp: [...maxDp], minDp: [...minDp], ans, calcDetails: {c1, c2, c3, newMax, newMin}, result: "Running..."
+        });
+
+        // Step C: Update DP Tables
+        maxDp[i] = newMax;
+        minDp[i] = newMin;
+
+        history.push({
+          line: 9, phase: `✏️ 【Index ${i}: 更新 max_dp 與 min_dp】`,
+          desc: `取最大與最小值更新 DP 表格：<br><b>max_dp[${i}]</b> = max(${c1}, ${c2}, ${c3}) = <b style="color:var(--orange);">${newMax}</b><br><b>min_dp[${i}]</b> = min(${c1}, ${c2}, ${c3}) = <b style="color:var(--cyan);">${newMin}</b>`,
+          idx: i, val: v, maxDp: [...maxDp], minDp: [...minDp], ans, result: "Running..."
+        });
+
+        // Step D: Update Global Ans
+        let oldAns = ans;
+        ans = Math.max(ans, newMax);
+        let ansUpdated = ans > oldAns;
+
+        history.push({
+          line: 10, phase: `🏆 【Index ${i}: 更新全域最大值 ans】`,
+          desc: `比較當前 max_dp[${i}] (${newMax}) 與全域 ans (${oldAns}) ➔ ${ansUpdated ? `<b style="color:var(--green);">更新 ans 為 ${ans}!</b>` : '保持 ans 為 ' + ans}`,
+          idx: i, val: v, maxDp: [...maxDp], minDp: [...minDp], ans, ansUpdated, result: "Running..."
+        });
+      }
+
+      history.push({
+        line: 11, phase: "🎉 【Complete: 演算法結束】",
+        desc: `所有元素遍歷完成！最終回傳最大連續子陣列乘積 ans = <b style="color:var(--green); font-size:1.1rem;">${ans}</b>`,
+        idx: n - 1, val: nums[n - 1], maxDp: [...maxDp], minDp: [...minDp], ans, result: ans
+      });
+    }
+
+    // 2. DP Space Optimized (超細化步驟)
+    function buildDPOptSteps(nums) {
+      let curMax = nums[0];
+      let curMin = nums[0];
+      let ans = nums[0];
+
+      history.push({
+        line: 2, phase: "⚡ 【Step 1: 初始化變數】",
+        desc: `起點設置: cur_max = ${curMax}, cur_min = ${curMin}, 全域 ans = ${ans}`,
+        idx: 0, val: nums[0], curMax, curMin, ans, result: "Running..."
+      });
+
+      for (let i = 1; i < nums.length; i++) {
+        let v = nums[i];
+
+        // Step A: Focus Index
+        history.push({
+          line: 3, phase: `🔍 【Index ${i}: 移至新元素】`,
+          desc: `讀取 nums[${i}] = ${v}。當前狀態：cur_max = ${curMax}, cur_min = ${curMin}`,
+          idx: i, val: v, curMax, curMin, ans, result: "Running..."
+        });
+
+        // Step B: Check Negative & Swap
+        let swapped = false;
+        if (v < 0) {
+          swapped = true;
+          let temp = curMax;
+          curMax = curMin;
+          curMin = temp;
+
+          history.push({
+            line: 6, phase: `🔄 【Index ${i}: 檢測到負數！執行 Swap】`,
+            desc: `因為 v = ${v} < 0，乘以負數會讓大變小、小變大！<br>⚡ <b style="color:var(--red);">交換 cur_max 與 cur_min</b> ➔ 交換後 cur_max = ${curMax}, cur_min = ${curMin}`,
+            idx: i, val: v, curMax, curMin, ans, swapped: true, result: "Running..."
+          });
+        }
+
+        // Step C: Update cur_max & cur_min
+        let oldMax = curMax;
+        let oldMin = curMin;
+
+        let cMax1 = v;
+        let cMax2 = v * oldMax;
+        curMax = Math.max(cMax1, cMax2);
+
+        let cMin1 = v;
+        let cMin2 = v * oldMin;
+        curMin = Math.min(cMin1, cMin2);
+
+        history.push({
+          line: 7, phase: `✏️ 【Index ${i}: 計算並更新 cur_max / cur_min】`,
+          desc: `計算新狀態：<br>• cur_max = max(${v}, ${v} × ${oldMax}) = max(${cMax1}, ${cMax2}) = <b style="color:var(--orange);">${curMax}</b><br>• cur_min = min(${v}, ${v} × ${oldMin}) = min(${cMin1}, ${cMin2}) = <b style="color:var(--cyan);">${curMin}</b>`,
+          idx: i, val: v, curMax, curMin, ans, result: "Running..."
+        });
+
+        // Step D: Update Global Ans
+        let oldAns = ans;
+        ans = Math.max(ans, curMax);
+        let ansUpdated = ans > oldAns;
+
+        history.push({
+          line: 9, phase: `🏆 【Index ${i}: 檢查全域 ans】`,
+          desc: `比較 cur_max (${curMax}) 與舊 ans (${oldAns}) ➔ ${ansUpdated ? `<b style="color:var(--green);">更新 ans 為 ${ans}!</b>` : '保持 ans 為 ' + ans}`,
+          idx: i, val: v, curMax, curMin, ans, ansUpdated, result: "Running..."
+        });
+      }
+
+      history.push({
+        line: 10, phase: "🎉 【Complete: 演算法結束】",
+        desc: `遍歷完畢！最終最大乘積 ans = <b style="color:var(--green); font-size:1.1rem;">${ans}</b>`,
+        idx: nums.length - 1, val: nums[nums.length - 1], curMax, curMin, ans, result: ans
+      });
+    }
+
+    // 3. Prefix & Suffix Scan (超細化步驟)
+    function buildPrefixSuffixSteps(nums) {
+      const n = nums.length;
+      let prefix = 0;
+      let suffix = 0;
+      let ans = nums[0];
+
+      history.push({
+        line: 4, phase: "⚡ 【Step 1: 初始化】",
+        desc: `初始狀態: prefix = 0, suffix = 0, ans = ${ans}`,
+        idx: -1, val: "-", prefix: 0, suffix: 0, ans, result: "Running..."
+      });
+
+      for (let i = 0; i < n; i++) {
+        let leftIdx = i;
+        let rightIdx = n - 1 - i;
+        let leftVal = nums[leftIdx];
+        let rightVal = nums[rightIdx];
+
+        // Step A: Focus
+        history.push({
+          line: 5, phase: `🔍 【Step ${i+1}: 指針對齊】`,
+          desc: `左指標指向 index ${leftIdx} (${leftVal})，右指標指向 index ${rightIdx} (${rightVal})`,
+          idx: leftIdx, rightIdx: rightIdx, val: leftVal, prefix, suffix, ans, result: "Running..."
+        });
+
+        // Step B: Calculate Cumulative
+        let oldPrefix = prefix;
+        let oldSuffix = suffix;
+        prefix = (prefix === 0 ? 1 : prefix) * leftVal;
+        suffix = (suffix === 0 ? 1 : suffix) * rightVal;
+
+        history.push({
+          line: 6, phase: `📐 【Step ${i+1}: 雙向累乘計算】`,
+          desc: `• 左前綴 (Prefix): (${oldPrefix} 或 1) × ${leftVal} = <b style="color:var(--cyan);">${prefix}</b><br>• 右後綴 (Suffix): (${oldSuffix} 或 1) × ${rightVal} = <b style="color:var(--purple);">${suffix}</b>`,
+          idx: leftIdx, rightIdx: rightIdx, val: leftVal, prefix, suffix, ans, result: "Running..."
+        });
+
+        // Step C: Update Ans
+        let oldAns = ans;
+        ans = Math.max(ans, prefix, suffix);
+        let ansUpdated = ans > oldAns;
+
+        history.push({
+          line: 8, phase: `🏆 【Step ${i+1}: 更新全域 ans】`,
+          desc: `比較 max(${oldAns}, prefix:${prefix}, suffix:${suffix}) ➔ ${ansUpdated ? `<b style="color:var(--green);">更新 ans 為 ${ans}!</b>` : '保持 ans 為 ' + ans}`,
+          idx: leftIdx, rightIdx: rightIdx, val: leftVal, prefix, suffix, ans, ansUpdated, result: "Running..."
+        });
+      }
+
+      history.push({
+        line: 9, phase: "🎉 【Complete: 演算法結束】",
+        desc: `雙向掃描完成！最終最大乘積 ans = <b style="color:var(--green); font-size:1.1rem;">${ans}</b>`,
+        idx: n - 1, rightIdx: 0, val: nums[n - 1], prefix, suffix, ans, result: ans
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const p = presets[currentPreset];
+
+      let html = `<div class="array-container">`;
+      for (let i = 0; i < p.nums.length; i++) {
+        let isActive = (state.idx === i);
+        let isSuffixActive = (state.rightIdx === i);
+
+        let activeCls = "";
+        if (currentAlgo === 2) {
+          if (isActive) activeCls = "active-prefix";
+          if (isSuffixActive) activeCls = "active-suffix";
+          if (isActive && isSuffixActive) activeCls = "active";
+        } else {
+          if (isActive) activeCls = "active";
+        }
+
+        html += `
+          <div class="array-item ${activeCls}">
+            <span class="array-idx">idx ${i}</span>
+            <span class="array-val">${p.nums[i]}</span>
+          </div>
+        `;
+      }
+      html += `</div>`;
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Detailed Execution Trace Panel
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟 (Step):</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> of ${history.length}</div>
+          <div><b>• 當前 Array Index:</b> ${state.idx !== undefined && state.idx >= 0 ? `<span style="color:var(--cyan); font-weight:bold;">${state.idx}</span>` : 'N/A'}</div>
+          <div><b>• 當前讀取數值 (v):</b> ${state.val !== undefined ? `<span style="color:var(--purple); font-weight:bold;">${state.val}</span>` : 'N/A'}</div>
+          <div><b>• 當前全域最大 (ans):</b> <span style="color:var(--green); font-weight:bold;">${state.ans !== undefined ? state.ans : '-'}</span></div>
+        </div>
+      `;
+
+      // Variable Display Panel
+      document.getElementById('pos-display').innerText = state.idx !== undefined && state.idx >= 0 ? `i = ${state.idx}` : "-";
+      document.getElementById('extra-display').innerText = state.val !== undefined ? `${state.val}` : "-";
+
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (state.maxDp && state.minDp) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">DP Arrays 狀態:</span>
+            <div class="dp-table">
+              ${state.maxDp.map((val, idx) => `
+                <div class="table-item ${state.idx === idx ? 'active-curr' : ''}">
+                  <span style="font-size: 0.6rem; color: var(--text-dim);">[${idx}]</span>
+                  <span style="color:var(--orange);">Max: ${val}</span>
+                  <span style="color:var(--cyan);">Min: ${state.minDp[idx]}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (state.curMax !== undefined && state.curMin !== undefined) {
+        dynPanel.innerHTML = `
+          <div style="display:flex; gap:12px; font-family:monospace; font-size:0.82rem; padding:4px 0; align-items:center;">
+            <div><span style="color:var(--text-dim);">cur_max:</span> <span class="var-badge ${state.ansUpdated ? 'updated' : 'highlight'}">${state.curMax}</span></div>
+            <div><span style="color:var(--text-dim);">cur_min:</span> <span class="var-badge" style="border-color:var(--cyan); color:var(--cyan);">${state.curMin}</span></div>
+            ${state.swapped ? '<div style="color:var(--red); font-weight:bold; font-size:0.75rem;">⚡ Swapped!</div>' : ''}
+          </div>
+        `;
+      } else if (state.prefix !== undefined && state.suffix !== undefined) {
+        dynPanel.innerHTML = `
+          <div style="display:flex; gap:12px; font-family:monospace; font-size:0.82rem; padding:4px 0;">
+            <div><span style="color:var(--text-dim);">Prefix Product:</span> <span class="var-badge" style="border-color:var(--cyan); color:var(--cyan);">${state.prefix}</span></div>
+            <div><span style="color:var(--text-dim);">Suffix Product:</span> <span class="var-badge" style="border-color:var(--purple); color:var(--purple);">${state.suffix}</span></div>
+          </div>
+        `;
+      } else {
+        dynPanel.innerHTML = '';
+      }
+
+      // Result Panel
+      const statusEl = document.getElementById('status-display');
+      statusEl.innerText = state.ans !== undefined ? `${state.ans}` : '0';
+
+      const resEl = document.getElementById('result-text');
+      resEl.innerHTML = state.result !== "Running..." ? `Max Subarray Product = <b style="color:var(--green);">${state.result}</b>` : "Computing...";
+      resEl.style.color = state.result !== "Running..." ? "var(--green)" : "var(--text-dim)";
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VS Code - Jump Game III BFS Visualizer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Fira Code & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght=400;500;700&family=Inter:wght=400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1E1E1E;
+            color: #D4D4D4;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        /* One Dark Pro Style Colors */
+        .vs-bg-main { background-color: #1E1E1E; }
+        .vs-bg-side { background-color: #252526; }
+        .vs-bg-editor { background-color: #282C34; }
+        .vs-border { border-color: #3E4451; }
+        
+        /* Highlighting and Animations */
+        .line-highlight {
+            background-color: rgba(75, 136, 219, 0.15);
+            border-left: 4px solid #4B88DB;
+        }
+        .cell-pulse {
+            animation: pulse-border 1.2s infinite ease-in-out;
+        }
+        @keyframes pulse-border {
+            0%, 100% { border-color: #3E4451; transform: scale(1); }
+            50% { border-color: #98C379; transform: scale(1.05); background-color: rgba(152, 195, 121, 0.1); }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #1E1E1E; }
+        ::-webkit-scrollbar-thumb { background: #3E4451; border-radius: 3px; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden vs-bg-main">
+
+    <!-- Top Window Menu Bar -->
+    <div class="h-9 vs-bg-side flex items-center justify-between px-4 border-b vs-border text-xs text-gray-400 select-none">
+        <div class="flex items-center space-x-2">
+            <span class="w-3 h-3 rounded-full bg-red-500 opacity-70"></span>
+            <span class="w-3 h-3 rounded-full bg-yellow-500 opacity-70"></span>
+            <span class="w-3 h-3 rounded-full bg-green-500 opacity-70"></span>
+            <span class="ml-4 font-semibold text-gray-300">jump_game_iii_bfs.py - LeetCode Class Platform</span>
+        </div>
+        <div class="code-font text-sky-400">BFS_Instructor_Mode.sh</div>
+    </div>
+
+    <!-- Main Core Layout -->
+    <div class="flex-1 flex overflow-hidden p-4 gap-4">
+        
+        <!-- ================= LEFT COLUMN: Problem & Metrics (25%) ================= -->
+        <div class="w-1/4 flex flex-col gap-4 overflow-y-auto">
+            <!-- Problem Description -->
+            <div class="vs-bg-side p-5 rounded-md border vs-border flex flex-col gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold px-2 py-0.5 bg-yellow-600/30 text-yellow-500 rounded">Medium</span>
+                    <h1 class="text-base font-bold text-white tracking-wide">1306. Jump Game III</h1>
+                </div>
+                <p class="text-xs text-gray-300 leading-relaxed">
+                    給定一個非負整數陣列 <code class="code-font text-orange-400">arr</code> 與起始索引 <code class="code-font text-orange-400">start</code>。當你在索引 <code class="code-font">i</code> 時，可以跳到 <code class="code-font">i + arr[i]</code> 或 <code class="code-font">i - arr[i]</code>。請判斷是否能走訪到任何數值為 <strong class="text-emerald-400">0</strong> 的索引。
+                </p>
+                <div class="text-[11px] text-gray-400 bg-[#1E1E1E] p-2 rounded border vs-border">
+                    <span class="text-amber-500 font-semibold">Constraints:</span>
+                    <ul class="list-disc pl-4 mt-1 space-y-0.5">
+                        <li>1 &le; arr.length &le; 5 * 10⁴</li>
+                        <li>0 &le; arr[i] &lt; arr.length</li>
+                        <li>0 &le; start &lt; arr.length</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Complexity Matrix -->
+            <div class="vs-bg-side p-5 rounded-md border vs-border flex flex-col gap-3">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Complexity & Architecture</h3>
+                <div class="flex gap-2">
+                    <span class="text-xs font-mono px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded">Time: O(N)</span>
+                    <span class="text-xs font-mono px-2 py-1 bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded">Space: O(N)</span>
+                </div>
+                <p class="text-xs text-gray-400 leading-relaxed">
+                    藉由廣度優先搜尋 (BFS)，我們從起點向外逐層擴散。利用 <code class="text-purple-400">visited</code> 集合阻斷重複路徑，確保每個節點在最糟狀況下僅被推進 Queue 一次，完美避免死循環，將時間收斂在線性。
+                </p>
+            </div>
+
+            <!-- Test Cases Panel -->
+            <div class="vs-bg-side p-5 rounded-md border vs-border flex flex-col gap-3 mt-auto">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Select Test Case</h3>
+                <div class="flex flex-col gap-2" id="testcase-container">
+                    <!-- Triggered via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MIDDLE COLUMN: Visualization Arena (45%) ================= -->
+        <div class="w-[45%] flex flex-col gap-4 overflow-hidden">
+            <!-- Top: Graphical State Visualizer -->
+            <div class="flex-1 vs-bg-side p-5 rounded-md border vs-border flex flex-col overflow-hidden">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Data Structure: Jump Transition Graph</h3>
+                <div class="flex-1 flex flex-col justify-center items-center gap-8 overflow-y-auto" id="canvas-container">
+                    <!-- Active Array / Graph State Generated Here -->
+                    <div id="array-nodes" class="flex gap-3 justify-center items-center w-full flex-wrap"></div>
+                    
+                    <!-- Dynamic Edge Branch Tracer Box -->
+                    <div id="branch-info" class="w-full max-w-md p-3 rounded bg-[#1E1E1E] border vs-border flex flex-col gap-2 text-xs">
+                        <!-- Filled by JS State engine -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom: Queue & Visited State Monitor -->
+            <div class="h-1/3 vs-bg-side p-5 rounded-md border vs-border flex flex-col gap-3">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">State Matrix & Collection Monitor</h3>
+                
+                <div class="grid grid-cols-2 gap-4 flex-1">
+                    <!-- Queue State -->
+                    <div class="bg-[#1E1E1E] p-3 rounded border vs-border flex flex-col">
+                        <span class="text-[11px] text-sky-400 font-mono font-bold mb-1">Queue (FIFO structure):</span>
+                        <div id="queue-monitor" class="flex-1 flex items-center gap-1.5 p-2 overflow-x-auto bg-[#252526] rounded border border-gray-700/50">
+                            <!-- Queue dynamic elements -->
+                        </div>
+                    </div>
+                    <!-- Visited Set State -->
+                    <div class="bg-[#1E1E1E] p-3 rounded border vs-border flex flex-col">
+                        <span class="text-[11px] text-purple-400 font-mono font-bold mb-1">Visited Hash Set:</span>
+                        <div id="visited-monitor" class="flex-1 flex flex-wrap content-start gap-1.5 p-2 overflow-y-auto bg-[#252526] rounded border border-gray-700/50">
+                            <!-- Visited items -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playback Controller Toolbar -->
+            <div class="vs-bg-side px-5 py-3 rounded-md border vs-border flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <button id="btn-prev" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-xs font-medium rounded text-white transition-all">上一步</button>
+                    <button id="btn-next" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-xs font-medium rounded text-white transition-all">下一步</button>
+                    <button id="btn-reset" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-xs font-medium rounded text-gray-300 transition-all">重置</button>
+                    <button id="btn-auto" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-xs font-medium rounded text-white transition-all">自動播放</button>
+                </div>
+                <div class="text-xs text-gray-400 font-mono">
+                    Step: <span id="step-counter" class="text-yellow-400 font-bold">0</span> / <span id="step-total">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= RIGHT COLUMN: Code & Debugger (30%) ================= -->
+        <div class="w-1/3 vs-bg-side rounded-md border vs-border flex flex-col overflow-hidden">
+            <!-- IDE Tab Header -->
+            <div class="h-9 bg-[#21252B] flex items-center px-4 border-b vs-border">
+                <div class="bg-[#282C34] px-4 h-full flex items-center text-xs text-gray-300 border-t-2 border-amber-500 font-mono gap-2 rounded-t-sm">
+                    <span class="text-amber-500 font-bold">Py</span> solution.py
+                </div>
+            </div>
+            
+            <!-- Code Block Arena -->
+            <div class="flex-1 vs-bg-editor p-4 overflow-y-auto code-font text-[13px] leading-6 tracking-wide relative select-text" id="code-container">
+                <!-- Code Lines injection via JavaScript -->
+            </div>
+
+            <!-- Variable Watcher Panel -->
+            <div class="h-2/5 bg-[#21252B] border-t vs-border p-4 flex flex-col">
+                <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
+                    <span>Variables Watcher</span>
+                    <span class="text-[10px] text-gray-500 font-mono">Real-time Callstack</span>
+                </div>
+                <div class="flex-1 bg-[#1E1E1E] rounded p-3 border vs-border font-mono text-xs flex flex-col gap-2 overflow-y-auto">
+                    <div class="flex justify-between border-b border-gray-800/60 pb-1">
+                        <span class="text-blue-400">arr:</span>
+                        <span id="watch-arr" class="text-yellow-300 text-right max-w-[70%] truncate">[]</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-800/60 pb-1">
+                        <span class="text-blue-400">curr:</span>
+                        <span id="watch-curr" class="text-orange-400 font-bold">-</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-800/60 pb-1">
+                        <span class="text-blue-400">arr[curr]:</span>
+                        <span id="watch-curr-val" class="text-emerald-400">-</span>
+                    </div>
+                    <div class="flex flex-col border-b border-gray-800/60 pb-1 gap-1">
+                        <span class="text-purple-400">Branches calculation:</span>
+                        <div class="pl-3 text-[11px] text-gray-400 flex flex-col gap-0.5">
+                            <div>➔ Right (curr + arr[curr]): <span id="watch-nxt-right" class="text-gray-200">-</span></div>
+                            <div>➔ Left (curr - arr[curr]): <span id="watch-nxt-left" class="text-gray-200">-</span></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-blue-400">nxt (evaluated):</span>
+                        <span id="watch-nxt" class="text-pink-400 font-bold">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Data & State Logic Script Block -->
+    <script>
+        // 1. Raw Python Code Lines (No nested HTML templates here to avoid token leaking)
+        const codeLines = [
+            "from collections import deque",
+            "class Solution:",
+            "    def canReach(self, arr: list[int], start: int) -> bool:",
+            "        n = len(arr)",
+            "        queue = deque([start])",
+            "        visited = {start}",
+            "        ",
+            "        while queue:",
+            "            curr = queue.popleft()",
+            "            ",
+            "            if arr[curr] == 0:",
+            "                return True",
+            "                ",
+            "            for nxt in (curr + arr[curr], curr - arr[curr]):",
+            "                if 0 <= nxt < n and nxt not in visited:",
+            "                    visited.add(nxt)",
+            "                    queue.append(nxt)",
+            "                    ",
+            "        return False"
+        ];
+
+        // 2. Test Cases Setup
+        const testCases = [
+            { id: 1, arr: [4, 2, 3, 0, 3, 1, 2], start: 5, label: "範例一 (可達)" },
+            { id: 2, arr: [4, 2, 3, 0, 3, 1, 2], start: 0, label: "範例二 (可達)" },
+            { id: 3, arr: [3, 0, 2, 1, 2], start: 2, label: "範例三 (死路)" }
+        ];
+
+        let currentTestCase = testCases[0];
+        let steps = [];
+        let currentStepIdx = 0;
+        let autoPlayTimer = null;
+
+        // 3. Render Python Code Block securely with non-conflicting syntax highlight engine
+        function renderCodeBlock() {
+            const container = document.getElementById('code-container');
+            container.innerHTML = '';
+            
+            codeLines.forEach((rawText, idx) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.id = `code-line-${idx}`;
+                lineDiv.className = 'px-4 py-0.5 flex items-start gap-4 transition-all duration-150';
+                
+                const lineNum = document.createElement('span');
+                lineNum.className = 'text-gray-600 select-none text-right w-6 flex-shrink-0 font-mono';
+                lineNum.innerText = idx + 1;
+                
+                const lineContent = document.createElement('span');
+                lineContent.className = 'whitespace-pre text-[#ABB2BF] font-mono';
+                
+                // Escape simple text chars to html entities first
+                let text = rawText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                
+                // Apply color classes token by token using strict boundary mapping
+                const keywords = ['from', 'import', 'class', 'def', 'if', 'return', 'while', 'for', 'in', 'and', 'not'];
+                const builtins = ['self', 'list', 'int', 'bool', 'len', 'deque'];
+                const constants = ['True', 'False'];
+
+                keywords.forEach(kw => {
+                    const reg = new RegExp(`\\b${kw}\\b`, 'g');
+                    text = text.replace(reg, `<span class="text-[#C678DD] font-bold">${kw}</span>`);
+                });
+                builtins.forEach(bi => {
+                    const reg = new RegExp(`\\b${bi}\\b`, 'g');
+                    text = text.replace(reg, `<span class="text-[#E5C07B]">${bi}</span>`);
+                });
+                constants.forEach(c => {
+                    const reg = new RegExp(`\\b${c}\\b`, 'g');
+                    text = text.replace(reg, `<span class="text-[#D19A66] font-bold">${c}</span>`);
+                });
+                
+                // Highlight numbers
+                text = text.replace(/\b(\d+)\b/g, '<span class="text-[#D19A66]">$1</span>');
+                
+                lineContent.innerHTML = text;
+                lineDiv.appendChild(lineNum);
+                lineDiv.appendChild(lineContent);
+                container.appendChild(lineDiv);
+            });
+        }
+
+        // 4. Trace State Generator (BFS Process Simulation)
+        function generateBFSSteps(arr, start) {
+            let trace = [];
+            let n = arr.length;
+            
+            let queue = [start];
+            let visited = [start];
+            let curr = null;
+            let nxt_candidates = [];
+            let nxt = null;
+
+            trace.push({
+                line: 2, queue: [], visited: [], curr: null, nxt: null, rightBranch: null, leftBranch: null, msg: "準備進入函式入口"
+            });
+            trace.push({
+                line: 3, queue: [], visited: [], curr: null, nxt: null, rightBranch: null, leftBranch: null, msg: `取得陣列總長度 n = ${n}`
+            });
+            trace.push({
+                line: 4, queue: [...queue], visited: [], curr: null, nxt: null, rightBranch: null, leftBranch: null, msg: `初始化 Queue，將起點放入: [${start}]`
+            });
+            trace.push({
+                line: 5, queue: [...queue], visited: [...visited], curr: null, nxt: null, rightBranch: null, leftBranch: null, msg: `初始化 Visited 雜湊集，記錄起點: {${start}}`
+            });
+
+            while(queue.length > 0) {
+                trace.push({
+                    line: 7, queue: [...queue], visited: [...visited], curr: curr, nxt: null, rightBranch: null, leftBranch: null, msg: "檢查 Queue 是否不為空，繼續執行迴圈"
+                });
+
+                curr = queue.shift();
+                trace.push({
+                    line: 8, queue: [...queue], visited: [...visited], curr: curr, nxt: null, rightBranch: null, leftBranch: null, msg: `從隊列左側彈出目前要探索的索引 curr = ${curr}`
+                });
+
+                trace.push({
+                    line: 10, queue: [...queue], visited: [...visited], curr: curr, nxt: null, rightBranch: null, leftBranch: null, msg: `檢查變數值 arr[${curr}] == 0 ? 當前數值為 ${arr[curr]}`
+                });
+
+                if (arr[curr] === 0) {
+                    trace.push({
+                        line: 11, queue: [...queue], visited: [...visited], curr: curr, nxt: null, rightBranch: null, leftBranch: null, msg: `成功找到數值為 0 的索引了！回傳 True`
+                    });
+                    return trace;
+                }
+
+                let right = curr + arr[curr];
+                let left = curr - arr[curr];
+                nxt_candidates = [right, left];
+
+                trace.push({
+                    line: 13, queue: [...queue], visited: [...visited], curr: curr, nxt: null, rightBranch: right, leftBranch: left, msg: `展開可跳躍方向：向右可達 ${right}，向左可達 ${left}`
+                });
+
+                for(let i = 0; i < nxt_candidates.length; i++) {
+                    nxt = nxt_candidates[i];
+                    let isRight = (i === 0);
+                    let branchText = isRight ? "右分支" : "左分支";
+
+                    trace.push({
+                        line: 13, queue: [...queue], visited: [...visited], curr: curr, nxt: nxt, rightBranch: right, leftBranch: left, msg: `評估 ${branchText} 索引 nxt = ${nxt}`
+                    });
+
+                    trace.push({
+                        line: 14, queue: [...queue], visited: [...visited], curr: curr, nxt: nxt, rightBranch: right, leftBranch: left, msg: `檢查邊界與是否拜訪過：0 &le; ${nxt} &lt; ${n} 且未在 Visited 中`
+                    });
+
+                    if (nxt >= 0 && nxt < n && !visited.includes(nxt)) {
+                        visited.push(nxt);
+                        trace.push({
+                            line: 15, queue: [...queue], visited: [...visited], curr: curr, nxt: nxt, rightBranch: right, leftBranch: left, msg: `符合條件！將 ${nxt} 加入 Visited 集合`
+                        });
+
+                        queue.push(nxt);
+                        trace.push({
+                            line: 16, queue: [...queue], visited: [...visited], curr: curr, nxt: nxt, rightBranch: right, leftBranch: left, msg: `將新索引 ${nxt} 推入 Queue 尾端排隊`
+                        });
+                    } else {
+                        let reason = (nxt < 0 || nxt >= n) ? "越界不合法" : "已被拜訪過";
+                        trace.push({
+                            line: 14, queue: [...queue], visited: [...visited], curr: curr, nxt: nxt, rightBranch: right, leftBranch: left, msg: `${branchText} ${nxt} 遭丟棄，原因：${reason}`
+                        });
+                    }
+                }
+            }
+
+            trace.push({
+                line: 19, queue: [...queue], visited: [...visited], curr: null, nxt: null, rightBranch: null, leftBranch: null, msg: "所有路徑已搜畢，無法到達任何 0 的位置，回傳 False"
+            });
+            return trace;
+        }
+
+        // 5. Update UI Render Loop
+        function updateUI() {
+            if (steps.length === 0) return;
+            const state = steps[currentStepIdx];
+
+            // A. Line Highlights
+            codeLines.forEach((_, idx) => {
+                const el = document.getElementById(`code-line-${idx}`);
+                if (el) {
+                    if (idx === state.line) {
+                        el.classList.add('line-highlight');
+                    } else {
+                        el.classList.remove('line-highlight');
+                    }
+                }
+            });
+
+            // B. Variables Data Sync
+            document.getElementById('watch-arr').innerText = JSON.stringify(currentTestCase.arr);
+            document.getElementById('watch-curr').innerText = state.curr !== null ? state.curr : 'None';
+            document.getElementById('watch-curr-val').innerText = state.curr !== null ? currentTestCase.arr[state.curr] : 'None';
+            document.getElementById('watch-nxt-right').innerText = state.rightBranch !== null ? state.rightBranch : '-';
+            document.getElementById('watch-nxt-left').innerText = state.leftBranch !== null ? state.leftBranch : '-';
+            document.getElementById('watch-nxt').innerText = state.nxt !== null ? state.nxt : 'None';
+            
+            document.getElementById('step-counter').innerText = currentStepIdx;
+            document.getElementById('step-total').innerText = steps.length - 1;
+
+            // C. Queue UI Monitor Sync
+            const queueMonitor = document.getElementById('queue-monitor');
+            queueMonitor.innerHTML = '';
+            if (state.queue.length === 0) {
+                queueMonitor.innerHTML = '<span class="text-gray-500 text-xs italic">Empty</span>';
+            } else {
+                state.queue.forEach((idx, qIdx) => {
+                    const qNode = document.createElement('span');
+                    qNode.className = `px-2 py-1 text-xs font-mono rounded font-bold transition-all text-white ${qIdx === 0 ? 'bg-sky-500 border border-sky-400' : 'bg-gray-700'}`;
+                    qNode.innerText = idx;
+                    queueMonitor.appendChild(qNode);
+                });
+            }
+
+            // D. Visited Set UI Monitor Sync
+            const visitedMonitor = document.getElementById('visited-monitor');
+            visitedMonitor.innerHTML = '';
+            if (state.visited.length === 0) {
+                visitedMonitor.innerHTML = '<span class="text-gray-500 text-xs italic">Empty</span>';
+            } else {
+                state.visited.forEach(idx => {
+                    const vNode = document.createElement('span');
+                    vNode.className = 'px-2 py-0.5 text-xs font-mono rounded bg-purple-600/30 text-purple-300 border border-purple-500/30';
+                    vNode.innerText = idx;
+                    visitedMonitor.appendChild(vNode);
+                });
+            }
+
+            // E. Array Nodes Render
+            const arrayNodesContainer = document.getElementById('array-nodes');
+            arrayNodesContainer.innerHTML = '';
+            currentTestCase.arr.forEach((val, idx) => {
+                const outerBox = document.createElement('div');
+                outerBox.className = 'flex flex-col items-center gap-1';
+
+                const node = document.createElement('div');
+                node.className = `w-12 h-12 rounded-md border-2 flex flex-col items-center justify-center font-bold text-sm transition-all duration-300 relative`;
+                
+                if (state.curr === idx) {
+                    node.className += ' border-yellow-400 bg-yellow-500/20 text-white cell-pulse';
+                } else if (state.nxt === idx) {
+                    node.className += ' border-pink-500 bg-pink-500/20 text-white';
+                } else if (state.visited.includes(idx)) {
+                    node.className += ' border-purple-500/60 bg-purple-900/20 text-purple-300';
+                } else {
+                    node.className += ' vs-border bg-[#252526] text-gray-400';
+                }
+
+                if (val === 0) {
+                    node.className += ' ring-2 ring-emerald-500/50 text-emerald-400 font-black';
+                }
+
+                node.innerHTML = `<span>${val}</span>`;
+                
+                const idxLabel = document.createElement('span');
+                idxLabel.className = `text-[10px] font-mono ${state.curr === idx ? 'text-yellow-400 font-bold' : 'text-gray-500'}`;
+                idxLabel.innerText = `[${idx}]`;
+
+                outerBox.appendChild(node);
+                outerBox.appendChild(idxLabel);
+                arrayNodesContainer.appendChild(outerBox);
+            });
+
+            // F. Message log container update
+            const branchInfo = document.getElementById('branch-info');
+            branchInfo.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
+                    <span class="text-blue-300 font-bold">Execution Logs:</span>
+                </div>
+                <div class="text-gray-300 font-mono text-[11px] mt-1 bg-[#282C34] p-2 rounded border border-gray-800">${state.msg}</div>
+            `;
+        }
+
+        // 6. Event Handlers Configuration
+        function initTestCase(tc) {
+            currentTestCase = tc;
+            steps = generateBFSSteps(tc.arr, tc.start);
+            currentStepIdx = 0;
+            if(autoPlayTimer) {
+                clearInterval(autoPlayTimer);
+                autoPlayTimer = null;
+                document.getElementById('btn-auto').innerText = "自動播放";
+                document.getElementById('btn-auto').className = "px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-xs font-medium rounded text-white transition-all";
+            }
+            updateUI();
+            renderTestCaseButtons();
+        }
+
+        function renderTestCaseButtons() {
+            const container = document.getElementById('testcase-container');
+            container.innerHTML = '';
+            testCases.forEach(tc => {
+                const btn = document.createElement('button');
+                const isSelected = tc.id === currentTestCase.id;
+                btn.className = `w-full text-left p-2.5 rounded text-xs transition-all flex flex-col gap-1 border ${
+                    isSelected 
+                        ? 'bg-blue-600/10 border-blue-500 text-blue-400 font-semibold' 
+                        : 'bg-[#1E1E1E] border-[#3E4451]/50 text-gray-400 hover:bg-gray-800/50'
+                }`;
+                btn.innerHTML = `
+                    <div class="flex justify-between items-center w-full">
+                        <span>${tc.label}</span>
+                        <span class="text-[10px] bg-black/30 px-1 rounded font-mono text-gray-400">start: ${tc.start}</span>
+                    </div>
+                    <div class="font-mono text-[11px] opacity-80 overflow-hidden text-ellipsis whitespace-nowrap">arr = ${JSON.stringify(tc.arr)}</div>
+                `;
+                btn.onclick = () => initTestCase(tc);
+                container.appendChild(btn);
+            });
+        }
+
+        document.getElementById('btn-next').onclick = () => {
+            if (currentStepIdx < steps.length - 1) {
+                currentStepIdx++;
+                updateUI();
+            }
+        };
+
+        document.getElementById('btn-prev').onclick = () => {
+            if (currentStepIdx > 0) {
+                currentStepIdx--;
+                updateUI();
+            }
+        };
+
+        document.getElementById('btn-reset').onclick = () => {
+            currentStepIdx = 0;
+            updateUI();
+        };
+
+        document.getElementById('btn-auto').onclick = () => {
+            const btn = document.getElementById('btn-auto');
+            if (autoPlayTimer) {
+                clearInterval(autoPlayTimer);
+                autoPlayTimer = null;
+                btn.innerText = "自動播放";
+                btn.className = "px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-xs font-medium rounded text-white transition-all";
+            } else {
+                btn.innerText = "暫停播放";
+                btn.className = "px-3 py-1 bg-amber-600 hover:bg-amber-500 text-xs font-medium rounded text-white transition-all";
+                autoPlayTimer = setInterval(() => {
+                    if (currentStepIdx < steps.length - 1) {
+                        currentStepIdx++;
+                        updateUI();
+                    } else {
+                        clearInterval(autoPlayTimer);
+                        autoPlayTimer = null;
+                        btn.innerText = "自動播放";
+                        btn.className = "px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-xs font-medium rounded text-white transition-all";
+                    }
+                }, 1000);
+            }
+        };
+
+        // Initialize App Components
+        window.onload = () => {
+            renderCodeBlock();
+            initTestCase(testCases[0]);
+        };
+    </script>
+</body>
+</html>

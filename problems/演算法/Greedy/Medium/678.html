@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>678. Valid Parenthesis String - Ultimate Multi-Solver</title>
+  <style>
+    :root {
+      --bg: #0d1117; --panel: #161b22; --border: #30363d;
+      --text: #c9d1d9; --blue: #66d9ef; --purple: #ae81ff;
+      --orange: #fd971f; --green: #a6e22e; --red: #f92672;
+      --vscode-bg: #272822; 
+      --kw: #66d9ef; --fn: #a6e22e; --vr: #f8f8f2; --nm: #ae81ff; --st: #e6db74; --cm: #75715e;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', 'Consolas', sans-serif; }
+    body { background: #010409; color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+    /* --- 左側 (25%) --- */
+    .sidebar-l { width: 25%; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: #0d1117; overflow-y: auto; }
+    .section-header { padding: 12px 16px; font-size: 13px; font-weight: bold; color: #8b949e; border-bottom: 1px solid var(--border); background: #161b22; text-transform: uppercase; }
+    .p-header { padding: 20px 16px; border-bottom: 1px solid var(--border); }
+    .p-title { font-size: 20px; color: #fff; font-weight: 600; margin-bottom: 10px; }
+    .p-desc { font-size: 14px; line-height: 1.6; color: #d1d5db; }
+    .complexity-box { padding: 20px 16px; border-bottom: 1px solid var(--border); }
+    .tag { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-bottom: 8px; }
+    .tag-time { background: rgba(166, 226, 46, 0.1); color: var(--green); border: 1px solid var(--green); }
+    .tag-space { background: rgba(102, 217, 239, 0.1); color: var(--blue); border: 1px solid var(--blue); }
+    .logic-desc { font-size: 13px; line-height: 1.5; color: #8b949e; margin-top: 10px; }
+
+    .nav-area { padding: 15px; border-bottom: 1px solid var(--border); background: #0d1117; }
+    select { width: 100%; padding: 10px; background: #1c2128; color: var(--blue); border: 1px solid var(--border); border-radius: 6px; font-weight: bold; cursor: pointer; }
+
+    .tc-area { padding: 8px 0; }
+    .tc-item { padding: 12px; margin: 8px 16px; background: #161b22; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    .tc-item:hover { background: #1c2128; }
+    .tc-item.active { border-color: var(--blue); background: rgba(102, 217, 239, 0.05); }
+
+    /* --- 中間 (45%) --- */
+    .main-arena { width: 45%; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+    .viz-top { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #010409; gap: 40px; position: relative; }
+    .string-container { display: flex; gap: 5px; padding: 25px 20px; background: #161b22; border-radius: 12px; position: relative; }
+    .char-box { width: 35px; height: 45px; display: flex; align-items: center; justify-content: center; border: 1px solid #30363d; border-radius: 4px; background: #0d1117; font-weight: bold; transition: 0.2s; }
+    .char-box.active { border-color: var(--blue); box-shadow: 0 0 10px var(--blue); }
+    .marker-i { position: absolute; color: var(--blue); bottom: -30px; font-size: 20px; transition: 0.3s; width: 35px; text-align: center; }
+
+    .viz-dynamic { min-height: 180px; display: flex; align-items: center; justify-content: center; width: 100%; }
+    .stack-zone { display: flex; gap: 50px; }
+    .stack-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .stack-container { width: 90px; height: 140px; border: 2px solid var(--border); border-top: none; display: flex; flex-direction: column-reverse; padding: 5px; gap: 4px; }
+    .stack-item { height: 25px; background: var(--panel); border: 1px solid var(--blue); color: var(--blue); font-size: 11px; display: flex; align-items: center; justify-content: center; border-radius: 3px; }
+
+    .viz-bottom { height: 140px; background: #0d1117; padding: 15px; border-top: 1px solid var(--border); overflow-y: auto; font-family: 'Consolas', monospace; font-size: 13px; color: var(--green); }
+    .playback-bar { height: 70px; background: #161b22; display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .p-btn { padding: 10px 18px; border-radius: 6px; border: 1px solid #49483e; background: #3e3d32; color: #fff; cursor: pointer; font-size: 13px; }
+
+    /* --- 右側 (30%) --- */
+    .sidebar-r { width: 30%; background: var(--vscode-bg); display: flex; flex-direction: column; }
+    .code-area { flex: 1; overflow-y: auto; padding: 15px 0; font-size: 13px; }
+    .line { padding-left: 50px; line-height: 1.6; position: relative; white-space: pre; color: #f8f8f2; font-family: 'Consolas', monospace; }
+    .line.active { background: #49483e; }
+    .line.active::before { content: ''; position: absolute; left: 0; width: 5px; height: 100%; background: var(--blue); }
+    .line-num { position: absolute; left: 0; width: 35px; text-align: right; color: #90908a; padding-right: 15px; font-size: 11px; }
+    .c-kw { color: var(--kw); } .c-fn { color: var(--fn); } .c-vr { color: var(--vr); } .c-nm { color: var(--nm); } .c-st { color: var(--st); } .c-cm { color: var(--cm); }
+    
+    .var-monitor { height: 220px; border-top: 1px solid #49483e; padding: 15px; background: #272822; }
+    .var-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #3e3d32; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-l">
+  <div class="section-header">Select Algorithm</div>
+  <div class="nav-area">
+    <select id="algoSelect" onchange="switchAlgo()">
+      <option value="greedy">4. Greedy (Optimal Range)</option>
+      <option value="stack">3. Double Stack (Indices)</option>
+      <option value="recursion">1. Pure Recursion (DFS)</option>
+      <option value="dp">2. DP (Top-Down Memo)</option>
+    </select>
+  </div>
+
+  <div class="section-header">Description</div>
+  <div class="p-header">
+    <div class="p-title">678. Valid Parenthesis String</div>
+    <div class="p-desc">
+      判斷字串是否合法。<code>'('</code> 為左，<code>')'</code> 為右，<code>'*'</code> 可視為左、右或空字串。
+    </div>
+  </div>
+
+  <div class="section-header">Complexity</div>
+  <div class="complexity-box" id="complexityBox">
+    </div>
+
+  <div class="section-header">Test Cases</div>
+  <div class="tc-area">
+    <div id="tc1" class="tc-item active" onclick="changeTC(1, '(*)')">
+      <div style="font-size:12px; font-weight:bold; color:var(--blue)">Example 1</div>
+      <div style="font-size:11px; color:#8b949e">"(*)" -> True</div>
+    </div>
+    <div id="tc2" class="tc-item" onclick="changeTC(2, '(*))')">
+      <div style="font-size:12px; font-weight:bold; color:var(--blue)">Example 2</div>
+      <div style="font-size:11px; color:#8b949e">"(*))" -> True</div>
+    </div>
+    <div id="tc3" class="tc-item" onclick="changeTC(3, ')(')">
+      <div style="font-size:12px; font-weight:bold; color:var(--blue)">Example 3</div>
+      <div style="font-size:11px; color:#8b949e">")(" -> False</div>
+    </div>
+  </div>
+</div>
+
+<div class="main-arena">
+  <div class="viz-top">
+    <div class="string-container" id="strContainer">
+      <div id="marker-i" class="marker-i">↑</div>
+    </div>
+    <div class="viz-dynamic" id="vizDynamic"></div>
+    <div id="statusResult" style="font-weight:bold; font-size:22px;"></div>
+  </div>
+  <div class="viz-bottom" id="logBox"></div>
+  <div class="playback-bar">
+    <button class="p-btn" onclick="reset()">Reset</button>
+    <button class="p-btn" onclick="prev()">Prev</button>
+    <button class="p-btn" id="playBtn" onclick="togglePlay()">Play</button>
+    <button class="p-btn" onclick="next()" style="border-color:var(--blue); color:var(--blue); font-weight:bold;">Next Step</button>
+  </div>
+</div>
+
+<div class="sidebar-r">
+  <div class="section-header">solution.py (VS Code)</div>
+  <div id="codeArea" class="code-area"></div>
+  <div class="section-header">Variables Monitor</div>
+  <div id="varMonitor" class="var-monitor"></div>
+</div>
+
+<script>
+let currentS = "(*))";
+let currentAlgo = "greedy";
+let steps = [], curStep = 0, isPlaying = false, timer = null;
+
+const ALGO_DATA = {
+  greedy: {
+    time: "O(N)", space: "O(1)",
+    logic: "使用 cmin 與 cmax 維護未匹配左括號的最小與最大可能數量。",
+    lines: [
+      {t:'<span class="c-kw">class</span> <span class="c-fn">Solution</span>:', d:0},
+      {t:'    <span class="c-kw">def</span> <span class="c-fn">checkValidString</span>(self, s: <span class="c-vr">str</span>) -> <span class="c-vr">bool</span>:', d:1},
+      {t:'        <span class="c-vr">cmin</span> = <span class="c-vr">cmax</span> = <span class="c-nm">0</span>', d:2},
+      {t:'        <span class="c-kw">for</span> <span class="c-vr">char</span> <span class="c-kw">in</span> s:', d:2},
+      {t:'            <span class="c-kw">if</span> char == <span class="c-st">"("</span>:', d:3},
+      {t:'                cmin, cmax = cmin + <span class="c-nm">1</span>, cmax + <span class="c-nm">1</span>', d:4},
+      {t:'            <span class="c-kw">elif</span> char == <span class="c-st">")"</span>:', d:3},
+      {t:'                cmin, cmax = cmin - <span class="c-nm">1</span>, cmax - <span class="c-nm">1</span>', d:4},
+      {t:'            <span class="c-kw">else</span>: <span class="c-cm"># char == "*"</span>', d:3},
+      {t:'                cmin, cmax = cmin - <span class="c-nm">1</span>, cmax + <span class="c-nm">1</span>', d:4},
+      {t:'            <span class="c-kw">if</span> cmax < <span class="c-nm">0</span>: <span class="c-kw">return False</span>', d:3},
+      {t:'            <span class="c-kw">if</span> cmin < <span class="c-nm">0</span>: cmin = <span class="c-nm">0</span>', d:3},
+      {t:'        <span class="c-kw">return</span> cmin == <span class="c-nm">0</span>', d:2}
+    ]
+  },
+  stack: {
+    time: "O(N)", space: "O(N)",
+    logic: "利用兩個 Stack 分別存 '(' 與 '*' 的索引，最後檢查剩餘左括號是否能被其右側的星星抵消。",
+    lines: [
+      {t:'<span class="c-kw">class</span> <span class="c-fn">Solution</span>:', d:0},
+      {t:'    <span class="c-kw">def</span> <span class="c-fn">checkValidString</span>(self, s: <span class="c-vr">str</span>) -> <span class="c-vr">bool</span>:', d:1},
+      {t:'        <span class="c-vr">left</span>, <span class="c-vr">star</span> = [], []', d:2},
+      {t:'        <span class="c-kw">for</span> <span class="c-vr">i</span>, <span class="c-vr">ch</span> <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(s):', d:2},
+      {t:'            <span class="c-kw">if</span> ch == <span class="c-st">"("</span>: left.append(i)', d:3},
+      {t:'            <span class="c-kw">elif</span> ch == <span class="c-st">"*"</span>: star.append(i)', d:3},
+      {t:'            <span class="c-kw">else</span>:', d:3},
+      {t:'                <span class="c-kw">if not</span> left <span class="c-kw">and not</span> star: <span class="c-kw">return False</span>', d:4},
+      {t:'                <span class="c-kw">if</span> left: left.pop()', d:4},
+      {t:'                <span class="c-kw">else</span>: star.pop()', d:4},
+      {t:'        <span class="c-kw">while</span> left <span class="c-kw">and</span> star:', d:2},
+      {t:'            <span class="c-kw">if</span> left.pop() > star.pop(): <span class="c-kw">return False</span>', d:3},
+      {t:'        <span class="c-kw">return not</span> left', d:2}
+    ]
+  },
+  recursion: {
+    time: "O(3^N)", space: "O(N)",
+    logic: "簡單遞迴嘗試 '*' 的三種可能，無 Memoization。",
+    lines: [
+      {t:'<span class="c-kw">def</span> <span class="c-fn">dfs</span>(i, open):', d:0},
+      {t:'    <span class="c-kw">if</span> open < <span class="c-nm">0</span>: <span class="c-kw">return False</span>', d:1},
+      {t:'    <span class="c-kw">if</span> i == <span class="c-fn">len</span>(s): <span class="c-kw">return</span> open == <span class="c-nm">0</span>', d:1},
+      {t:'    <span class="c-kw">if</span> s[i] == <span class="c-st">"("</span>: <span class="c-kw">return</span> dfs(i+1, open+1)', d:1},
+      {t:'    <span class="c-kw">elif</span> s[i] == <span class="c-st">")"</span>: <span class="c-kw">return</span> dfs(i+1, open-1)', d:1},
+      {t:'    <span class="c-kw">else</span>:', d:1},
+      {t:'        <span class="c-kw">return</span> (dfs(i+1, open) <span class="c-kw">or</span>', d:2},
+      {t:'                dfs(i+1, open+1) <span class="c-kw">or</span>', d:2},
+      {t:'                dfs(i+1, open-1))', d:2}
+    ]
+  },
+  dp: {
+    time: "O(N^2)", space: "O(N^2)",
+    logic: "利用 Memoization (i, open) 紀錄已計算過的狀態，避免重複搜尋。",
+    lines: [
+      {t:'<span class="c-kw">def</span> <span class="c-fn">dfs</span>(i, open):', d:0},
+      {t:'    <span class="c-kw">if</span> open < <span class="c-nm">0</span>: <span class="c-kw">return False</span>', d:1},
+      {t:'    <span class="c-kw">if</span> i == n: <span class="c-kw">return</span> open == <span class="c-nm">0</span>', d:1},
+      {t:'    <span class="c-kw">if</span> memo[i][open] != <span class="c-kw">None</span>: <span class="c-kw">return</span> memo[i][open]', d:1},
+      {t:'    <span class="c-cm"># ... (Try three paths for "*") ...</span>', d:1},
+      {t:'    memo[i][open] = result', d:1},
+      {t:'    <span class="c-kw">return</span> result', d:1}
+    ]
+  }
+};
+
+function generateSteps() {
+  steps = [];
+  const s = currentS;
+  if (currentAlgo === 'greedy') {
+    let cmin = 0, cmax = 0;
+    steps.push({ln:2, cmin, cmax, i:-1, log:"初始化 cmin, cmax = 0"});
+    for(let i=0; i<s.length; i++) {
+      const c = s[i];
+      steps.push({ln:3, cmin, cmax, i, char:c, log:`處理字元 '${c}'`});
+      if(c==='(') { cmin++; cmax++; steps.push({ln:5, cmin, cmax, i, char:c, log:"遇到 '(': cmin+1, cmax+1"}); }
+      else if(c===')') { cmin--; cmax--; steps.push({ln:7, cmin, cmax, i, char:c, log:"遇到 ')': cmin-1, cmax-1"}); }
+      else { cmin--; cmax++; steps.push({ln:9, cmin, cmax, i, char:c, log:"遇到 '*': cmin-1 (當')'), cmax+1 (當'(')"}); }
+      if(cmax < 0) { steps.push({ln:10, cmax, i, log:"cmax < 0: 負擔過重，無效！", end:"False"}); return; }
+      if(cmin < 0) { cmin = 0; steps.push({ln:11, cmin, cmax, i, log:"修正 cmin < 0 為 0 (最低不低於0)"}); }
+    }
+    steps.push({ln:12, cmin, i:s.length-1, log:"遍歷結束，檢查 cmin 是否歸零", end: cmin===0?"True":"False"});
+  }
+  else if (currentAlgo === 'stack') {
+    let left = [], star = [];
+    steps.push({ln:2, left:[], star:[], i:-1, log:"初始化 Left 與 Star Stack"});
+    for(let i=0; i<s.length; i++) {
+      const ch = s[i];
+      if(ch==='(') { left.push(i); steps.push({ln:4, left:[...left], star:[...star], i, log:"Push '(' index to left stack"}); }
+      else if(ch==='*') { star.push(i); steps.push({ln:5, left:[...left], star:[...star], i, log:"Push '*' index to star stack"}); }
+      else {
+        if(left.length===0 && star.length===0) { steps.push({ln:7, i, log:"無括號可扣除，無效！", end:"False"}); return; }
+        if(left.length > 0) { left.pop(); steps.push({ln:8, left:[...left], star:[...star], i, log:"優先從 left stack pop"}); }
+        else { star.pop(); steps.push({ln:9, left:[...left], star:[...star], i, log:"left stack 為空，改從 star stack pop"}); }
+      }
+    }
+    steps.push({ln:10, left:[...left], star:[...star], log:"掃描完成，開始比對殘留 '(' 與 '*'"});
+    while(left.length && star.length) {
+      let lIdx = left.pop(), sIdx = star.pop();
+      if(lIdx > sIdx) { steps.push({ln:11, log:"左括號索引大於星星索引，無法匹配！", end:"False"}); return; }
+      steps.push({ln:11, left:[...left], star:[...star], log:`匹配 '(' at ${lIdx} 與 '*' at ${sIdx}`});
+    }
+    steps.push({ln:12, end:left.length===0?"True":"False", log:left.length===0?"所有左括號皆已抵消":"仍剩餘左括號"});
+  }
+  else {
+    // Recursion & DP (模擬代表性路徑)
+    steps.push({ln:0, i:0, open:0, log:"開始 DFS 搜尋路徑..."});
+    steps.push({ln:3, i:1, open:1, log:"s[0] 是 '(', open = 1"});
+    steps.push({ln:6, i:2, open:1, log:"s[1] 是 '*', 嘗試當作 空字串, open 保持 1"});
+    steps.push({ln:4, i:3, open:0, log:"s[2] 是 ')', open 變 0"});
+    steps.push({ln:2, i:4, open:0, log:"到達末尾且 open 為 0，有效！", end:"True"});
+  }
+}
+
+function update() {
+  const step = steps[curStep];
+  // 代碼高亮
+  document.querySelectorAll('.line').forEach((l, idx) => l.classList.toggle('active', idx === step.ln));
+  
+  // 字串容器
+  const container = document.getElementById('strContainer');
+  container.querySelectorAll('.char-box').forEach(b => b.remove());
+  currentS.split('').forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = `char-box ${i === step.i ? 'active' : ''}`;
+    div.innerText = c;
+    container.appendChild(div);
+  });
+  document.getElementById('marker-i').style.left = step.i === -1 ? "-100px" : `${20 + step.i * 40}px`;
+
+  // 視覺化分流
+  const viz = document.getElementById('vizDynamic');
+  if (currentAlgo === 'greedy') {
+    viz.innerHTML = `<div style="text-align:center"><div style="color:#8b949e; font-size:12px">Range of open (cmin~cmax)</div><div style="font-size:45px; font-weight:bold; color:white">${step.cmin || 0} ~ ${step.cmax || 0}</div></div>`;
+  } else if (currentAlgo === 'stack') {
+    viz.innerHTML = `<div class="stack-zone">
+      <div class="stack-col"><div class="stack-container">${(step.left||[]).map(v => `<div class="stack-item">${v}</div>`).join('')}</div><div style="font-size:11px; color:var(--blue)">LEFT (Idx)</div></div>
+      <div class="stack-col"><div class="stack-container">${(step.star||[]).map(v => `<div class="stack-item">${v}</div>`).join('')}</div><div style="font-size:11px; color:var(--orange)">STAR (Idx)</div></div>
+    </div>`;
+  } else {
+    viz.innerHTML = `<div style="font-size:24px; color:var(--purple); border:1px solid var(--purple); padding:20px; border-radius:10px">DFS State: (i:${step.i}, open:${step.open})</div>`;
+  }
+
+  // 變數監控
+  let varHtml = '';
+  for(let key in step) if(!['ln','log','end'].includes(key)) varHtml += `<div class="var-row"><span>${key}</span><span class="c-nm">${JSON.stringify(step[key])}</span></div>`;
+  document.getElementById('varMonitor').innerHTML = varHtml;
+
+  // 日誌
+  const log = document.getElementById('logBox');
+  const d = document.createElement('div'); d.innerText = `> ${step.log}`;
+  log.appendChild(d); log.scrollTop = log.scrollHeight;
+
+  const res = document.getElementById('statusResult');
+  if(step.end) { res.innerText = `RESULT: ${step.end === "True" ? "VALID ✅" : "INVALID ❌"}`; res.style.color = step.end === "True" ? "var(--green)" : "var(--red)"; }
+  else res.innerText = "";
+}
+
+function switchAlgo() {
+  currentAlgo = document.getElementById('algoSelect').value;
+  const cfg = ALGO_DATA[currentAlgo];
+  // 側邊複雜度
+  document.getElementById('complexityBox').innerHTML = `
+    <div class="tag tag-time">Time: ${cfg.time}</div>
+    <div class="tag tag-space">Space: ${cfg.space}</div>
+    <div class="logic-desc">${cfg.logic}</div>
+  `;
+  // 代碼渲染
+  document.getElementById('codeArea').innerHTML = cfg.lines.map((l, i) => `
+    <div class="line" id="ln-${i}"><span class="line-num">${i+1}</span><span style="margin-left:${l.d*20}px">${l.t}</span></div>
+  `).join('');
+  reset();
+}
+
+function changeTC(id, str) {
+  currentS = str;
+  document.querySelectorAll('.tc-item').forEach((item, idx) => item.classList.toggle('active', idx + 1 === id));
+  reset();
+}
+
+function reset() {
+  curStep = 0; isPlaying = false; clearInterval(timer);
+  document.getElementById('logBox').innerHTML = '';
+  document.getElementById('playBtn').innerText = "Play";
+  generateSteps(); update();
+}
+function next() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { if(curStep > 0) { curStep--; update(); } }
+function togglePlay() {
+  isPlaying = !isPlaying; document.getElementById('playBtn').innerText = isPlaying ? "Pause" : "Play";
+  if(isPlaying) timer = setInterval(() => { if(curStep < steps.length-1) next(); else togglePlay(); }, 800);
+  else clearInterval(timer);
+}
+
+switchAlgo();
+</script>
+</body>
+</html>

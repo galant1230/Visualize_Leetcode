@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>1594. 矩陣最大非負乘積 - 你的邏輯版本</title>
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --primary: #58a6ff; --text: #c9d1d9;
+      --ide-bg: #010409; --ide-kw: #ff7b72; --ide-vr: #79c0ff; --border: #30363d;
+      --hl-max: #ffa657; --hl-min: #a5d6ff; --success: #238636;
+    }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; overflow: hidden; }
+    .layout { max-width: 1550px; margin: auto; display: flex; gap: 12px; height: 97vh; }
+    
+    .panel-left { flex: 1.1; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding-right: 5px; }
+    .card { background: var(--card); padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+    h3, h4 { margin: 0 0 5px 0; color: var(--primary); font-size: 15px; border-bottom: 1px solid var(--border); padding-bottom: 3px; }
+    .section-title { font-weight: bold; color: var(--hl-max); font-size: 11px; margin: 4px 0 2px 0; display: block; }
+    
+    /* 三表連動佈局 */
+    .grids-wrapper { display: flex; gap: 6px; justify-content: space-between; margin-top: 5px; }
+    .grid-column { flex: 1; text-align: center; }
+    .grid-label { font-size: 9.5px; margin-bottom: 3px; color: #8b949e; font-weight: bold; }
+    .grid { display: grid; gap: 2px; background: #010409; padding: 4px; border-radius: 4px; margin: 0 auto; }
+    .cell { width: 42px; height: 42px; background: #0d1117; border: 1px solid #21262d; display: flex; justify-content: center; align-items: center; font-size: 9.5px; font-weight: bold; }
+    .cell.active { border-color: #fff; box-shadow: 0 0 5px #fff; z-index: 10; }
+    .v-txt { color: #fff; } .m-txt { color: var(--hl-max); } .n-txt { color: var(--hl-min); }
+
+    /* Log 視窗 */
+    .log-win { background: #010409; border: 1px solid var(--border); padding: 8px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 10.5px; height: 120px; color: #7ee787; margin-top: 5px; overflow-y: auto; line-height: 1.5; border-left: 3px solid var(--hl-max); }
+    .log-val { color: var(--ide-vr); font-weight: bold; }
+    .log-op { color: var(--ide-kw); }
+
+    .panel-right { flex: 0.9; background: var(--ide-bg); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
+    .ide-header { background: #161b22; padding: 8px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    #code-display { padding: 10px 0; font-family: 'Fira Code', monospace; font-size: 11.5px; line-height: 1.2; white-space: pre; color: #e6edf3; flex-grow: 1; }
+    .code-line { display: block; padding: 0 20px; border-left: 4px solid transparent; }
+    .code-line.active { background: rgba(35, 134, 54, 0.2); border-left-color: var(--success); }
+    .kw { color: var(--ide-kw); } .vr { color: var(--ide-vr); } .cm { color: #8b949e; }
+    
+    .btn { padding: 5px 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; font-size: 11px; }
+    .btn-next { background: var(--success); color: white; }
+    .ex-sel { background: #30363d; color: white; border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; margin-right: 3px; }
+    .ex-sel.active { background: var(--primary); }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div class="panel-left">
+    <div class="card">
+      <h3>1594. Maximum Non Negative Product</h3>
+      <div class="desc-text">使用 <b>max_dp</b> 與 <b>min_dp</b> 同步計算，並透過 <b>v >= 0</b> 判斷式處理負數翻轉。</div>
+      <div style="margin-top:5px;">
+          <button class="ex-sel active" onclick="loadEx(2)">Ex 2 (8)</button>
+          <button class="ex-sel" onclick="loadEx(1)">Ex 1 (-1)</button>
+          <button class="ex-sel" onclick="loadEx(3)">Ex 3 (0)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="grids-wrapper">
+        <div class="grid-column"><div class="grid-label">Grid (v)</div><div class="grid" id="input-grid"></div></div>
+        <div class="grid-column"><div class="grid-label">Max DP (M)</div><div class="grid" id="max-grid"></div></div>
+        <div class="grid-column"><div class="grid-label">Min DP (m)</div><div class="grid" id="min-grid"></div></div>
+      </div>
+      
+      <span class="section-title">運算細節與狀態 (v 判斷邏輯):</span>
+      <div class="log-win" id="log-v">點擊下一步開始...</div>
+    </div>
+
+    <div class="card" style="font-size:10px; color:#8b949e;">
+      <b>範例 2 核心觀察：</b>當 v = -4 (負數) 時，max_dp 會從上方的 min_dp 轉移而來。
+    </div>
+  </div>
+
+  <div class="panel-right">
+    <div class="ide-header">
+      <div style="font-size:10px; color:#8b949e; font-family:monospace;">solution.py</div>
+      <div style="display:flex; gap:5px;">
+        <button class="btn btn-next" onclick="step()">下一步 (Step)</button>
+        <button class="btn" style="background:#30363d; color:white;" onclick="reset()">重置</button>
+      </div>
+    </div>
+    <div id="code-display"></div>
+  </div>
+</div>
+
+<script>
+const examples = {
+  1: [[-1,-2,-3],[-2,-3,-3],[-3,-3,-2]],
+  2: [[1,-2,1],[1,-2,1],[3,-4,1]],
+  3: [[1,3],[0,-4]]
+};
+
+const pyCode = [
+  'class Solution:',
+  '    def maxProductPath(self, grid: list[list[int]]) -> int:',
+  '        m, n = len(grid), len(grid[0])',
+  '        max_dp = [[0.0] * n for _ in range(m)]',
+  '        min_dp = [[0.0] * n for _ in range(m)]',
+  '        max_dp[0][0] = min_dp[0][0] = grid[0][0]',
+  '        # 初始化第一列 (只能從左邊來)',
+  '        for j in range(1, n):',
+  '            max_dp[0][j] = min_dp[0][j] = max_dp[0][j-1] * grid[0][j]',
+  '        # 初始化第一行 (只能從上面來)',
+  '        for i in range(1, m):',
+  '            max_dp[i][0] = min_dp[i][0] = max_dp[i-1][0] * grid[i][0]',
+  '        # 填充其餘的格子',
+  '        for i in range(1, m):',
+  '            for j in range(1, n):',
+  '                v = grid[i][j]',
+  '                if v >= 0:',
+  '                    max_dp[i][j] = max(max_dp[i-1][j], max_dp[i][j-1]) * v',
+  '                    min_dp[i][j] = min(min_dp[i-1][j], min_dp[i][j-1]) * v',
+  '                else:',
+  '                    max_dp[i][j] = min(min_dp[i-1][j], min_dp[i][j-1]) * v',
+  '                    min_dp[i][j] = max(max_dp[i-1][j], max_dp[i][j-1]) * v',
+  '        res = max_dp[m-1][n-1]',
+  '        return int(res) % 1000000007 if res >= 0 else -1'
+];
+
+let curEx = 2, state = { i: 0, j: 0, stage: 'init', mx: [], mi: [], done: false };
+
+function loadEx(n) { curEx = n; reset(); document.querySelectorAll('.ex-sel').forEach(b => b.classList.toggle('active', b.innerText.includes(n))); }
+
+function reset() {
+    const g = examples[curEx];
+    state = { i: 0, j: 0, stage: 'init', mx: g.map(r => r.map(() => '-')), mi: g.map(r => r.map(() => '-')), done: false };
+    render();
+}
+
+function render() {
+    const g = examples[curEx];
+    const draw = (id, data, colorClass, isInput = false) => {
+        const el = document.getElementById(id);
+        el.style.gridTemplateColumns = `repeat(${g[0].length}, 42px)`;
+        el.innerHTML = data.flatMap((row, r) => row.map((v, c) => {
+            let active = (r === state.i && c === state.j && !state.done) ? 'active' : '';
+            return `<div class="cell ${colorClass} ${active}">${isInput ? g[r][c] : v}</div>`;
+        })).join('');
+    };
+    draw('input-grid', g, 'v-txt', true);
+    draw('max-grid', state.mx, 'm-txt');
+    draw('min-grid', state.mi, 'n-txt');
+
+    const lineMap = { 'init': [5], 'row0': [8], 'col0': [11], 'v_pos': [17, 18], 'v_neg': [20, 21], 'end': [22, 23] };
+    const activeLines = state.done ? lineMap['end'] : lineMap[state.stage];
+    document.getElementById('code-display').innerHTML = pyCode.map((l, idx) => {
+        const cls = activeLines.includes(idx) ? 'code-line active' : 'code-line';
+        const indent = l.match(/^\s*/)[0].length * 6;
+        const colored = l.trim().replace(/\b(class|def|for|in|if|else|return|max|min)\b/g, '<span class="kw">$1</span>')
+                               .replace(/\b(max_dp|min_dp|grid|res|v|i|j)\b/g, '<span class="vr">$1</span>');
+        return `<span class="${cls}" style="padding-left: calc(20px + ${indent}px)">${colored || ' '}</span>`;
+    }).join('\n');
+}
+
+function step() {
+    if (state.done) return;
+    const g = examples[curEx];
+    const log = document.getElementById('log-v');
+    let logTxt = "";
+
+    if (state.stage === 'init') {
+        state.mx[0][0] = state.mi[0][0] = g[0][0];
+        logTxt = `[Init] 起點 (0,0) = <span class="log-val">${g[0][0]}</span>`;
+        state.stage = 'row0'; state.j = 1;
+    } else if (state.stage === 'row0') {
+        state.mx[0][state.j] = state.mi[0][state.j] = state.mx[0][state.j-1] * g[0][state.j];
+        logTxt = `[Row 0] 只能從左邊來: max_dp[0][${state.j}] = <span class="log-val">${state.mx[0][state.j]}</span>`;
+        state.j++; if (state.j === g[0].length) { state.stage = 'col0'; state.i = 1; state.j = 0; }
+    } else if (state.stage === 'col0') {
+        state.mx[state.i][0] = state.mi[state.i][0] = state.mx[state.i-1][0] * g[state.i][0];
+        logTxt = `[Col 0] 只能從上面來: max_dp[${state.i}][0] = <span class="log-val">${state.mx[state.i][0]}</span>`;
+        state.i++; if (state.i === g.length) { state.stage = 'fill'; state.i = 1; state.j = 1; }
+    } else if (state.stage === 'fill' || state.stage === 'v_pos' || state.stage === 'v_neg') {
+        let v = g[state.i][state.j];
+        let m_top = state.mx[state.i-1][state.j], m_left = state.mx[state.i][state.j-1];
+        let n_top = state.mi[state.i-1][state.j], n_left = state.mi[state.i][state.j-1];
+
+        logTxt = `[填充 (${state.i}, ${state.j})] <span class="log-op">v</span> = <span class="log-val">${v}</span><br>`;
+        if (v >= 0) {
+            state.stage = 'v_pos';
+            state.mx[state.i][state.j] = Math.max(m_top, m_left) * v;
+            state.mi[state.i][state.j] = Math.min(n_top, n_left) * v;
+            logTxt += `> <span class="log-op">v >= 0</span>: max_dp = max(${m_top}, ${m_left}) * ${v} = <span class="log-val">${state.mx[state.i][state.j]}</span>`;
+        } else {
+            state.stage = 'v_neg';
+            state.mx[state.i][state.j] = Math.min(n_top, n_left) * v;
+            state.mi[state.i][state.j] = Math.max(m_top, m_left) * v;
+            logTxt += `> <span class="log-op">v < 0 (翻轉)</span>: max_dp = <span style="color:var(--hl-min)">min_dp來源</span> * ${v} = <span class="log-val">${state.mx[state.i][state.j]}</span>`;
+        }
+        
+        state.j++;
+        if (state.j === g[0].length) { state.j = 1; state.i++; }
+        if (state.i === g.length) { state.done = true; state.i = g.length-1; state.j = g[0].length-1; }
+    }
+
+    log.innerHTML = logTxt;
+    render();
+}
+reset();
+</script>
+</body>
+</html>

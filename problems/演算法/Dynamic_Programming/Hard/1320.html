@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 1320 視覺化</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
+        body { background-color: #121212; color: #EFF1F6; font-family: 'Inter', sans-serif; margin: 0; height: 100vh; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        .active-line { background-color: #2DB55D22; border-left: 3px solid #2DB55D; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #3E3E3E; border-radius: 5px; }
+        .keyboard-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 300px; }
+        .key-cap { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 1px solid #333; font-weight: bold; transition: all 0.3s; position: relative; }
+        .finger-l { background: #3B82F6 !important; border-color: #60A5FA !important; color: white; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+        .finger-r { background: #EF4444 !important; border-color: #F87171 !important; color: white; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
+        .target-key { border-color: #FAC02E; color: #FAC02E; border-width: 2px; }
+        .kw { color: #C586C0; } .fn { color: #DCDCAA; } .cm { color: #6A9955; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const WORD = "CAKE";
+        const KEYBOARD = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+        
+        const CODE_SNIPPET = [
+            { t: "def calculate_distance(char1, char2):", i: 0 },
+            { t: "    row1, col1 = divmod(char1, 6)", i: 1 },
+            { t: "    row2, col2 = divmod(char2, 6)", i: 1 },
+            { t: "    return abs(row1-row2) + abs(col1-col2)", i: 1 },
+            { t: "# 初始化 dp[word_length][26][26]", i: 0 },
+            { t: "for finger_pos in range(26):", i: 0 },
+            { t: "    dp[0][first_char][finger_pos] = 0", i: 1 },
+            { t: "for i in range(1, word_length):", i: 0 },
+            { t: "    # 情況 1: 移動前一個字母的手指", i: 1 },
+            { t: "    dp[i][curr][other] = min(..., dp[i-1][prev][other] + dist)", i: 2 },
+            { t: "    # 情況 2: 移動另一隻手指", i: 1 },
+            { t: "    dp[i][curr][prev] = min(..., dp[i-1][prev_pos][prev] + dist_to_curr)", i: 2 }
+        ];
+
+        const App = () => {
+            const [step, setStep] = useState(0);
+            const [playing, setPlaying] = useState(false);
+            const [history, setHistory] = useState([]);
+
+            // 模擬解法產生步驟
+            useEffect(() => {
+                const h = [];
+                const word = WORD;
+                let L = ord(word[0]);
+                let R = null; // 初始自由
+                let totalDist = 0;
+
+                h.push({ idx: 0, char: word[0], L, R, msg: "初始：左手放在第一個字 'C' (免費)", line: 6, dist: 0 });
+
+                // 模擬最優路徑 (C->A by L, K->E by R)
+                h.push({ idx: 1, char: 'A', L: ord('A'), R: null, msg: "移動左手 C -> A (距離: 2)", line: 9, dist: 2 });
+                h.push({ idx: 2, char: 'K', L: ord('A'), R: ord('K'), msg: "左手在 A，右手放在 'K' (免費)", line: 11, dist: 0 });
+                h.push({ idx: 3, char: 'E', L: ord('A'), R: ord('E'), msg: "移動右手 K -> E (距離: 1)", line: 11, dist: 1 });
+                
+                setHistory(h);
+            }, []);
+
+            function ord(c) { return c.charCodeAt(0) - 65; }
+
+            const current = history[step] || { idx: 0, char: '?', L: 0, R: -1, msg: "準備中...", line: 0, dist: 0 };
+
+            return (
+                <div className="flex h-screen w-screen overflow-hidden">
+                    {/* LEFT: LEETCODE DESCRIPTION */}
+                    <div className="w-[320px] bg-[#262626] border-r border-[#333] flex flex-col p-5 overflow-y-auto custom-scroll">
+                        <h1 className="text-xl font-bold mb-2">1320. Minimum Distance</h1>
+                        <div className="flex gap-2 mb-4">
+                            <span className="text-[10px] px-2 py-0.5 bg-[#333] text-[#F53C3C] rounded-full font-bold">Hard</span>
+                            <span className="text-[10px] px-2 py-0.5 bg-[#333] text-blue-400 rounded-full font-bold">DP</span>
+                        </div>
+                        
+                        <div className="text-[13px] text-gray-400 space-y-4">
+                            <section>
+                                <h4 className="font-bold text-white mb-1">題目規則</h4>
+                                <ul className="list-disc ml-4 space-y-1">
+                                    <li>6x6 鍵盤，曼哈頓距離計算。</li>
+                                    <li>兩隻手指初始位置「免費」。</li>
+                                    <li>求輸入字串的最短總移動距離。</li>
+                                </ul>
+                            </section>
+
+                            <section className="bg-black/20 p-3 rounded-lg border border-white/5">
+                                <h4 className="font-bold text-white mb-2 text-xs uppercase text-orange-400">解法思路</h4>
+                                <p className="text-[11px] leading-relaxed">
+                                    我們使用 <b>三維 DP</b>：<br/>
+                                    <code>dp[i][L][R]</code> 表示打到第 i 個字時，左手在 L，右手在 R 的最小代價。<br/><br/>
+                                    每一回合，我們要決定：<br/>
+                                    1. 讓剛剛按完字的手指繼續按下一位。<br/>
+                                    2. 讓另一隻手指跨越鍵盤去按下一位。
+                                </p>
+                            </section>
+
+                            <div className="pt-4 border-t border-white/5">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase mb-2">座標範例</p>
+                                <div className="grid grid-cols-2 gap-2 font-mono text-[11px]">
+                                    <div className="bg-[#1e1e1e] p-1 rounded text-center">A: (0, 0)</div>
+                                    <div className="bg-[#1e1e1e] p-1 rounded text-center">F: (0, 5)</div>
+                                    <div className="bg-[#1e1e1e] p-1 rounded text-center">G: (1, 0)</div>
+                                    <div className="bg-[#1e1e1e] p-1 rounded text-center">Z: (4, 1)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* MIDDLE: VISUALIZER (1:1 with Right) */}
+                    <div className="flex-1 flex flex-col bg-[#121212] border-r border-[#333]">
+                        <div className="flex-1 p-8 flex flex-col items-center justify-center gap-8">
+                            <h2 className="text-2xl font-bold tracking-[0.5em] text-white">
+                                {WORD.split("").map((c, i) => (
+                                    <span key={i} className={i === current.idx ? "text-yellow-500 underline underline-offset-8" : i < current.idx ? "text-gray-600" : "text-gray-200"}>
+                                        {c}
+                                    </span>
+                                ))}
+                            </h2>
+
+                            <div className="keyboard-grid">
+                                {KEYBOARD.map((key, i) => {
+                                    const isL = current.L === i;
+                                    const isR = current.R === i;
+                                    const isTarget = ord(current.char) === i;
+                                    return (
+                                        <div key={key} className={`key-cap text-xs bg-[#1E1E1E] ${isL ? 'finger-l' : isR ? 'finger-r' : ''} ${isTarget ? 'target-key' : ''}`}>
+                                            {key}
+                                            {isL && <span className="absolute -top-6 text-[10px] text-blue-400 font-bold">左手</span>}
+                                            {isR && <span className="absolute -top-6 text-[10px] text-red-400 font-bold">右手</span>}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="mt-8 bg-[#262626] px-8 py-4 rounded-xl border border-[#333] shadow-2xl text-center">
+                                <p className="text-gray-400 text-xs mb-1 uppercase tracking-widest font-bold">動態日誌</p>
+                                <p className="text-white text-sm font-medium">{current.msg}</p>
+                            </div>
+                        </div>
+
+                        {/* PLAYBACK */}
+                        <div className="h-20 p-4 border-t border-[#333] flex items-center gap-4 bg-[#1A1A1A]">
+                            <button onClick={() => setStep(0)} className="text-xs text-gray-500 hover:text-white px-3">RESET</button>
+                            <button onClick={() => setStep(s => Math.max(0, s-1))} className="p-2 bg-[#333] rounded hover:bg-[#444]">◀</button>
+                            <button onClick={() => setPlaying(!playing)} className="w-10 h-10 bg-yellow-600 rounded-full flex items-center justify-center font-bold">{playing ? 'Ⅱ' : '▶'}</button>
+                            <button onClick={() => setStep(s => Math.min(history.length-1, s+1))} className="p-2 bg-[#333] rounded hover:bg-[#444]">▶</button>
+                            <div className="flex-1 h-1 bg-[#333] rounded-full">
+                                <div className="h-full bg-yellow-600 rounded-full transition-all" style={{width: `${((step+1)/history.length)*100}%`}}></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RIGHT: CODE TRACE (1:1 with Middle) */}
+                    <div className="flex-1 flex flex-col bg-[#1A1A1A]">
+                        <div className="h-1/2 flex flex-col border-b border-[#333]">
+                            <div className="bg-[#262626] px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">3D DP Logic Trace</div>
+                            <div className="flex-1 p-4 overflow-auto custom-scroll bg-[#1E1E1E]">
+                                {CODE_SNIPPET.map((line, i) => (
+                                    <div key={i} className={`flex items-start ${current.line === i ? 'active-line' : ''}`}>
+                                        <span className="w-8 text-[9px] text-gray-600 font-mono text-right pr-3 select-none">{i+1}</span>
+                                        <pre className="text-[11px] code-font" style={{marginLeft: `${line.i * 1.5}rem`}}
+                                             dangerouslySetInnerHTML={{__html: line.t.replace(/\b(def|return|for|in|class|min|abs|divmod)\b/g, '<span class="kw">$1</span>')
+                                                                                     .replace(/(#.*)/, '<span class="cm">$1</span>')}} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="h-1/2 p-6 flex flex-col gap-4">
+                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">當前狀態變數</h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-[#121212] p-4 rounded-lg border border-[#333]">
+                                    <p className="text-[9px] text-gray-500 uppercase mb-1">當前字元</p>
+                                    <p className="text-2xl font-bold text-yellow-500 font-mono">{current.char}</p>
+                                </div>
+                                <div className="bg-[#121212] p-4 rounded-lg border border-[#333]">
+                                    <p className="text-[9px] text-gray-500 uppercase mb-1">本次成本</p>
+                                    <p className="text-2xl font-bold text-green-500 font-mono">+{current.dist}</p>
+                                </div>
+                            </div>
+                            <div className="bg-[#262626] p-4 rounded-lg border border-[#333] flex-1">
+                                <p className="text-[9px] text-gray-500 uppercase mb-2">DP 狀態快照</p>
+                                <div className="font-mono text-[12px] space-y-2 text-blue-300">
+                                    <p>dp[{current.idx}][L][R] = ?</p>
+                                    <p className="text-gray-500 text-[10px]">正在計算移動至 {current.char} 的最小路徑...</p>
+                                    <div className="flex items-center gap-2 mt-4">
+                                        <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                                        <span className="text-gray-300">左手位置: {current.L}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                                        <span className="text-gray-300">右手位置: {current.R === null ? 'None' : current.R}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

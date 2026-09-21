@@ -1,0 +1,957 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>70. Climbing Stairs - Multi-Strategy Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --easy: #00b8a3;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(0, 184, 163, 0.15); color: var(--easy); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--easy); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--easy); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--easy); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; min-height: 100px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 6px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 5px 10px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .tree-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; height: 380px; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 12px; }
+    
+    .stairs-container { display: flex; align-items: flex-end; justify-content: center; height: 100%; width: 100%; gap: 12px; padding: 20px; }
+    .stair-step { background: #1e1e1e; border: 2px solid var(--border); border-radius: 6px 6px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 8px 4px; font-family: monospace; transition: all 0.3s ease; position: relative; }
+    .stair-step.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.15); box-shadow: 0 0 12px rgba(255, 161, 22, 0.3); }
+    .stair-step.computed { border-color: var(--easy); background: rgba(0, 184, 163, 0.12); }
+
+    .memo-tree-container { position: relative; width: 100%; height: 100%; min-width: 500px; min-height: 350px; }
+
+    /* Modern Tree SVG Styles */
+    svg.tree-svg-canvas { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+    .tree-edge { stroke: #334155; stroke-width: 2.5; stroke-dasharray: 6; animation: dash 30s linear infinite; transition: all 0.4s ease; }
+    .tree-edge.active { stroke: var(--orange); stroke-width: 4; stroke-dasharray: none; filter: drop-shadow(0px 0px 6px var(--orange)); }
+    .tree-edge.completed { stroke: var(--easy); stroke-dasharray: none; opacity: 0.8; }
+    .tree-edge-label { fill: #94a3b8; font-size: 11px; font-weight: 600; font-family: monospace; text-anchor: middle; background: #0f172a; }
+
+    .tree-node-group { cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .tree-node-circle { fill: #1e293b; stroke: #475569; stroke-width: 2.5; transition: all 0.3s ease; rx: 24px; ry: 24px; }
+    .tree-node-group.visiting .tree-node-circle { fill: #2e1065; stroke: var(--orange); stroke-width: 3.5; filter: drop-shadow(0 0 10px rgba(255, 161, 22, 0.6)); }
+    .tree-node-group.cached .tree-node-circle { fill: #3b0764; stroke: var(--purple); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5)); }
+    .tree-node-group.completed .tree-node-circle { fill: #064e3b; stroke: var(--easy); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(0, 184, 163, 0.4)); }
+    .tree-node-group.pruned .tree-node-circle { fill: #450a0a; stroke: var(--red); stroke-width: 2.5; }
+
+    .tree-node-text-title { fill: #f8fafc; font-size: 13px; font-weight: bold; font-family: monospace; text-anchor: middle; }
+    .tree-node-text-sub { fill: #38bdf8; font-size: 11px; font-weight: bold; font-family: monospace; text-anchor: middle; }
+    .tree-node-badge { fill: #0f172a; stroke: #334155; stroke-width: 1; }
+
+    .tree-legend { display: flex; gap: 12px; align-items: center; font-size: 0.72rem; }
+    .legend-item { display: flex; align-items: center; gap: 4px; color: var(--text-dim); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+    .dp-table { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .table-item { background: #1e1e1e; border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; min-width: 42px; }
+    .table-item.active-curr { border-color: var(--orange); color: var(--orange); font-weight: bold; background: rgba(255, 161, 22, 0.15); transform: scale(1.08); }
+
+    .var-badge { font-family: monospace; padding: 2px 6px; border-radius: 4px; background: #222; border: 1px solid var(--border); font-size: 0.78rem; }
+    .var-badge.highlight { border-color: var(--orange); color: var(--orange); font-weight: bold; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 68px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--easy); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #222; padding: 8px; border-radius: 4px; text-align: center; font-family: monospace; font-weight: bold; border: 1px solid var(--cyan); }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">70. Climbing Stairs</span>
+    <span class="badge">Easy</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Recursion</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. DP (Top-Down)</button>
+      <button class="algo-btn" onclick="setAlgo(2)">3. DP (Bottom-Up)</button>
+      <button class="algo-btn" onclick="setAlgo(3)">4. DP (Space Opt)</button>
+      <button class="algo-btn" onclick="setAlgo(4)">5. Matrix Exponentiation</button>
+      <button class="algo-btn" onclick="setAlgo(5)">6. Math (Binet Formula)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: n = 2</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: n = 3</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: n = 4</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          假設你正在爬樓梯。需要走 <code>n</code> 階才能到達樓頂。<br>
+          每次你可以跨 <b>1 階</b> 或 <b>2 階</b>。請問有多少種不同的方法可以爬到樓頂？
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(2^n)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(n)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="stack-title">📚 Call Stack (歷程紀錄)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card">
+        <!-- 動態替換 Idea Box 內容 -->
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 狀態與遞迴樹視覺化 (Tree Visualizer)</span>
+          <div class="tree-legend" id="legend-box">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--orange);"></span>Visiting</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--easy);"></span>Computed</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--purple);"></span>Memoized</div>
+          </div>
+        </div>
+
+        <div class="tree-wrapper" id="vis-wrapper">
+          <!-- 動態切換樹狀圖 / 樓梯階梯圖 -->
+        </div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="pos-label">Current Index (i): </span>
+              <span id="pos-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="extra-label">Aux State: </span>
+              <span id="extra-display" style="font-weight: bold; color: var(--purple);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="aux-label">Return Value: </span>
+              <span id="aux-display" class="var-badge highlight">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Ways: </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.1rem; color: var(--easy);">0</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- 動態渲染 DP Array / Cache Panel -->
+          </div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current State / Result:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">步驟說明 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Recursion
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">climbStairs</span>(<span class="self">self</span>, n: int) -> int:`,
+       `        <span class="kw">def</span> <span class="fn">dfs</span>(i):`,
+       `            <span class="kw">if</span> i >= n:`,
+       `                <span class="kw">return</span> i == n`,
+       `            <span class="kw">return</span> dfs(i + <span class="cls">1</span>) + dfs(i + <span class="cls">2</span>)`,
+       `        <span class="kw">return</span> dfs(<span class="cls">0</span>)`],
+      
+      // 2. DP (Top-Down)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">climbStairs</span>(<span class="self">self</span>, n: int) -> int:`,
+       `        cache = [-<span class="cls">1</span>] * n`,
+       `        <span class="kw">def</span> <span class="fn">dfs</span>(i):`,
+       `            <span class="kw">if</span> i >= n:`,
+       `                <span class="kw">return</span> i == n`,
+       `            <span class="kw">if</span> cache[i] != -<span class="cls">1</span>:`,
+       `                <span class="kw">return</span> cache[i]`,
+       `            cache[i] = dfs(i + <span class="cls">1</span>) + dfs(i + <span class="cls">2</span>)`,
+       `            <span class="kw">return</span> cache[i]`,
+       `        <span class="kw">return</span> dfs(<span class="cls">0</span>)`],
+
+      // 3. DP (Bottom-Up)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">climbStairs</span>(<span class="self">self</span>, n: int) -> int:`,
+       `        <span class="kw">if</span> n <= <span class="cls">2</span>: <span class="kw">return</span> n`,
+       `        dp = [<span class="cls">0</span>] * (n + <span class="cls">1</span>)`,
+       `        dp[<span class="cls">1</span>], dp[<span class="cls">2</span>] = <span class="cls">1</span>, <span class="cls">2</span>`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="cls">3</span>, n + <span class="cls">1</span>):`,
+       `            dp[i] = dp[i - <span class="cls">1</span>] + dp[i - <span class="cls">2</span>]`,
+       `        <span class="kw">return</span> dp[n]`],
+
+      // 4. DP (Space Optimized)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">climbStairs</span>(<span class="self">self</span>, n: int) -> int:`,
+       `        one, two = <span class="cls">1</span>, <span class="cls">1</span>`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(n - <span class="cls">1</span>):`,
+       `            temp = one`,
+       `            one = one + two`,
+       `            two = temp`,
+       `        <span class="kw">return</span> one`],
+
+      // 5. Matrix Exponentiation
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">climbStairs</span>(<span class="self">self</span>, n: int) -> int:`,
+       `        <span class="kw">if</span> n == <span class="cls">1</span>: <span class="kw">return</span> <span class="cls">1</span>`,
+       `        <span class="kw">def</span> <span class="fn">matrix_mult</span>(A, B): ...`,
+       `        <span class="kw">def</span> <span class="fn">matrix_pow</span>(M, p): ...`,
+       `        M = [[<span class="cls">1</span>, <span class="cls">1</span>], [<span class="cls">1</span>, <span class="cls">0</span>]]`,
+       `        result = matrix_pow(M, n)`,
+       `        <span class="kw">return</span> result[<span class="cls">0</span>][<span class="cls">0</span>]`],
+
+      // 6. Math
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">climbStairs</span>(<span class="self">self</span>, n: int) -> int:`,
+       `        sqrt5 = math.sqrt(<span class="cls">5</span>)`,
+       `        phi = (<span class="cls">1</span> + sqrt5) / <span class="cls">2</span>`,
+       `        psi = (<span class="cls">1</span> - sqrt5) / <span class="cls">2</span>`,
+       `        n += <span class="cls">1</span>`,
+       `        <span class="kw">return</span> round((phi**n - psi**n) / sqrt5)`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Pure Recursion (爆搜遞迴)",
+        time: "O(2^n)", space: "O(n)",
+        idea: "<b>解法思路：</b>從第 <code>0</code> 階開始向上遞迴，每次決策走 1 步 (<code>dfs(i+1)</code>) 或 2 步 (<code>dfs(i+2)</code>)。當 <code>i == n</code> 表示成功到達傳回 1；當 <code>i > n</code> 表示越界傳回 0。因為存在大量重複計算，時間複雜度呈指數級膨脹。"
+      },
+      {
+        title: "2. Dynamic Programming (Top-Down + Memo)",
+        time: "O(n)", space: "O(n)",
+        idea: "<b>解法思路：</b>在純遞迴的基礎上加入 <code>cache</code> 陣列紀錄已計算過的階數狀態。當再次訪問相同的 <code>i</code> 時，直接從快取傳回結果，將指數級的樹狀結構剪枝為線性 O(n)。"
+      },
+      {
+        title: "3. Dynamic Programming (Bottom-Up)",
+        time: "O(n)", space: "O(n)",
+        idea: "<b>解法思路：</b>採用自底向上的動態規劃。維護長度為 <code>n+1</code> 的 <code>dp</code> 陣列，定義 <code>dp[i]</code> 為爬到第 <code>i</code> 階的方法數。基礎狀態 <code>dp[1]=1, dp[2]=2</code>，狀態轉移方程為 <code>dp[i] = dp[i-1] + dp[i-2]</code>。"
+      },
+      {
+        title: "4. Dynamic Programming (Space Optimized)",
+        time: "O(n)", space: "O(1)",
+        idea: "<b>解法思路：</b>觀察 Bottom-Up 方程發現 <code>dp[i]</code> 僅依賴於前兩項，因此不需保留整個陣列。使用兩個滾動變數 <code>one</code> 與 <code>two</code> 交替更新，將空間複雜度優化至 O(1)。"
+      },
+      {
+        title: "5. Matrix Exponentiation (矩陣快速冪)",
+        time: "O(log n)", space: "O(1)",
+        idea: "<b>解法思路：</b>將斐波那契轉移方程轉化為矩陣形式：<code>[[1, 1], [1, 0]]^n</code>。利用二進制二分法 (快速冪) 計算矩陣的 n 次方，能在 O(log n) 時間內獲得解答。"
+      },
+      {
+        title: "6. Math (Binet's Formula 通項公式)",
+        time: "O(1) 或 O(log n)", space: "O(1)",
+        idea: "<b>解法思路：</b>利用黃金比例 <code>φ = (1+√5)/2</code> 與韋達定理推導出的費波那契數列閉式解 (Binet's Formula)。直接帶入公式 <code>round((φ^(n+1) - ψ^(n+1)) / √5)</code> 可在 O(1) 算出答案。"
+      }
+    ];
+
+    const presets = [
+      {
+        title: "Example 1", n: 2, expected: 2,
+        explanation: "There are two ways to climb to the top.<br>1. 1 step + 1 step<br>2. 2 steps"
+      },
+      {
+        title: "Example 2", n: 3, expected: 3,
+        explanation: "There are three ways to climb to the top.<br>1. 1 step + 1 step + 1 step<br>2. 1 step + 2 steps<br>3. 2 steps + 1 step"
+      },
+      {
+        title: "Example 3", n: 4, expected: 5,
+        explanation: "There are 5 ways to climb to the top.<br>1. 1+1+1+1<br>2. 1+1+2<br>3. 1+2+1<br>4. 2+1+1<br>5. 2+2"
+      }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title} (n = ${p.n})</div>
+        <div><b>Input:</b> n = ${p.n} | <b>Output:</b> ${p.expected}</div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b><br>${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const n = presets[currentPreset].n;
+
+      switch(currentAlgo) {
+        case 0: buildRecursionSteps(n); break;
+        case 1: buildTopDownSteps(n); break;
+        case 2: buildBottomUpSteps(n); break;
+        case 3: buildSpaceOptSteps(n); break;
+        case 4: buildMatrixSteps(n); break;
+        case 5: buildMathSteps(n); break;
+      }
+    }
+
+    // 1. Pure Recursion
+    function buildRecursionSteps(n) {
+      const stack = [];
+      const treeNodes = [];
+      const treeEdges = [];
+      let counter = 0;
+
+      function dfs(i, parentId = null, stepType = "") {
+        const nodeId = ++counter;
+        const nodeObj = { id: nodeId, val: i, parentId, stepType, state: 'visiting', res: null };
+        treeNodes.push(nodeObj);
+        if (parentId) treeEdges.push({ from: parentId, to: nodeId, label: stepType });
+
+        stack.push({ fnName: "dfs", args: `i=${i}` });
+
+        history.push({
+          line: 3, phase: `⏬ 【DFS Call】dfs(${i})`,
+          desc: `從第 ${i} 階展開分支探索... (邁向下一步)`,
+          i, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        if (i >= n) {
+          const isTarget = (i === n);
+          const res = isTarget ? 1 : 0;
+          nodeObj.state = isTarget ? 'completed' : 'pruned';
+          nodeObj.res = res;
+
+          history.push({
+            line: 4, phase: isTarget ? `🎯 【Reached Top】` : `💥 【Overstep Boundary】`,
+            desc: isTarget ? `到達第 ${n} 階！發現 1 種有效路徑，傳回 1` : `超過第 ${n} 階 (i=${i})，無效路徑，傳回 0`,
+            i, resVal: res, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+
+          stack.pop();
+          return res;
+        }
+
+        let left = dfs(i + 1, nodeId, "+1");
+        let right = dfs(i + 2, nodeId, "+2");
+        let total = left + right;
+
+        nodeObj.state = 'completed';
+        nodeObj.res = total;
+
+        history.push({
+          line: 5, phase: `🔙 【Return Sum】dfs(${i}) = ${total}`,
+          desc: `匯合分支：跨1步 dfs(${i+1})=${left} + 跨2步 dfs(${i+2})=${right} => 傳回 ${total}`,
+          i, resVal: total, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        stack.pop();
+        return total;
+      }
+
+      const res = dfs(0);
+      history.push({
+        line: 6, phase: "🎉 【Complete】", desc: `純遞迴計算完成！總方法數 = ${res}`,
+        i: 0, resVal: res, stack: [], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: null, result: res
+      });
+    }
+
+    // 2. Top-Down (Memo)
+    function buildTopDownSteps(n) {
+      const cache = new Array(n).fill(-1);
+      const stack = [];
+      const treeNodes = [];
+      const treeEdges = [];
+      let counter = 0;
+
+      function dfs(i, parentId = null, stepType = "") {
+        const nodeId = ++counter;
+        const nodeObj = { id: nodeId, val: i, parentId, stepType, state: 'visiting', res: null };
+        treeNodes.push(nodeObj);
+        if (parentId) treeEdges.push({ from: parentId, to: nodeId, label: stepType });
+
+        stack.push({ fnName: "dfs", args: `i=${i}` });
+
+        history.push({
+          line: 3, phase: `⏬ 【DFS Call】dfs(${i})`,
+          desc: `檢查第 ${i} 階狀態...`,
+          i, cache: [...cache], stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        if (i >= n) {
+          const res = (i === n ? 1 : 0);
+          nodeObj.state = (i === n ? 'completed' : 'pruned'); nodeObj.res = res;
+          history.push({
+            line: 4, phase: `⚡ 【Base Case】i=${i}`,
+            desc: i === n ? `成功到達樓頂，傳回 1` : `超越樓頂，傳回 0`,
+            i, resVal: res, cache: [...cache], stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+          stack.pop();
+          return res;
+        }
+
+        if (cache[i] !== -1) {
+          nodeObj.state = 'cached'; nodeObj.res = cache[i];
+          history.push({
+            line: 6, phase: `🟪 【Cache Hit】Cache[${i}] = ${cache[i]}`,
+            desc: `直接命中快取 Cache[${i}]，立即傳回 ${cache[i]}，免去下層重複樹搜尋 (剪枝)`,
+            i, resVal: cache[i], cache: [...cache], stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+          stack.pop();
+          return cache[i];
+        }
+
+        let left = dfs(i + 1, nodeId, "+1");
+        let right = dfs(i + 2, nodeId, "+2");
+        let total = left + right;
+
+        cache[i] = total;
+        nodeObj.state = 'completed'; nodeObj.res = total;
+
+        history.push({
+          line: 8, phase: `💾 【Cache Store】Cache[${i}] = ${total}`,
+          desc: `寫入快取：Cache[${i}] = dfs(${i+1}) + dfs(${i+2}) = ${total}`,
+          i, resVal: total, cache: [...cache], stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        stack.pop();
+        return total;
+      }
+
+      const res = dfs(0);
+      history.push({
+        line: 10, phase: "🎉 【Complete】", desc: `Top-Down 記憶化搜尋完畢！總方法數 = ${res}`,
+        i: 0, resVal: res, cache: [...cache], stack: [], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: null, result: res
+      });
+    }
+
+    // 3. Bottom-Up
+    function buildBottomUpSteps(n) {
+      if (n <= 2) {
+        history.push({
+          line: 2, phase: "⚡ 【Base Case】", desc: `n <= 2，直接傳回 ${n}`,
+          i: n, dp: Array.from({length: n+1}, (_, idx) => idx), result: n
+        });
+        return;
+      }
+
+      const dp = new Array(n + 1).fill(0);
+      dp[1] = 1; dp[2] = 2;
+
+      history.push({
+        line: 4, phase: "【Init Base DP】", desc: `初始化基本狀態：dp[1] = 1, dp[2] = 2`,
+        i: 2, dp: [...dp], result: "Running..."
+      });
+
+      for (let i = 3; i <= n; i++) {
+        dp[i] = dp[i - 1] + dp[i - 2];
+        history.push({
+          line: 6, phase: `➕ 【Calculate dp[${i}]】`,
+          desc: `dp[${i}] = dp[${i-1}] (${dp[i-1]}) + dp[${i-2}] (${dp[i-2]}) = ${dp[i]}`,
+          i, currVal: dp[i], dp: [...dp], result: "Running..."
+        });
+      }
+
+      history.push({
+        line: 7, phase: "🎉 【Complete】", desc: `Bottom-Up DP 計算完畢！dp[${n}] = ${dp[n]}`,
+        i: n, dp: [...dp], result: dp[n]
+      });
+    }
+
+    // 4. Space Optimized
+    function buildSpaceOptSteps(n) {
+      let one = 1, two = 1;
+      history.push({
+        line: 2, phase: "【Init Var】", desc: `初始化 one = 1, two = 1`,
+        i: 0, one, two, result: "Running..."
+      });
+
+      for (let i = 0; i < n - 1; i++) {
+        let temp = one;
+        one = one + two;
+        two = temp;
+
+        history.push({
+          line: 5, phase: `🔄 【Step ${i + 1} Update】`,
+          desc: `temp = ${temp}, one = ${one} (${temp}+${two}), two = ${temp}`,
+          i: i + 1, one, two, temp, result: "Running..."
+        });
+      }
+
+      history.push({
+        line: 7, phase: "🎉 【Complete】", desc: `滾動優化計算完畢！最終結果 = ${one}`,
+        i: n - 1, one, two, result: one
+      });
+    }
+
+    // 5. Matrix Exponentiation
+    function buildMatrixSteps(n) {
+      history.push({
+        line: 5, phase: "📐 【Matrix Setup】", desc: `轉移矩陣 M = [[1, 1], [1, 0]]，計算 M^${n}`,
+        i: n, matrix: [[1,1],[1,0]], result: "Running..."
+      });
+
+      function getFibMatrix(p) {
+        let res = [[1, 0], [0, 1]];
+        let base = [[1, 1], [1, 0]];
+        while(p > 0) {
+          if (p % 2 === 1) {
+            res = mult(res, base);
+          }
+          base = mult(base, base);
+          p = Math.floor(p / 2);
+        }
+        return res;
+      }
+      function mult(A, B) {
+        return [
+          [A[0][0]*B[0][0] + A[0][1]*B[1][0], A[0][0]*B[0][1] + A[0][1]*B[1][1]],
+          [A[1][0]*B[0][0] + A[1][1]*B[1][0], A[1][0]*B[0][1] + A[1][1]*B[1][1]]
+        ];
+      }
+
+      const resM = getFibMatrix(n);
+
+      history.push({
+        line: 6, phase: "⚡ 【Matrix Fast Pow】", desc: `快速冪計算完成，結果矩陣 M^${n} = [[${resM[0][0]}, ${resM[0][1]}], [${resM[1][0]}, ${resM[1][1]}]]`,
+        i: n, matrix: resM, result: "Running..."
+      });
+
+      history.push({
+        line: 7, phase: "🎉 【Complete】", desc: `提取 result[0][0] = ${resM[0][0]}`,
+        i: n, matrix: resM, result: resM[0][0]
+      });
+    }
+
+    // 6. Math Formula
+    function buildMathSteps(n) {
+      const sqrt5 = Math.sqrt(5);
+      const phi = (1 + sqrt5) / 2;
+      const psi = (1 - sqrt5) / 2;
+
+      history.push({
+        line: 3, phase: "📐 【Constants】", desc: `計算黃金比例 √5 ≈ ${sqrt5.toFixed(4)}, φ ≈ ${phi.toFixed(4)}, ψ ≈ ${psi.toFixed(4)}`,
+        i: n, phi, psi, result: "Running..."
+      });
+
+      const targetN = n + 1;
+      const ans = Math.round((Math.pow(phi, targetN) - Math.pow(psi, targetN)) / sqrt5);
+
+      history.push({
+        line: 6, phase: "⚡ 【Binet Formula】", desc: `帶入通項公式 ((φ^${targetN} - ψ^${targetN}) / √5) = ${ans}`,
+        i: n, phi, psi, ans, result: ans
+      });
+    }
+
+    /* ---------------- Improved Tree Layout Algorithm & Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const p = presets[currentPreset];
+
+      if (currentAlgo === 0 || currentAlgo === 1) {
+        // ENHANCED SVG TREE VISUALIZATION
+        let nodes = state.treeNodes || [];
+        let edges = state.treeEdges || [];
+
+        wrapper.innerHTML = `
+          <div class="memo-tree-container" id="tree-container">
+            <svg class="tree-svg-canvas" id="tree-svg-root"></svg>
+          </div>`;
+
+        const svg = document.getElementById('tree-svg-root');
+        if (nodes.length === 0) return;
+
+        // Build hierarchy tree map to compute positions nicely
+        const nodeMap = {};
+        nodes.forEach(n => { nodeMap[n.id] = { ...n, children: [] }; });
+        let root = null;
+
+        nodes.forEach(n => {
+          if (n.parentId && nodeMap[n.parentId]) {
+            nodeMap[n.parentId].children.push(nodeMap[n.id]);
+          } else {
+            root = nodeMap[n.id];
+          }
+        });
+
+        // Compute horizontal coordinates based on leaves
+        let leafCounter = 0;
+        function assignX(node) {
+          if (!node.children || node.children.length === 0) {
+            leafCounter++;
+            node.x = leafCounter;
+          } else {
+            node.children.forEach(c => assignX(c));
+            const firstX = node.children[0].x;
+            const lastX = node.children[node.children.length - 1].x;
+            node.x = (firstX + lastX) / 2;
+          }
+        }
+        if (root) assignX(root);
+
+        // Compute vertical depth
+        function assignY(node, depth = 0) {
+          node.depth = depth;
+          if (node.children) {
+            node.children.forEach(c => assignY(c, depth + 1));
+          }
+        }
+        if (root) assignY(root);
+
+        // Calculate scaling & pixel mapping
+        const totalLeaves = Math.max(leafCounter, 1);
+        const maxDepth = Math.max(...Object.values(nodeMap).map(n => n.depth), 1);
+
+        const svgWidth = Math.max(wrapper.clientWidth - 30, totalLeaves * 75);
+        const svgHeight = Math.max(wrapper.clientHeight - 30, (maxDepth + 1) * 70 + 40);
+
+        svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+
+        const marginX = 45;
+        const marginY = 40;
+        const availableW = svgWidth - marginX * 2;
+        const availableH = svgHeight - marginY * 2;
+
+        const scaleX = totalLeaves > 1 ? availableW / (totalLeaves - 1) : availableW / 2;
+        const scaleY = maxDepth > 0 ? availableH / maxDepth : 0;
+
+        Object.values(nodeMap).forEach(n => {
+          n.px = totalLeaves > 1 ? marginX + (n.x - 1) * scaleX : svgWidth / 2;
+          n.py = marginY + n.depth * scaleY;
+        });
+
+        // Render Edges
+        edges.forEach(e => {
+          const fromNode = nodeMap[e.from];
+          const toNode = nodeMap[e.to];
+          if (fromNode && toNode) {
+            const isEdgeActive = (state.activeNode === e.to);
+            const isCompleted = toNode.state === 'completed' || toNode.state === 'cached';
+
+            // Curved SVG Path
+            const midY = (fromNode.py + toNode.py) / 2;
+            const d = `M ${fromNode.px} ${fromNode.py} C ${fromNode.px} ${midY}, ${toNode.px} ${midY}, ${toNode.px} ${toNode.py}`;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('class', `tree-edge ${isEdgeActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`);
+            svg.appendChild(path);
+
+            // Edge Label (+1 or +2 step)
+            const labelX = (fromNode.px + toNode.px) / 2;
+            const labelY = midY;
+
+            const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bgRect.setAttribute('x', labelX - 10);
+            bgRect.setAttribute('y', labelY - 8);
+            bgRect.setAttribute('width', 20);
+            bgRect.setAttribute('height', 14);
+            bgRect.setAttribute('rx', 3);
+            bgRect.setAttribute('class', 'tree-node-badge');
+            svg.appendChild(bgRect);
+
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', labelX);
+            text.setAttribute('y', labelY + 3);
+            text.setAttribute('class', 'tree-edge-label');
+            text.textContent = e.label || '';
+            svg.appendChild(text);
+          }
+        });
+
+        // Render Nodes
+        Object.values(nodeMap).forEach(n => {
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          let cls = `tree-node-group ${n.state}`;
+          if (state.activeNode === n.id) cls += " visiting";
+          g.setAttribute('class', cls);
+          g.setAttribute('transform', `translate(${n.px}, ${n.py})`);
+
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          circle.setAttribute('x', -24);
+          circle.setAttribute('y', -22);
+          circle.setAttribute('width', 48);
+          circle.setAttribute('height', 44);
+          circle.setAttribute('class', 'tree-node-circle');
+          g.appendChild(circle);
+
+          const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          titleText.setAttribute('y', n.res !== null ? -4 : 4);
+          titleText.setAttribute('class', 'tree-node-text-title');
+          titleText.textContent = `i=${n.val}`;
+          g.appendChild(titleText);
+
+          if (n.res !== null) {
+            const subText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            subText.setAttribute('y', 13);
+            subText.setAttribute('class', 'tree-node-text-sub');
+            subText.textContent = `ans=${n.res}`;
+            g.appendChild(subText);
+          }
+
+          svg.appendChild(g);
+        });
+
+      } else if (currentAlgo === 4) {
+        // Matrix Render
+        const m = state.matrix || [[0,0],[0,0]];
+        wrapper.innerHTML = `
+          <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+            <div style="font-size:0.85rem; color:var(--cyan);">Exponent Matrix M^${p.n}:</div>
+            <div class="matrix-grid" style="width: 180px; height: 120px;">
+              <div style="display:flex; align-items:center; justify-content:center;">${m[0][0]}</div>
+              <div style="display:flex; align-items:center; justify-content:center;">${m[0][1]}</div>
+              <div style="display:flex; align-items:center; justify-content:center;">${m[1][0]}</div>
+              <div style="display:flex; align-items:center; justify-content:center;">${m[1][1]}</div>
+            </div>
+          </div>
+        `;
+      } else {
+        // Stairs Render for DP
+        let html = `<div class="stairs-container">`;
+        for (let step = 1; step <= p.n; step++) {
+          let height = 40 + step * 30;
+          let cls = "stair-step";
+
+          if (state.i === step) cls += " active";
+          else if (state.i > step) cls += " computed";
+
+          let ways = state.dp ? state.dp[step] : (step === state.i ? state.one : '');
+
+          html += `
+            <div class="${cls}" style="height: ${height}px; flex: 1;">
+              <span style="font-weight: bold; color: var(--text);">${step}F</span>
+              <span style="font-size: 0.75rem; color: var(--easy);">${ways ? ways + ' ways' : ''}</span>
+            </div>
+          `;
+        }
+        html += `</div>`;
+        wrapper.innerHTML = html;
+      }
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      // Stack Panel
+      const stackBox = document.getElementById('stack-display');
+      if (currentAlgo === 0 || currentAlgo === 1) {
+        const stackData = state.stack || [];
+        stackBox.innerHTML = stackData.length === 0 
+          ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Call Stack Empty</div>`
+          : stackData.map(f => `
+              <div class="stack-frame">
+                <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.75rem;">(${f.args})</span></div>
+              </div>
+            `).join('');
+        document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+      } else {
+        stackBox.innerHTML = `<div style="color:var(--text-dim); text-align:center; margin:auto;">Iterative Method (No Dynamic Call Stack)</div>`;
+        document.getElementById('stackDepthHint').innerText = `Iterative`;
+      }
+
+      // Variable Display
+      document.getElementById('pos-display').innerText = state.i !== undefined ? state.i : "-";
+      document.getElementById('extra-display').innerText = state.one !== undefined ? `one=${state.one}` : (state.resVal !== undefined ? state.resVal : "-");
+      document.getElementById('aux-display').innerText = state.two !== undefined ? `two=${state.two}` : "-";
+
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (state.cache) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Cache Array:</span>
+            <div class="dp-table">
+              ${state.cache.map((val, idx) => `
+                <div class="table-item ${state.i === idx ? 'active-curr' : ''}">
+                  <span style="font-size: 0.6rem; color: var(--text-dim);">${idx}</span>
+                  <span>${val}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (state.dp) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">DP Table:</span>
+            <div class="dp-table">
+              ${state.dp.map((val, idx) => idx === 0 ? '' : `
+                <div class="table-item ${state.i === idx ? 'active-curr' : ''}">
+                  <span style="font-size: 0.6rem; color: var(--text-dim);">${idx}F</span>
+                  <span>${val}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        dynPanel.innerHTML = '';
+      }
+
+      // Result Panel
+      const statusEl = document.getElementById('status-display');
+      statusEl.innerText = state.result !== "Running..." ? state.result : (state.currVal || state.resVal || state.one || 0);
+
+      const resEl = document.getElementById('result-text');
+      resEl.innerText = state.result !== "Running..." ? `Total Ways = ${state.result}` : "Computing...";
+      resEl.style.color = state.result !== "Running..." ? "var(--green)" : "var(--text-dim)";
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

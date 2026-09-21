@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 2573. Find the String with LCP - VS Code Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+        :root {
+            --vscode-bg: #1e1e1e;
+            --vscode-sidebar: #252526;
+            --vscode-highlight: #37373d;
+            --vscode-accent: #007acc;
+            --py-keyword: #c678dd;
+            --py-func: #61afef;
+            --py-string: #98c379;
+            --py-num: #d19a66;
+            --py-comment: #5c6370;
+        }
+        body { background-color: #181818; color: #cccccc; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
+        .vscode-font { font-family: 'Fira Code', monospace; }
+        .line-highlight { background-color: rgba(55, 55, 61, 0.8); border-left: 3px solid var(--vscode-accent); }
+        .dp-cell { transition: all 0.3s ease; width: 35px; height: 35px; }
+        .dp-update { animation: pulse 0.6s ease-out; background-color: #264f78 !important; color: white; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); background-color: var(--vscode-accent); } 100% { transform: scale(1); } }
+        .terminal-log { font-size: 12px; border-bottom: 1px solid #333; padding: 2px 0; }
+        .scroll-hide::-webkit-scrollbar { width: 5px; }
+        .scroll-hide::-webkit-scrollbar-thumb { background: #333; }
+    </style>
+</head>
+<body class="flex flex-col">
+
+<div class="h-9 bg-[#323233] flex items-center px-3 text-sm space-x-4 border-b border-[#2b2b2b]">
+    <div class="flex items-center space-x-2"><i class="fa-solid fa-code text-blue-400"></i> <span>solution.py - LeetCode Visualizer</span></div>
+</div>
+
+<div class="flex flex-1 overflow-hidden">
+    
+    <div class="w-1/4 bg-[#252526] border-r border-[#333] flex flex-col">
+        <div class="p-4 border-b border-[#333] flex justify-between items-center">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-500">Problem Description</span>
+            <select id="example-select" onchange="loadExample()" class="bg-[#3c3c3c] text-xs p-1 rounded border-none outline-none">
+                <option value="0">Example 1 (abab)</option>
+                <option value="1">Example 2 (aaaa)</option>
+                <option value="2">Example 3 (Invalid)</option>
+            </select>
+        </div>
+        <div class="p-6 overflow-y-auto scroll-hide space-y-4 text-sm leading-relaxed">
+            <h1 class="text-xl font-bold text-white">2573. Find the String with LCP</h1>
+            <div class="flex space-x-2"><span class="text-red-400 font-bold">Hard</span><span class="text-gray-500">String / DP / Greedy</span></div>
+            <p>給定一個 n x n 矩陣 <code>lcp</code>，代表子字串 <code>word[i...]</code> 與 <code>word[j...]</code> 的最長公共前綴長度。請回傳字典序最小的字串。</p>
+            <div class="bg-[#1e1e1e] p-4 rounded-md border border-[#333]">
+                <span class="text-xs text-gray-500 uppercase">Constraints:</span>
+                <ul class="list-disc ml-4 mt-2 text-xs text-gray-400">
+                    <li>n == lcp.length == lcp[i].length</li>
+                    <li>1 <= n <= 1000</li>
+                    <li>0 <= lcp[i][j] <= n</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-[45%] bg-[#1e1e1e] flex flex-col relative">
+        <div class="header p-3 bg-[#252526] text-xs text-gray-500 uppercase">Visualization Arena</div>
+        
+        <div class="flex-grow p-8 flex flex-col items-center space-y-12 overflow-y-auto scroll-hide">
+            <div class="w-full">
+                <h3 class="text-sm mb-4 text-gray-400"><i class="fa-solid fa-font mr-2"></i>Current String Construction (res)</h3>
+                <div id="word-container" class="flex justify-center gap-3"></div>
+            </div>
+
+            <div class="w-full flex flex-col items-center">
+                <h3 class="text-sm mb-4 text-gray-400"><i class="fa-solid fa-table-cells mr-2"></i>DP / LCP Matrix Verification</h3>
+                <div id="matrix-grid" class="grid gap-1 bg-[#2d2d2d] p-2 rounded shadow-2xl"></div>
+            </div>
+        </div>
+
+        <div class="p-4 bg-[#252526] flex justify-center items-center space-x-4 border-t border-[#333]">
+            <button onclick="stepBack()" class="btn px-4 py-1 bg-[#3c3c3c] hover:bg-[#505050] rounded text-sm"><i class="fa-solid fa-backward-step mr-2"></i>Prev</button>
+            <button onclick="toggleAuto()" id="auto-btn" class="btn px-4 py-1 bg-green-700 hover:bg-green-600 rounded text-sm"><i class="fa-solid fa-play mr-2"></i>Auto</button>
+            <button onclick="stepForward()" class="btn px-4 py-1 bg-[#007acc] hover:bg-[#118ad2] rounded text-sm text-white">Next<i class="fa-solid fa-forward-step ml-2"></i></button>
+            <button onclick="resetAll()" class="btn px-4 py-1 bg-red-900/50 hover:bg-red-800 rounded text-sm">Reset</button>
+        </div>
+    </div>
+
+    <div class="w-[30%] bg-[#252526] border-l border-[#333] flex flex-col">
+        <div class="header p-3 text-xs text-gray-500 uppercase flex justify-between">
+            <span>Debugger</span>
+            <span class="text-blue-400">Python 3.10</span>
+        </div>
+        
+        <div id="code-area" class="flex-grow p-2 vscode-font text-[13px] leading-6 overflow-y-auto scroll-hide"></div>
+
+        <div class="h-1/3 bg-[#1e1e1e] border-t border-[#333] flex flex-col">
+            <div class="p-2 text-xs bg-[#252526] text-gray-500 border-b border-[#333]">VARIABLES WATCH</div>
+            <div id="vars-log" class="p-4 flex-grow overflow-y-auto scroll-hide vscode-font text-xs space-y-1">
+                <div class="text-gray-500 italic">No active session...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const examples = [
+        { lcp: [[4,0,2,0],[0,3,0,1],[2,0,2,0],[0,1,0,1]], n: 4 },
+        { lcp: [[4,3,2,1],[3,3,2,1],[2,2,2,1],[1,1,1,1]], n: 4 },
+        { lcp: [[4,3,2,1],[3,3,2,1],[2,2,2,1],[1,1,1,3]], n: 4 }
+    ];
+
+    let currentEx = 0;
+    let stepIndex = -1;
+    let timeline = [];
+    let autoPlayInterval = null;
+
+    const pythonCode = [
+        { line: 0, text: "def findTheString(lcp):", indent: 0 },
+        { line: 1, text: "    n = len(lcp)", indent: 0 },
+        { line: 2, text: "    res = [''] * n", indent: 0 },
+        { line: 3, text: "    char_code = 97 # 'a'", indent: 0 },
+        { line: 4, text: "    for i in range(n):", indent: 0 },
+        { line: 5, text: "        if res[i] != '': continue", indent: 1 },
+        { line: 6, text: "        if char_code > 122: return ''", indent: 1 },
+        { line: 7, text: "        curr = chr(char_code)", indent: 1 },
+        { line: 8, text: "        for j in range(i, n):", indent: 1 },
+        { line: 9, text: "            if lcp[i][j] > 0:", indent: 2 },
+        { line: 10, text: "                res[j] = curr", indent: 3 },
+        { line: 11, text: "        char_code += 1", indent: 1 },
+        { line: 12, text: "    word = ''.join(res)", indent: 0 },
+        { line: 13, text: "    dp = [[0]*(n+1) for _ in range(n+1)]", indent: 0 },
+        { line: 14, text: "    for i in range(n-1, -1, -1):", indent: 0 },
+        { line: 15, text: "        for j in range(n-1, -1, -1):", indent: 1 },
+        { line: 16, text: "            if word[i] == word[j]:", indent: 2 },
+        { line: 17, text: "                dp[i][j] = dp[i+1][j+1] + 1", indent: 3 },
+        { line: 18, text: "            if dp[i][j] != lcp[i][j]: return ''", indent: 2 },
+        { line: 19, text: "    return word", indent: 0 }
+    ];
+
+    function initCodeArea() {
+        const area = document.getElementById('code-area');
+        area.innerHTML = pythonCode.map(l => `
+            <div id="code-line-${l.line}" class="px-4 whitespace-pre">` + 
+            " ".repeat(l.indent * 4) + 
+            l.text.replace(/def|for|in|if|return|continue/g, m => `<span style="color:var(--py-keyword)">${m}</span>`)
+                  .replace(/len|range|chr|join/g, m => `<span style="color:var(--py-func)">${m}</span>`)
+                  .replace(/97|122|0|1/g, m => `<span style="color:var(--py-num)">${m}</span>`)
+                  .replace(/'.*?'/g, m => `<span style="color:var(--py-string)">${m}</span>`)
+                  .replace(/#.*/g, m => `<span style="color:var(--py-comment)">${m}</span>`)
+            + `</div>`
+        ).join('');
+    }
+
+    function generateTimeline() {
+        const { lcp, n } = examples[currentEx];
+        const t = [];
+        let res = Array(n).fill("");
+        let char_code = 97;
+        
+        t.push({ line: 2, vars: { res: [...res] }, msg: "Initialize empty string result" });
+        t.push({ line: 3, vars: { char_code: 97 }, msg: "Start with character 'a'" });
+
+        for (let i = 0; i < n; i++) {
+            t.push({ line: 4, vars: { i }, msg: `Checking index i=${i}` });
+            if (res[i] !== "") {
+                t.push({ line: 5, vars: { i, "res[i]": res[i] }, msg: "Index already filled, skipping" });
+                continue;
+            }
+            if (char_code > 122) { t.push({ line: 6, msg: "Out of alphabets!" }); return t; }
+            
+            let curr = String.fromCharCode(char_code);
+            t.push({ line: 7, vars: { i, curr }, msg: `Assigning character '${curr}'` });
+
+            for (let j = i; j < n; j++) {
+                if (lcp[i][j] > 0) {
+                    res[j] = curr;
+                    t.push({ line: 10, vars: { i, j, res: [...res] }, msg: `lcp[${i}][${j}] > 0, res[${j}] = '${curr}'`, update: `slot-${j}` });
+                }
+            }
+            char_code++;
+            t.push({ line: 11, vars: { char_code }, msg: "Next available character: " + String.fromCharCode(char_code) });
+        }
+
+        let word = res.join('');
+        t.push({ line: 12, vars: { word }, msg: "String construction finished: " + word });
+        
+        let dp = Array(n+1).fill(0).map(() => Array(n+1).fill(0));
+        for (let i = n-1; i >= 0; i--) {
+            for (let j = n-1; j >= 0; j--) {
+                t.push({ line: 15, vars: { i, j }, msg: `Validating DP[${i}][${j}]` });
+                if (word[i] === word[j]) {
+                    dp[i][j] = dp[i+1][j+1] + 1;
+                    t.push({ line: 17, vars: { i, j, [`dp[${i}][${j}]`]: dp[i][j] }, msg: "Match! Increment LCP", dpUpdate: [i, j, dp[i][j]] });
+                } else {
+                    dp[i][j] = 0;
+                }
+                if (dp[i][j] !== lcp[i][j]) {
+                    t.push({ line: 18, vars: { i, j, "dp_val": dp[i][j], "expected": lcp[i][j] }, msg: "Mismatch found! Invalid matrix" });
+                    return t;
+                }
+            }
+        }
+        t.push({ line: 19, msg: "Success! Returning smallest string" });
+        return t;
+    }
+
+    function renderVisuals() {
+        const { lcp, n } = examples[currentEx];
+        const grid = document.getElementById('matrix-grid');
+        grid.style.gridTemplateColumns = `repeat(${n}, 35px)`;
+        grid.innerHTML = '';
+        for(let i=0; i<n; i++) {
+            for(let j=0; j<n; j++) {
+                grid.innerHTML += `<div id="dp-${i}-${j}" class="dp-cell flex items-center justify-center text-xs bg-[#1e1e1e] border border-[#333] text-gray-500">${lcp[i][j]}</div>`;
+            }
+        }
+
+        const wordBox = document.getElementById('word-container');
+        wordBox.innerHTML = Array(n).fill(0).map((_, i) => `<div id="slot-${i}" class="w-10 h-10 border-b-2 border-[#007acc] bg-[#252526] flex items-center justify-center font-bold text-lg text-white"></div>`).join('');
+    }
+
+    function updateStep() {
+        if (stepIndex < 0 || stepIndex >= timeline.length) return;
+        const state = timeline[stepIndex];
+
+        // Code Highlight
+        document.querySelectorAll('.line-highlight').forEach(el => el.classList.remove('line-highlight'));
+        document.getElementById(`code-line-${state.line}`).classList.add('line-highlight');
+
+        // Variables Log
+        const log = document.getElementById('vars-log');
+        let varHtml = `<div class="text-blue-400 mb-2">> ${state.msg}</div>`;
+        for (let key in state.vars) {
+            varHtml += `<div><span class="text-yellow-500">${key}</span> = <span class="text-green-400">${JSON.stringify(state.vars[key])}</span></div>`;
+        }
+        log.innerHTML = varHtml;
+
+        // Visual Updates
+        if (state.update) {
+            const el = document.getElementById(state.update);
+            el.innerText = state.vars.res[state.update.split('-')[1]];
+            el.classList.add('dp-update');
+            setTimeout(() => el.classList.remove('dp-update'), 600);
+        }
+
+        if (state.dpUpdate) {
+            const [i, j, val] = state.dpUpdate;
+            const el = document.getElementById(`dp-${i}-${j}`);
+            el.innerText = val;
+            el.classList.add('dp-update', 'text-white');
+            setTimeout(() => el.classList.remove('dp-update'), 600);
+        }
+    }
+
+    function stepForward() { if (stepIndex < timeline.length - 1) { stepIndex++; updateStep(); } else { stopAuto(); } }
+    function stepBack() { if (stepIndex > 0) { stepIndex--; resetVisualOnly(); for(let i=0; i<=stepIndex; i++) applySilentStep(i); updateStep(); } }
+    
+    function applySilentStep(idx) {
+        const state = timeline[idx];
+        if (state.update) document.getElementById(state.update).innerText = state.vars.res[state.update.split('-')[1]];
+        if (state.dpUpdate) document.getElementById(`dp-${state.dpUpdate[0]}-${state.dpUpdate[1]}`).innerText = state.dpUpdate[2];
+    }
+
+    function resetVisualOnly() {
+        renderVisuals();
+    }
+
+    function resetAll() {
+        stopAuto();
+        stepIndex = -1;
+        document.getElementById('vars-log').innerHTML = '<div class="text-gray-500 italic">Resetting...</div>';
+        renderVisuals();
+        document.querySelectorAll('.line-highlight').forEach(el => el.classList.remove('line-highlight'));
+    }
+
+    function toggleAuto() {
+        if (autoPlayInterval) { stopAuto(); }
+        else {
+            document.getElementById('auto-btn').innerHTML = '<i class="fa-solid fa-pause mr-2"></i>Pause';
+            autoPlayInterval = setInterval(stepForward, 500);
+        }
+    }
+
+    function stopAuto() {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+        document.getElementById('auto-btn').innerHTML = '<i class="fa-solid fa-play mr-2"></i>Auto';
+    }
+
+    function loadExample() {
+        currentEx = document.getElementById('example-select').value;
+        timeline = generateTimeline();
+        resetAll();
+    }
+
+    // Init
+    initCodeArea();
+    loadExample();
+</script>
+</body>
+</html>

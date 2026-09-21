@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>846. Hand of Straights - Pro Debugger</title>
+  <style>
+    :root {
+      --bg: #0d1117; --panel: #161b22; --border: #30363d;
+      --text: #c9d1d9; --blue: #66d9ef; --purple: #ae81ff;
+      --orange: #fd971f; --green: #a6e22e; --red: #f92672;
+      --vscode-bg: #272822; 
+      --kw: #66d9ef; --fn: #e6db74; --vr: #f8f8f2; --nm: #ae81ff; --st: #e6db74; --cm: #75715e;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', 'Consolas', sans-serif; }
+    body { background: #010409; color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+    /* --- 左側 (25%): LeetCode 形式 --- */
+    .sidebar-l { width: 25%; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: #0d1117; overflow-y: auto; }
+    .section-header { padding: 12px 16px; font-size: 13px; font-weight: bold; color: #8b949e; border-bottom: 1px solid var(--border); background: #161b22; text-transform: uppercase; }
+    
+    .p-header { padding: 20px 16px; border-bottom: 1px solid var(--border); }
+    .p-title { font-size: 22px; color: #fff; font-weight: 600; margin-bottom: 10px; }
+    .p-desc { font-size: 15px; line-height: 1.6; color: #d1d5db; margin-bottom: 15px; }
+    .p-constraints { font-size: 13px; color: #8b949e; background: #161b22; padding: 10px; border-radius: 4px; line-height: 1.5; }
+
+    .complexity-box { padding: 20px 16px; border-bottom: 1px solid var(--border); }
+    .tag { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: bold; margin-bottom: 10px; }
+    .tag-time { background: rgba(166, 226, 46, 0.1); color: var(--green); border: 1px solid var(--green); }
+    .tag-space { background: rgba(102, 217, 239, 0.1); color: var(--blue); border: 1px solid var(--blue); }
+    .logic-desc { font-size: 14px; line-height: 1.6; color: #8b949e; }
+
+    .tc-area { padding: 16px; flex: 1; }
+    .tc-item { padding: 14px; margin-bottom: 12px; background: #161b22; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    .tc-item.active { border-color: var(--blue); background: rgba(102, 217, 239, 0.05); }
+    .tc-label { font-size: 13px; font-weight: bold; color: var(--blue); margin-bottom: 6px; }
+    .tc-content { font-family: 'Consolas', monospace; font-size: 13px; color: #8b949e; word-break: break-all; }
+
+    /* --- 中間 (45%) --- */
+    .main-arena { width: 45%; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+    .viz-top { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #010409; gap: 25px; }
+    .hand-scroll { display: flex; gap: 8px; padding: 15px; background: #161b22; border-radius: 8px; border: 1px solid var(--border); }
+    .hand-cell { min-width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; }
+    .hand-cell.active { background: var(--blue); color: #000; font-weight: bold; border-color: #fff; transform: scale(1.1); }
+    .card-map { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+    .card-node { width: 50px; height: 70px; background: var(--vscode-bg); border: 1px solid #49483e; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.2s; }
+    .card-node.target { border-color: var(--orange); background: rgba(253, 151, 31, 0.15); transform: translateY(-5px); }
+    
+    .result-groups { display: flex; gap: 12px; opacity: 0; transition: 0.5s; }
+    .result-groups.show { opacity: 1; }
+    .group-box { padding: 8px; border: 1px solid var(--green); border-radius: 6px; display: flex; gap: 5px; background: rgba(166, 226, 46, 0.05); }
+    .mini-card { width: 22px; height: 32px; background: #fff; color: #000; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 3px; }
+
+    .viz-bottom { height: 150px; background: #0d1117; padding: 15px; border-top: 1px solid var(--border); overflow-y: auto; font-family: 'Consolas', monospace; font-size: 14px; color: var(--green); }
+    .playback-bar { height: 70px; background: #161b22; display: flex; align-items: center; justify-content: center; gap: 12px; border-top: 1px solid var(--border); }
+    .p-btn { padding: 10px 18px; border-radius: 6px; border: 1px solid #49483e; background: #3e3d32; color: #fff; cursor: pointer; font-size: 14px; transition: 0.2s; }
+    .p-btn:hover { background: #4e4d42; }
+
+    /* --- 右側 (30%): VS Code 復刻 --- */
+    .sidebar-r { width: 30%; background: var(--vscode-bg); display: flex; flex-direction: column; }
+    .code-area { flex: 1.5; padding-top: 15px; overflow-y: auto; }
+    .line { display: block; padding-left: 60px; line-height: 1.7; font-size: 16px; position: relative; white-space: pre; color: #f8f8f2; font-family: 'Consolas', monospace; }
+    .line.active { background: #49483e; }
+    .line.active::before { content: ''; position: absolute; left: 0; width: 5px; height: 100%; background: var(--blue); }
+    .line-num { position: absolute; left: 0; width: 40px; text-align: right; color: #90908a; padding-right: 20px; font-size: 14px; }
+    .c-kw { color: var(--kw); } .c-fn { color: var(--fn); } .c-vr { color: var(--vr); } .c-nm { color: var(--nm); }
+    
+    .var-monitor { flex: 1; border-top: 1px solid #49483e; padding: 15px; background: #272822; }
+    .var-row { display: flex; justify-content: space-between; font-size: 15px; padding: 8px 0; border-bottom: 1px solid #3e3d32; font-family: 'Consolas', monospace; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-l">
+  <div class="section-header">Description</div>
+  <div class="p-header">
+    <div class="p-title">846. Hand of Straights</div>
+    <div class="p-desc">
+      Alice 有一些牌，她想要將這些牌重新分組，每一組必須包含 <b>groupSize</b> 張連續的牌。
+    </div>
+    <div class="p-constraints">
+      • 1 <= hand.length <= 10^4<br>
+      • 0 <= hand[i] <= 10^9<br>
+      • 1 <= groupSize <= hand.length
+    </div>
+  </div>
+
+  <div class="section-header">Complexity Analysis</div>
+  <div class="complexity-box">
+    <div class="tag tag-time">Time: O(N log N)</div>
+    <div class="tag tag-space">Space: O(N)</div>
+    <div class="logic-desc">
+      核心思路：先排序手牌。遍歷手牌時，若發現數字尚未被消耗（count > 0），則以此數字為起點，嘗試找尋後續連續的數字組成順子。
+    </div>
+  </div>
+
+  <div class="section-header">Test Cases</div>
+  <div class="tc-area">
+    <div id="tc1" class="tc-item active" onclick="changeTC(1)">
+      <div class="tc-label">Example 1</div>
+      <div class="tc-content">Input: hand = [1,2,3,6,2,3,4,7,8], GS = 3</div>
+      <div class="tc-content" style="color:var(--green); margin-top:6px;">Output: true</div>
+    </div>
+    <div id="tc2" class="tc-item" onclick="changeTC(2)">
+      <div class="tc-label">Example 2</div>
+      <div class="tc-content">Input: hand = [1,2,3,4,5], GS = 4</div>
+      <div class="tc-content" style="color:var(--red); margin-top:6px;">Output: false</div>
+    </div>
+  </div>
+</div>
+
+<div class="main-arena">
+  <div class="viz-top">
+    <div id="handScroll" class="hand-scroll"></div>
+    <div id="cardMap" class="card-map"></div>
+    <div id="resultGroups" class="result-groups">
+      <div class="group-box"><div class="mini-card">1</div><div class="mini-card">2</div><div class="mini-card">3</div></div>
+      <div class="group-box"><div class="mini-card">2</div><div class="mini-card">3</div><div class="mini-card">4</div></div>
+      <div class="group-box"><div class="mini-card">6</div><div class="mini-card">7</div><div class="mini-card">8</div></div>
+    </div>
+  </div>
+  <div class="viz-bottom" id="logBox"></div>
+  <div class="playback-bar">
+    <button class="p-btn" onclick="reset()">Reset</button>
+    <button class="p-btn" onclick="prev()">Prev Step</button>
+    <button class="p-btn" id="playBtn" onclick="togglePlay()">Auto Play</button>
+    <button class="p-btn" onclick="next()" style="border-color:var(--blue); color:var(--blue); font-weight:bold;">Next Step</button>
+  </div>
+</div>
+
+<div class="sidebar-r">
+  <div class="section-header">solution.py (VS Code)</div>
+  <div id="codeArea" class="code-area"></div>
+  <div class="section-header">Variables Monitor</div>
+  <div id="varMonitor" class="var-monitor"></div>
+</div>
+
+<script>
+let currentTC = { hand: [1,2,3,6,2,3,4,7,8], gs: 3, id: 1 };
+let steps = [], curStep = 0, isPlaying = false, timer = null;
+
+const codeLines = [
+  { t: '<span class="c-kw">from</span> collections <span class="c-kw">import</span> Counter', i:0 },
+  { t: '', i:0 },
+  { t: '<span class="c-kw">class</span> <span class="c-fn">Solution</span>(object):', i:0 },
+  { t: '  <span class="c-kw">def</span> <span class="c-fn">isNStraightHand</span>(self, hand, groupSize):', i:1 },
+  { t: '    <span class="c-kw">if</span> <span class="c-fn">len</span>(hand) % groupSize:', i:2 },
+  { t: '      <span class="c-kw">return</span> <span class="c-nm">False</span>', i:3 },
+  { t: '    <span class="c-vr">count</span> = <span class="c-fn">Counter</span>(hand)', i:2 },
+  { t: '    hand.<span class="c-fn">sort</span>()', i:2 },
+  { t: '    <span class="c-kw">for</span> <span class="c-vr">num</span> <span class="c-kw">in</span> hand:', i:2 },
+  { t: '      <span class="c-kw">if</span> count[num]:', i:3 },
+  { t: '        <span class="c-kw">for</span> <span class="c-vr">i</span> <span class="c-kw">in</span> <span class="c-fn">range</span>(num, num + groupSize):', i:4 },
+  { t: '          <span class="c-kw">if</span> <span class="c-kw">not</span> count[i]:', i:5 },
+  { t: '            <span class="c-kw">return</span> <span class="c-nm">False</span>', i:6 },
+  { t: '          count[i] -= <span class="c-nm">1</span>', i:5 },
+  { t: '    <span class="c-kw">return</span> <span class="c-nm">True</span>', i:2 }
+];
+
+function generateSteps(hand, gs) {
+  let s = [], count = {}, h = [...hand].sort((a,b)=>a-b);
+  hand.forEach(x => count[x] = (count[x] || 0) + 1);
+  s.push({ ln: 4, count: {...count}, num: null, i: null, idx: -1, log: "檢查整除性..." });
+  if (hand.length % gs !== 0) { s.push({ ln: 5, count: {...count}, num: null, i: null, idx: -1, log: "無法整除，回傳 False。" }); return s; }
+  s.push({ ln: 6, count: {...count}, num: null, i: null, idx: -1, log: "Counter 統計完成。" });
+  s.push({ ln: 7, count: {...count}, num: null, i: null, idx: -1, log: "手牌已排序，開始遍歷。" });
+  for (let idx = 0; idx < h.length; idx++) {
+    let num = h[idx];
+    s.push({ ln: 8, count: {...count}, num, i: null, idx, log: `讀取數字: ${num}` });
+    if (count[num] > 0) {
+      for (let i = num; i < num + gs; i++) {
+        s.push({ ln: 10, count: {...count}, num, i, idx, log: `尋找順子成員: ${i}...` });
+        if (!count[i]) { s.push({ ln: 12, count: {...count}, num, i, idx, log: `缺失數字 ${i}，無法成組。` }); return s; }
+        count[i]--;
+        s.push({ ln: 13, count: {...count}, num, i, idx, log: `成功消耗 ${i}。` });
+      }
+    }
+  }
+  s.push({ ln: 14, count: {...count}, num: null, i: null, idx: -1, log: "分組圓滿完成！", finished: true });
+  return s;
+}
+
+function update() {
+  const step = steps[curStep];
+  document.querySelectorAll('.line').forEach((l, idx) => l.classList.toggle('active', idx === step.ln));
+  const sorted = [...currentTC.hand].sort((a,b)=>a-b);
+  document.getElementById('handScroll').innerHTML = sorted.map((v, idx) => `<div class="hand-cell ${idx === step.idx ? 'active' : ''}">${v}</div>`).join('');
+  document.getElementById('cardMap').innerHTML = Object.keys(step.count).sort((a,b)=>a-b).map(k => `
+    <div class="card-node ${Number(k) === step.i ? 'target' : ''}">
+      <div style="font-size:18px; font-weight:bold; color:#fff">${k}</div>
+      <div style="font-size:12px; color:var(--green)">x${step.count[k]}</div>
+    </div>
+  `).join('');
+  document.getElementById('resultGroups').classList.toggle('show', step.finished && currentTC.id === 1);
+  document.getElementById('varMonitor').innerHTML = `
+    <div class="var-row"><span>num</span><span class="c-nm">${step.num || '--'}</span></div>
+    <div class="var-row"><span>i</span><span class="c-nm">${step.i || '--'}</span></div>
+    <div class="var-row"><span>groupSize</span><span class="c-nm">${currentTC.gs}</span></div>
+  `;
+  const logBox = document.getElementById('logBox');
+  const div = document.createElement('div'); div.innerHTML = `> ${step.log}`;
+  logBox.appendChild(div); logBox.scrollTop = logBox.scrollHeight;
+}
+
+function changeTC(id) {
+  currentTC = id === 1 ? { hand: [1,2,3,6,2,3,4,7,8], gs: 3, id: 1 } : { hand: [1,2,3,4,5], gs: 4, id: 2 };
+  document.getElementById('tc1').className = id === 1 ? 'tc-item active' : 'tc-item';
+  document.getElementById('tc2').className = id === 2 ? 'tc-item active' : 'tc-item';
+  reset();
+}
+
+function reset() {
+  steps = generateSteps(currentTC.hand, currentTC.gs); curStep = 0; isPlaying = false; clearInterval(timer);
+  document.getElementById('logBox').innerHTML = ''; update();
+}
+function next() { if (curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { if (curStep > 0) { curStep--; update(); } }
+function togglePlay() {
+  isPlaying = !isPlaying;
+  document.getElementById('playBtn').innerText = isPlaying ? "Pause" : "Auto Play";
+  if (isPlaying) timer = setInterval(() => { if(curStep < steps.length - 1) next(); else togglePlay(); }, 600);
+  else clearInterval(timer);
+}
+
+document.getElementById('codeArea').innerHTML = codeLines.map((l, i) => `<div class="line"><span class="line-num">${i+1}</span><span style="margin-left:${l.i*20}px">${l.t}</span></div>`).join('');
+reset();
+</script>
+</body>
+</html>

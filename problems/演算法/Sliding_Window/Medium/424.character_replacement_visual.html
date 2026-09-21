@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>424. Longest Repeating Character Replacement - LeetCode Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-medium: #ffc01e;
+      --lc-blue: #007aff;
+      --lc-red: #ff3b30;
+      --lc-green: #2cbb5d;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1350px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(255, 192, 30, 0.15);
+      color: var(--lc-medium);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .dashboard {
+      max-width: 1350px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1000px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+
+    .problem-desc { font-size: 0.9rem; color: #ccc; margin-bottom: 12px; }
+    
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.85rem;
+      color: var(--lc-text);
+      margin-bottom: 10px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+
+    .complexity-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-green); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title {
+      font-weight: bold;
+      color: var(--lc-blue);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      min-height: 360px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+    .num { color: #bd93f9; }
+    .cm { color: #6272a4; font-style: italic; }
+    .op { color: #ff79c6; }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .status-card .label { font-size: 0.7rem; color: var(--lc-text-dim); display: block; }
+    .status-card .value { font-size: 0.95rem; font-family: monospace; font-weight: bold; color: var(--lc-orange); }
+
+    .formula-check-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    .string-container {
+      min-height: 120px;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 35px 10px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+
+    .char-box {
+      width: 40px;
+      height: 44px;
+      background: #2a2a2a;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      font-size: 1.1rem;
+      font-weight: bold;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .char-box.in-window {
+      background: rgba(0, 122, 255, 0.2);
+      border-color: var(--lc-blue);
+      color: #fff;
+    }
+    .char-box.invalid-win {
+      background: rgba(255, 59, 48, 0.25);
+      border-color: var(--lc-red);
+    }
+
+    .pointer-tag {
+      position: absolute;
+      font-size: 0.68rem;
+      font-weight: bold;
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: #fff;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .tag-l { top: -26px; background: var(--lc-orange); }
+    .tag-r { bottom: -26px; background: var(--lc-blue); }
+
+    .control-panel {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    select, input[type="text"], input[type="number"] {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      color: var(--lc-text);
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    input[type="text"] { flex: 1; min-width: 100px; }
+    input[type="number"] { width: 60px; }
+    select:focus, input:focus { border-color: var(--lc-orange); outline: none; }
+    
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-green); color: #fff; }
+    .btn-primary:hover { background: #28a745; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .result-banner {
+      background: rgba(44, 187, 93, 0.1);
+      border: 1px solid var(--lc-green);
+      color: var(--lc-green);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">424. Longest Repeating Character Replacement</span>
+    <span class="lc-badge">Medium</span>
+    <span class="lc-tag">Hash Table</span>
+    <span class="lc-tag">String</span>
+    <span class="lc-tag">Sliding Window</span>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄：題目描述與程式碼 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Description & Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個僅包含大寫英文字母的字串 <code>s</code> 以及一個整數 <code>k</code>。你可以選擇字串中的任意字元並將其替換為任何其他大寫英文字母，最多可執行 <code>k</code> 次。請回傳在執行上述操作後，包含相同字母的最長子字串長度。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> s = "AABABBA", k = 1</div>
+            <div><strong>Output:</strong> 4</div>
+            <div><strong>Explanation:</strong> 將索引 2 的 'B' 替換為 'A' 後，得到 "AAAA" (長度為 4)。</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span id="timeComp" class="complexity-val">O(N)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span id="spaceComp" class="complexity-val">O(26) ≈ O(1)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span>🐍 Python3 程式碼單步追蹤</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="codeBox"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄：狀態面板與視覺化控制 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與動態視窗 (State Monitor)</div>
+        <div class="card-body">
+          <!-- 思路說明 -->
+          <div class="approach-box">
+            <div class="approach-title">💡 解法思路 (Approach & Intuition)</div>
+            <div id="approachText">--</div>
+          </div>
+
+          <!-- 變數面板 -->
+          <div class="status-grid">
+            <div class="status-card">
+              <span class="label" id="lbl-l">Left (l)</span>
+              <span id="stat-l" class="value" style="color: var(--lc-orange);">-</span>
+            </div>
+            <div class="status-card">
+              <span class="label" id="lbl-r">Right (r)</span>
+              <span id="stat-r" class="value" style="color: var(--lc-blue);">-</span>
+            </div>
+            <div class="status-card">
+              <span class="label">Max Frequency (maxf)</span>
+              <span id="stat-maxf" class="value" style="color: var(--lc-medium);">-</span>
+            </div>
+            <div class="status-card">
+              <span class="label">Max Length (res)</span>
+              <span id="stat-res" class="value" style="color: var(--lc-green);">-</span>
+            </div>
+            <div class="status-card" style="grid-column: span 4;">
+              <span class="label">Frequency Count Dict (count)</span>
+              <span id="stat-count" class="value" style="font-size: 0.85rem; color: #a6e22e;">{}</span>
+            </div>
+          </div>
+
+          <!-- 預算檢查檢測箱 -->
+          <div class="formula-check-box" id="formulaBox">
+            公式檢測：(Window Size) - (maxf) ≤ k
+          </div>
+
+          <!-- 視窗視覺化 -->
+          <div class="string-container" id="stringBox"></div>
+
+          <!-- 控制選項 -->
+          <div class="control-panel">
+            <select id="algoSelect" onchange="initSim()">
+              <option value="optimal" selected>Sol 3: Sliding Window Optimal O(N)</option>
+              <option value="perChar">Sol 2: Sliding Window per Char O(26*N)</option>
+              <option value="brute">Sol 1: Brute Force O(N^2)</option>
+            </select>
+            <input type="text" id="strInput" value="AABABBA">
+            <input type="number" id="kInput" value="1" min="0">
+            <button class="btn" onclick="initSim()">Reset</button>
+            <button id="prevBtn" class="btn" onclick="prevStep()" disabled>← Prev</button>
+            <button id="nextBtn" class="btn btn-primary" onclick="nextStep()">Step →</button>
+          </div>
+
+          <div id="finalBox" class="result-banner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = {
+      brute: {
+        time: "O(N²)", space: "O(26) ≈ O(1)",
+        approach: "使用雙層迴圈枚舉所有可能的子字串 <code>s[i..j]</code>。內層迴圈維護一個字典記錄出現頻率與當前最多字元次數 <code>maxf</code>。若當前的「子字串長度 - maxf ≤ k」，代表該子字串可透過不多於 k 次替換達成全相同字元，隨即更新最大長度 <code>res</code>。",
+        lines: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>:' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">characterReplacement</span>(<span class="self">self</span>, s: <span class="kw">str</span>, k: <span class="kw">int</span>) -> <span class="kw">int</span>:' },
+          { id: "l3", text: '        res <span class="op">=</span> <span class="num">0</span>' },
+          { id: "l4", text: '        <span class="kw">for</span> i <span class="kw">in</span> <span class="kw">range</span>(<span class="kw">len</span>(s)):' },
+          { id: "l5", text: '            count, maxf <span class="op">=</span> {}, <span class="num">0</span>' },
+          { id: "l6", text: '            <span class="kw">for</span> j <span class="kw">in</span> <span class="kw">range</span>(i, <span class="kw">len</span>(s)):' },
+          { id: "l7", text: '                count[s[j]] <span class="op">=</span> <span class="num">1</span> <span class="op">+</span> count.get(s[j], <span class="num">0</span>)' },
+          { id: "l8", text: '                maxf <span class="op">=</span> <span class="kw">max</span>(maxf, count[s[j]])' },
+          { id: "l9", text: '                <span class="kw">if</span> (j <span class="op">-</span> i <span class="op">+</span> <span class="num">1</span>) <span class="op">-</span> maxf <span class="op">&lt;=</span> k:' },
+          { id: "l10", text: '                    res <span class="op">=</span> <span class="kw">max</span>(res, j <span class="op">-</span> i <span class="op">+</span> <span class="num">1</span>)' },
+          { id: "l11", text: '        <span class="kw">return</span> res' }
+        ]
+      },
+      perChar: {
+        time: "O(|Σ| · N)", space: "O(1)",
+        approach: "針對字串中出現的每個獨特字元 <code>c</code> 獨立進行一次雙指針滑動視窗。視窗內僅記錄字元 <code>c</code> 的出現次數 <code>count</code>。需替換的字母數為 <code>(r - l + 1) - count</code>，若超過 <code>k</code> 則移動左指針 <code>l</code> 收縮視窗。",
+        lines: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>:' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">characterReplacement</span>(<span class="self">self</span>, s: <span class="kw">str</span>, k: <span class="kw">int</span>) -> <span class="kw">int</span>:' },
+          { id: "l3", text: '        res <span class="op">=</span> <span class="num">0</span>' },
+          { id: "l4", text: '        charSet <span class="op">=</span> <span class="kw">set</span>(s)' },
+          { id: "l5", text: '        <span class="kw">for</span> c <span class="kw">in</span> charSet:' },
+          { id: "l6", text: '            count <span class="op">=</span> l <span class="op">=</span> <span class="num">0</span>' },
+          { id: "l7", text: '            <span class="kw">for</span> r <span class="kw">in</span> <span class="kw">range</span>(<span class="kw">len</span>(s)):' },
+          { id: "l8", text: '                <span class="kw">if</span> s[r] <span class="op">==</span> c:' },
+          { id: "l9", text: '                    count <span class="op">+=</span> <span class="num">1</span>' },
+          { id: "l10", text: '                <span class="kw">while</span> (r <span class="op">-</span> l <span class="op">+</span> <span class="num">1</span>) <span class="op">-</span> count <span class="op">&gt;</span> k:' },
+          { id: "l11", text: '                    <span class="kw">if</span> s[l] <span class="op">==</span> c:' },
+          { id: "l12", text: '                        count <span class="op">-=</span> <span class="num">1</span>' },
+          { id: "l13", text: '                    l <span class="op">+=</span> <span class="num">1</span>' },
+          { id: "l14", text: '                res <span class="op">=</span> <span class="kw">max</span>(res, r <span class="op">-</span> l <span class="op">+</span> <span class="num">1</span>)' },
+          { id: "l15", text: '        <span class="kw">return</span> res' }
+        ]
+      },
+      optimal: {
+        time: "O(N)", space: "O(26) ≈ O(1)",
+        approach: "最佳化滑動視窗：利用右指針 <code>r</code> 擴張視窗並更新字典與「歷史最高頻率」<code>maxf</code>。當需替換字母數 <code>(r - l + 1) - maxf > k</code> 時，只需單次將 <code>l</code> 右移。因為 <code>maxf</code> 無需在左指針右移時縮減（只有產生更大的 <code>maxf</code> 才可能打破最大長度紀錄），時間複雜度優化至 $O(N)$。",
+        lines: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>:' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">characterReplacement</span>(<span class="self">self</span>, s: <span class="kw">str</span>, k: <span class="kw">int</span>) -> <span class="kw">int</span>:' },
+          { id: "l3", text: '        <span class="cm"># 頻率字典，用來記錄當前窗口內各字母的數量</span>' },
+          { id: "l4", text: '        count <span class="op">=</span> {}' },
+          { id: "l5", text: '        res <span class="op">=</span> <span class="num">0</span>      <span class="cm"># 最終結果：最大長度</span>' },
+          { id: "l6", text: '        left <span class="op">=</span> <span class="num">0</span>     <span class="cm"># 左指針</span>' },
+          { id: "l7", text: '        maxf <span class="op">=</span> <span class="num">0</span>     <span class="cm"># 歷史最強多數黨的次數</span>' },
+          { id: "l8", text: ' ' },
+          { id: "l9", text: '        <span class="cm"># 右指針遍歷字串</span>' },
+          { id: "l10", text: '        <span class="kw">for</span> right <span class="kw">in</span> <span class="kw">range</span>(<span class="kw">len</span>(s)):' },
+          { id: "l11", text: '            <span class="cm"># 1. 將右指針指向的字母加入計數</span>' },
+          { id: "l12", text: '            char_r <span class="op">=</span> s[right]' },
+          { id: "l13", text: '            count[char_r] <span class="op">=</span> <span class="num">1</span> <span class="op">+</span> count.get(char_r, <span class="num">0</span>)' },
+          { id: "l14", text: '            ' },
+          { id: "l15", text: '            <span class="cm"># 2. 更新「歷史最強」。只有當某字母出現次數超過紀錄時，</span>' },
+          { id: "l16", text: '            <span class="cm">#    窗口才有可能在維持合法的情況下繼續變大。</span>' },
+          { id: "l17", text: '            maxf <span class="op">=</span> <span class="kw">max</span>(maxf, count[char_r])' },
+          { id: "l18", text: ' ' },
+          { id: "l19", text: '            <span class="cm"># 3. 檢查「預算」。(窗口寬度 - maxf) 就是我們需要變更的字母數。</span>' },
+          { id: "l20", text: '            <span class="cm">#    如果超過 k，代表目前這個窗口沒救了，左邊界必須右移。</span>' },
+          { id: "l21", text: '            <span class="kw">while</span> (right <span class="op">-</span> left <span class="op">+</span> <span class="num">1</span>) <span class="op">-</span> maxf <span class="op">&gt;</span> k:' },
+          { id: "l22", text: '                count[s[left]] <span class="op">-=</span> <span class="num">1</span>' },
+          { id: "l23", text: '                left <span class="op">+=</span> <span class="num">1</span>' },
+          { id: "l24", text: ' ' },
+          { id: "l25", text: '            <span class="cm"># 4. 結算：目前窗口是合法的，挑戰歷史最大長度紀錄。</span>' },
+          { id: "l26", text: '            res <span class="op">=</span> <span class="kw">max</span>(res, right <span class="op">-</span> left <span class="op">+</span> <span class="num">1</span>)' },
+          { id: "l27", text: '            ' },
+          { id: "l28", text: '        <span class="kw">return</span> res' }
+        ]
+      }
+    };
+
+    let s = "";
+    let k = 0;
+    let steps = [];
+    let currentStepIdx = 0;
+    let selectedAlgo = "optimal";
+
+    function generateSteps() {
+      steps = [];
+      if (selectedAlgo === "brute") generateBruteSteps();
+      else if (selectedAlgo === "perChar") generatePerCharSteps();
+      else if (selectedAlgo === "optimal") generateOptimalSteps();
+    }
+
+    // 1. Brute Force Step Generator
+    function generateBruteSteps() {
+      let res = 0;
+      steps.push({ lineId: "l3", l: "-", r: "-", maxf: 0, res: 0, countStr: "{}", hintText: "初始化 res = 0" });
+
+      for (let i = 0; i < s.length; i++) {
+        steps.push({ lineId: "l4", l: i, r: "-", maxf: 0, res, countStr: "{}", hintText: `外層迴圈: 起始位置 i = ${i} ('${s[i]}')` });
+        let count = {};
+        let maxf = 0;
+        steps.push({ lineId: "l5", l: i, r: "-", maxf: 0, res, countStr: "{}", hintText: "重置 count 字典與 maxf = 0" });
+
+        for (let j = i; j < s.length; j++) {
+          let charJ = s[j];
+          count[charJ] = (count[charJ] || 0) + 1;
+          steps.push({ lineId: "l7", l: i, r: j, maxf, res, countStr: JSON.stringify(count), hintText: `加入 '${charJ}' ➔ count['${charJ}'] = ${count[charJ]}` });
+
+          maxf = Math.max(maxf, count[charJ]);
+          steps.push({ lineId: "l8", l: i, r: j, maxf, res, countStr: JSON.stringify(count), hintText: `更新 maxf = ${maxf}` });
+
+          let winLen = j - i + 1;
+          let needReplace = winLen - maxf;
+          let isValid = needReplace <= k;
+
+          steps.push({ lineId: "l9", l: i, r: j, maxf, res, countStr: JSON.stringify(count), isInvalid: !isValid, hintText: `檢查預算: ${winLen} (Size) - ${maxf} (maxf) = ${needReplace} (≤ ${k} ?) ➔ ${isValid}` });
+
+          if (isValid) {
+            res = Math.max(res, winLen);
+            steps.push({ lineId: "l10", l: i, r: j, maxf, res, countStr: JSON.stringify(count), hintText: `合法窗口，更新 res = max(${res}, ${winLen})` });
+          }
+        }
+      }
+
+      steps.push({ lineId: "l11", l: "-", r: "-", maxf: "-", res, countStr: "-", isFinished: true, hintText: `走訪結束，回傳 res = ${res}` });
+    }
+
+    // 2. Sliding Window per Char Generator
+    function generatePerCharSteps() {
+      let res = 0;
+      let charSet = Array.from(new Set(s));
+
+      steps.push({ lineId: "l3", l: "-", r: "-", maxf: "-", res: 0, countStr: "-", hintText: "初始化 res = 0" });
+      steps.push({ lineId: "l4", l: "-", r: "-", maxf: "-", res: 0, countStr: `set(${JSON.stringify(charSet)})`, hintText: "取得獨特字元集合 charSet" });
+
+      for (let charTarget of charSet) {
+        steps.push({ lineId: "l5", l: "-", r: "-", maxf: "-", res, countStr: `目標字元: '${charTarget}'`, hintText: `開始對目標字元 '${charTarget}' 進行滑動視窗` });
+        let count = 0;
+        let l = 0;
+        steps.push({ lineId: "l6", l: 0, r: "-", maxf: "-", res, countStr: `count('Target') = 0`, hintText: "初始化 count = 0, l = 0" });
+
+        for (let r = 0; r < s.length; r++) {
+          steps.push({ lineId: "l7", l, r, maxf: count, res, countStr: `目標 '${charTarget}' 數: ${count}`, hintText: `右指針 r = ${r} ('${s[r]}')` });
+
+          if (s[r] === charTarget) {
+            count++;
+            steps.push({ lineId: "l9", l, r, maxf: count, res, countStr: `目標 '${charTarget}' 數: ${count}`, hintText: `匹配目標字母 '${charTarget}'，count += 1` });
+          }
+
+          let winLen = r - l + 1;
+          while (winLen - count > k) {
+            steps.push({ lineId: "l10", l, r, maxf: count, res, countStr: `目標 '${charTarget}' 數: ${count}`, isInvalid: true, hintText: `替換數 ${winLen - count} > k (${k})，窗口不合法` });
+
+            if (s[l] === charTarget) {
+              count--;
+              steps.push({ lineId: "l12", l, r, maxf: count, res, countStr: `目標 '${charTarget}' 數: ${count}`, isInvalid: true, hintText: `移出左界目標字元 '${charTarget}'，count -= 1` });
+            }
+            l++;
+            winLen = r - l + 1;
+            steps.push({ lineId: "l13", l, r, maxf: count, res, countStr: `目標 '${charTarget}' 數: ${count}`, hintText: `左指針 l 向右收縮 (l = ${l})` });
+          }
+
+          steps.push({ lineId: "l10", l, r, maxf: count, res, countStr: `目標 '${charTarget}' 數: ${count}`, hintText: `替換數 ${winLen - count} ≤ k (${k})，窗口合法` });
+
+          res = Math.max(res, winLen);
+          steps.push({ lineId: "l14", l, r, maxf: count, res, countStr: `目標 '${charTarget}' 數: ${count}`, hintText: `更新最長長度 res = ${res}` });
+        }
+      }
+
+      steps.push({ lineId: "l15", l: "-", r: "-", maxf: "-", res, countStr: "-", isFinished: true, hintText: `所有字母測試完畢，回傳 res = ${res}` });
+    }
+
+    // 3. Sliding Window Optimal Generator
+    function generateOptimalSteps() {
+      let count = {};
+      let res = 0;
+      let left = 0;
+      let maxf = 0;
+
+      steps.push({ lineId: "l4", l: 0, r: "-", maxf: 0, res: 0, countStr: "{}", hintText: "1. 初始化頻率字典 count = {}" });
+      steps.push({ lineId: "l5", l: 0, r: "-", maxf: 0, res: 0, countStr: "{}", hintText: "初始化 res = 0" });
+      steps.push({ lineId: "l6", l: 0, r: "-", maxf: 0, res: 0, countStr: "{}", hintText: "初始化 left = 0" });
+      steps.push({ lineId: "l7", l: 0, r: "-", maxf: 0, res: 0, countStr: "{}", hintText: "初始化歷史最強頻率 maxf = 0" });
+
+      for (let right = 0; right < s.length; right++) {
+        let charR = s[right];
+        steps.push({ lineId: "l10", l: left, r: right, maxf, res, countStr: JSON.stringify(count), hintText: `右指針 right 擴張至 ${right} ('${charR}')` });
+
+        count[charR] = (count[charR] || 0) + 1;
+        steps.push({ lineId: "l13", l: left, r: right, maxf, res, countStr: JSON.stringify(count), hintText: `將 '${charR}' 加入計數: count['${charR}'] = ${count[charR]}` });
+
+        maxf = Math.max(maxf, count[charR]);
+        steps.push({ lineId: "l17", l: left, r: right, maxf, res, countStr: JSON.stringify(count), hintText: `更新歷史最強頻率 maxf = ${maxf}` });
+
+        let winLen = right - left + 1;
+        let needReplace = winLen - maxf;
+
+        while (winLen - maxf > k) {
+          steps.push({ lineId: "l21", l: left, r: right, maxf, res, countStr: JSON.stringify(count), isInvalid: true, hintText: `預算超標: 視窗長度(${winLen}) - maxf(${maxf}) = ${needReplace} > k(${k})` });
+
+          let charL = s[left];
+          count[charL] -= 1;
+          steps.push({ lineId: "l22", l: left, r: right, maxf, res, countStr: JSON.stringify(count), isInvalid: true, hintText: `扣除左指針字元頻率: count['${charL}'] = ${count[charL]}` });
+
+          left++;
+          winLen = right - left + 1;
+          needReplace = winLen - maxf;
+          steps.push({ lineId: "l23", l: left, r: right, maxf, res, countStr: JSON.stringify(count), hintText: `左指針右移: left = ${left}` });
+        }
+
+        steps.push({ lineId: "l21", l: left, r: right, maxf, res, countStr: JSON.stringify(count), hintText: `預算檢查通過: 視窗長度(${winLen}) - maxf(${maxf}) = ${needReplace} ≤ k(${k})` });
+
+        res = Math.max(res, winLen);
+        steps.push({ lineId: "l26", l: left, r: right, maxf, res, countStr: JSON.stringify(count), hintText: `結算當前合法視窗長度 ${winLen}，更新 res = ${res}` });
+      }
+
+      steps.push({ lineId: "l28", l: "-", r: "-", maxf: "-", res, countStr: JSON.stringify(count), isFinished: true, hintText: `掃描完畢，回傳最大長度 res = ${res}` });
+    }
+
+    function initSim() {
+      selectedAlgo = document.getElementById("algoSelect").value;
+      s = document.getElementById("strInput").value.toUpperCase();
+      k = parseInt(document.getElementById("kInput").value) || 0;
+
+      if (!s) return;
+
+      document.getElementById("timeComp").innerText = codeTemplates[selectedAlgo].time;
+      document.getElementById("spaceComp").innerText = codeTemplates[selectedAlgo].space;
+      document.getElementById("approachText").innerHTML = codeTemplates[selectedAlgo].approach;
+
+      if (selectedAlgo === "brute") {
+        document.getElementById("lbl-l").innerText = "i Index";
+        document.getElementById("lbl-r").innerText = "j Index";
+      } else {
+        document.getElementById("lbl-l").innerText = "Left (l)";
+        document.getElementById("lbl-r").innerText = "Right (r)";
+      }
+
+      const codeBox = document.getElementById("codeBox");
+      codeBox.innerHTML = codeTemplates[selectedAlgo].lines
+        .map(line => `<div class="code-line" id="${line.id}">${line.text}</div>`)
+        .join("");
+
+      generateSteps();
+      currentStepIdx = 0;
+      renderCurrentStep();
+    }
+
+    function renderCurrentStep() {
+      const state = steps[currentStepIdx];
+
+      document.getElementById("stat-l").innerText = state.l;
+      document.getElementById("stat-r").innerText = state.r;
+      document.getElementById("stat-maxf").innerText = state.maxf;
+      document.getElementById("stat-res").innerText = state.res;
+      document.getElementById("stat-count").innerText = state.countStr;
+      document.getElementById("stepHint").innerText = state.hintText;
+
+      // 更新公式檢測框
+      const fBox = document.getElementById("formulaBox");
+      if (typeof state.l === "number" && typeof state.r === "number") {
+        let winSize = state.r - state.l + 1;
+        let diff = typeof state.maxf === "number" ? winSize - state.maxf : "-";
+        let validStr = typeof diff === "number" ? (diff <= k ? "✅ 合法" : "❌ 超標") : "";
+        fBox.innerHTML = `視窗長度: <b>${winSize}</b> | maxf: <b>${state.maxf}</b> | 需替換: <b>${diff}</b> (k=${k}) ➔ ${validStr}`;
+        fBox.style.borderColor = diff <= k ? "var(--lc-green)" : "var(--lc-red)";
+      } else {
+        fBox.innerHTML = `檢測公式：(Window Size) - (maxf) ≤ k (${k})`;
+        fBox.style.borderColor = "var(--lc-border)";
+      }
+
+      document.querySelectorAll(".code-line").forEach(el => el.classList.remove("active-line"));
+      const targetLine = document.getElementById(state.lineId);
+      if (targetLine) targetLine.classList.add("active-line");
+
+      renderStringBoxes(state.l, state.r, state.isInvalid, state.isFinished);
+
+      document.getElementById("prevBtn").disabled = (currentStepIdx === 0);
+      
+      const fb = document.getElementById("finalBox");
+      if (state.isFinished) {
+        fb.innerHTML = `Accepted | Longest Repeating Character Substring: ${state.res}`;
+        fb.style.display = "block";
+        document.getElementById("nextBtn").disabled = true;
+      } else {
+        fb.style.display = "none";
+        document.getElementById("nextBtn").disabled = false;
+      }
+    }
+
+    function renderStringBoxes(lIdx, rIdx, isInvalid, isFinished) {
+      const boxContainer = document.getElementById("stringBox");
+      boxContainer.innerHTML = "";
+
+      for (let i = 0; i < s.length; i++) {
+        const box = document.createElement("div");
+        box.className = "char-box";
+        box.innerText = s[i];
+
+        if (!isFinished) {
+          let lTag = selectedAlgo === "brute" ? "i" : "L";
+          let rTag = selectedAlgo === "brute" ? "j" : "R";
+
+          if (typeof lIdx === "number" && typeof rIdx === "number" && i >= lIdx && i <= rIdx) {
+            box.classList.add("in-window");
+            if (isInvalid) box.classList.add("invalid-win");
+          }
+
+          if (i === lIdx) {
+            box.innerHTML += `<div class="pointer-tag tag-l">${lTag}</div>`;
+          }
+          if (i === rIdx) {
+            box.innerHTML += `<div class="pointer-tag tag-r">${rTag}</div>`;
+          }
+        }
+
+        boxContainer.appendChild(box);
+      }
+    }
+
+    function nextStep() {
+      if (currentStepIdx < steps.length - 1) {
+        currentStepIdx++;
+        renderCurrentStep();
+      }
+    }
+
+    function prevStep() {
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        renderCurrentStep();
+      }
+    }
+
+    window.onload = initSim;
+  </script>
+</body>
+</html>

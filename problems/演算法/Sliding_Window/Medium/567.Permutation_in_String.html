@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>567. Permutation in String - Detailed Debug</title>
+  <style>
+    :root {
+      --bg: #1e1e1e; --card: #252526; --primary: #4ec9b0; --text: #d4d4d4;
+      --hl: #ce9178; --sort: #dcdcaa; --error: #f44747; --blue: #3794ff;
+    }
+    body { font-family: 'Fira Code', 'Consolas', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 20px; overflow-x: hidden; }
+    .main-grid { max-width: 1600px; margin: auto; display: grid; grid-template-columns: 1fr 650px; gap: 20px; }
+    
+    .header { grid-column: span 2; display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #333; border-radius: 8px; border-bottom: 2px solid var(--primary); }
+    .nav-group { display: flex; gap: 8px; }
+    .nav-btn { background: #3c3c3c; border: 1px solid #555; color: #aaa; padding: 8px 12px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; }
+    .nav-btn.active { background: #007acc; color: white; border-color: #007acc; font-weight: bold; }
+
+    .card { background: var(--card); padding: 18px; border-radius: 10px; border: 1px solid #454545; margin-bottom: 15px; }
+    .viz-canvas { height: 160px; background: #000; border-radius: 6px; position: relative; display: flex; align-items: center; justify-content: center; margin: 10px 0; }
+    .char-node { width: 36px; height: 45px; background: #2d2d2d; border: 2px solid #555; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 1.1rem; margin: 0 3px; position: relative; transition: 0.2s; }
+    .char-node.active { border-color: var(--hl); background: rgba(206, 145, 120, 0.1); }
+    .char-node.match { border-color: var(--primary); color: var(--primary); background: rgba(78, 201, 176, 0.2); box-shadow: 0 0 10px var(--primary); }
+    .ptr { position: absolute; top: -22px; font-size: 9px; font-weight: bold; color: var(--primary); text-transform: uppercase; }
+
+    .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .table-card { background: #161b22; border: 1px solid #30363d; padding: 10px; border-radius: 6px; }
+    .row { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 3px 0; border-bottom: 1px solid #222; }
+    
+    .code-win { background: #1e1e1e; padding: 15px; border-radius: 6px; border: 1px solid #333; font-size: 12px; line-height: 1.4; white-space: pre; height: 480px; overflow-y: auto; position: relative; }
+    .line-hl { background: rgba(78, 201, 176, 0.15); border-left: 4px solid var(--primary); display: block; margin-left: -15px; padding-left: 11px; }
+    .kw { color: #c586c0; } .fn { color: #dcdcaa; } .vr { color: #9cdcfe; } .nm { color: #b5cea8; }
+
+    .ctrl-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .btn { padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .btn-step { background: #238636; color: white; }
+    .btn-undo { background: #d29922; color: white; }
+    .btn-reset { background: #8b949e; color: white; }
+    .btn:hover { opacity: 0.8; }
+
+    .example-box { font-size: 0.85rem; line-height: 1.6; }
+    .example-tag { padding: 2px 6px; border-radius: 3px; background: #333; cursor: pointer; margin-right: 5px; border: 1px solid #555; }
+    .example-tag.selected { border-color: var(--primary); color: var(--primary); }
+  </style>
+</head>
+<body>
+
+<div class="main-grid">
+  <div class="header">
+    <div style="font-weight:bold; color:var(--primary)">567. Permutation in String </div>
+    <div class="nav-group">
+      <button class="nav-btn" id="btn-brute" onclick="setAlgo('brute')">1. Brute Force</button>
+      <button class="nav-btn" id="btn-nested" onclick="setAlgo('nested')">2. Nested Map</button>
+      <button class="nav-btn active" id="btn-slide" onclick="setAlgo('slide')">3. Sliding Window</button>
+    </div>
+  </div>
+
+  <div class="left-col">
+    <div class="card example-box">
+      <strong style="color:var(--primary)">題目敘述：</strong> 給定兩個字串 <code>s1</code> 和 <code>s2</code>，若 <code>s2</code> 包含 <code>s1</code> 的排列 (Permutation) 則回傳 <code>True</code>。
+      <div style="margin-top:8px">
+        <span class="example-tag selected" id="ex-1" onclick="loadExample(1)">Example 1 (True)</span>
+        <span class="example-tag" id="ex-2" onclick="loadExample(2)">Example 2 (False)</span>
+      </div>
+      <div id="ex-desc" style="margin-top:8px; color:#aaa; font-style:italic">Input: s1 = "ab", s2 = "eidbaooo" -> Output: true</div>
+    </div>
+
+    <div class="card">
+      <div id="mode-title" style="color:var(--hl); font-weight:bold; font-size:0.9rem">模式：Sliding Window</div>
+      <div class="viz-canvas" id="canvas"></div>
+      <div class="tables-grid">
+        <div class="table-card">
+          <div style="color:var(--primary); font-size:0.7rem; margin-bottom:5px">Target (s1 / Need)</div>
+          <div id="target-map"></div>
+        </div>
+        <div class="table-card">
+          <div style="color:var(--hl); font-size:0.7rem; margin-bottom:5px">Current (Window)</div>
+          <div id="current-map"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card" style="background:#000; font-size:12px; height:180px; overflow-y:auto; color:#d4d4d4; font-family: monospace;" id="logs"></div>
+  </div>
+
+  <div class="right-col">
+    <div class="ctrl-group">
+      <button class="btn btn-reset" onclick="reset()">重置 (Reset)</button>
+      <button class="btn btn-undo" onclick="undo()">上一步 (Undo)</button>
+      <button class="btn btn-step" onclick="runStep()">下一步 (Step)</button>
+    </div>
+    
+    <div class="card" style="display: flex; justify-content: space-around; text-align: center; padding: 10px; margin-bottom:10px">
+      <div>L / i<div id="val-l" style="font-size:1.2rem; color:var(--primary)">0</div></div>
+      <div>R / j<div id="val-r" style="font-size:1.2rem; color:var(--primary)">0</div></div>
+      <div>Valid / cur<div id="val-v" style="font-size:1.2rem; color:var(--primary)">0</div></div>
+    </div>
+
+    <div class="code-win" id="code-content"></div>
+  </div>
+</div>
+
+<script>
+let s1 = "ab", s2 = "eidbaooo";
+let currentAlgo = 'slide';
+let history = [];
+let state = {};
+
+const codes = {
+  brute: `<span class="kw">class</span> <span class="fn">Solution</span>:
+    <span class="kw">def</span> <span class="fn">checkInclusion</span>(<span class="vr">self</span>, <span class="vr">s1</span>: <span class="vr">str</span>, <span class="vr">s2</span>: <span class="vr">str</span>) -> <span class="vr">bool</span>:
+        <span class="vr">s1_sorted</span> = <span class="fn">sorted</span>(<span class="vr">s1</span>)
+        <span class="kw">for</span> <span class="vr">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(<span class="vr">s2</span>)):
+            <span class="kw">for</span> <span class="vr">j</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="vr">i</span>, <span class="fn">len</span>(<span class="vr">s2</span>)):
+                <span class="vr">sub</span> = <span class="vr">s2</span>[<span class="vr">i</span> : <span class="vr">j</span> + <span class="nm">1</span>]
+                <span class="kw">if</span> <span class="fn">sorted</span>(<span class="vr">sub</span>) == <span class="vr">s1_sorted</span>:
+                    <span class="kw">return True</span>
+        <span class="kw">return False</span>`,
+  nested: `<span class="kw">class</span> <span class="fn">Solution</span>:
+    <span class="kw">def</span> <span class="fn">checkInclusion</span>(<span class="vr">self</span>, <span class="vr">s1</span>: <span class="vr">str</span>, <span class="vr">s2</span>: <span class="vr">str</span>) -> <span class="vr">bool</span>:
+        <span class="vr">count1</span> = <span class="fn">Counter</span>(<span class="vr">s1</span>)
+        <span class="vr">need</span> = <span class="fn">len</span>(<span class="vr">count1</span>)
+        <span class="kw">for</span> <span class="vr">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(<span class="vr">s2</span>)):
+            <span class="vr">count2</span>, <span class="vr">cur</span> = {}, <span class="nm">0</span>
+            <span class="kw">for</span> <span class="vr">j</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="vr">i</span>, <span class="fn">len</span>(<span class="vr">s2</span>)):
+                <span class="vr">c</span> = <span class="vr">s2</span>[<span class="vr">j</span>]
+                <span class="vr">count2</span>[<span class="vr">c</span>] = <span class="nm">1</span> + <span class="vr">count2</span>.<span class="fn">get</span>(<span class="vr">c</span>, <span class="nm">0</span>)
+                <span class="kw">if</span> <span class="vr">count1</span>[<span class="vr">c</span>] < <span class="vr">count2</span>[<span class="vr">c</span>]: <span class="kw">break</span>
+                <span class="kw">if</span> <span class="vr">count1</span>[<span class="vr">c</span>] == <span class="vr">count2</span>[<span class="vr">c</span>]: <span class="vr">cur</span> += <span class="nm">1</span>
+                <span class="kw">if</span> <span class="vr">cur</span> == <span class="vr">need</span>: <span class="kw">return True</span>
+        <span class="kw">return False</span>`,
+  slide: `<span class="kw">class</span> <span class="fn">Solution</span>:
+    <span class="kw">def</span> <span class="fn">checkInclusion</span>(<span class="vr">self</span>, <span class="vr">s1</span>: <span class="vr">str</span>, <span class="vr">s2</span>: <span class="vr">str</span>) -> <span class="vr">bool</span>:
+        <span class="vr">need</span>, <span class="vr">window</span> = <span class="fn">Counter</span>(<span class="vr">s1</span>), {}
+        <span class="vr">left</span>, <span class="vr">right</span>, <span class="vr">valid</span> = <span class="nm">0</span>, <span class="nm">0</span>, <span class="nm">0</span>
+        <span class="kw">while</span> <span class="vr">right</span> < <span class="fn">len</span>(<span class="vr">s2</span>):
+            <span class="vr">c</span> = <span class="vr">s2</span>[<span class="vr">right</span>]
+            <span class="vr">right</span> += <span class="nm">1</span>
+            <span class="kw">if</span> <span class="vr">c</span> <span class="kw">in</span> <span class="vr">need</span>:
+                <span class="vr">window</span>[<span class="vr">c</span>] = <span class="vr">window</span>.<span class="fn">get</span>(<span class="vr">c</span>, <span class="nm">0</span>) + <span class="nm">1</span>
+                <span class="kw">if</span> <span class="vr">window</span>[<span class="vr">c</span>] == <span class="vr">need</span>[<span class="vr">c</span>]: <span class="vr">valid</span> += <span class="nm">1</span>
+            <span class="kw">while</span> <span class="vr">right</span> - <span class="vr">left</span> >= <span class="fn">len</span>(<span class="vr">s1</span>):
+                <span class="kw">if</span> <span class="vr">valid</span> == <span class="fn">len</span>(<span class="vr">need</span>): <span class="kw">return True</span>
+                <span class="vr">d</span> = <span class="vr">s2</span>[<span class="vr">left</span>]
+                <span class="vr">left</span> += <span class="nm">1</span>
+                <span class="kw">if</span> <span class="vr">d</span> <span class="kw">in</span> <span class="vr">need</span>:
+                    <span class="kw">if</span> <span class="vr">window</span>[<span class="vr">d</span>] == <span class="vr">need</span>[<span class="vr">d</span>]: <span class="vr">valid</span> -= <span class="nm">1</span>
+                    <span class="vr">window</span>[<span class="vr">d</span>] -= <span class="nm">1</span>
+        <span class="kw">return False</span>`
+};
+
+function loadExample(n) {
+  document.querySelectorAll('.example-tag').forEach(t => t.classList.remove('selected'));
+  document.getElementById('ex-' + n).classList.add('selected');
+  if(n === 1) {
+    s1 = "ab"; s2 = "eidbaooo";
+    document.getElementById('ex-desc').innerText = 'Input: s1 = "ab", s2 = "eidbaooo" -> Output: true';
+  } else {
+    s1 = "ab"; s2 = "eidboaoo";
+    document.getElementById('ex-desc').innerText = 'Input: s1 = "ab", s2 = "eidboaoo" -> Output: false';
+  }
+  reset();
+}
+
+function setAlgo(a) {
+  currentAlgo = a;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + a).classList.add('active');
+  reset();
+}
+
+function reset() {
+  state = { i: 0, j: 0, l: 0, r: 0, v: 0, need: {}, win: {}, end: false, found: false, line: -1 };
+  for(let c of s1) state.need[c] = (state.need[c] || 0) + 1;
+  history = [];
+  document.getElementById('code-content').innerHTML = codes[currentAlgo].split('\n').map((l, i) => `<span id="L-${i}">${l}</span>`).join('\n');
+  document.getElementById('mode-title').innerText = `模式：${currentAlgo === 'brute' ? 'Brute Force' : currentAlgo === 'nested' ? 'Nested Map' : 'Sliding Window'}`;
+  document.getElementById('logs').innerHTML = "";
+  addLog("系統重置成功。");
+  render();
+}
+
+function addLog(m) {
+  const l = document.getElementById('logs');
+  const time = new Date().toLocaleTimeString().split(' ')[0];
+  l.innerHTML = `<div><span style="color:#569cd6">[${time}]</span> ${m}</div>` + l.innerHTML;
+}
+
+function undo() {
+  if(history.length > 0) {
+    state = history.pop();
+    addLog("撤銷動作。");
+    render();
+  }
+}
+
+function saveHistory() {
+  history.push(JSON.parse(JSON.stringify(state)));
+  if(history.length > 50) history.shift();
+}
+
+function render() {
+  const canvas = document.getElementById('canvas');
+  let low, high;
+  if(currentAlgo === 'slide') { low = state.l; high = state.r - 1; }
+  else { low = state.i; high = state.j; }
+
+  canvas.innerHTML = s2.split('').map((char, idx) => {
+    let cls = 'char-node';
+    if(idx >= low && idx <= high) cls += ' active';
+    if(state.found && idx >= low && idx <= high) cls += ' match';
+    let p = '';
+    if(currentAlgo === 'slide') {
+      if(idx === state.l) p = `<div class="ptr">L</div>`;
+      if(idx === state.r) p += `<div class="ptr" style="color:var(--blue); left:18px">R</div>`;
+    } else {
+      if(idx === state.i) p = `<div class="ptr">i</div>`;
+      if(idx === state.j) p += `<div class="ptr" style="color:var(--blue); left:18px">j</div>`;
+    }
+    return `<div class="${cls}"><b>${char}</b><span style="font-size:8px;opacity:0.4">${idx}</span>${p}</div>`;
+  }).join('');
+
+  const targetDiv = document.getElementById('target-map');
+  targetDiv.innerHTML = Object.entries(state.need).map(([k,v])=>`<div class="row"><span>${k}</span><b>${v}</b></div>`).join('');
+  
+  const currentDiv = document.getElementById('current-map');
+  currentDiv.innerHTML = Object.keys(state.need).map(k => {
+    let cur = state.win[k] || 0;
+    let target = state.need[k];
+    return `<div class="row" style="color:${cur===target?'var(--primary)':'#fff'}"><span>${k}</span><b>${cur}</b></div>`;
+  }).join('');
+
+  document.getElementById('val-l').innerText = (currentAlgo==='slide' ? state.l : state.i);
+  document.getElementById('val-r').innerText = (currentAlgo==='slide' ? state.r : state.j);
+  document.getElementById('val-v').innerText = state.v;
+  
+  document.querySelectorAll('.line-hl').forEach(el => el.classList.remove('line-hl'));
+  if(state.line >= 0) {
+      const lineEl = document.getElementById(`L-${state.line}`);
+      if(lineEl) lineEl.classList.add('line-hl');
+  }
+}
+
+function runStep() {
+  if(state.end) return;
+  saveHistory();
+
+  if(currentAlgo === 'brute') {
+    const sub = s2.substring(state.i, state.j + 1);
+    addLog(`檢查子字串 s2[${state.i}:${state.j+1}] -> "${sub}"`);
+    state.line = 5;
+
+    if(sub.length === s1.length) {
+       const sortedSub = sub.split('').sort().join('');
+       const sortedS1 = s1.split('').sort().join('');
+       if(sortedSub === sortedS1) {
+         state.line = 7; state.found = true; state.end = true;
+         addLog(`✨ <b style="color:var(--primary)">成功！</b> "${sub}" 的排列匹配 "${s1}"`);
+       } else {
+         addLog(`排序後 "${sortedSub}" != "${sortedS1}"，繼續搜尋`);
+         state.j++;
+       }
+    } else {
+       state.j++;
+    }
+
+    if(!state.found && state.j >= s2.length) {
+      state.i++; state.j = state.i;
+      addLog(`i 右移至 ${state.i}，重新開始搜尋`);
+    }
+    if(state.i > s2.length - s1.length) {
+      state.line = 8; state.end = true;
+      addLog(`<b style="color:var(--error)">失敗</b>：已遍歷所有可能子字串。`);
+    }
+
+  } else if(currentAlgo === 'nested') {
+    const char = s2[state.j];
+    state.line = 10;
+    state.win[char] = (state.win[char] || 0) + 1;
+    addLog(`j 移至 ${state.j} ('${char}'), Window[${char}] = ${state.win[char]}`);
+
+    if ((state.need[char] || 0) < state.win[char]) {
+      state.line = 11;
+      addLog(`❌ '${char}' 超出需求(${state.need[char] || 0})，Break 並重置 i`);
+      state.i++; state.j = state.i; state.win = {}; state.v = 0;
+    } else {
+      if (state.need[char] === state.win[char]) {
+        state.line = 12;
+        const oldV = state.v;
+        state.v++;
+        addLog(`✅ '${char}' 數量達標！Valid: <span style="color:var(--primary)">${oldV} -> ${state.v}</span>`);
+      }
+      
+      if (state.v === Object.keys(state.need).length) {
+        state.line = 13; state.found = true; state.end = true;
+        addLog(`🏆 <b style="color:var(--primary)">成功！</b> 滿足所有字元需求。`);
+      } else {
+        state.j++;
+        if (state.j >= s2.length) {
+          state.i++; state.j = state.i; state.win = {}; state.v = 0;
+          addLog(`i 右移至 ${state.i}`);
+        }
+      }
+    }
+  } else {
+    // Sliding Window
+    if(state.r - state.l < s1.length && state.r < s2.length) {
+      state.line = 5;
+      let c = s2[state.r];
+      addLog(`[右擴] R 指向 '${c}' (${state.r})`);
+      state.r++;
+      state.line = 6;
+      if (state.need[c]) {
+        state.line = 7;
+        state.win[c] = (state.win[c] || 0) + 1;
+        addLog(`  -> 納入窗口，'${c}': ${state.win[c]}/${state.need[c]}`);
+        if (state.win[c] === state.need[c]) {
+          state.line = 8;
+          const oldV = state.v;
+          state.v++;
+          addLog(`  -> ✨ <b style="color:var(--primary)">Valid: ${oldV} -> ${state.v}</b>`);
+        }
+      }
+    } else {
+      state.line = 10;
+      if (state.v === Object.keys(state.need).length) {
+        state.line = 11; state.found = true; state.end = true;
+        addLog(`🏆 <b style="color:var(--primary)">匹配成功！</b> 窗口 [${state.l}, ${state.r-1}] 符合排列。`);
+      } else {
+        state.line = 12;
+        let d = s2[state.l];
+        addLog(`[左收] L 指向 '${d}' (${state.l})，窗口長度已達 ${s1.length}`);
+        state.l++;
+        state.line = 13;
+        if (state.need[d]) {
+          state.line = 14;
+          if (state.win[d] === state.need[d]) {
+            state.line = 15;
+            const oldV = state.v;
+            state.v--;
+            addLog(`  -> ⚠️ '${d}' 被移出，<b style="color:var(--hl)">Valid: ${oldV} -> ${state.v}</b>`);
+          }
+          state.win[d]--;
+        }
+      }
+    }
+  }
+  render();
+}
+
+reset();
+</script>
+</body>
+</html>

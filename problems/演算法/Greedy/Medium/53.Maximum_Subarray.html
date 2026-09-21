@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>53. Maximum Subarray - Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(80, 250, 123, 0.15); color: var(--green); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 110px; max-height: 180px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .array-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 250px; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 16px; }
+    
+    .array-board { display: flex; gap: 8px; background: #151821; padding: 12px; border-radius: 8px; border: 1px solid var(--border); flex-wrap: wrap; justify-content: center; }
+    .array-cell { background: #1e1e1e; border: 2px solid var(--border); border-radius: 6px; width: 55px; height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; transition: all 0.25s ease; position: relative; }
+    
+    .array-cell.in-max-range { border-color: var(--green); background: rgba(80, 250, 123, 0.15); }
+    .array-cell.in-curr-range { border-color: var(--cyan); background: rgba(139, 233, 253, 0.15); }
+    .array-cell.active-curr { border-color: var(--orange); background: rgba(255, 161, 22, 0.3); transform: scale(1.1); box-shadow: 0 0 12px rgba(255, 161, 22, 0.5); z-index: 2; }
+    
+    .cell-val { font-weight: bold; color: #fff; font-size: 1.1rem; }
+    .cell-idx { font-size: 0.65rem; color: var(--text-dim); position: absolute; top: 2px; left: 4px; }
+    .cell-label { font-size: 0.6rem; color: var(--medium); position: absolute; bottom: 2px; }
+
+    .var-badge { font-family: monospace; padding: 3px 8px; border-radius: 4px; background: #222; border: 1px solid var(--border); font-size: 0.8rem; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">53. Maximum Subarray</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Kadane's Algorithm O(N)</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. Bottom-Up 1D DP O(N)</button>
+      <button class="algo-btn" onclick="setAlgo(2)">3. Divide & Conquer O(N log N)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: Standard (-2, 1, -3...)</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: Single Element ([1])</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: All Positive ([5,4,-1,7,8])</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個整數陣列 <b>nums</b>，請找出一個具有最大總和的<b>連續子陣列 (Subarray)</b>（至少包含一個數字），並返回其最大總和。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Micro-steps Enabled</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 陣列狀態與區域/全局和視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="array-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Index (i): </span>
+              <span id="pos-i-display" style="font-weight: bold; color: var(--orange);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Sum: </span>
+              <span id="curr-sum-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Max Sum: </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.15rem; color: var(--green);">-</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Status / Output:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Kadane's Algorithm
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">maxSubArray</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        max_sum = cur_sum = nums[0]`,
+       `        <span class="kw">for</span> num <span class="kw">in</span> nums[1:]:`,
+       `            cur_sum = max(num, cur_sum + num)`,
+       `            max_sum = max(max_sum, cur_sum)`,
+       `        <span class="kw">return</span> max_sum`],
+      
+      // 2. Bottom-Up 1D DP
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">maxSubArray</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        dp = [0] * len(nums)`,
+       `        dp[0] = nums[0]`,
+       `        max_sum = dp[0]`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(1, len(nums)):`,
+       `            dp[i] = max(nums[i], dp[i-1] + nums[i])`,
+       `            max_sum = max(max_sum, dp[i])`,
+       `        <span class="kw">return</span> max_sum`],
+
+      // 3. Divide & Conquer
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">maxSubArray</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        <span class="kw">def</span> <span class="fn">solve</span>(l, r):`,
+       `            <span class="kw">if</span> l == r: <span class="kw">return</span> nums[l]`,
+       `            mid = (l + r) // 2`,
+       `            left_max = solve(l, mid)`,
+       `            right_max = solve(mid + 1, r)`,
+       `            cross_max = max_cross(l, mid, r)`,
+       `            <span class="kw">return</span> max(left_max, right_max, cross_max)`,
+       `        <span class="kw">return</span> solve(0, len(nums) - 1)`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Kadane's Algorithm (貪婪/動態規劃優化)",
+        time: "O(N)", space: "O(1)",
+        idea: "<b>解法思路：</b>維護一個當前最大子陣列和 <code>cur_sum</code>。當走訪到數字 <code>num</code> 時，選擇「加入前面積累的 <code>cur_sum + num</code>」或是「放棄前面，從 <code>num</code> 重新開始 (即 <code>max(num, cur_sum + num)</code>)」。同時更新全局最大值 <code>max_sum</code>。"
+      },
+      {
+        title: "2. Bottom-Up 1D Dynamic Programming (一維動態規劃)",
+        time: "O(N)", space: "O(N)",
+        idea: "<b>解法思路：</b>定義 <code>dp[i]</code> 為以 <code>nums[i]</code> 為結尾的最大子陣列和。轉移方程式為 <code>dp[i] = max(nums[i], dp[i-1] + nums[i])</code>。最終答案即為 <code>dp</code> 陣列中的最大值。"
+      },
+      {
+        title: "3. Divide and Conquer (分治法)",
+        time: "O(N log N)", space: "O(log N)",
+        idea: "<b>解法思路：</b>將陣列切分為左右兩半。最大子陣列可能存在於：1. 完全在左半部 2. 完全在右半部 3. 跨越中點 (Cross Mid)。遞迴求出三者後取最大值。"
+      }
+    ];
+
+    const presets = [
+      { title: "Example 1", nums: [-2, 1, -3, 4, -1, 2, 1, -5, 4], expected: 6, explanation: "連續子陣列 [4, -1, 2, 1] 的和最大，為 6。" },
+      { title: "Example 2", nums: [1], expected: 1, explanation: "只有一個元素，最大和即為 1。" },
+      { title: "Example 3", nums: [5, 4, -1, 7, 8], expected: 23, explanation: "連續子陣列 [5, 4, -1, 7, 8] 的和最大，為 23。" }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input:</b> nums = [${p.nums.join(', ')}] | <b>Expected Output:</b> <span style="color:var(--green)">${p.expected}</span></div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- Granular History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const { nums } = presets[currentPreset];
+
+      switch(currentAlgo) {
+        case 0: buildKadaneSteps(nums); break;
+        case 1: buildDPSteps(nums); break;
+        case 2: buildDivideConquerSteps(nums); break;
+      }
+    }
+
+    // 1. Kadane's Algorithm Steps
+    function buildKadaneSteps(nums) {
+      let curSum = nums[0];
+      let maxSum = nums[0];
+      let curL = 0, curR = 0;
+      let maxL = 0, maxR = 0;
+
+      history.push({
+        line: 2, phase: "⚡ 【Step 1: 初始化變數】",
+        desc: `設定初始狀態：<code>cur_sum = nums[0] (${nums[0]})</code>, <code>max_sum = ${nums[0]}</code>`,
+        i: 0, num: nums[0], curSum, maxSum, curL, curR, maxL, maxR, result: "Running..."
+      });
+
+      for (let i = 1; i < nums.length; i++) {
+        let num = nums[i];
+        let joinPrev = curSum + num;
+
+        history.push({
+          line: 3, phase: `🔍 【Focus: nums[${i}] = ${num}】`,
+          desc: `決策點：選擇「接續前面的累加和 (<code>${curSum} + ${num} = ${joinPrev}</code>)」還是「自己重新開始 (<code>${num}</code>)」？`,
+          i, num, curSum, maxSum, curL, curR, maxL, maxR, result: "Running..."
+        });
+
+        if (num > joinPrev) {
+          curSum = num;
+          curL = i;
+          curR = i;
+          history.push({
+            line: 4, phase: `✏️ 【Update cur_sum: 重新開始】`,
+            desc: `<code>nums[${i}] (${num}) > ${joinPrev}</code>！放棄前面的子陣列，<b>從 index ${i} 重新開始</b>。`,
+            i, num, curSum, maxSum, curL, curR, maxL, maxR, result: "Running..."
+          });
+        } else {
+          curSum = joinPrev;
+          curR = i;
+          history.push({
+            line: 4, phase: `✏️ 【Update cur_sum: 接續前面】`,
+            desc: `<code>${joinPrev} >= ${num}</code>！選擇<b>接續前面的子陣列</b>，<code>cur_sum = ${curSum}</code>。`,
+            i, num, curSum, maxSum, curL, curR, maxL, maxR, result: "Running..."
+          });
+        }
+
+        if (curSum > maxSum) {
+          maxSum = curSum;
+          maxL = curL;
+          maxR = curR;
+          history.push({
+            line: 5, phase: `🎉 【Update max_sum: 突破新高！】`,
+            desc: `更新全局最大值：<code>max_sum = <b style="color:var(--green);">${maxSum}</b></code> (區間: [${maxL}..${maxR}])`,
+            i, num, curSum, maxSum, curL, curR, maxL, maxR, result: "Running..."
+          });
+        }
+      }
+
+      history.push({
+        line: 6, phase: "🎉 【Complete: 演算法結束】",
+        desc: `陣列走訪完畢！最大子陣列和 = <b style="color:var(--green); font-size:1.1rem;">${maxSum}</b>`,
+        i: nums.length - 1, num: nums[nums.length - 1], curSum, maxSum, curL, curR, maxL, maxR, result: maxSum
+      });
+    }
+
+    // 2. 1D DP Steps
+    function buildDPSteps(nums) {
+      const dp = new Array(nums.length).fill(0);
+      dp[0] = nums[0];
+      let maxSum = dp[0];
+
+      history.push({
+        line: 3, phase: "⚡ 【Step 1: 初始化 DP 陣列】",
+        desc: `建立長度為 <b>${nums.length}</b> 的 <code>dp</code> 陣列。<code>dp[0] = nums[0] (${nums[0]})</code>, <code>max_sum = ${maxSum}</code>`,
+        dp: [...dp], i: 0, num: nums[0], maxSum, result: "Running..."
+      });
+
+      for (let i = 1; i < nums.length; i++) {
+        let num = nums[i];
+        let choiceConcat = dp[i-1] + num;
+
+        history.push({
+          line: 5, phase: `🔍 【Focus: dp[${i}] (nums[${i}] = ${num})】`,
+          desc: `計算以 <code>nums[${i}]</code> 結尾的最大和：比較 <code>nums[${i}] (${num})</code> 與 <code>dp[${i-1}] + nums[${i}] (${dp[i-1]} + ${num} = ${choiceConcat})</code>。`,
+          dp: [...dp], i, num, maxSum, result: "Running..."
+        });
+
+        dp[i] = Math.max(num, choiceConcat);
+
+        history.push({
+          line: 6, phase: `✏️ 【Update dp[${i}]】`,
+          desc: `轉移結果：<code>dp[${i}] = <b style="color:var(--orange);">${dp[i]}</b></code>`,
+          dp: [...dp], i, num, maxSum, result: "Running..."
+        });
+
+        if (dp[i] > maxSum) {
+          maxSum = dp[i];
+          history.push({
+            line: 7, phase: `🎉 【Update max_sum】`,
+            desc: `更新全局最大值：<code>max_sum = <b style="color:var(--green);">${maxSum}</b></code>`,
+            dp: [...dp], i, num, maxSum, result: "Running..."
+          });
+        }
+      }
+
+      history.push({
+        line: 8, phase: "🎉 【Complete: 演算法結束】",
+        desc: `<code>dp</code> 陣列計算完畢！最大子陣列和 = <b style="color:var(--green); font-size:1.1rem;">${maxSum}</b>`,
+        dp: [...dp], i: nums.length - 1, num: nums[nums.length - 1], maxSum, result: maxSum
+      });
+    }
+
+    // 3. Divide and Conquer Steps
+    function buildDivideConquerSteps(nums) {
+      let globalMax = -Infinity;
+
+      function solve(l, r) {
+        history.push({
+          line: 2, phase: `📥 【Divide: Range [${l}..${r}]】`,
+          desc: `處理區間 <code>[${l}..${r}]</code>`,
+          l, r, result: "Running..."
+        });
+
+        if (l === r) {
+          history.push({
+            line: 3, phase: `🎯 【Base Case: Single Element】`,
+            desc: `區間長度為 1，<code>nums[${l}] = ${nums[l]}</code>`,
+            l, r, result: "Running..."
+          });
+          return nums[l];
+        }
+
+        let mid = Math.floor((l + r) / 2);
+        let leftMax = solve(l, mid);
+        let rightMax = solve(mid + 1, r);
+
+        // Cross Mid
+        let leftSum = 0, maxLeftCross = -Infinity;
+        for (let i = mid; i >= l; i--) {
+          leftSum += nums[i];
+          maxLeftCross = Math.max(maxLeftCross, leftSum);
+        }
+
+        let rightSum = 0, maxRightCross = -Infinity;
+        for (let i = mid + 1; i <= r; i++) {
+          rightSum += nums[i];
+          maxRightCross = Math.max(maxRightCross, rightSum);
+        }
+
+        let crossMax = maxLeftCross + maxRightCross;
+        let res = Math.max(leftMax, rightMax, crossMax);
+        globalMax = Math.max(globalMax, res);
+
+        history.push({
+          line: 7, phase: `✏️ 【Conquer & Merge: Range [${l}..${r}]】`,
+          desc: `LeftMax: <code>${leftMax}</code>, RightMax: <code>${rightMax}</code>, CrossMax: <code>${crossMax}</code> ➔ 區域最大: <b style="color:var(--green);">${res}</b>`,
+          l, r, mid, leftMax, rightMax, crossMax, res, result: "Running..."
+        });
+
+        return res;
+      }
+
+      let res = solve(0, nums.length - 1);
+
+      history.push({
+        line: 9, phase: "🎉 【Complete: 演算法結束】",
+        desc: `分治合併完畢！最大子陣列和 = <b style="color:var(--green); font-size:1.1rem;">${res}</b>`,
+        l: 0, r: nums.length - 1, result: res
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const { nums } = presets[currentPreset];
+
+      let html = `<div class="array-board">`;
+
+      for (let i = 0; i < nums.length; i++) {
+        let isCurr = (state.i === i);
+        let inMaxRange = (currentAlgo === 0 && i >= state.maxL && i <= state.maxR);
+        let inCurrRange = (currentAlgo === 0 && i >= state.curL && i <= state.curR);
+        if (currentAlgo === 2) {
+          inCurrRange = (i >= state.l && i <= state.r);
+        }
+
+        let cls = [];
+        if (isCurr) cls.push("active-curr");
+        if (inMaxRange) cls.push("in-max-range");
+        else if (inCurrRange) cls.push("in-curr-range");
+
+        let label = "";
+        if (currentAlgo === 0) {
+          if (i === state.curL && i === state.curR) label = "cur";
+          else if (i === state.curL) label = "curL";
+          else if (i === state.curR) label = "curR";
+        } else if (currentAlgo === 2) {
+          if (i === state.l) label = "L";
+          if (i === state.r) label = "R";
+          if (i === state.mid) label = "Mid";
+        }
+
+        html += `
+          <div class="array-cell ${cls.join(' ')}">
+            <span class="cell-idx">[${i}]</span>
+            <span class="cell-val">${nums[i]}</span>
+            <span class="cell-label">${label}</span>
+          </div>
+        `;
+      }
+      html += `</div>`;
+
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack / Trace Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟 (Step):</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          <div><b>• 當前聚焦 Index:</b> <span style="color:var(--medium); font-weight:bold;">${state.i !== undefined ? state.i : (state.l !== undefined ? `[${state.l}..${state.r}]` : '-')}</span></div>
+          <div><b>• 當前數值 (num):</b> <span style="color:var(--cyan); font-weight:bold;">${state.num !== undefined ? state.num : '-'}</span></div>
+        </div>
+      `;
+
+      // Positions Display
+      document.getElementById('pos-i-display').innerText = state.i !== undefined ? `${state.i}` : (state.l !== undefined ? `[${state.l}..${state.r}]` : "-");
+      document.getElementById('curr-sum-display').innerText = state.curSum !== undefined ? `${state.curSum}` : (state.res !== undefined ? `${state.res}` : "-");
+      document.getElementById('status-display').innerText = state.maxSum !== undefined ? `${state.maxSum}` : (state.result !== "Running..." ? `${state.result}` : "-");
+
+      // Dynamic Panel
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (currentAlgo === 1 && state.dp) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">1D DP Array (dp[i] = max subarray ending at i):</span>
+            <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
+              ${state.dp.map((v, idx) => `
+                <div style="background:#222; border:1px solid ${state.i === idx ? 'var(--orange)' : 'var(--border)'}; padding:4px 8px; border-radius:4px; font-family:monospace; font-size:0.75rem;">
+                  <span style="color:var(--text-dim)">[${idx}]</span> <b style="color:${state.i === idx ? 'var(--orange)' : '#fff'}">${v}</b>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (currentAlgo === 2) {
+        dynPanel.innerHTML = `
+          <div style="font-size:0.78rem; font-family:monospace; color:var(--text-dim);">
+            Divide & Conquer Subproblems: LeftMax = <b>${state.leftMax !== undefined ? state.leftMax : '-'}</b> | RightMax = <b>${state.rightMax !== undefined ? state.rightMax : '-'}</b> | CrossMax = <b>${state.crossMax !== undefined ? state.crossMax : '-'}</b>
+          </div>
+        `;
+      } else {
+        dynPanel.innerHTML = `
+          <div style="font-size:0.78rem; font-family:monospace; color:var(--text-dim);">
+            Current Subarray Range: Index <code>[${state.curL !== undefined ? state.curL : 0} .. ${state.curR !== undefined ? state.curR : 0}]</code> | Max Subarray Range: <code>[${state.maxL !== undefined ? state.maxL : 0} .. ${state.maxR !== undefined ? state.maxR : 0}]</code>
+          </div>
+        `;
+      }
+
+      // Result Text
+      const resEl = document.getElementById('result-text');
+      resEl.innerHTML = state.result !== "Running..." ? `Max Subarray Sum = <b style="color:var(--green);">${state.result}</b>` : "Searching Maximum Subarray Sum...";
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

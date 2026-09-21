@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>33. Search in Rotated Sorted Array - 終極視覺化版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1e1e1e; color: #d4d4d4; font-family: 'Fira Code', monospace; height: 100vh; overflow: hidden; }
+        .sidebar-item { background-color: #252526; border: 1px solid #333; border-radius: 6px; padding: 15px; }
+        .active-line { background-color: rgba(38, 79, 120, 0.6); border-left: 3px solid #007acc; }
+        .token-keyword { color: #569cd6; }
+        .token-comment { color: #6a9955; }
+        .token-def { color: #dcdcaa; }
+        .token-class { color: #4ec9b0; }
+        .array-cell { transition: all 0.3s ease; border: 2px solid #333; position: relative; }
+        .cell-l { border-color: #4fc1ff !important; background: rgba(79, 193, 255, 0.1); }
+        .cell-r { border-color: #f44747 !important; background: rgba(244, 71, 71, 0.1); }
+        .cell-mid { border-color: #dcdcaa !important; background: rgba(220, 220, 170, 0.2); animation: pulse 1s infinite; }
+        .cell-target { background: #d7ba7d; color: #1e1e1e; font-weight: bold; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        pre { margin: 0; white-space: pre; }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <header class="h-14 border-b border-zinc-800 flex items-center px-6 justify-between bg-[#252526] shrink-0">
+        <div class="flex items-center gap-3">
+            <span class="bg-yellow-600 text-white text-[10px] px-2 py-0.5 rounded font-bold">MEDIUM</span>
+            <div class="font-bold text-lg text-white">#33 Search in Rotated Sorted Array</div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="switchAlgo('binary')" id="btn-binary" class="px-4 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-500 transition-colors">Binary Search</button>
+            <button onclick="switchAlgo('brute')" id="btn-brute" class="px-4 py-1 rounded bg-zinc-700 text-sm text-white hover:bg-zinc-600 transition-colors">Brute Force</button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden p-4 gap-4">
+        
+        <section class="w-1/4 flex flex-col gap-4 shrink-0">
+            <div class="sidebar-item">
+                <h2 class="text-blue-400 font-bold mb-2 text-xs uppercase tracking-widest">● 題目敘述</h2>
+                <p class="text-[11px] text-zinc-400 leading-relaxed">
+                    整數陣列 <span class="text-white">nums</span> 已按升序排列，但在傳遞給函數前可能在某個下標處進行了 <span class="text-yellow-500">旋轉</span>。<br><br>
+                    例如: <span class="text-zinc-500">[0,1,2,4,5,6,7]</span> 可能旋轉成 <span class="text-zinc-500">[4,5,6,7,0,1,2]</span>。<br><br>
+                    請找出 <span class="text-white font-bold">target</span> 的下標，若不存在則返回 <span class="text-red-400 font-bold">-1</span>。
+                </p>
+            </div>
+
+            <div id="complexity-section" class="sidebar-item border-l-4 border-green-600">
+                <h2 class="text-blue-400 font-bold mb-2 text-xs uppercase tracking-widest">● 複雜度分析</h2>
+                <div id="comp-binary">
+                    <div class="flex justify-between text-[11px] mb-1"><span>Time:</span><span class="text-green-400 font-bold">O(log N)</span></div>
+                    <div class="flex justify-between text-[11px]"><span>Space:</span><span class="text-blue-400 font-bold">O(1)</span></div>
+                </div>
+                <div id="comp-brute" class="hidden">
+                    <div class="flex justify-between text-[11px] mb-1"><span>Time:</span><span class="text-red-400 font-bold">O(N)</span></div>
+                    <div class="flex justify-between text-[11px]"><span>Space:</span><span class="text-blue-400 font-bold">O(1)</span></div>
+                </div>
+            </div>
+
+            <div class="sidebar-item flex-1 overflow-hidden flex flex-col">
+                <h2 class="text-blue-400 font-bold mb-3 text-xs uppercase tracking-widest">● 測資選擇</h2>
+                <div id="case-list" class="space-y-2 overflow-y-auto"></div>
+            </div>
+        </section>
+
+        <section class="w-[45%] flex flex-col gap-4">
+            <div class="sidebar-item flex-1 flex flex-col items-center justify-center relative">
+                <div class="absolute top-4 left-4 text-xs text-zinc-500 uppercase">Target: <span id="target-val" class="text-yellow-500 font-bold">-</span></div>
+                
+                <div id="array-container" class="flex gap-2 mb-12"></div>
+
+                <div id="status-msg" class="w-full max-w-md text-center text-sm py-4 px-6 bg-zinc-900 rounded border border-zinc-800 text-blue-300 italic">
+                    準備開始...
+                </div>
+            </div>
+
+            <div class="sidebar-item h-16 flex items-center justify-between">
+                <div class="flex gap-2">
+                    <button onclick="prevStep()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded text-xs transition-colors">上一步</button>
+                    <button onclick="togglePlay()" id="play-btn" class="px-5 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-500 transition-all">自動播放</button>
+                    <button onclick="nextStep()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded text-xs transition-colors">下一步</button>
+                    <button onclick="reset()" class="ml-2 px-3 py-1.5 border border-zinc-600 hover:bg-zinc-800 rounded text-xs transition-colors text-zinc-400">重置</button>
+                </div>
+                <div class="text-[10px] text-zinc-500 uppercase">Step: <span id="cur-step" class="text-white font-bold">0</span></div>
+            </div>
+        </section>
+
+        <section class="w-[30%] flex flex-col gap-4">
+            <div class="sidebar-item flex-1 flex flex-col overflow-hidden p-0">
+                <div class="bg-[#323233] px-4 py-2 text-[10px] text-zinc-400 border-b border-zinc-800">PYTHON IDE</div>
+                <div id="code-box" class="p-4 text-[11px] leading-5 overflow-y-auto flex-1 font-mono"></div>
+            </div>
+            <div class="sidebar-item h-1/4">
+                <h2 class="text-blue-400 font-bold mb-2 text-xs uppercase tracking-widest">● Watcher</h2>
+                <div id="watcher" class="space-y-1 text-[11px]"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const cases = [
+            {nums: [4,5,6,7,0,1,2], target: 0},
+            {nums: [4,5,6,7,0,1,2], target: 3},
+            {nums: [6,7,1,2,3,4,5], target: 1},
+            {nums: [1,3], target: 3}
+        ];
+
+        let algo = 'binary';
+        let caseIdx = 0;
+        let steps = [];
+        let stepIdx = 0;
+        let timer = null;
+
+        const binaryLines = [
+            "class <span class='token-class'>Solution</span>:",
+            "    <span class='token-keyword'>def</span> <span class='token-def'>search</span>(self, nums: List[int], target: int) -> int:",
+            "        left = 0",
+            "        right = len(nums) - 1",
+            "        <span class='token-comment'># 找某個確定存在的 target while left <= right</span>",
+            "        <span class='token-keyword'>while</span>(left <= right):",
+            "            mid = (left + right)//2",
+            "            <span class='token-keyword'>if</span> nums[mid] == target:",
+            "                <span class='token-keyword'>return</span> mid",
+            "            <span class='token-comment'># 判斷左半邊是否為有序的</span>",
+            "            <span class='token-keyword'>if</span> nums[left] <= nums[mid]:",
+            "                <span class='token-keyword'>if</span> nums[left] <= target < nums[mid]: <span class='token-comment'># 如果在左邊</span>",
+            "                    right = mid - 1",
+            "                <span class='token-keyword'>else</span>:",
+            "                    left = mid + 1",
+            "            <span class='token-keyword'>else</span>: <span class='token-comment'># 右半邊是有序的</span>",
+            "                <span class='token-keyword'>if</span> nums[mid] < target <= nums[right]:",
+            "                    left = mid + 1",
+            "                <span class='token-keyword'>else</span>:",
+            "                    right = mid - 1",
+            "        <span class='token-keyword'>return</span> -1"
+        ];
+
+        const bruteLines = [
+            "class <span class='token-class'>Solution</span>:",
+            "    <span class='token-keyword'>def</span> <span class='token-def'>search</span>(self, nums: List[int], target: int) -> int:",
+            "        <span class='token-keyword'>for</span> i <span class='token-keyword'>in</span> range(len(nums)):",
+            "            <span class='token-keyword'>if</span> nums[i] == target:",
+            "                <span class='token-keyword'>return</span> i",
+            "        <span class='token-keyword'>return</span> -1"
+        ];
+
+        function switchAlgo(a) {
+            algo = a;
+            document.getElementById('btn-binary').className = a === 'binary' ? 'px-4 py-1 rounded bg-blue-600 text-white text-sm' : 'px-4 py-1 rounded bg-zinc-700 text-sm text-white';
+            document.getElementById('btn-brute').className = a === 'brute' ? 'px-4 py-1 rounded bg-blue-600 text-white text-sm' : 'px-4 py-1 rounded bg-zinc-700 text-sm text-white';
+            document.getElementById('comp-binary').classList.toggle('hidden', a !== 'binary');
+            document.getElementById('comp-brute').classList.toggle('hidden', a !== 'brute');
+            document.getElementById('complexity-section').className = `sidebar-item border-l-4 ${a === 'binary' ? 'border-green-600' : 'border-red-600'}`;
+            renderCode();
+            reset();
+        }
+
+        function getSteps() {
+            const {nums, target} = cases[caseIdx];
+            const s = [];
+            if(algo === 'binary') {
+                let l = 0, r = nums.length - 1;
+                s.push({l, r, mid: null, line: 2, msg: "初始化 left = 0, right = n-1"});
+                while(l <= r) {
+                    let mid = Math.floor((l+r)/2);
+                    s.push({l, r, mid, line: 6, msg: `計算 mid = ${mid}`});
+                    if(nums[mid] === target) {
+                        s.push({l, r, mid, line: 8, msg: "命中 target！返回 index"});
+                        return s;
+                    }
+                    if(nums[l] <= nums[mid]) {
+                        s.push({l, r, mid, line: 10, msg: "左半部遞增"});
+                        if(nums[l] <= target && target < nums[mid]) {
+                            s.push({l, r, mid, line: 12, msg: "target 在左側有序區間內"});
+                            r = mid - 1;
+                        } else {
+                            s.push({l, r, mid, line: 14, msg: "target 不在左側，搜尋右側"});
+                            l = mid + 1;
+                        }
+                    } else {
+                        s.push({l, r, mid, line: 15, msg: "左半部斷開，右半部必定遞增"});
+                        if(nums[mid] < target && target <= nums[r]) {
+                            s.push({l, r, mid, line: 17, msg: "target 在右側有序區間內"});
+                            l = mid + 1;
+                        } else {
+                            s.push({l, r, mid, line: 19, msg: "target 不在右側，搜尋左側"});
+                            r = mid - 1;
+                        }
+                    }
+                }
+                s.push({l, r, mid: null, line: 20, msg: "迴圈結束，未找到"});
+            } else {
+                for(let i=0; i<nums.length; i++) {
+                    s.push({l: i, r: null, mid: null, line: 2, msg: `逐一檢查 i = ${i}`});
+                    if(nums[i] === target) {
+                        s.push({l: i, r: null, mid: null, line: 4, msg: "找到了！"});
+                        return s;
+                    }
+                }
+                s.push({l: null, r: null, mid: null, line: 5, msg: "遍歷結束，未找到"});
+            }
+            return s;
+        }
+
+        function renderCode() {
+            const lines = algo === 'binary' ? binaryLines : bruteLines;
+            document.getElementById('code-box').innerHTML = lines.map((line, i) => 
+                `<div id="line-${i}"><pre>${line}</pre></div>`
+            ).join('');
+        }
+
+        function updateUI() {
+            const step = steps[stepIdx];
+            const {nums, target} = cases[caseIdx];
+            document.getElementById('array-container').innerHTML = nums.map((val, i) => {
+                let cls = "array-cell w-12 h-12 flex items-center justify-center rounded text-sm font-bold ";
+                if (algo === 'binary') {
+                    if (i === step.l) cls += "cell-l ";
+                    if (i === step.r) cls += "cell-r ";
+                    if (i === step.mid) cls += "cell-mid ";
+                } else {
+                    if (i === step.l) cls += "cell-mid ";
+                }
+                // 標示成功的最後一步
+                if (val === target && stepIdx === steps.length - 1 && step.line !== 20 && step.line !== 5) cls += "cell-target ";
+                return `<div class="${cls}">${val}</div>`;
+            }).join('');
+
+            document.querySelectorAll('#code-box div').forEach(el => el.classList.remove('active-line'));
+            document.getElementById(`line-${step.line}`)?.classList.add('active-line');
+            document.getElementById('target-val').textContent = target;
+            document.getElementById('status-msg').textContent = step.msg;
+            document.getElementById('cur-step').textContent = stepIdx;
+            
+            document.getElementById('watcher').innerHTML = algo === 'binary' ? `
+                <div class="flex justify-between border-b border-zinc-800 pb-1"><span>left:</span><span class="text-blue-400 font-bold">${step.l ?? '-'}</span></div>
+                <div class="flex justify-between border-b border-zinc-800 pb-1"><span>right:</span><span class="text-red-400 font-bold">${step.r ?? '-'}</span></div>
+                <div class="flex justify-between border-b border-zinc-800 pb-1"><span>mid index:</span><span class="text-yellow-500 font-bold">${step.mid ?? '-'}</span></div>
+            ` : `<div class="flex justify-between border-b border-zinc-800 pb-1"><span>current i:</span><span class="text-yellow-500 font-bold">${step.l ?? '-'}</span></div>`;
+        }
+
+        function reset() { 
+            stop(); 
+            steps = getSteps(); 
+            stepIdx = 0; 
+            updateUI(); 
+        }
+
+        function nextStep() { if (stepIdx < steps.length - 1) { stepIdx++; updateUI(); } else stop(); }
+        function prevStep() { if (stepIdx > 0) { stepIdx--; updateUI(); } }
+        function togglePlay() { timer ? stop() : start(); }
+        function start() { document.getElementById('play-btn').textContent = "暫停播放"; timer = setInterval(nextStep, 600); }
+        function stop() { document.getElementById('play-btn').textContent = "自動播放"; clearInterval(timer); timer = null; }
+
+        document.getElementById('case-list').innerHTML = cases.map((c, i) => `
+            <button onclick="caseIdx=${i};reset();" class="w-full text-left p-2 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] border border-zinc-700 transition-all hover:border-blue-500">
+                Case ${i+1}: nums=[${c.nums}], t=${c.target}
+            </button>
+        `).join('');
+
+        renderCode();
+        reset();
+    </script>
+</body>
+</html>

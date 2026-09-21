@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>312. Burst Balloons - Pro Debugger V2.2</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --vscode-bg: #1e1e1e; --line-active: #2d2d30;
+        }
+        * { box-sizing: border-box; }
+        body { 
+            background: #010409; color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin: 0; display: flex; height: 100vh; overflow: hidden;
+        }
+
+        /* --- 左側：Problem & Logic (25%) --- */
+        .sidebar-l { width: 25%; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
+        .section-header { padding: 10px 16px; font-size: 11px; font-weight: bold; color: #8b949e; border-bottom: 1px solid var(--border); background: #161b22; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .p-content { padding: 16px; flex: 1; overflow-y: auto; border-bottom: 1px solid var(--border); }
+        .difficulty-hard { color: var(--red); font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block; }
+        .p-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #fff; }
+        .p-body { font-size: 13px; line-height: 1.6; color: #c9d1d9; }
+        .formula-box { background: #161b22; padding: 10px; border-radius: 6px; border: 1px solid var(--border); font-family: monospace; font-size: 11px; margin: 10px 0; color: var(--orange); }
+        .topic-tags { margin-bottom: 8px; }
+        .topic-tag { background: #21262d; border: 1px solid var(--border); padding: 2px 8px; border-radius: 12px; font-size: 10px; color: var(--blue); margin-right: 4px; }
+
+        .logic-section { padding: 16px; flex: 1.2; overflow-y: auto; border-bottom: 1px solid var(--border); background: rgba(13, 17, 23, 0.5); }
+        .logic-card h4 { margin: 12px 0 6px 0; color: var(--blue); font-size: 13px; }
+        .logic-card p { margin: 0 0 10px 0; font-size: 12px; line-height: 1.5; }
+
+        .tc-tab { padding: 6px 10px; background: #21262d; border: 1px solid var(--border); color: #8b949e; cursor: pointer; font-size: 11px; margin-bottom: 4px; border-radius: 4px; }
+        .tc-tab.active { border-color: var(--blue); color: #fff; }
+
+        /* --- 中間：Arena (45%) --- */
+        .main-arena { width: 45%; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+        /* 比例 1:1:1 控制 */
+        .viz-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-bottom: 1px solid var(--border); }
+        
+        .viz-top { align-items: center; justify-content: center; background: #010409; }
+        .balloon-wrap { display: flex; gap: 8px; height: 80px; align-items: flex-end; }
+        .balloon { width: 34px; height: 46px; background: var(--green); border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); font-size: 12px;}
+        .balloon.boundary { background: #30363d; opacity: 0.4; }
+        .balloon.k-target { background: var(--red); transform: translateY(-10px) scale(1.1); box-shadow: 0 8px 15px rgba(248, 81, 73, 0.3); }
+        .balloon.range-active { border: 2px dashed var(--purple); background: rgba(188, 140, 255, 0.1); }
+        
+        .viz-mid { padding: 10px; display: flex; justify-content: center; align-items: center; background: #0d1117; overflow: auto; }
+        .dp-grid { border-collapse: collapse; }
+        .dp-grid td { border: 1px solid var(--border); width: 28px; height: 28px; text-align: center; font-size: 9px; color: #484f58; }
+        .cell-focus { background: #264f78 !important; color: #fff !important; }
+        .cell-updated { animation: flashUpdate 0.8s ease-out; background: #238636 !important; color: #fff !important; }
+
+        .viz-bottom { background: #010409; padding: 12px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 11px; }
+        .log-entry { margin-bottom: 4px; border-left: 2px solid var(--border); padding-left: 8px; animation: fadeIn 0.3s; }
+        .log-time { color: #858585; margin-right: 8px; }
+        .log-msg-calc { color: var(--orange); font-weight: bold; }
+
+        @keyframes flashUpdate { 0% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .controller { height: 60px; background: #161b22; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .ctrl-btn { padding: 6px 12px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #c9d1d9; cursor: pointer; font-size: 11px; font-weight: bold; }
+        .ctrl-btn.reset { border-color: var(--red); color: var(--red); }
+
+        /* --- 右側：Console (30%) --- */
+        .sidebar-r { width: 30%; display: flex; flex-direction: column; background: var(--vscode-bg); border-left: 1px solid var(--border); }
+        .code-area { flex: 1.2; padding-top: 10px; overflow-y: auto; font-family: 'Fira Code', monospace; }
+        .line { display: block; padding-left: 45px; line-height: 1.5; font-size: 11px; position: relative; white-space: pre; color: #d4d4d4; }
+        .line.active { background: var(--line-active); }
+        .line.active::before { content: ''; position: absolute; left: 0; width: 4px; height: 100%; background: var(--blue); }
+        .line-num { position: absolute; left: 0; width: 32px; text-align: right; color: #858585; padding-right: 10px; }
+        
+        .debug-panels { flex: 1; display: flex; flex-direction: column; border-top: 1px solid var(--border); }
+        .panel-v { flex: 1; overflow-y: auto; padding: 10px; background: #1e1e1e; border-bottom: 1px solid var(--border); }
+        .panel-s { flex: 1; overflow-y: auto; padding: 10px; background: #1e1e1e; }
+        .var-row { display: flex; justify-content: space-between; font-size: 10.5px; padding: 3px 0; border-bottom: 1px solid #2d2d2d; }
+        .stack-item { padding: 4px 8px; border-radius: 3px; background: #2d2d30; margin-bottom: 3px; font-size: 10px; border-left: 3px solid #555; }
+        .stack-item.top { border-left-color: var(--blue); background: #37373d; color: #fff; }
+        .c-key { color: #c586c0; } .c-fn { color: #dcdcaa; } .c-var { color: #9cdcfe; } .c-num { color: #b5cea8; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar-l">
+    <div class="section-header">Problem Description</div>
+    <div class="p-content">
+        <span class="difficulty-hard">困難 (Hard)</span>
+        <div class="p-title">312. Burst Balloons</div>
+        <div class="topic-tags">
+            <span class="topic-tag">陣列</span>
+            <span class="topic-tag">動態規劃</span>
+        </div>
+        <div class="p-body">
+            有 <code>n</code> 個氣球，索引從 <code>0</code> 到 <code>n - 1</code>。每個氣球標有數字 <code>nums[i]</code>。戳破氣球 <code>i</code> 可獲得：
+            <div class="formula-box">nums[i-1] * nums[i] * nums[i+1]</div>
+            <b>邊界處理：</b> 若 <code>i-1</code> 或 <code>i+1</code> 超出範圍，視為 <code>1</code>。需回傳明智戳破所有氣球後能獲得的 <b>最大硬幣數量</b>。
+        </div>
+    </div>
+
+    <div class="section-header">Algorithm Logic</div>
+    <div class="logic-section">
+        <div class="logic-card">
+            <h4>1. 為什麼不能正向思考？</h4>
+            <p>若正向枚舉「先戳破誰」，戳破後左右氣球會變相鄰，導致<b>子問題不獨立</b>。</p>
+            <h4>2. 逆向枚舉：最後一個戳破</h4>
+            <p>考慮在區間 <code>(left, right)</code> 中，氣球 <code>k</code> 是<b>最後一個</b>被戳破的。此時 <code>left</code> 和 <code>right</code> 氣球必定還在場。</p>
+            <h4>3. 狀態定義</h4>
+            <p><code>dfs(l, r)</code> 表示戳破開區間 <code>(l, r)</code> 內最大收益：</p>
+            <p style="color:var(--orange); font-size:11px;"><b>dfs(l, k) + dfs(k, r) + nums[l]*nums[k]*nums[r]</b></p>
+        </div>
+    </div>
+
+    <div class="section-header">Example Controls</div>
+    <div style="padding: 12px 16px;">
+        <button class="tc-tab active" onclick="reset()">[3, 1, 5, 8]</button>
+    </div>
+</div>
+
+<div class="main-arena">
+    <div class="viz-section viz-top">
+        <div id="balloonDisplay" class="balloon-wrap"></div>
+    </div>
+    
+    <div class="viz-section viz-mid">
+        <table class="dp-grid" id="dpGrid"></table>
+    </div>
+
+    <div class="viz-section viz-bottom" id="executionLogs">
+        <div class="log-entry" style="color:var(--green)">> Debugger Ready. Click Next or Play.</div>
+    </div>
+
+    <div class="controller">
+        <button class="ctrl-btn reset" onclick="reset()">重置</button>
+        <button class="ctrl-btn" onclick="prev()">上一步</button>
+        <button class="ctrl-btn" onclick="togglePlay()" id="playBtn">自動播放</button>
+        <button class="ctrl-btn" onclick="next()">下一步 (F10)</button>
+    </div>
+</div>
+
+<div class="sidebar-r">
+    <div class="section-header">solution.py</div>
+    <div class="code-area" id="codeArea"></div>
+    <div class="debug-panels">
+        <div class="section-header">Variables Monitor</div>
+        <div class="panel-v" id="varMonitor"></div>
+        <div class="section-header">Call Stack</div>
+        <div class="panel-s" id="stackList"></div>
+    </div>
+</div>
+
+<script>
+const input = [3, 1, 5, 8];
+let steps = [], curStep = 0, isPlaying = false, timer = null;
+
+const codeLines = [
+    { txt: '<span class="c-key">class</span> <span class="c-fn">Solution</span>:', ind: 0 },
+    { txt: '    <span class="c-key">def</span> <span class="c-fn">maxCoins</span>(<span class="c-var">self</span>, <span class="c-var">nums</span>):', ind: 1 },
+    { txt: '        <span class="c-var">nums</span> = [<span class="c-num">1</span>] + nums + [<span class="c-num">1</span>]', ind: 2 },
+    { txt: '        <span class="c-var">memo</span> = {}', ind: 2 },
+    { txt: ' ', ind: 0 },
+    { txt: '        <span class="c-key">def</span> <span class="c-fn">dfs</span>(<span class="c-var">left</span>, <span class="c-var">right</span>):', ind: 2 },
+    { txt: '            <span class="c-key">if</span> <span class="c-var">left</span> + <span class="c-num">1</span> == <span class="c-var">right</span>: <span class="c-key">return</span> <span class="c-num">0</span>', ind: 3 },
+    { txt: '            <span class="c-key">if</span> (left, right) <span class="c-key">in</span> <span class="c-var">memo</span>: <span class="c-key">return</span> <span class="c-var">memo</span>', ind: 3 },
+    { txt: '            <span class="c-var">res</span> = <span class="c-num">0</span>', ind: 3 },
+    { txt: '            <span class="c-key">for</span> <span class="c-var">k</span> <span class="c-key">in</span> <span class="c-fn">range</span>(left + <span class="c-num">1</span>, right):', ind: 3 },
+    { txt: '                <span class="c-var">gain</span> = <span class="c-fn">dfs</span>(left, k) + <span class="c-fn">dfs</span>(k, right) + \\', ind: 4 },
+    { txt: '                       (<span class="c-var">nums</span>[left] * <span class="c-var">nums</span>[k] * <span class="c-var">nums</span>[right])', ind: 4 },
+    { txt: '                <span class="c-var">res</span> = <span class="c-fn">max</span>(res, <span class="c-var">gain</span>)', ind: 4 },
+    { txt: '            <span class="c-var">memo</span>[(left, right)] = <span class="c-var">res</span>', ind: 3 },
+    { txt: '            <span class="c-key">return</span> <span class="c-var">res</span>', ind: 3 }
+];
+
+function generateSteps(input) {
+    let raw = [1, ...input, 1]; let n = raw.length;
+    let s = []; let memo = {}; let stack = [];
+
+    function solve(l, r) {
+        stack.push({l, r});
+        const snap = (ln, k, res, g, msg) => ({
+            ln, l, r, k, res, gain: g, m: {...memo}, st: [...stack], log: msg, updated: false
+        });
+
+        s.push(snap(5, null, 0, 0, `dfs(${l}, ${r}): 開始計算子區間`));
+        if (l + 1 === r) {
+            s.push(snap(6, null, 0, 0, `區間 (${l}, ${r}) 無氣球，收益 0`));
+            stack.pop(); return 0;
+        }
+        if (memo[`${l},${r}`] !== undefined) {
+            s.push(snap(7, null, memo[`${l},${r}`], 0, `命中快取: Memo[${l},${r}] = ${memo[`${l},${r}`]}`));
+            stack.pop(); return memo[`${l},${r}`];
+        }
+
+        let res = 0;
+        s.push(snap(8, null, 0, 0, `初始化 res = 0`));
+        for (let k = l + 1; k < r; k++) {
+            s.push(snap(9, k, res, 0, `嘗試最後戳破氣球 k = ${k}`));
+            let leftV = solve(l, k);
+            let rightV = solve(k, r);
+            let kScore = raw[l] * raw[k] * raw[r];
+            let currentGain = leftV + rightV + kScore;
+            res = Math.max(res, currentGain);
+            s.push(snap(11, k, res, currentGain, `計算: ${leftV} + ${rightV} + (${raw[l]}*${raw[k]}*${raw[r]}) = ${currentGain}`));
+            s.push(snap(12, k, res, currentGain, `更新 res = ${res}`));
+        }
+        memo[`${l},${r}`] = res;
+        s.push({...snap(13, null, res, 0, `完成區間: Memo[${l},${r}] = ${res}`), updated: true});
+        stack.pop();
+        return res;
+    }
+    solve(0, n - 1);
+    return {steps: s, nums: raw};
+}
+
+function update() {
+    const step = steps[curStep];
+    const n = step.nums.length;
+
+    document.querySelectorAll('.line').forEach((el, idx) => el.classList.toggle('active', idx === step.ln));
+    
+    document.getElementById('balloonDisplay').innerHTML = step.nums.map((v, i) => {
+        let cls = 'balloon' + (i === 0 || i === n - 1 ? ' boundary' : '') + (i === step.k ? ' k-target' : '') + (i > step.l && i < step.r ? ' range-active' : '');
+        return `<div class="${cls}">${v}</div>`;
+    }).join('');
+
+    let table = '<tr><th></th>' + step.nums.map((_, i) => `<th>${i}</th>`).join('') + '</tr>';
+    for (let i = 0; i < n; i++) {
+        table += `<tr><th>${i}</th>`;
+        for (let j = 0; j < n; j++) {
+            let val = step.m[`${i},${j}`] ?? '-';
+            let cls = (i === step.l && j === step.r) ? (step.updated ? 'cell-updated' : 'cell-focus') : '';
+            table += `<td class="${cls}">${val}</td>`;
+        }
+        table += '</tr>';
+    }
+    document.getElementById('dpGrid').innerHTML = table;
+
+    const logBox = document.getElementById('executionLogs');
+    const logEntry = document.createElement('div');
+    logEntry.className = 'log-entry';
+    logEntry.innerHTML = `<span class="log-time">[${curStep}]</span> <span class="${step.log.includes('*') ? 'log-msg-calc' : ''}">${step.log}</span>`;
+    logBox.appendChild(logEntry);
+    logBox.scrollTop = logBox.scrollHeight;
+
+    const monitorData = [['left', step.l], ['right', step.r], ['k', step.k ?? '-'], ['res', step.res]];
+    document.getElementById('varMonitor').innerHTML = monitorData.map(d => `<div class="var-row"><span class="var-name">${d[0]}</span><span class="var-val">${d[1]}</span></div>`).join('');
+
+    document.getElementById('stackList').innerHTML = step.st.map((s, idx) => `<div class="stack-item ${idx === step.st.length - 1 ? 'top' : ''}">dfs(${s.l}, ${s.r})</div>`).reverse().join('');
+}
+
+function reset() { 
+    const data = generateSteps(input); 
+    steps = data.steps.map(s => ({...s, nums: data.nums})); 
+    curStep = 0; isPlaying = false; clearInterval(timer); 
+    document.getElementById('playBtn').innerText = "自動播放";
+    document.getElementById('executionLogs').innerHTML = '<div class="log-entry" style="color:var(--green)">> Reset complete. Ready.</div>';
+    update(); 
+}
+
+function next() { if (curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { if (curStep > 0) { curStep--; update(); } }
+function togglePlay() { 
+    isPlaying = !isPlaying; document.getElementById('playBtn').innerText = isPlaying ? "暫停" : "自動播放"; 
+    if (isPlaying) timer = setInterval(() => { if(curStep < steps.length-1) next(); else togglePlay(); }, 400); 
+    else clearInterval(timer); 
+}
+
+document.getElementById('codeArea').innerHTML = codeLines.map((l, i) => `<div class="line"><span class="line-num">${i}</span><span style="margin-left:${l.ind*18}px">${l.txt}</span></div>`).join('');
+document.addEventListener('keydown', e => { if (e.key === 'F10') next(); });
+reset();
+</script>
+</body>
+</html>

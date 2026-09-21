@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>55. Jump Game - Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 110px; max-height: 180px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .array-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 250px; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 16px; }
+    
+    .array-board { display: flex; gap: 8px; background: #151821; padding: 12px; border-radius: 8px; border: 1px solid var(--border); flex-wrap: wrap; justify-content: center; }
+    .array-cell { background: #1e1e1e; border: 2px solid var(--border); border-radius: 6px; width: 55px; height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; transition: all 0.25s ease; position: relative; }
+    
+    .array-cell.in-reachable { border-color: var(--cyan); background: rgba(139, 233, 253, 0.12); }
+    .array-cell.is-target { border-color: var(--green); background: rgba(80, 250, 123, 0.15); }
+    .array-cell.active-curr { border-color: var(--orange); background: rgba(255, 161, 22, 0.3); transform: scale(1.1); box-shadow: 0 0 12px rgba(255, 161, 22, 0.5); z-index: 2; }
+    .array-cell.is-unreachable { border-color: var(--red); background: rgba(255, 85, 85, 0.15); }
+
+    .cell-val { font-weight: bold; color: #fff; font-size: 1.1rem; }
+    .cell-idx { font-size: 0.65rem; color: var(--text-dim); position: absolute; top: 2px; left: 4px; }
+    .cell-label { font-size: 0.6rem; color: var(--medium); position: absolute; bottom: 2px; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">55. Jump Game</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Greedy (Forward) O(N)</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. Greedy (Backward) O(N)</button>
+      <button class="algo-btn" onclick="setAlgo(2)">3. Bottom-Up 1D DP O(N²)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: Reachable ([2,3,1,1,4])</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: Stuck Trap ([3,2,1,0,4])</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: Zero Jump ([0])</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個非負整數陣列 <b>nums</b>，起點為陣列的第一個位置 (Index 0)。陣列中的每個元素代表你在該位置<b>最大可以跳躍的步數</b>。請判斷是否能夠成功到達陣列的最後一個位置。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Micro-steps Enabled</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 陣列跳躍與可達邊界視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="array-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Index (i): </span>
+              <span id="pos-i-display" style="font-weight: bold; color: var(--orange);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Max Reach / Target: </span>
+              <span id="reach-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Can Reach Last?: </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.15rem; color: var(--green);">-</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Status / Output:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Greedy Forward
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">canJump</span>(<span class="self">self</span>, nums: List[int]) -> bool:`,
+       `        max_reach = 0`,
+       `        <span class="kw">for</span> i, jump <span class="kw">in</span> enumerate(nums):`,
+       `            <span class="kw">if</span> i > max_reach:`,
+       `                <span class="kw">return False</span>`,
+       `            max_reach = max(max_reach, i + jump)`,
+       `            <span class="kw">if</span> max_reach >= len(nums) - 1:`,
+       `                <span class="kw">return True</span>`,
+       `        <span class="kw">return True</span>`],
+      
+      // 2. Greedy Backward
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">canJump</span>(<span class="self">self</span>, nums: List[int]) -> bool:`,
+       `        last_pos = len(nums) - 1`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(len(nums) - 1, -1, -1):`,
+       `            <span class="kw">if</span> i + nums[i] >= last_pos:`,
+       `                last_pos = i`,
+       `        <span class="kw">return</span> last_pos == 0`],
+
+      // 3. Bottom-Up DP
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">canJump</span>(<span class="self">self</span>, nums: List[int]) -> bool:`,
+       `        dp = [<span class="kw">False</span>] * len(nums)`,
+       `        dp[0] = <span class="kw">True</span>`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(len(nums)):`,
+       `            <span class="kw">if</span> <span class="kw">not</span> dp[i]: <span class="kw">continue</span>`,
+       `            <span class="kw">for</span> j <span class="kw">in</span> range(1, nums[i] + 1):`,
+       `                <span class="kw">if</span> i + j < len(nums): dp[i + j] = <span class="kw">True</span>`,
+       `        <span class="kw">return</span> dp[-1]`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Forward Greedy (正向貪婪演算法)",
+        time: "O(N)", space: "O(1)",
+        idea: "<b>解法思路：</b>維護一個全局能抵達的最遠索引 <code>max_reach</code>。當走訪到 index <code>i</code> 時，若 <code>i > max_reach</code> 代表被卡住無法抵達；否則用 <code>i + nums[i]</code> 嘗試擴展 <code>max_reach</code>。若 <code>max_reach >= len-1</code> 即可提早回傳 True。"
+      },
+      {
+        title: "2. Backward Greedy (逆向貪婪倒推法)",
+        time: "O(N)", space: "O(1)",
+        idea: "<b>解法思路：</b>將「目標終點」設定為 <code>last_pos = len-1</code>。從後往前走訪，若從當前位置 <code>i</code> 最遠可跳到/超過 <code>last_pos</code> (即 <code>i + nums[i] >= last_pos</code>)，表示只要能到達 <code>i</code> 就一定能到終點，因此將目標前移：<code>last_pos = i</code>。最後檢查是否 <code>last_pos == 0</code>。"
+      },
+      {
+        title: "3. Bottom-Up 1D DP (一維動態規劃)",
+        time: "O(N²)", space: "O(N)",
+        idea: "<b>解法思路：</b>定義 <code>dp[i]</code> 為「是否能夠抵達位置 i」。初值 <code>dp[0] = True</code>。依序檢查每個可達的 <code>i</code>，將從 <code>i</code> 能跳到的未來所有位置 <code>i + j</code> 標記為 True。最後回傳 <code>dp[-1]</code>。"
+      }
+    ];
+
+    const presets = [
+      { title: "Example 1", nums: [2, 3, 1, 1, 4], expected: "True", explanation: "從 Index 0 跳 1 步到 Index 1，再跳 3 步即可到達終點 Index 4。" },
+      { title: "Example 2", nums: [3, 2, 1, 0, 4], expected: "False", explanation: "無論怎麼跳，最終都會停在 Index 3 (數值為 0)，無法再往前跳。" },
+      { title: "Example 3", nums: [0], expected: "True", explanation: "起點即為終點，直接成功抵達。" }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input:</b> nums = [${p.nums.join(', ')}] | <b>Expected Output:</b> <span style="color:${p.expected === 'True' ? 'var(--green)' : 'var(--red)'}">${p.expected}</span></div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- Granular History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const { nums } = presets[currentPreset];
+
+      switch(currentAlgo) {
+        case 0: buildGreedyForwardSteps(nums); break;
+        case 1: buildGreedyBackwardSteps(nums); break;
+        case 2: buildDPSteps(nums); break;
+      }
+    }
+
+    // 1. Forward Greedy Steps
+    function buildGreedyForwardSteps(nums) {
+      let maxReach = 0;
+      const target = nums.length - 1;
+
+      history.push({
+        line: 2, phase: "⚡ 【Step 1: 初始化變數】",
+        desc: `設定最遠可達位置 <code>max_reach = 0</code>，目標終點為 Index <b>${target}</b>`,
+        i: 0, jump: nums[0], maxReach, target, result: "Running..."
+      });
+
+      for (let i = 0; i < nums.length; i++) {
+        let jump = nums[i];
+
+        history.push({
+          line: 4, phase: `🔍 【Check Index ${i}: nums[${i}] = ${jump}】`,
+          desc: `走訪至 Index <b>${i}</b>。檢查當前位置是否在可達範圍內 (<code>i (${i}) <= max_reach (${maxReach})</code>)？`,
+          i, jump, maxReach, target, result: "Running..."
+        });
+
+        if (i > maxReach) {
+          history.push({
+            line: 5, phase: "❌ 【Unreachable: 卡住了！】",
+            desc: `<code>i (${i}) > max_reach (${maxReach})</code>！無法抵達 Index ${i}，無法到達終點！`,
+            i, jump, maxReach, target, result: false
+          });
+          return;
+        }
+
+        let newReach = i + jump;
+        let oldReach = maxReach;
+        maxReach = Math.max(maxReach, newReach);
+
+        history.push({
+          line: 6, phase: `✏️ 【Update max_reach: ${oldReach} ➔ ${maxReach}】`,
+          desc: `從 Index ${i} 最遠可跳到 <code>${i} + ${jump} = ${newReach}</code>。更新 <code>max_reach = max(${oldReach}, ${newReach}) = <b style="color:var(--cyan);">${maxReach}</b></code>`,
+          i, jump, maxReach, target, result: "Running..."
+        });
+
+        if (maxReach >= target) {
+          history.push({
+            line: 8, phase: "🎉 【Early Exit: 成功抵達終點線！】",
+            desc: `<code>max_reach (${maxReach}) >= Target (${target})</code>！已經確定可以涵蓋到終點！`,
+            i, jump, maxReach, target, result: true
+          });
+          return;
+        }
+      }
+
+      history.push({
+        line: 9, phase: "🎉 【Complete: 走訪完畢】",
+        desc: `走訪完所有元素，<code>max_reach (${maxReach}) >= Target (${target})</code> 為 <b>${maxReach >= target}</b>`,
+        i: nums.length - 1, jump: nums[nums.length - 1], maxReach, target, result: maxReach >= target
+      });
+    }
+
+    // 2. Backward Greedy Steps
+    function buildGreedyBackwardSteps(nums) {
+      let lastPos = nums.length - 1;
+
+      history.push({
+        line: 2, phase: "⚡ 【Step 1: 初始化 Target】",
+        desc: `從終點開始倒推：設定需抵達的目標位置 <code>last_pos = ${lastPos}</code>`,
+        i: lastPos, lastPos, result: "Running..."
+      });
+
+      for (let i = nums.length - 1; i >= 0; i--) {
+        let jump = nums[i];
+        let maxJumpFromI = i + jump;
+
+        history.push({
+          line: 4, phase: `🔍 【Check Index ${i}: nums[${i}] = ${jump}】`,
+          desc: `檢查 Index <b>${i}</b> 最遠能跳到 <code>${i} + ${jump} = ${maxJumpFromI}</code>。目標 <code>last_pos = ${lastPos}</code>`,
+          i, jump, maxJumpFromI, lastPos, result: "Running..."
+        });
+
+        if (maxJumpFromI >= lastPos) {
+          lastPos = i;
+          history.push({
+            line: 5, phase: `🎯 【Target Advanced: 移至 Index ${i}】`,
+            desc: `因為 <code>${maxJumpFromI} >= ${lastPos}</code>，代表只要能到 Index ${i} 就一定能到終點！將目標前移至 <code>last_pos = <b style="color:var(--green);">${lastPos}</b></code>`,
+            i, jump, maxJumpFromI, lastPos, result: "Running..."
+          });
+        } else {
+          history.push({
+            line: 4, phase: `⚠️ 【Target Maintained】`,
+            desc: `<code>${maxJumpFromI} < ${lastPos}</code>，從 Index ${i} 跳不到當前的 <code>last_pos</code>，目標維持 <code>last_pos = ${lastPos}</code>`,
+            i, jump, maxJumpFromI, lastPos, result: "Running..."
+          });
+        }
+      }
+
+      const success = (lastPos === 0);
+      history.push({
+        line: 6, phase: success ? "🎉 【Success: 可以從起點跳到終點！】" : "❌ 【Failed: 無法連回起點 Index 0】",
+        desc: `倒推結束！最終 <code>last_pos</code> 為 <b>${lastPos}</b> (${success ? '== 0 成功' : '!= 0 失敗'})`,
+        i: 0, lastPos, result: success
+      });
+    }
+
+    // 3. Bottom-Up DP Steps
+    function buildDPSteps(nums) {
+      const dp = new Array(nums.length).fill(false);
+      dp[0] = true;
+
+      history.push({
+        line: 3, phase: "⚡ 【Step 1: 初始化 DP 陣列】",
+        desc: `建立 DP 陣列，標記起點 <code>dp[0] = True</code>`,
+        dp: [...dp], i: 0, result: "Running..."
+      });
+
+      for (let i = 0; i < nums.length; i++) {
+        history.push({
+          line: 5, phase: `🔍 【Focus: Check dp[${i}]】`,
+          desc: `檢查 Index ${i} 是否可達？ <code>dp[${i}] = ${dp[i]}</code>`,
+          dp: [...dp], i, result: "Running..."
+        });
+
+        if (!dp[i]) {
+          history.push({
+            line: 5, phase: `⏭️ 【Skip Unreachable: Index ${i}】`,
+            desc: `<code>dp[${i}]</code> 為 False，無法抵達此處，直接跳過。`,
+            dp: [...dp], i, result: "Running..."
+          });
+          continue;
+        }
+
+        let jump = nums[i];
+        for (let j = 1; j <= jump; j++) {
+          if (i + j < nums.length) {
+            dp[i + j] = true;
+            history.push({
+              line: 7, phase: `✏️ 【Update dp[${i + j}] = True】`,
+              desc: `從可達位置 Index ${i} 往前跳 ${j} 步 ➔ 標記 <code>dp[${i + j}] = <b style="color:var(--cyan);">True</b></code>`,
+              dp: [...dp], i, jumpTo: i + j, result: "Running..."
+            });
+          }
+        }
+      }
+
+      const res = dp[nums.length - 1];
+      history.push({
+        line: 8, phase: res ? "🎉 【Success: dp[-1] is True】" : "❌ 【Failed: dp[-1] is False】",
+        desc: `DP 計算完畢！終點 <code>dp[${nums.length - 1}]</code> 為 <b>${res}</b>`,
+        dp: [...dp], i: nums.length - 1, result: res
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const { nums } = presets[currentPreset];
+
+      let html = `<div class="array-board">`;
+
+      for (let i = 0; i < nums.length; i++) {
+        let isCurr = (state.i === i);
+        let inReachable = false;
+        let isTarget = false;
+        let isUnreachable = false;
+
+        if (currentAlgo === 0) {
+          inReachable = (i <= state.maxReach);
+          isTarget = (i === nums.length - 1);
+          if (state.result === false && i > state.maxReach) isUnreachable = true;
+        } else if (currentAlgo === 1) {
+          isTarget = (i === state.lastPos);
+        } else if (currentAlgo === 2 && state.dp) {
+          inReachable = state.dp[i];
+          isTarget = (i === nums.length - 1);
+        }
+
+        let cls = [];
+        if (isCurr) cls.push("active-curr");
+        if (isTarget) cls.push("is-target");
+        else if (inReachable) cls.push("in-reachable");
+        if (isUnreachable) cls.push("is-unreachable");
+
+        let label = "";
+        if (currentAlgo === 0 && i === state.maxReach) label = "max_reach";
+        if (currentAlgo === 1 && i === state.lastPos) label = "target";
+
+        html += `
+          <div class="array-cell ${cls.join(' ')}">
+            <span class="cell-idx">[${i}]</span>
+            <span class="cell-val">${nums[i]}</span>
+            <span class="cell-label">${label}</span>
+          </div>
+        `;
+      }
+      html += `</div>`;
+
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack / Trace Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟 (Step):</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          <div><b>• 當前聚焦 Index:</b> <span style="color:var(--medium); font-weight:bold;">${state.i !== undefined ? state.i : '-'}</span></div>
+          <div><b>• 當前最大可跳步數:</b> <span style="color:var(--cyan); font-weight:bold;">${state.jump !== undefined ? state.jump : '-'}</span></div>
+        </div>
+      `;
+
+      // Positions Display
+      document.getElementById('pos-i-display').innerText = state.i !== undefined ? `${state.i}` : "-";
+      document.getElementById('reach-display').innerText = state.maxReach !== undefined ? `${state.maxReach}` : (state.lastPos !== undefined ? `Target: ${state.lastPos}` : "-");
+      
+      let statusStr = "-";
+      if (state.result === true) statusStr = "<span style='color:var(--green)'>True 🎉</span>";
+      else if (state.result === false) statusStr = "<span style='color:var(--red)'>False ❌</span>";
+      else statusStr = "<span style='color:var(--text-dim)'>Evaluating...</span>";
+      document.getElementById('status-display').innerHTML = statusStr;
+
+      // Dynamic Panel
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (currentAlgo === 2 && state.dp) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">DP Array (dp[i] = Is reachable?):</span>
+            <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
+              ${state.dp.map((v, idx) => `
+                <div style="background:#222; border:1px solid ${state.i === idx ? 'var(--orange)' : 'var(--border)'}; padding:4px 8px; border-radius:4px; font-family:monospace; font-size:0.75rem;">
+                  <span style="color:var(--text-dim)">[${idx}]</span> <b style="color:${v ? 'var(--green)' : 'var(--red)'}">${v ? 'T' : 'F'}</b>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (currentAlgo === 1) {
+        dynPanel.innerHTML = `
+          <div style="font-size:0.78rem; font-family:monospace; color:var(--text-dim);">
+            Backward Target Goal: Need to reach Index <code><b style="color:var(--green);">${state.lastPos !== undefined ? state.lastPos : '-'}</b></code>
+          </div>
+        `;
+      } else {
+        dynPanel.innerHTML = `
+          <div style="font-size:0.78rem; font-family:monospace; color:var(--text-dim);">
+            Max Reachable Index: <code><b style="color:var(--cyan);">${state.maxReach !== undefined ? state.maxReach : 0}</b></code> / Target: <code>${presets[currentPreset].nums.length - 1}</code>
+          </div>
+        `;
+      }
+
+      // Result Text
+      const resEl = document.getElementById('result-text');
+      if (state.result === true) {
+        resEl.innerHTML = `Can Reach Last Index? ➔ <b style="color:var(--green);">True</b>`;
+      } else if (state.result === false) {
+        resEl.innerHTML = `Can Reach Last Index? ➔ <b style="color:var(--red);">False</b>`;
+      } else {
+        resEl.innerHTML = "Simulating jumps...";
+      }
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

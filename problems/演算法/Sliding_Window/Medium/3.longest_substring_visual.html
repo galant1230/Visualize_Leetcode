@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3. Longest Substring Without Repeating Characters - LeetCode Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-medium: #ffc01e;
+      --lc-blue: #007aff;
+      --lc-red: #ff3b30;
+      --lc-green: #2cbb5d;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1350px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(255, 192, 30, 0.15);
+      color: var(--lc-medium);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .dashboard {
+      max-width: 1350px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1000px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+
+    .problem-desc { font-size: 0.9rem; color: #ccc; margin-bottom: 12px; }
+    
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.85rem;
+      color: var(--lc-text);
+      margin-bottom: 10px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+
+    .complexity-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-green); }
+
+    /* 思路解說區塊 */
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title {
+      font-weight: bold;
+      color: var(--lc-blue);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      min-height: 290px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+    .num { color: #bd93f9; }
+    .cm { color: #6272a4; font-style: italic; }
+    .op { color: #ff79c6; }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .status-card .label { font-size: 0.72rem; color: var(--lc-text-dim); display: block; }
+    .status-card .value { font-size: 0.95rem; font-family: monospace; font-weight: bold; color: var(--lc-orange); }
+
+    .string-container {
+      min-height: 140px;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 40px 10px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+
+    .char-box {
+      width: 42px;
+      height: 48px;
+      background: #2a2a2a;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      font-size: 1.2rem;
+      font-weight: bold;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .char-box.in-window {
+      background: rgba(0, 122, 255, 0.2);
+      border-color: var(--lc-blue);
+      color: #fff;
+    }
+    .char-box.conflict {
+      background: rgba(255, 59, 48, 0.25);
+      border-color: var(--lc-red);
+      animation: shake 0.3s;
+    }
+
+    .pointer-tag {
+      position: absolute;
+      font-size: 0.7rem;
+      font-weight: bold;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: #fff;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .tag-l { top: -28px; background: var(--lc-orange); }
+    .tag-r { bottom: -28px; background: var(--lc-blue); }
+
+    .control-panel {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    select, input[type="text"] {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      color: var(--lc-text);
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    input[type="text"] { flex: 1; min-width: 120px; }
+    select:focus, input[type="text"]:focus { border-color: var(--lc-orange); outline: none; }
+    
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-green); color: #fff; }
+    .btn-primary:hover { background: #28a745; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .result-banner {
+      background: rgba(44, 187, 93, 0.1);
+      border: 1px solid var(--lc-green);
+      color: var(--lc-green);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 10px;
+      display: none;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">3. Longest Substring Without Repeating Characters</span>
+    <span class="lc-badge">Medium</span>
+    <span class="lc-tag">Hash Table</span>
+    <span class="lc-tag">String</span>
+    <span class="lc-tag">Sliding Window</span>
+  </div>
+
+  <div class="dashboard">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Description & Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個字串 <code>s</code>，請找出其中不含有重複字元的最長子字串長度。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> s = "abcabcbb"</div>
+            <div><strong>Output:</strong> 3</div>
+            <div><strong>Explanation:</strong> 無重複字元的最長子字串為 "abc"，長度為 3。</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span id="timeComp" class="complexity-val">O(N)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span id="spaceComp" class="complexity-val">O(min(N, M))</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span>🐍 Python3 程式碼單步追蹤</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="codeBox"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與動態視窗 (State Monitor)</div>
+        <div class="card-body">
+          <!-- 動態切換的解法思路卡片 -->
+          <div class="approach-box">
+            <div class="approach-title">💡 解法思路 (Approach & Intuition)</div>
+            <div id="approachText">--</div>
+          </div>
+
+          <div class="status-grid">
+            <div class="status-card">
+              <span class="label" id="lbl-l">l (Left)</span>
+              <span id="stat-l" class="value" style="color: var(--lc-orange);">-</span>
+            </div>
+            <div class="status-card">
+              <span class="label" id="lbl-r">r (Right)</span>
+              <span id="stat-r" class="value" style="color: var(--lc-blue);">-</span>
+            </div>
+            <div class="status-card">
+              <span class="label">Current Window</span>
+              <span id="stat-cur" class="value">0</span>
+            </div>
+            <div class="status-card" style="grid-column: span 3;">
+              <span class="label" id="lbl-data">Set / Map State</span>
+              <span id="stat-data" class="value" style="font-size: 0.85rem; color: #a6e22e;">{}</span>
+            </div>
+            <div class="status-card" style="grid-column: span 3;">
+              <span class="label">Max Length (res)</span>
+              <span id="stat-max" class="value" style="color: var(--lc-green); font-size: 1.2rem;">0</span>
+            </div>
+          </div>
+
+          <div class="string-container" id="stringBox"></div>
+
+          <div class="control-panel">
+            <select id="algoSelect" onchange="initSim()">
+              <option value="optimal" selected>Sol 3: Sliding Window Optimal O(N)</option>
+              <option value="slidingSet">Sol 2: Sliding Window (Set) O(N)</option>
+              <option value="brute">Sol 1: 暴力法 Brute Force O(N*M)</option>
+            </select>
+            <input type="text" id="strInput" value="abcabcbb">
+            <button class="btn" onclick="initSim()">Reset</button>
+            <button id="prevBtn" class="btn" onclick="prevStep()" disabled>← Prev</button>
+            <button id="nextBtn" class="btn btn-primary" onclick="nextStep()">Step →</button>
+          </div>
+
+          <div id="finalBox" class="result-banner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = {
+      brute: {
+        time: "O(N * M)", space: "O(M)",
+        approach: "使用兩層迴圈：外層 <code>i</code> 固定起點，內層 <code>j</code> 嘗試擴展子字串。搭配 <code>charSet</code> 紀錄當前出現過的字元，一旦發現重複字元 <code>s[j]</code> 就立即 <code>break</code> 結束該輪，並用 <code>charSet.size</code> 更新最大長度 <code>res</code>。",
+        lines: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>:' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">lengthOfLongestSubstring</span>(<span class="self">self</span>, s: <span class="kw">str</span>) -> <span class="kw">int</span>:' },
+          { id: "l3", text: '        res <span class="op">=</span> <span class="num">0</span>' },
+          { id: "l4", text: '        <span class="kw">for</span> i <span class="kw">in</span> <span class="kw">range</span>(<span class="kw">len</span>(s)):' },
+          { id: "l5", text: '            charSet <span class="op">=</span> <span class="kw">set</span>()' },
+          { id: "l6", text: '            <span class="kw">for</span> j <span class="kw">in</span> <span class="kw">range</span>(i, <span class="kw">len</span>(s)):' },
+          { id: "l7", text: '                <span class="kw">if</span> s[j] <span class="kw">in</span> charSet:' },
+          { id: "l8", text: '                    <span class="kw">break</span>' },
+          { id: "l9", text: '                charSet.add(s[j])' },
+          { id: "l10", text: '            res <span class="op">=</span> <span class="kw">max</span>(res, <span class="kw">len</span>(charSet))' },
+          { id: "l11", text: '        <span class="kw">return</span> res' }
+        ]
+      },
+      slidingSet: {
+        time: "O(N)", space: "O(M)",
+        approach: "維護雙指針 <code>l</code>、<code>r</code> 形成的滑動視窗與一個集合 <code>charSet</code>。右指針 <code>r</code> 不斷右移擴張；若發現新字元 <code>s[r]</code> 已存在於集合中，則進入 <code>while</code> 迴圈讓左指針 <code>l</code> 逐步向右收縮並從 <code>charSet</code> 移除字元，直到消除重複為止。",
+        lines: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>:' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">lengthOfLongestSubstring</span>(<span class="self">self</span>, s: <span class="kw">str</span>) -> <span class="kw">int</span>:' },
+          { id: "l3", text: '        charSet <span class="op">=</span> <span class="kw">set</span>()' },
+          { id: "l4", text: '        l <span class="op">=</span> <span class="num">0</span>' },
+          { id: "l5", text: '        res <span class="op">=</span> <span class="num">0</span>' },
+          { id: "l6", text: '        <span class="kw">for</span> r <span class="kw">in</span> <span class="kw">range</span>(<span class="kw">len</span>(s)):' },
+          { id: "l7", text: '            <span class="kw">while</span> s[r] <span class="kw">in</span> charSet:' },
+          { id: "l8", text: '                charSet.remove(s[l])' },
+          { id: "l9", text: '                l <span class="op">+=</span> <span class="num">1</span>' },
+          { id: "l10", text: '            charSet.add(s[r])' },
+          { id: "l11", text: '            res <span class="op">=</span> <span class="kw">max</span>(res, r <span class="op">-</span> l <span class="op">+</span> <span class="num">1</span>)' },
+          { id: "l12", text: '        <span class="kw">return</span> res' }
+        ]
+      },
+      optimal: {
+        time: "O(N)", space: "O(M)",
+        approach: "最佳化滑動視窗：利用字典 <code>mp</code> 記錄「字元 ➔ 最新出現的索引位置」。遇到重複字元 <code>s[r]</code> 時，不需要用 <code>while</code> 逐格移動左指針，直接將 <code>l</code> 一口氣跳轉至 <code>max(mp[s[r]] + 1, l)</code>，將視窗收縮操作壓縮為 $O(1)$。",
+        lines: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>:' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">lengthOfLongestSubstring</span>(<span class="self">self</span>, s: <span class="kw">str</span>) -> <span class="kw">int</span>:' },
+          { id: "l3", text: '        mp <span class="op">=</span> {}' },
+          { id: "l4", text: '        l <span class="op">=</span> <span class="num">0</span>' },
+          { id: "l5", text: '        res <span class="op">=</span> <span class="num">0</span>' },
+          { id: "l6", text: '        <span class="kw">for</span> r <span class="kw">in</span> <span class="kw">range</span>(<span class="kw">len</span>(s)):' },
+          { id: "l7", text: '            <span class="kw">if</span> s[r] <span class="kw">in</span> mp:' },
+          { id: "l8", text: '                l <span class="op">=</span> <span class="kw">max</span>(mp[s[r]] <span class="op">+</span> <span class="num">1</span>, l)' },
+          { id: "l9", text: '            mp[s[r]] <span class="op">=</span> r' },
+          { id: "l10", text: '            res <span class="op">=</span> <span class="kw">max</span>(res, r <span class="op">-</span> l <span class="op">+</span> <span class="num">1</span>)' },
+          { id: "l11", text: '        <span class="kw">return</span> res' }
+        ]
+      }
+    };
+
+    let s = "";
+    let steps = [];
+    let currentStepIdx = 0;
+    let selectedAlgo = "optimal";
+
+    function generateSteps() {
+      steps = [];
+      if (selectedAlgo === "brute") generateBruteSteps();
+      else if (selectedAlgo === "slidingSet") generateSlidingSetSteps();
+      else if (selectedAlgo === "optimal") generateOptimalSteps();
+    }
+
+    // 1. 暴力法步驟生成
+    function generateBruteSteps() {
+      let res = 0;
+      steps.push({ lineId: "l3", l: "-", r: "-", curLen: 0, res: 0, dataStr: "set()", hintText: "初始化 res = 0" });
+
+      for (let i = 0; i < s.length; i++) {
+        steps.push({ lineId: "l4", l: i, r: "-", curLen: 0, res, dataStr: "set()", hintText: `外層迴圈: 起始位置 i = ${i} ('${s[i]}')` });
+        let charSet = new Set();
+        steps.push({ lineId: "l5", l: i, r: "-", curLen: 0, res, dataStr: "set()", hintText: "清空當前 charSet" });
+
+        for (let j = i; j < s.length; j++) {
+          let char = s[j];
+          steps.push({ lineId: "l6", l: i, r: j, curLen: charSet.size, res, dataStr: formatSet(charSet), hintText: `內層迴圈: 檢查 j = ${j} ('${char}')` });
+          
+          steps.push({ lineId: "l7", l: i, r: j, curLen: charSet.size, res, dataStr: formatSet(charSet), isConflict: charSet.has(char), conflictIdx: j, hintText: `檢查 '${char}' 是否在 charSet 中 ➔ ${charSet.has(char) ? 'True (重複了!)' : 'False'}` });
+
+          if (charSet.has(char)) {
+            steps.push({ lineId: "l8", l: i, r: j, curLen: charSet.size, res, dataStr: formatSet(charSet), isConflict: true, conflictIdx: j, hintText: `遇到重複字元 '${char}'，break 跳出內層迴圈` });
+            break;
+          }
+
+          charSet.add(char);
+          steps.push({ lineId: "l9", l: i, r: j, curLen: charSet.size, res, dataStr: formatSet(charSet), hintText: `將 '${char}' 加入 charSet` });
+        }
+
+        res = Math.max(res, charSet.size);
+        steps.push({ lineId: "l10", l: i, r: "-", curLen: charSet.size, res, dataStr: formatSet(charSet), hintText: `更新最長長度 res = max(${res}, ${charSet.size}) ➔ ${res}` });
+      }
+
+      steps.push({ lineId: "l11", l: "-", r: "-", curLen: 0, res, dataStr: "-", isFinished: true, hintText: `走訪完畢，回傳 res = ${res}` });
+    }
+
+    // 2. Sliding Window (Set) 步驟生成
+    function generateSlidingSetSteps() {
+      let charSet = new Set();
+      let l = 0, res = 0;
+
+      steps.push({ lineId: "l3", l: 0, r: "-", curLen: 0, res: 0, dataStr: "set()", hintText: "初始化 charSet = set()" });
+      steps.push({ lineId: "l4", l: 0, r: "-", curLen: 0, res: 0, dataStr: "set()", hintText: "初始化 左指針 l = 0" });
+      steps.push({ lineId: "l5", l: 0, r: "-", curLen: 0, res: 0, dataStr: "set()", hintText: "初始化 res = 0" });
+
+      for (let r = 0; r < s.length; r++) {
+        let char = s[r];
+        steps.push({ lineId: "l6", l, r, curLen: (r - l), res, dataStr: formatSet(charSet), hintText: `右指針 r 移至 ${r} ('${char}')` });
+
+        while (charSet.has(char)) {
+          steps.push({ lineId: "l7", l, r, curLen: (r - l), res, dataStr: formatSet(charSet), isConflict: true, conflictIdx: r, hintText: `檢查 s[r] ('${char}') 在 charSet 中 ➔ True (衝突！)` });
+          
+          let lChar = s[l];
+          charSet.delete(lChar);
+          steps.push({ lineId: "l8", l, r, curLen: (r - l), res, dataStr: formatSet(charSet), isConflict: true, conflictIdx: r, hintText: `自 charSet 移除左邊字元 '${lChar}'` });
+          
+          l++;
+          steps.push({ lineId: "l9", l, r, curLen: (r - l + 1), res, dataStr: formatSet(charSet), hintText: `收縮視窗，左指針 l += 1 (l = ${l})` });
+        }
+
+        steps.push({ lineId: "l7", l, r, curLen: (r - l), res, dataStr: formatSet(charSet), hintText: `檢查 s[r] ('${char}') 在 charSet 中 ➔ False` });
+
+        charSet.add(char);
+        steps.push({ lineId: "l10", l, r, curLen: (r - l + 1), res, dataStr: formatSet(charSet), hintText: `將 '${char}' 加入 charSet` });
+
+        let curLen = r - l + 1;
+        res = Math.max(res, curLen);
+        steps.push({ lineId: "l11", l, r, curLen, res, dataStr: formatSet(charSet), hintText: `計算當前長度 ${curLen}，更新 res = ${res}` });
+      }
+
+      steps.push({ lineId: "l12", l: "-", r: "-", curLen: 0, res, dataStr: formatSet(charSet), isFinished: true, hintText: `走訪結束，回傳 res = ${res}` });
+    }
+
+    // 3. Sliding Window (Optimal) 步驟生成
+    function generateOptimalSteps() {
+      let mp = {};
+      let l = 0, res = 0;
+
+      steps.push({ lineId: "l3", l: 0, r: "-", curLen: 0, res: 0, dataStr: "{}", hintText: "初始化位置哈希表 mp = {}" });
+      steps.push({ lineId: "l4", l: 0, r: "-", curLen: 0, res: 0, dataStr: "{}", hintText: "初始化 左指針 l = 0" });
+      steps.push({ lineId: "l5", l: 0, r: "-", curLen: 0, res: 0, dataStr: "{}", hintText: "初始化 res = 0" });
+
+      for (let r = 0; r < s.length; r++) {
+        let char = s[r];
+        steps.push({ lineId: "l6", l, r, curLen: (r - l), res, dataStr: formatMap(mp), hintText: `右指針 r 移至 ${r} ('${char}')` });
+
+        let hasChar = char in mp;
+        steps.push({ lineId: "l7", l, r, curLen: (r - l), res, dataStr: formatMap(mp), isConflict: hasChar && mp[char] >= l, conflictIdx: r, hintText: `檢查 '${char}' 是否在 mp 中 ➔ ${hasChar ? `True (上次在索引 ${mp[char]})` : 'False'}` });
+
+        if (hasChar) {
+          let prevIdx = mp[char];
+          let oldL = l;
+          l = Math.max(prevIdx + 1, l);
+          steps.push({ lineId: "l8", l, r, curLen: (r - l + 1), res, dataStr: formatMap(mp), hintText: `跳轉左指針: l = max(mp['${char}'] + 1, l) ➔ max(${prevIdx + 1}, ${oldL}) = ${l}` });
+        }
+
+        mp[char] = r;
+        steps.push({ lineId: "l9", l, r, curLen: (r - l + 1), res, dataStr: formatMap(mp), hintText: `更新字典: mp['${char}'] = ${r}` });
+
+        let curLen = r - l + 1;
+        res = Math.max(res, curLen);
+        steps.push({ lineId: "l10", l, r, curLen, res, dataStr: formatMap(mp), hintText: `當前視窗長度 ${curLen}，更新 res = ${res}` });
+      }
+
+      steps.push({ lineId: "l11", l: "-", r: "-", curLen: 0, res, dataStr: formatMap(mp), isFinished: true, hintText: `視窗掃描完畢，回傳 res = ${res}` });
+    }
+
+    function formatSet(set) {
+      if (set.size === 0) return "set()";
+      return "{" + Array.from(set).map(c => `'${c}'`).join(", ") + "}";
+    }
+
+    function formatMap(map) {
+      const keys = Object.keys(map);
+      if (keys.length === 0) return "{}";
+      return "{" + keys.map(k => `'${k}': ${map[k]}`).join(", ") + "}";
+    }
+
+    function initSim() {
+      selectedAlgo = document.getElementById("algoSelect").value;
+      s = document.getElementById("strInput").value;
+
+      if (!s) return;
+
+      document.getElementById("timeComp").innerText = codeTemplates[selectedAlgo].time;
+      document.getElementById("spaceComp").innerText = codeTemplates[selectedAlgo].space;
+      document.getElementById("approachText").innerHTML = codeTemplates[selectedAlgo].approach;
+
+      // 調整狀態標籤名稱
+      if (selectedAlgo === "brute") {
+        document.getElementById("lbl-l").innerText = "i (Outer Index)";
+        document.getElementById("lbl-r").innerText = "j (Inner Index)";
+        document.getElementById("lbl-data").innerText = "charSet";
+      } else if (selectedAlgo === "slidingSet") {
+        document.getElementById("lbl-l").innerText = "l Pointer";
+        document.getElementById("lbl-r").innerText = "r Pointer";
+        document.getElementById("lbl-data").innerText = "charSet";
+      } else {
+        document.getElementById("lbl-l").innerText = "l Pointer";
+        document.getElementById("lbl-r").innerText = "r Pointer";
+        document.getElementById("lbl-data").innerText = "mp Hash Map";
+      }
+
+      const codeBox = document.getElementById("codeBox");
+      codeBox.innerHTML = codeTemplates[selectedAlgo].lines
+        .map(line => `<div class="code-line" id="${line.id}">${line.text}</div>`)
+        .join("");
+
+      generateSteps();
+      currentStepIdx = 0;
+      renderCurrentStep();
+    }
+
+    function renderCurrentStep() {
+      const state = steps[currentStepIdx];
+
+      document.getElementById("stat-l").innerText = state.l;
+      document.getElementById("stat-r").innerText = state.r;
+      document.getElementById("stat-cur").innerText = state.curLen;
+      document.getElementById("stat-data").innerText = state.dataStr;
+      document.getElementById("stat-max").innerText = state.res;
+      document.getElementById("stepHint").innerText = state.hintText;
+
+      document.querySelectorAll(".code-line").forEach(el => el.classList.remove("active-line"));
+      const targetLine = document.getElementById(state.lineId);
+      if (targetLine) targetLine.classList.add("active-line");
+
+      renderStringBoxes(state.l, state.r, state.isConflict, state.conflictIdx, state.isFinished);
+
+      document.getElementById("prevBtn").disabled = (currentStepIdx === 0);
+      
+      const fb = document.getElementById("finalBox");
+      if (state.isFinished) {
+        fb.innerHTML = `Accepted | Longest Substring Length: ${state.res}`;
+        fb.style.display = "block";
+        document.getElementById("nextBtn").disabled = true;
+      } else {
+        fb.style.display = "none";
+        document.getElementById("nextBtn").disabled = false;
+      }
+    }
+
+    function renderStringBoxes(lIdx, rIdx, isConflict, conflictIdx, isFinished) {
+      const boxContainer = document.getElementById("stringBox");
+      boxContainer.innerHTML = "";
+
+      for (let i = 0; i < s.length; i++) {
+        const box = document.createElement("div");
+        box.className = "char-box";
+        box.innerText = s[i];
+
+        if (!isFinished) {
+          let lTag = selectedAlgo === "brute" ? "i" : "L";
+          let rTag = selectedAlgo === "brute" ? "j" : "R";
+
+          if (typeof lIdx === "number" && typeof rIdx === "number" && i >= lIdx && i <= rIdx) {
+            box.classList.add("in-window");
+          }
+
+          if (isConflict && i === conflictIdx) {
+            box.classList.add("conflict");
+          }
+
+          if (i === lIdx) {
+            box.innerHTML += `<div class="pointer-tag tag-l">${lTag}</div>`;
+          }
+          if (i === rIdx) {
+            box.innerHTML += `<div class="pointer-tag tag-r">${rTag}</div>`;
+          }
+        }
+
+        boxContainer.appendChild(box);
+      }
+    }
+
+    function nextStep() {
+      if (currentStepIdx < steps.length - 1) {
+        currentStepIdx++;
+        renderCurrentStep();
+      }
+    }
+
+    function prevStep() {
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        renderCurrentStep();
+      }
+    }
+
+    window.onload = initSim;
+  </script>
+</body>
+</html>

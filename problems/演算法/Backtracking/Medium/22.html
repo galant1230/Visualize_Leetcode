@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 22 - Instructor Final Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --bg-editor: #1E1E1E; --bg-sidebar: #252526; --text-main: #D4D4D4;
+            --vscode-blue: #007ACC; --vscode-green: #6A9955; --vscode-purple: #C586C0;
+            --vscode-yellow: #DCDCAA; --vscode-orange: #CE9178; --accent: #FFA500;
+        }
+        body { background-color: #121212; color: var(--text-main); font-family: 'Fira Code', monospace; height: 100vh; overflow: hidden; padding: 0.75rem; }
+        .code-keyword { color: var(--vscode-purple); } .code-func { color: var(--vscode-yellow); }
+        .active-line { background-color: rgba(173, 214, 255, 0.1); border-left: 3px solid var(--vscode-blue); }
+        
+        /* 樹狀圖節點 */
+        .node circle { fill: #2d2d2d; stroke: #444; stroke-width: 2px; }
+        .node text { fill: #bbb; font-size: 11px; pointer-events: none; }
+        .link { fill: none; stroke: #3a3a3a; stroke-width: 1.5px; }
+        .node-active circle { stroke: var(--accent); filter: drop-shadow(0 0 8px var(--accent)); r: 10; }
+        .node-active text { fill: var(--accent); font-weight: bold; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col gap-3">
+
+    <main class="flex flex-1 gap-3 overflow-hidden">
+        
+        <section class="w-[30%] flex flex-col gap-3 shrink-0 overflow-y-auto custom-scrollbar pr-1">
+            <div class="bg-[#252526] p-4 rounded-md border border-[#333]">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="bg-orange-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">Medium</span>
+                    <h2 class="text-sm font-bold text-white tracking-tight">22. Generate Parentheses</h2>
+                </div>
+                <p class="text-[11px] text-gray-400 leading-relaxed">
+                    給定一個整數 $n$，請生成所有可能且「有效」的括號組合。
+                </p>
+                <div class="mt-3 flex gap-2">
+                    <div class="text-[10px] bg-[#1e1e1e] p-2 rounded border border-[#444] flex-1">
+                        <b class="text-gray-500 block mb-1">Example 1</b>
+                        n = 3 <br> 5 combinations
+                    </div>
+                    <div class="text-[10px] bg-[#1e1e1e] p-2 rounded border border-[#444] flex-1">
+                        <b class="text-gray-500 block mb-1">Example 2</b>
+                        n = 1 <br> ["()"]
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#252526] p-4 rounded-md border border-[#333] flex-1">
+                <h3 class="text-blue-400 text-[10px] font-bold uppercase tracking-widest border-b border-[#333] pb-2 mb-3">Algorithm Logic</h3>
+                <ul class="text-[11px] text-gray-400 space-y-3">
+                    <li class="flex gap-2">
+                        <span class="text-orange-500 font-bold">1.</span>
+                        <span><b>決策樹：</b> 每一層代表放入一個括號，左或右。</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="text-orange-500 font-bold">2.</span>
+                        <span><b>左括號優先：</b> 只要 o > 0（還有剩），就可以放 "("。</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="text-orange-500 font-bold">3.</span>
+                        <span><b>右括號限制：</b> 只有當 o < c（左括號放得比右括號多）時，放 ")" 才是合法的。</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="text-orange-500 font-bold">4.</span>
+                        <span><b>終止條件：</b> 當 o=0 且 c=0 時，代表字串構造完成。</span>
+                    </li>
+                </ul>
+
+                <div class="mt-6">
+                    <h4 class="text-[10px] text-gray-500 font-bold uppercase mb-2">Complexity Explains</h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-[11px] font-mono bg-[#1e1e1e] p-2 rounded">
+                            <span class="text-gray-500">Time:</span>
+                            <span class="text-orange-400">O(4ⁿ / √n)</span>
+                        </div>
+                        <p class="text-[9px] text-gray-500 italic px-1">由第 $n$ 個卡塔蘭數 (Catalan Number) 決定組合總數。</p>
+                        <div class="flex justify-between text-[11px] font-mono bg-[#1e1e1e] p-2 rounded">
+                            <span class="text-gray-500">Space:</span>
+                            <span class="text-green-400">O(n)</span>
+                        </div>
+                        <p class="text-[9px] text-gray-500 italic px-1">遞迴深度最大為 $2n$，因此空間複雜度為線性。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#252526] p-3 rounded-md border border-[#333] shadow-inner">
+                <div class="flex gap-1 p-1 bg-[#1e1e1e] rounded border border-[#333]">
+                    <button id="btn-n1" onclick="changeCase(1)" class="tc-btn flex-1 text-[10px] py-2 rounded transition">n = 1</button>
+                    <button id="btn-n3" onclick="changeCase(3)" class="tc-btn flex-1 text-[10px] py-2 rounded transition font-bold">n = 3</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="w-[40%] flex flex-col gap-3 overflow-hidden">
+            <div class="h-16 bg-[#252526] rounded-md border border-[#333] flex items-center justify-around px-10 shrink-0">
+                <div class="text-center">
+                    <span class="text-[9px] text-gray-500 uppercase font-bold block">Left (o)</span>
+                    <span id="display-o" class="text-xl font-bold text-blue-400 font-mono">0</span>
+                </div>
+                <div class="h-8 w-px bg-[#333]"></div>
+                <div class="text-center">
+                    <span class="text-[9px] text-gray-500 uppercase font-bold block">Right (c)</span>
+                    <span id="display-c" class="text-xl font-bold text-orange-400 font-mono">0</span>
+                </div>
+            </div>
+
+            <div class="flex-1 bg-[#1E1E1E] rounded-md border border-[#333] relative">
+                <div id="tree-viz" class="w-full h-full"></div>
+            </div>
+
+            <div class="h-32 bg-[#252526] rounded-md border border-[#333] p-3 flex flex-col">
+                <div class="text-[9px] text-blue-400 font-bold mb-2 uppercase flex justify-between">
+                    <span>Call Stack</span>
+                    <span id="stack-depth" class="text-gray-600">Depth: 0</span>
+                </div>
+                <div id="stack-container" class="flex-1 flex items-end gap-1.5 overflow-x-auto custom-scrollbar pb-1"></div>
+            </div>
+
+            <div class="bg-[#252526] h-14 rounded-md border border-[#333] flex items-center justify-between px-6 shrink-0 shadow-lg">
+                <div class="flex gap-4">
+                    <button onclick="prevStep()" class="text-gray-400 hover:text-white"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"/></svg></button>
+                    <button id="play-btn" onclick="togglePlay()" class="text-[10px] bg-blue-600 px-6 py-1.5 rounded text-white font-bold hover:bg-blue-500">PLAY</button>
+                    <button onclick="resetSimulation()" class="text-[10px] bg-[#333] px-4 py-1.5 rounded text-gray-300 font-bold hover:bg-[#444] border border-[#555]">RESET</button>
+                    <button onclick="nextStep()" class="text-gray-400 hover:text-white"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/></svg></button>
+                </div>
+                <div class="text-[10px] font-mono text-gray-500">STEP <span id="step-count" class="text-blue-400 font-bold">0</span></div>
+            </div>
+        </section>
+
+        <section class="w-[30%] flex flex-col gap-3 shrink-0">
+            <div class="h-[40%] bg-[#1E1E1E] rounded-md border border-[#333] overflow-hidden flex flex-col shadow-lg">
+                <div class="bg-[#252526] px-4 py-1.5 text-[10px] border-b border-[#333] text-gray-500 font-bold">solution.py</div>
+                <div id="code-display" class="p-4 text-[10px] leading-relaxed overflow-auto flex-1 font-mono"></div>
+            </div>
+            
+            <div class="flex-1 bg-[#1E1E1E] rounded-md border border-[#333] flex flex-col overflow-hidden shadow-2xl">
+                <div class="bg-[#252526] px-4 py-2 text-[10px] border-b border-[#333] text-blue-400 font-bold">EXECUTION LOG</div>
+                <div id="log-container" class="flex-1 p-4 text-[11px] text-gray-400 font-mono leading-relaxed overflow-y-auto custom-scrollbar"></div>
+                <div class="p-3 bg-[#252526] border-t border-[#333]">
+                    <span class="text-[9px] text-gray-500 uppercase font-bold block mb-2 tracking-widest">Found Result</span>
+                    <div id="res-gallery" class="flex flex-wrap gap-1 max-h-20 overflow-y-auto custom-scrollbar"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const codeLines = [
+            'class Solution:', '    def generateParenthesis(self, n):', '        result = []', '        def generate(o, c, curr):', '            if o == c == 0:', '                result.append(curr)', '                return', '            ', '            if o > 0:', '                generate(o-1, c, curr + "(")', '            ', '            if o < c:', '                generate(o, c-1, curr + ")")', '        ', '        generate(n, n, "")', '        return result'
+        ];
+
+        let history = [], currentStep = 0, isPlaying = false, playInterval, treeData = null;
+
+        function initCode() {
+            document.getElementById('code-display').innerHTML = codeLines.map((line, i) => {
+                let formatted = line.replace(/class|def|if|return/g, m => `<span class="code-keyword">${m}</span>`)
+                                    .replace(/generate|append/g, m => `<span class="code-func">${m}</span>`);
+                return `<div id="line-${i}" class="whitespace-pre px-2"><span class="inline-block w-4 text-gray-600 mr-2 text-[8px] text-right">${i}</span>${formatted}</div>`;
+            }).join('');
+        }
+
+        function generateData(n) {
+            const steps = []; const resSnap = [];
+            const root = { name: '""', id: "root", children: [], o: n, c: n, curr: "" };
+            let nodeIdCounter = 0;
+
+            function backtrack(o, c, curr, d3Node) {
+                steps.push({ line: 3, o, c, curr, nodeId: d3Node.id, log: `CALL: generate(${o}, ${c}, "${curr}")`, res: [...resSnap] });
+                if (o === 0 && c === 0) {
+                    resSnap.push(curr);
+                    steps.push({ line: 5, o, c, curr, nodeId: d3Node.id, log: `<span class="text-green-400">FOUND: ${curr}</span>`, res: [...resSnap] });
+                    steps.push({ line: 6, o, c, curr, nodeId: d3Node.id, log: `RETURNING...`, res: [...resSnap], isReturn: true });
+                    return;
+                }
+                if (o > 0) {
+                    const child = { name: '(', id: `n${++nodeIdCounter}`, children: [], o: o-1, c, curr: curr + "(" };
+                    d3Node.children.push(child);
+                    steps.push({ line: 9, o, c, curr, nodeId: d3Node.id, log: `o=${o} > 0, try "("`, res: [...resSnap] });
+                    backtrack(o - 1, c, curr + "(", child);
+                }
+                if (o < c) {
+                    const child = { name: ')', id: `n${++nodeIdCounter}`, children: [], o, c: c-1, curr: curr + ")" };
+                    d3Node.children.push(child);
+                    steps.push({ line: 12, o, c, curr, nodeId: d3Node.id, log: `o=${o} < c=${c}, try ")"`, res: [...resSnap] });
+                    backtrack(o, c - 1, curr + ")", child);
+                }
+                steps.push({ line: 12, o, c, curr, nodeId: d3Node.id, log: `Backtrack from "${curr}"`, res: [...resSnap], isReturn: true });
+            }
+            backtrack(n, n, "", root);
+
+            let stack = [];
+            steps.forEach(step => {
+                if(step.line === 3) stack.push({curr: step.curr, o: step.o, c: step.c});
+                if(step.isReturn) stack.pop();
+                step.currentStack = [...stack];
+            });
+            return { steps, root };
+        }
+
+        const svgContainer = d3.select("#tree-viz").append("svg").attr("width", "100%").attr("height", "100%");
+        const svg = svgContainer.append("g");
+        const treeLayout = d3.tree().size([550, 250]); 
+
+        function renderAll() {
+            const step = history[currentStep];
+            d3.selectAll("#code-display div").classed("active-line", false);
+            d3.select(`#line-${step.line}`).classed("active-line", true);
+
+            const logBox = document.getElementById('log-container');
+            logBox.innerHTML += `<div>> ${step.log}</div>`;
+            logBox.scrollTop = logBox.scrollHeight;
+
+            document.getElementById('display-o').innerText = step.o;
+            document.getElementById('display-c').innerText = step.c;
+
+            const root = d3.hierarchy(treeData);
+            treeLayout(root);
+            const links = svg.selectAll(".link").data(root.links(), d => d.target.data.id);
+            links.enter().append("path").attr("class", "link").merge(links).attr("d", d3.linkVertical().x(d => d.x).y(d => d.y));
+            const nodes = svg.selectAll(".node").data(root.descendants(), d => d.data.id);
+            const nEnter = nodes.enter().append("g").attr("class", "node").attr("transform", d => `translate(${d.x},${d.y})`);
+            nEnter.append("circle").attr("r", 8); nEnter.append("text").attr("dy", ".35em").attr("text-anchor", "middle").text(d => d.data.name);
+            svg.selectAll(".node circle").style("stroke", d => d.data.id === step.nodeId ? "var(--accent)" : "#444")
+                                      .style("stroke-width", d => d.data.id === step.nodeId ? "3px" : "2px");
+
+            document.getElementById('res-gallery').innerHTML = (step.res || []).map(r => `<div class="bg-blue-900/20 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-900/30 font-mono">${r}</div>`).join('');
+
+            const stackContainer = document.getElementById('stack-container');
+            document.getElementById('stack-depth').innerText = `Depth: ${step.currentStack.length}`;
+            stackContainer.innerHTML = (step.currentStack || []).map((s, i) => `
+                <div class="h-16 w-20 shrink-0 bg-[#1e1e1e] border-t-4 border-orange-500 rounded flex flex-col items-center justify-center p-1 shadow-lg">
+                    <span class="text-[9px] text-white font-bold">"${s.curr || '""'}"</span>
+                    <span class="text-[8px] text-gray-500 font-mono">o:${s.o} c:${s.c}</span>
+                </div>
+            `).join('');
+            stackContainer.scrollLeft = stackContainer.scrollWidth;
+
+            document.getElementById('step-count').innerText = currentStep;
+        }
+
+        function togglePlay() { isPlaying ? pause() : play(); }
+        function play() { isPlaying = true; document.getElementById('play-btn').innerText = 'PAUSE'; playInterval = setInterval(nextStep, 500); }
+        function pause() { isPlaying = false; document.getElementById('play-btn').innerText = 'PLAY'; clearInterval(playInterval); }
+        function nextStep() { if(currentStep < history.length-1) { currentStep++; renderAll(); } else pause(); }
+        function prevStep() { if(currentStep > 0) { currentStep--; document.getElementById('log-container').innerHTML = ''; renderAll(); } }
+        function resetSimulation() { pause(); currentStep = 0; document.getElementById('log-container').innerHTML = ''; renderAll(); }
+
+        function changeCase(n) {
+            pause();
+            d3.selectAll('.tc-btn').classed('bg-[#37373d] text-white border-blue-500', false).classed('text-gray-500', true);
+            const activeBtn = n === 1 ? document.getElementById('btn-n1') : document.getElementById('btn-n3');
+            activeBtn.classList.add('bg-[#37373d]', 'text-white', 'border-blue-500');
+            activeBtn.classList.remove('text-gray-500');
+
+            const data = generateData(n);
+            history = data.steps; treeData = data.root;
+            svg.selectAll("*").remove(); 
+            svgContainer.call(d3.zoom().on("zoom", (e) => svg.attr("transform", e.transform)));
+            svgContainer.call(d3.zoom().transform, d3.zoomIdentity.translate(80, 80).scale(0.8));
+            currentStep = 0; document.getElementById('log-container').innerHTML = ''; renderAll();
+        }
+
+        initCode(); changeCase(3); // 默認開啟 n=3，更具演示性
+    </script>
+</body>
+</html>

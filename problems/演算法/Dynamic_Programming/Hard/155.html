@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 115. Distinct Subsequences - 全路徑持久化版</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #8b949e;
+        }
+        body { 
+            background: #010409; color: var(--text); 
+            font-family: 'Fira Code', 'Consolas', monospace;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; overflow: hidden;
+        }
+        
+        .widget-card {
+            width: 1760px; height: 950px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; display: flex; overflow: hidden;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+        }
+
+        /* --- 左側：資訊與題解 --- */
+        .sidebar { width: 380px; border-right: 1px solid var(--border); background: #0d1117; display: flex; flex-direction: column; }
+        .section { padding: 25px; border-bottom: 1px solid var(--border); }
+        .problem-title { font-size: 22px; font-weight: bold; color: var(--blue); margin-bottom: 10px; }
+        .complexity-box { background: rgba(188, 140, 255, 0.05); border: 1px solid var(--purple); border-radius: 6px; padding: 12px; font-size: 13px; }
+
+        /* --- 右側：主工作區 --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; background: #010409; overflow: hidden; }
+        
+        /* 程式碼區：嚴格縮排與小字體 */
+        .editor-container { padding: 25px 40px; border-bottom: 1px solid var(--border); height: 320px; flex-shrink: 0; }
+        .editor { font-size: 13.5px; line-height: 1.8; }
+        .line { display: block; padding-left: 50px; position: relative; opacity: 0.3; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 10px; width: 30px; text-align: right; color: #484f58; font-size: 12px; }
+
+        .viz-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #0d1117; }
+        
+        /* 字串視覺化 */
+        .string-strip { padding: 15px 40px; border-bottom: 1px solid var(--border); background: #0d1117; flex-shrink: 0; }
+        .str-row { display: flex; align-items: center; gap: 8px; height: 40px; }
+        .char-cell { 
+            width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; 
+            border: 1px solid var(--border); border-radius: 6px; font-size: 18px; font-weight: bold;
+        }
+        .char-cell.active-s { border-color: var(--blue); background: rgba(88,166,255,0.15); }
+        .char-cell.active-t { border-color: var(--purple); background: rgba(188,140,255,0.15); }
+        .char-cell.picked { border-bottom: 5px solid var(--green); color: var(--green); transform: translateY(-3px); }
+
+        .bottom-grid { flex: 1; display: flex; overflow: hidden; }
+        
+        /* Matrix 區域：緊湊排版防止滾輪 */
+        .table-area { flex: 1; padding: 15px; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
+        .dp-table { border-collapse: collapse; margin-top: 5px; }
+        .dp-table td, .dp-table th { border: 1px solid var(--border); width: 38px; height: 38px; text-align: center; font-size: 13px; }
+        .cell-focus { background: var(--red) !important; color: white; font-weight: bold; box-shadow: 0 0 10px var(--red); }
+
+        /* 右側控制台：加大 Log 與路徑清單 */
+        .terminal { width: 520px; padding: 20px; border-left: 1px solid var(--border); background: #0d1117; display: flex; flex-direction: column; }
+        
+        .monitor-box { background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+        .mon-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; border-bottom: 1px solid #161b22; padding-bottom: 4px; }
+        .mon-val { color: var(--orange); font-weight: bold; }
+
+        /* 路徑清單 - 增加高度並顯示所有組合 */
+        .path-window { background: #010409; border: 1px solid var(--border); border-radius: 8px; height: 130px; margin-bottom: 12px; overflow-y: auto; padding: 10px; }
+        .path-title { font-size: 11px; color: var(--green); font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
+        .path-item { font-size: 12px; color: var(--green); margin-bottom: 4px; font-family: 'Fira Code', monospace; letter-spacing: 1px; }
+
+        /* Log 視窗 - 擴大高度 */
+        .log-window { background: #010409; border: 1px solid var(--border); border-radius: 8px; flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column-reverse; }
+        .log-item { font-size: 12px; color: var(--comment); padding: 5px 0; border-bottom: 1px solid #161b22; }
+        .log-item.latest { color: var(--text); border-left: 4px solid var(--green); padding-left: 10px; background: rgba(63, 185, 80, 0.05); }
+
+        .ctrl { display: flex; gap: 10px; margin-top: 15px; }
+        .btn { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-weight: bold; cursor: pointer; }
+        .btn-next { border-color: var(--green); color: var(--green); }
+        .btn:hover { background: var(--border); }
+        
+        .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .op { color: #ff7b72; } .num { color: #79c0ff; } .comment { color: #8b949e; }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="sidebar">
+        <div class="section">
+            <div class="problem-title">115. Distinct Subsequences</div>
+            <div style="font-size: 14px; color: var(--comment); line-height: 1.6;">給定 s 與 t，計算 s 中有多少個子序列等於 t。</div>
+            <div class="complexity-box" style="margin-top:15px;">
+                <b>Space/Time: O(M × N)</b><br>
+                M = len(s), N = len(t)
+            </div>
+        </div>
+        <div class="section" style="flex:1;">
+            <div style="color: var(--orange); font-weight: bold; font-size: 13px; margin-bottom: 10px;">遞迴邏輯 (Bottom-up Intuition):</div>
+            <div style="font-size: 12px; color: var(--comment); line-height: 1.8;">
+                • 無論匹配與否，皆可選擇<b>跳過</b> s[i]。<br>
+                • 若 <code>s[i] == t[j]</code>，額外增加<b>匹配</b>分支。<br>
+                • 當 <code>j == len(t)</code> 時，代表發現一個完整序列。
+            </div>
+        </div>
+        <div class="section" style="border:none;">
+            <button class="btn" id="t0" onclick="changeTC(0)" style="border-color:var(--blue); width:100%; margin-bottom:10px;">Case 1: rabbbit</button>
+            <button class="btn" id="t1" onclick="changeTC(1)" style="width:100%;">Case 2: babgbag</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="editor-container">
+            <div class="editor" id="codeArea"></div>
+        </div>
+
+        <div class="viz-layout">
+            <div class="string-strip">
+                <div class="str-row" id="sRow"></div>
+                <div style="height:8px"></div>
+                <div class="str-row" id="tRow"></div>
+            </div>
+
+            <div class="bottom-grid">
+                <div class="table-area">
+                    <div style="font-size:11px; color:var(--comment); text-transform:uppercase; margin-bottom:8px;">Memoization Matrix (i × j)</div>
+                    <table class="dp-table" id="dpTable"></table>
+                </div>
+
+                <div class="terminal">
+                    <div class="monitor-box">
+                        <div class="mon-row"><span>State (i, j):</span> <span class="mon-val" id="mon-ij">0, 0</span></div>
+                        <div class="mon-row"><span>s[i] == t[j]:</span> <span class="mon-val" id="mon-match">-</span></div>
+                        <div class="mon-row"><span>Current Res:</span> <span class="mon-val" id="mon-res">0</span></div>
+                    </div>
+
+                    <div class="path-window">
+                        <div class="path-title">Found Combinations:</div>
+                        <div id="pathList"></div>
+                    </div>
+
+                    <div class="log-window" id="logContent"></div>
+
+                    <div class="ctrl">
+                        <button class="btn" onclick="prev()">Prev</button>
+                        <button class="btn btn-next" onclick="next()">Next Step (F10)</button>
+                        <button class="btn" style="flex:0.4; border-color:var(--red);" onclick="reset()">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const testCases = [{s: "rabbbit", t: "rabbit"}, {s: "babgbag", t: "bag"}];
+let curTC = 0, steps = [], curStep = 0, foundPaths = new Set();
+
+const pyCode = [
+    `<span class="kw">def</span> <span class="fn">dfs</span>(i, j):`,
+    `    <span class="kw">if</span> j <span class="op">==</span> <span class="fn">len</span>(t): <span class="kw">return</span> <span class="num">1</span>`,
+    `    <span class="kw">if</span> i <span class="op">==</span> <span class="fn">len</span>(s): <span class="kw">return</span> <span class="num">0</span>`,
+    `    <span class="kw">if</span> (i, j) <span class="kw">in</span> memo: <span class="kw">return</span> memo[(i, j)]`,
+    `    `,
+    `    <span class="comment"># 分支 1: 跳過當前 s[i]</span>`,
+    `    res <span class="op">=</span> <span class="fn">dfs</span>(i + <span class="num">1</span>, j)`,
+    `    `,
+    `    <span class="kw">if</span> s[i] <span class="op">==</span> t[j]:`,
+    `        <span class="comment"># 分支 2: 選取並匹配 s[i]</span>`,
+    `        res <span class="op">+=</span> <span class="fn">dfs</span>(i + <span class="num">1</span>, j + <span class="num">1</span>)`,
+    `    `,
+    `    memo[(i, j)] <span class="op">=</span> res`,
+    `    <span class="kw">return</span> res`
+];
+
+function generateSteps(S, T) {
+    let memo = {}, s = [];
+    function run(i, j, pIdx) {
+        if (j === T.length) {
+            let path = S.split('').map((c, idx) => pIdx.includes(idx) ? c : "_").join("");
+            return { val: 1, p: path };
+        }
+        if (i === S.length) return { val: 0, p: null };
+        
+        const key = `${i},${j}`;
+        if (memo[key] !== undefined) {
+            s.push({l: 4, i, j, m: {...memo}, res: memo[key], msg: `緩存讀取: (${i},${j})`, pIdx: [...pIdx]});
+            return { val: memo[key], p: null };
+        }
+
+        s.push({l: 1, i, j, m: {...memo}, res: 0, msg: `進入 dfs(${i}, ${j})`, pIdx: [...pIdx]});
+        
+        // Skip
+        s.push({l: 7, i, j, m: {...memo}, res: 0, msg: `分支 1: 跳過 s[${i}]`, pIdx: [...pIdx]});
+        let skipObj = run(i + 1, j, [...pIdx]);
+        let total = skipObj.val;
+        if (skipObj.p) s.push({l: 7, i, j, m: {...memo}, res: total, msg: `發現路徑!`, pIdx: [...pIdx], newP: skipObj.p});
+
+        // Match
+        if (S[i] === T[j]) {
+            s.push({l: 11, i, j, m: {...memo}, res: total, msg: `分支 2: 匹配 s[${i}]`, pIdx: [...pIdx, i]});
+            let matchObj = run(i + 1, j + 1, [...pIdx, i]);
+            total += matchObj.val;
+            if (matchObj.p) s.push({l: 11, i, j, m: {...memo}, res: total, msg: `發現路徑!`, pIdx: [...pIdx, i], newP: matchObj.p});
+        }
+        
+        memo[key] = total;
+        s.push({l: 13, i, j, m: {...memo}, res: total, msg: `存入 memo: (${i},${j}) = ${total}`, pIdx: [...pIdx]});
+        return { val: total, p: null };
+    }
+    run(0, 0, []);
+    return s;
+}
+
+function update() {
+    const step = steps[curStep], S = testCases[curTC].s, T = testCases[curTC].t;
+    document.querySelectorAll('.line').forEach((l, idx) => idx === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+
+    // Monitor
+    document.getElementById('mon-ij').innerText = `${step.i}, ${step.j}`;
+    document.getElementById('mon-match').innerText = S[step.i] === T[step.j] ? "TRUE" : "FALSE";
+    document.getElementById('mon-res').innerText = step.res;
+
+    // Strings
+    document.getElementById('sRow').innerHTML = S.split('').map((c, i) => `<div class="char-cell ${i===step.i?'active-s':''} ${step.pIdx.includes(i)?'picked':''}">${c}</div>`).join('');
+    document.getElementById('tRow').innerHTML = T.split('').map((c, j) => `<div class="char-cell ${j===step.j?'active-t':''}">${c}</div>`).join('');
+
+    // Paths
+    if (step.newP) foundPaths.add(step.newP);
+    document.getElementById('pathList').innerHTML = Array.from(foundPaths).map(p => `<div class="path-item">● ${p}</div>`).join('');
+
+    // Log
+    document.getElementById('logContent').innerHTML = steps.slice(0, curStep + 1).reverse().map((s, idx) => `<div class="log-item ${idx===0?'latest':''}">> ${s.msg}</div>`).join('');
+
+    // Matrix
+    const table = document.getElementById('dpTable');
+    let h = `<tr><th></th>` + T.split('').map(c => `<th>${c}</th>`).join('') + `<th>$</th></tr>`;
+    for(let i=0; i<=S.length; i++) {
+        h += `<tr><th>${S[i] || '$'}</th>`;
+        for(let j=0; j<=T.length; j++) {
+            let val = step.m[`${i},${j}`] ?? (j===T.length?1:(i===S.length?0:"-"));
+            h += `<td class="${step.i===i && step.j===j?'cell-focus':''}">${val}</td>`;
+        }
+        h += `</tr>`;
+    }
+    table.innerHTML = h;
+}
+
+function changeTC(idx) {
+    curTC = idx;
+    document.getElementById('t0').style.borderColor = idx === 0 ? 'var(--blue)' : 'var(--border)';
+    document.getElementById('t1').style.borderColor = idx === 1 ? 'var(--blue)' : 'var(--border)';
+    reset();
+}
+
+function reset() {
+    steps = generateSteps(testCases[curTC].s, testCases[curTC].t);
+    curStep = 0; foundPaths.clear();
+    document.getElementById('codeArea').innerHTML = pyCode.map((l, i) => `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    update();
+}
+
+function next() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { if(curStep > 0) { curStep--; update(); } }
+document.addEventListener('keydown', e => { if(e.key === 'F10') next(); });
+
+reset();
+</script>
+</body>
+</html>

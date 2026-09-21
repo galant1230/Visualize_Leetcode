@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 90 Subsets II - Expert Layout</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --bg-editor: #1E1E1E; --bg-sidebar: #252526; --text-main: #D4D4D4;
+            --vscode-blue: #007ACC; --vscode-green: #6A9955; --vscode-purple: #C586C0;
+            --vscode-yellow: #DCDCAA; --vscode-orange: #CE9178; --accent: #FFA500;
+        }
+        body { background-color: #121212; color: var(--text-main); font-family: 'Fira Code', monospace; height: 100vh; overflow: hidden; padding: 0.75rem; }
+        .code-keyword { color: var(--vscode-purple); } .code-func { color: var(--vscode-yellow); }
+        .code-comment { color: var(--vscode-green); } .code-string { color: var(--vscode-orange); }
+        .active-line { background-color: rgba(173, 214, 255, 0.1); border-left: 3px solid var(--vscode-blue); }
+        
+        .node circle { fill: #2d2d2d; stroke: #444; stroke-width: 2px; }
+        .node text { fill: #999; font-size: 11px; pointer-events: none; }
+        .link { fill: none; stroke: #333; stroke-width: 1.5px; }
+        .node-active circle { stroke: var(--accent); filter: drop-shadow(0 0 5px var(--accent)); }
+        .node-active text { fill: var(--accent); font-weight: bold; }
+        .link-active { stroke: var(--accent); stroke-width: 2px; }
+        .node-pruned circle { stroke: #f43f5e; stroke-dasharray: 3,3; opacity: 0.5; }
+        .node-pruned text { fill: #f43f5e; opacity: 0.5; }
+        .link-pruned { stroke: #f43f5e; stroke-dasharray: 2,2; opacity: 0.3; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col gap-3">
+
+    <main class="flex flex-1 gap-3 overflow-hidden">
+        
+        <section class="w-1/4 flex flex-col gap-3 shrink-0 overflow-y-auto custom-scrollbar pr-1">
+            <div class="bg-[#252526] p-4 rounded-md border border-[#333]">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-orange-500 font-bold text-xs">90.</span>
+                    <h2 class="text-sm font-bold text-white">Subsets II</h2>
+                </div>
+                <p class="text-[11px] text-gray-400 leading-relaxed">
+                    找出含重複元素數組的所有子集。核心挑戰在於如何<b>「去重」</b>。
+                </p>
+            </div>
+
+            <div class="bg-[#252526] p-4 rounded-md border border-[#333]">
+                <h3 class="text-[#569CD6] mb-3 text-[10px] font-bold uppercase tracking-widest border-b border-[#333] pb-1">Complexity Analysis</h3>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] text-gray-500">Time Complexity</span>
+                            <span class="text-orange-400 font-bold text-xs font-mono">O(n · 2ⁿ)</span>
+                        </div>
+                        <p class="text-[9px] text-gray-500 italic">共有 2ⁿ 個可能的子集，每個子集複製到結果集需 O(n)。</p>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] text-gray-500">Space Complexity</span>
+                            <span class="text-green-400 font-bold text-xs font-mono">O(n)</span>
+                        </div>
+                        <p class="text-[9px] text-gray-500 italic">遞迴深度最大為 n (Stack 空間)，不計入結果集。空間利用極其高效。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#252526] p-4 rounded-md border border-[#333]">
+                <h3 class="text-[#569CD6] mb-2 text-[10px] font-bold uppercase tracking-widest border-b border-[#333] pb-1">Logic Steps</h3>
+                <ul class="text-[10px] text-gray-400 space-y-2 mt-2">
+                    <li><span class="text-blue-400">●</span> <b>Sort First:</b> 排序後相同數字相鄰，是剪枝的前提。</li>
+                    <li><span class="text-blue-400">●</span> <b>Pruning:</b> <code>if i > start and nums[i] == nums[i-1]</code>。這代表在同一層中，相同的數字只會被選一次。</li>
+                </ul>
+            </div>
+
+            <div class="bg-[#252526] p-3 rounded-md border border-[#333]">
+                <span class="text-[9px] text-gray-500 font-bold block mb-2 uppercase">Cases</span>
+                <div class="flex gap-2 mb-3">
+                    <button onclick="changeCase(0)" class="tc-btn flex-1 text-[10px] py-1 rounded bg-[#37373d] border border-blue-500">[1,2,2]</button>
+                    <button onclick="changeCase(1)" class="tc-btn flex-1 text-[10px] py-1 rounded bg-[#252526] border border-transparent hover:bg-[#333]">[4,4,4]</button>
+                </div>
+                <div class="text-[9px] text-gray-600 font-bold mb-2 uppercase italic">Collected (res)</div>
+                <div id="res-gallery" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar"></div>
+            </div>
+        </section>
+
+        <section class="w-[45%] flex flex-col gap-3 overflow-hidden">
+            <div class="flex-[2] bg-[#1E1E1E] rounded-md border border-[#333] relative overflow-hidden">
+                <div class="absolute top-3 left-4 text-[10px] text-gray-600 font-bold uppercase tracking-widest italic">Decision Tree & Pruning Visualization</div>
+                <div id="tree-viz" class="w-full h-full"></div>
+            </div>
+
+            <div class="flex-1 bg-[#252526] rounded-md border border-[#333] p-4 flex flex-col overflow-hidden shadow-inner">
+                <div class="text-[10px] text-[#569CD6] font-bold mb-3 uppercase tracking-wider flex justify-between">
+                    <span>Call Stack (Memory Frames)</span>
+                    <span class="text-gray-600 font-normal">LIFO Structure</span>
+                </div>
+                <div id="stack-container" class="flex-1 flex flex-col-reverse gap-2 overflow-y-auto custom-scrollbar pr-1"></div>
+            </div>
+
+            <div class="bg-[#252526] h-12 rounded-md border border-[#333] flex items-center justify-between px-6 shrink-0">
+                <div class="flex gap-4">
+                    <button onclick="prevStep()" class="text-gray-400 hover:text-white"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293V13.5a1 1 0 11-2 0V7.707L6.414 10a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414l-2.293-2.293z" transform="rotate(-90 10 10)"/></svg></button>
+                    <button id="play-btn" onclick="togglePlay()" class="text-[10px] bg-blue-600 px-5 py-1 rounded text-white font-bold hover:bg-blue-500">PLAY</button>
+                    <button onclick="nextStep()" class="text-gray-400 hover:text-white"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293V13.5a1 1 0 11-2 0V7.707L6.414 10a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414l-2.293-2.293z" transform="rotate(90 10 10)"/></svg></button>
+                </div>
+                <div class="text-[10px] font-mono text-gray-500 tracking-tighter">STEP <span id="step-count" class="text-blue-400">0</span> / <span id="total-steps">0</span></div>
+            </div>
+        </section>
+
+        <section class="w-[30%] flex flex-col gap-3 shrink-0">
+            <div class="h-[45%] bg-[#1E1E1E] rounded-md border border-[#333] overflow-hidden flex flex-col">
+                <div class="bg-[#252526] px-4 py-1.5 text-[10px] border-b border-[#333] text-gray-500 font-bold">solution.py</div>
+                <div id="code-display" class="p-4 text-[10px] leading-relaxed overflow-auto custom-scrollbar flex-1 font-mono"></div>
+            </div>
+
+            <div class="flex-1 bg-[#252526] rounded-md border border-[#333] p-4 flex flex-col overflow-hidden">
+                <div class="text-[9px] text-gray-500 font-bold mb-2 uppercase tracking-widest border-b border-[#333] pb-1">Comprehensive Execution Log</div>
+                <div id="log-container" class="flex-1 text-[9px] text-gray-400 overflow-y-auto custom-scrollbar font-mono space-y-1.5 italic">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 核心資料生成邏輯
+        const codeLines = [
+            'class Solution:', '    def subsetsWithDup(self, nums):', '        res = []', '        nums.sort()  # Step 1: Sorting', '        ', '        def backtrack(start, path):', '            res.append(path[:])', '            ', '            for i in range(start, len(nums)):', '                # Step 2: Pruning condition', '                if i > start and nums[i] == nums[i-1]:', '                    continue', '                ', '                path.append(nums[i])', '                backtrack(i + 1, path)', '                path.pop()', '        ', '        backtrack(0, [])', '        return res'
+        ];
+
+        let history = [], currentStep = 0, currentNums = [1, 2, 2], isPlaying = false, playInterval, treeData = null;
+
+        function initCode() {
+            const container = document.getElementById('code-display');
+            container.innerHTML = codeLines.map((line, i) => {
+                let formatted = line.replace(/class|def|if|for|in|return|continue/g, m => `<span class="code-keyword">${m}</span>`)
+                                    .replace(/sort|append|pop|backtrack|len/g, m => `<span class="code-func">${m}</span>`);
+                return `<div id="line-${i}" class="whitespace-pre px-2 relative"><span class="inline-block w-4 text-gray-600 mr-2 text-[8px] text-right">${i}</span>${formatted}</div>`;
+            }).join('');
+        }
+
+        function generateData(nums) {
+            const steps = []; const resSnap = []; nums.sort((a,b) => a-b);
+            const root = { name: "[]", id: "root", children: [], isPruned: false, path: [], start: 0, depth: 0 };
+            let nodeIdCounter = 0;
+
+            function backtrack(start, path, d3Node, depth) {
+                resSnap.push([...path]);
+                steps.push({ line: 6, path: [...path], start, i: null, nodeId: d3Node.id, log: `Depth ${depth}: backtrack called.`, res: [...resSnap], stack: [] });
+                steps.push({ line: 7, path: [...path], start, i: null, nodeId: d3Node.id, log: `<span class="text-green-400">Add to Result: [${path.join(',')}]</span>`, res: [...resSnap], stack: [] });
+
+                for (let i = start; i < nums.length; i++) {
+                    steps.push({ line: 11, path: [...path], start, i, nodeId: d3Node.id, log: `Checking i=${i} (value=${nums[i]}).`, res: [...resSnap], stack: [] });
+                    const isPruned = (i > start && nums[i] === nums[i-1]);
+                    const child = { name: nums[i], id: `n${++nodeIdCounter}`, children: [], isPruned, path: [...path, nums[i]], start: i+1, depth: depth+1 };
+                    d3Node.children.push(child);
+
+                    if (isPruned) {
+                        steps.push({ line: 12, path: [...path], start, i, nodeId: child.id, log: `<span class="text-rose-400">Prune: [${path}, ${nums[i]}] is duplicate.</span>`, res: [...resSnap], stack: [] });
+                        continue;
+                    }
+
+                    path.push(nums[i]);
+                    steps.push({ line: 14, path: [...path], start, i, nodeId: child.id, log: `Push ${nums[i]} into path. Recursive call.`, res: [...resSnap], stack: [] });
+                    backtrack(i + 1, path, child, depth + 1);
+                    path.pop();
+                    steps.push({ line: 16, path: [...path], start, i, nodeId: d3Node.id, log: `Pop ${nums[i]}. Back to Loop level ${depth}.`, res: [...resSnap], stack: [] });
+                }
+                steps.push({ line: 16, path: [...path], start, i: nums.length-1, nodeId: d3Node.id, log: `Depth ${depth} loop finished.`, res: [...resSnap], stack: [] });
+            }
+            backtrack(0, [], root, 0);
+
+            let currentCallStack = [];
+            steps.forEach(step => {
+                if (step.line === 6) currentCallStack.push({ path: step.path, start: step.start });
+                else if (step.line === 16 && step.log.includes("finished")) currentCallStack.pop();
+                step.stack = [...currentCallStack];
+            });
+            return { steps, root };
+        }
+
+        let svg = d3.select("#tree-viz").append("svg").attr("width", "100%").attr("height", "100%").append("g").attr("transform", "translate(40,40)");
+        let treeLayout = d3.tree().size([600, 300]);
+
+        function renderAll() {
+            const step = history[currentStep];
+            d3.selectAll("#code-display div").classed("active-line", false);
+            d3.select(`#line-${step.line}`).classed("active-line", true);
+
+            const logBox = document.getElementById('log-container');
+            const newLog = document.createElement('div');
+            newLog.innerHTML = `<span class="text-gray-600">[${currentStep}]</span> ${step.log}`;
+            logBox.appendChild(newLog); logBox.scrollTop = logBox.scrollHeight;
+
+            const root = d3.hierarchy(treeData);
+            treeLayout(root);
+            
+            const links = svg.selectAll(".link").data(root.links(), d => d.target.data.id);
+            links.enter().append("path").attr("class", "link").merge(links).attr("d", d3.linkVertical().x(d => d.x).y(d => d.y)).classed("link-pruned", d => d.target.data.isPruned);
+
+            const nodes = svg.selectAll(".node").data(root.descendants(), d => d.data.id);
+            const nEnter = nodes.enter().append("g").attr("class", "node").attr("transform", d => `translate(${d.x},${d.y})`);
+            nEnter.append("circle").attr("r", 8); nEnter.append("text").attr("dy", ".35em").attr("text-anchor", "middle").text(d => d.data.name);
+            
+            svg.selectAll(".node").classed("node-active", d => d.data.id === step.nodeId).classed("node-pruned", d => d.data.isPruned);
+
+            document.getElementById('res-gallery').innerHTML = (step.res || []).map(r => 
+                `<div class="bg-[#333] border border-blue-900/50 text-blue-300 px-1.5 py-0.5 rounded text-[8px] font-bold">[${r.join(',')}]</div>`
+            ).join('');
+
+            document.getElementById('stack-container').innerHTML = (step.stack || []).map((s, i) => 
+                `<div class="bg-[#1e1e1e] border-l-2 border-orange-500 px-2 py-1.5 text-[9px] mb-0.5 flex justify-between">
+                    <span class="text-gray-400">#${i} path: [${s.path.join(',')}]</span>
+                    <span class="text-gray-600 italic">start:${s.start}</span>
+                 </div>`
+            ).join('');
+
+            document.getElementById('step-count').innerText = currentStep;
+        }
+
+        function nextStep() { if(currentStep < history.length-1) { currentStep++; renderAll(); } else pause(); }
+        function prevStep() { if(currentStep > 0) { currentStep--; document.getElementById('log-container').innerHTML = ''; renderAll(); } }
+        function togglePlay() { isPlaying ? (clearInterval(playInterval), isPlaying=false, document.getElementById('play-btn').innerText='PLAY') : (isPlaying=true, document.getElementById('play-btn').innerText='PAUSE', playInterval=setInterval(nextStep, 500)); }
+        function changeCase(idx) {
+            currentNums = [[1, 2, 2], [4, 4, 4]][idx];
+            d3.selectAll('.tc-btn').classed('bg-[#37373d] border-blue-500', false).classed('bg-[#252526] border-transparent', true);
+            d3.select(`.tc-btn:nth-child(${idx+1})`).classed('bg-[#37373d] border-blue-500', true).classed('bg-[#252526] border-transparent', false);
+            const data = generateData([...currentNums]);
+            history = data.steps; treeData = data.root;
+            document.getElementById('total-steps').innerText = history.length - 1;
+            svg.selectAll("*").remove(); currentStep = 0; document.getElementById('log-container').innerHTML = ''; renderAll();
+        }
+
+        initCode(); changeCase(0);
+    </script>
+</body>
+</html>

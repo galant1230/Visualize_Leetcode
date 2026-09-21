@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>11. Container With Most Water - LeetCode Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-medium: #ffc01e;
+      --lc-green: #2cbb5d;
+      --lc-blue: #007aff;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1350px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(255, 192, 30, 0.15);
+      color: var(--lc-medium);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .dashboard {
+      max-width: 1350px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1000px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+
+    .problem-desc { font-size: 0.9rem; color: #ccc; margin-bottom: 12px; }
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.85rem;
+      color: var(--lc-text);
+      margin-bottom: 12px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+
+    .complexity-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-green); }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; italic: true; }
+    .num { color: #bd93f9; }
+    .cm { color: #6272a4; font-style: italic; }
+    .op { color: #ff79c6; }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .status-card .label { font-size: 0.72rem; color: var(--lc-text-dim); display: block; }
+    .status-card .value { font-size: 1rem; font-family: monospace; font-weight: bold; color: var(--lc-orange); }
+
+    .chart-area {
+      height: 220px;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 8px;
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+    }
+    .bar {
+      width: 26px;
+      background: #3e3e3e;
+      position: relative;
+      transition: all 0.2s ease;
+      border-radius: 2px 2px 0 0;
+    }
+    .bar.active { background: var(--lc-blue); }
+    .bar.winner { background: var(--lc-green) !important; box-shadow: 0 0 12px rgba(44, 187, 93, 0.6); }
+    .bar::after {
+      content: attr(data-h);
+      position: absolute;
+      top: -22px;
+      width: 100%;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--lc-text-dim);
+      font-weight: bold;
+    }
+    .bar.active::after { color: var(--lc-blue); }
+    .bar.winner::after { color: var(--lc-green); }
+
+    .water-overlay {
+      position: absolute;
+      background: rgba(0, 122, 255, 0.25);
+      border-top: 2px solid var(--lc-blue);
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+
+    .control-panel {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    input[type="text"] {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      color: var(--lc-text);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      flex: 1;
+      min-width: 140px;
+    }
+    input[type="text"]:focus { border-color: var(--lc-orange); outline: none; }
+    
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-green); color: #fff; }
+    .btn-primary:hover { background: #28a745; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .result-banner {
+      background: rgba(44, 187, 93, 0.1);
+      border: 1px solid var(--lc-green);
+      color: var(--lc-green);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">11. Container With Most Water</span>
+    <span class="lc-badge">Medium</span>
+    <span class="lc-tag">Array</span>
+    <span class="lc-tag">Two Pointers</span>
+    <span class="lc-tag">Greedy</span>
+  </div>
+
+  <div class="dashboard">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Description & Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個長度為 n 的整數陣列 <code>height</code>。有 n 條垂直線，第 i 條線的兩個端點分別為 (i, 0) 與 (i, height[i])。
+            找出其中的兩條線，使得它們與 x 軸構成的容器可以容納最多的水。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> height = [1,8,6,2,5,4,8,3,7]</div>
+            <div><strong>Output:</strong> 49</div>
+            <div><strong>Explanation:</strong> The vertical lines are represented by array [1,8,6,2,5,4,8,3,7]. In this case, the max area of water the container can contain is 49.</div>
+          </div>
+
+          <div style="font-size: 0.85rem; color: #aaa; margin-top: 8px;">
+            <strong>💡 解法核心思路 (Two Pointers & Greedy):</strong><br>
+            容器容量取決於 <code>(r - l) * min(height[l], height[r])</code>。使用雙指標從最寬處兩端向中間逼近，每次<strong>移動較短的那一側</strong>。因為如果移動較高側，寬度變小且高度最多維持原樣，面積必定變小；只有移動較矮側，才有可能找到更高的板子來提升總面積。
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val">O(N)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val">O(1)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span>🐍 Python3 程式碼單步追蹤</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container">
+<div class="code-line" id="l1"><span class="kw">class</span> <span class="fn">Solution</span>:</div>
+<div class="code-line" id="l2">    <span class="kw">def</span> <span class="fn">maxArea</span>(<span class="self">self</span>, height: list[<span class="kw">int</span>]) -> <span class="kw">int</span>:</div>
+<div class="code-line" id="l3">        max_water <span class="op">=</span> <span class="num">0</span></div>
+<div class="code-line" id="l4">        l, r <span class="op">=</span> <span class="num">0</span>, <span class="kw">len</span>(height) <span class="op">-</span> <span class="num">1</span></div>
+<div class="code-line" id="l5">        <span class="kw">while</span> l <span class="op">&lt;</span> r:</div>
+<div class="code-line" id="l7">            current_water <span class="op">=</span> (r <span class="op">-</span> l) <span class="op">*</span> <span class="kw">min</span>(height[l], height[r])</div>
+<div class="code-line" id="l8">            max_water <span class="op">=</span> <span class="kw">max</span>(max_water, current_water)</div>
+<div class="code-line" id="l10">            <span class="kw">if</span> height[l] <span class="op">&lt;</span> height[r]:</div>
+<div class="code-line" id="l11">                l <span class="op">+=</span> <span class="num">1</span></div>
+<div class="code-line" id="l12">            <span class="kw">else</span>:</div>
+<div class="code-line" id="l13">                r <span class="op">-=</span> <span class="num">1</span></div>
+<div class="code-line" id="l14">        <span class="kw">return</span> max_water</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與動態面板 (State Monitor)</div>
+        <div class="card-body">
+          <div class="status-grid">
+            <div class="status-card">
+              <span class="label">Pointers (l, r)</span>
+              <span id="stat-lr" class="value">0, 0</span>
+            </div>
+            <div class="status-card">
+              <span class="label">Heights (h[l], h[r])</span>
+              <span id="stat-h" class="value">0, 0</span>
+            </div>
+            <div class="status-card">
+              <span class="label">Width (r - l)</span>
+              <span id="stat-w" class="value">0</span>
+            </div>
+            <div class="status-card">
+              <span class="label">Min Height</span>
+              <span id="stat-minh" class="value">0</span>
+            </div>
+            <div class="status-card">
+              <span class="label">Current Area</span>
+              <span id="stat-area" class="value">0</span>
+            </div>
+            <div class="status-card">
+              <span class="label">Max Area</span>
+              <span id="stat-max" class="value" style="color: var(--lc-green);">0</span>
+            </div>
+          </div>
+
+          <div class="chart-area" id="chart"></div>
+
+          <div class="control-panel">
+            <input type="text" id="inputHeights" value="1,8,6,2,5,4,8,3,7" placeholder="1,8,6,2,5,4,8,3,7">
+            <button class="btn" onclick="initSim()">Reset</button>
+            <button id="prevBtn" class="btn" onclick="prevStep()" disabled>← Prev</button>
+            <button id="nextBtn" class="btn btn-primary" onclick="nextStep()">Step →</button>
+          </div>
+
+          <div id="finalBox" class="result-banner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let height = [];
+    let l = 0, r = 0;
+    let maxArea = 0;
+    let currentArea = 0;
+    let bestL = 0, bestR = 0;
+    let stepPhase = 'INIT'; // 'INIT' | 'CALC' | 'UPDATE' | 'MOVE' | 'DONE'
+
+    let historyStack = [];
+
+    function getCurrentSnapshot(lineId, hintText) {
+      return {
+        l, r, maxArea, currentArea, bestL, bestR, stepPhase,
+        lineId, hintText,
+        isFinished: stepPhase === 'DONE'
+      };
+    }
+
+    function applySnapshot(state) {
+      l = state.l;
+      r = state.r;
+      maxArea = state.maxArea;
+      currentArea = state.currentArea;
+      bestL = state.bestL;
+      bestR = state.bestR;
+      stepPhase = state.stepPhase;
+
+      updateStatus();
+      render(stepPhase === 'DONE');
+      highlightLine(state.lineId);
+      document.getElementById("stepHint").innerText = state.hintText;
+
+      const fb = document.getElementById("finalBox");
+      if (stepPhase === 'DONE') {
+        fb.innerHTML = `Accepted | Max Area: ${maxArea} (Index ${bestL} & ${bestR})`;
+        fb.style.display = "block";
+        document.getElementById("nextBtn").disabled = true;
+      } else {
+        fb.style.display = "none";
+        document.getElementById("nextBtn").disabled = false;
+      }
+
+      document.getElementById("prevBtn").disabled = historyStack.length <= 1;
+    }
+
+    function initSim() {
+      const rawInput = document.getElementById("inputHeights").value;
+      height = rawInput.split(",").map(Number).filter(n => !isNaN(n));
+      l = 0; 
+      r = height.length - 1; 
+      maxArea = 0;
+      currentArea = 0;
+      bestL = 0;
+      bestR = 0;
+      stepPhase = 'CALC'; // 初始化後直接準備第一步計算
+
+      historyStack = [];
+
+      const initialSnapshot = {
+        l, r, maxArea, currentArea, bestL, bestR, stepPhase: 'CALC',
+        lineId: "l4", hintText: `INIT: l=0, r=${r}`
+      };
+
+      historyStack.push(initialSnapshot);
+      applySnapshot(initialSnapshot);
+    }
+
+    function updateStatus() {
+      const w = Math.max(0, r - l);
+      const hMin = (l <= r && l < height.length && r >= 0) ? Math.min(height[l], height[r]) : 0;
+      document.getElementById("stat-lr").innerText = `${l}, ${r}`;
+      document.getElementById("stat-h").innerText = `${height[l] ?? 0}, ${height[r] ?? 0}`;
+      document.getElementById("stat-w").innerText = w;
+      document.getElementById("stat-minh").innerText = hMin;
+      document.getElementById("stat-area").innerText = currentArea;
+      document.getElementById("stat-max").innerText = maxArea;
+    }
+
+    function render(isFinal = false) {
+      const chart = document.getElementById("chart");
+      chart.innerHTML = "";
+      const maxVal = Math.max(...height, 1);
+      
+      height.forEach((h, idx) => {
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        if (isFinal && (idx === bestL || idx === bestR)) {
+          bar.className += " winner";
+        } else if (!isFinal && (idx === l || idx === r)) {
+          bar.className += " active";
+        }
+        bar.style.height = (h / maxVal * 160) + "px";
+        bar.setAttribute("data-h", h);
+        chart.appendChild(bar);
+      });
+
+      if (l < r && !isFinal) {
+        const overlay = document.createElement("div");
+        overlay.className = "water-overlay";
+        const hMin = Math.min(height[l], height[r]);
+        const barWidth = 26;
+        const gap = 8;
+        const totalBarSpace = barWidth + gap;
+        
+        const chartWidth = chart.clientWidth;
+        const totalWidth = height.length * totalBarSpace - gap;
+        const startX = (chartWidth - totalWidth) / 2;
+
+        overlay.style.left = (startX + l * totalBarSpace) + "px";
+        overlay.style.width = ((r - l) * totalBarSpace + barWidth) + "px";
+        overlay.style.height = (hMin / maxVal * 160) + "px";
+        chart.appendChild(overlay);
+      }
+    }
+
+    function nextStep() {
+      if (l >= r || stepPhase === 'DONE') return;
+
+      const hL = height[l], hR = height[r];
+      const hMin = Math.min(hL, hR);
+      const w = r - l;
+      let lineId = "l5";
+      let hint = "";
+
+      if (stepPhase === 'CALC') {
+        // Line 7: current_water = (r - l) * min(h[l], h[r])
+        currentArea = hMin * w;
+        lineId = "l7";
+        hint = `CALC: Area = ${w} * ${hMin} = ${currentArea}`;
+        stepPhase = 'UPDATE';
+      } else if (stepPhase === 'UPDATE') {
+        // Line 8: max_water = max(max_water, current_water)
+        if (currentArea > maxArea) {
+          maxArea = currentArea;
+          bestL = l;
+          bestR = r;
+        }
+        lineId = "l8";
+        hint = `UPDATE: max_water = ${maxArea}`;
+        stepPhase = 'MOVE';
+      } else if (stepPhase === 'MOVE') {
+        // Line 10-13: 移動指標
+        if (hL < hR) {
+          lineId = "l11";
+          hint = `MOVE: h[l](${hL}) < h[r](${hR}) -> l++`;
+          l++;
+        } else {
+          lineId = "l13";
+          hint = `MOVE: h[l](${hL}) >= h[r](${hR}) -> r--`;
+          r--;
+        }
+
+        if (l >= r) {
+          stepPhase = 'DONE';
+          lineId = "l14";
+          hint = "FINISHED: Loop ended (l >= r)";
+        } else {
+          stepPhase = 'CALC';
+        }
+      }
+
+      const snapshot = getCurrentSnapshot(lineId, hint);
+      historyStack.push(snapshot);
+      applySnapshot(snapshot);
+    }
+
+    function prevStep() {
+      if (historyStack.length <= 1) return;
+      historyStack.pop(); // 彈出當前狀態
+      const prevState = historyStack[historyStack.length - 1];
+      applySnapshot(prevState);
+    }
+
+    function highlightLine(id) {
+      document.querySelectorAll(".code-line").forEach(el => el.classList.remove("active-line"));
+      const target = document.getElementById(id);
+      if (target) target.classList.add("active-line");
+    }
+
+    window.onload = initSim;
+  </script>
+</body>
+</html>

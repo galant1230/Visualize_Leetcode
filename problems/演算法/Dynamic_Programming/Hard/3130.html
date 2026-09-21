@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Stable Arrays II - 前綴和優化視覺化</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --code-bg: #1e1e1e;
+            --zero-color: #d63031;
+            --one-color: #0984e3;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; line-height: 1.5; }
+        .layout { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; max-width: 1500px; margin: auto; }
+        
+        .info-section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow-y: auto; max-height: 90vh; }
+        .card { background: #f1f5f9; padding: 15px; border-left: 5px solid var(--primary); margin-bottom: 15px; border-radius: 4px; }
+        .thought-card { background: #fffaf0; border-left-color: #fd7e14; }
+        .formula-box { background: white; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-family: 'Courier New', monospace; margin: 10px 0; font-weight: bold; font-size: 0.9em; }
+        
+        .viz-section { display: flex; flex-direction: column; gap: 20px; }
+        .code-block { background: var(--code-bg); color: #d4d4d4; padding: 20px; border-radius: 12px; font-family: 'Fira Code', monospace; font-size: 13px; }
+        .table-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow-x: auto; }
+        
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; }
+        .cell-0 { color: var(--zero-color); font-weight: bold; }
+        .cell-1 { color: var(--one-color); font-weight: bold; }
+        .active-cell { background-color: #fef9c3; outline: 2px solid #facc15; }
+        .source-add { background-color: #dcfce7 !important; }
+        .source-sub { background-color: #fee2e2 !important; }
+        .h { background: #3e4451; color: #fff; border-left: 3px solid #61dafb; display: block; margin: 0 -20px; padding: 0 20px; }
+        
+        .controls { margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .btn { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn-primary { background: var(--primary); color: white; }
+        #status-bar { margin-top: 10px; font-weight: bold; color: var(--primary); min-height: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+    <div class="info-section">
+        <h2>Stable Arrays II - O(N*M) 優化解析</h2>
+        
+        <div class="card">
+            <strong>進階挑戰：</strong><br>
+            當 zero, one 變大時，原本的 Σ 迴圈會太慢。我們需要觀察 $dp[i][j]$ 與 $dp[i-1][j]$ 的關係。
+        </div>
+
+        <div class="card thought-card">
+            <strong>1. 優化思路 (Prefix Sum Optimization)</strong><br>
+            觀察結尾為 0 的轉移：<br>
+            dp[i][j][0] = dp[i-1][j][0] + dp[i-1][j][1]<br>
+            但這會包含「連續超過 limit 個 0」的情況。<br>
+            具體來說，當我們從 dp[i-1][j] 轉移過來，如果我們減掉 <strong>dp[i-(limit+1)][j][1]</strong>，就剛好扣掉了那些「因為再加一個 0 就會破壞穩定性」的組合。
+        </div>
+
+        <div class="card thought-card">
+            <strong>2. 優化後的轉移方程式</strong><br>
+            <div class="formula-box">
+                dp[i][j][0] = (dp[i-1][j][0] + dp[i-1][j][1] -非法項) % MOD<br>
+                非法項 = dp[i - (limit + 1)][j][1] (若存在)
+            </div>
+            <div class="formula-box">
+                dp[i][j][1] = (dp[i][j-1][0] + dp[i][j-1][1] -非法項) % MOD<br>
+                非法項 = dp[i][j - (limit + 1)][0] (若存在)
+            </div>
+        </div>
+
+        <div class="controls">
+            0: <input type="number" id="zero" value="3">
+            1: <input type="number" id="one" value="3">
+            L: <input type="number" id="limit" value="2">
+            <button class="btn btn-primary" onclick="initDP()">重置</button>
+            <button class="btn btn-primary" id="stepBtn" onclick="runStep()">下一步 (O(1) Step)</button>
+        </div>
+        <div id="status-bar">點擊重置開始...</div>
+    </div>
+
+    <div class="viz-section">
+        <div class="code-block" id="code-area"></div>
+        <div class="table-container" id="table-area"></div>
+    </div>
+</div>
+
+<script>
+    const MOD = 1000000007;
+    let zero, one, limit, dp, i, j, state;
+
+    const codeLines = [
+        "MOD = 10**9 + 7",
+        "dp = [[[0, 0] for _ in range(one + 1)] ...]",
+        "# 初始化 Base Cases...",
+        "for i in range(1, zero + 1):",
+        "    for j in range(1, one + 1):",
+        "        # O(1) 計算結尾 0：利用前一項加總並扣除失效項",
+        "        dp[i][j][0] = (dp[i-1][j][0] + dp[i-1][j][1]) % MOD",
+        "        if i > limit: ",
+        "            dp[i][j][0] = (dp[i][j][0] - dp[i-limit-1][j][1] + MOD) % MOD",
+        "        # O(1) 計算結尾 1：同理",
+        "        dp[i][j][1] = (dp[i][j-1][0] + dp[i][j-1][1]) % MOD",
+        "        if j > limit: ",
+        "            dp[i][j][1] = (dp[i][j][1] - dp[i][j-limit-1][0] + MOD) % MOD"
+    ];
+
+    function initDP() {
+        zero = parseInt(document.getElementById('zero').value);
+        one = parseInt(document.getElementById('one').value);
+        limit = parseInt(document.getElementById('limit').value);
+        dp = Array.from({length: zero + 1}, () => Array.from({length: one + 1}, () => [0, 0]));
+        i = 1; j = 1;
+        state = 'BASE';
+        document.getElementById('stepBtn').disabled = false;
+        updateStatus("已初始化。");
+        renderCode(-1);
+        renderTable();
+    }
+
+    function renderCode(highlightIdxs) {
+        document.getElementById('code-area').innerHTML = codeLines.map((line, idx) => {
+            let space = line.startsWith(' ') ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '';
+            if (line.includes('        ')) space = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+            const isH = highlightIdxs.includes(idx);
+            return `<div class="${isH ? 'h' : ''}">${space}${line.trim()}</div>`;
+        }).join('');
+    }
+
+    function renderTable() {
+        let html = `<table><tr><th>i\\j</th>`;
+        for (let x = 0; x <= one; x++) html += `<th>${x}</th>`;
+        html += `</tr>`;
+        for (let r = 0; r <= zero; r++) {
+            html += `<tr><th>${r}</th>`;
+            for (let c = 0; c <= one; c++) {
+                let active = (r === i && c === j && state === 'LOOP') ? 'active-cell' : '';
+                html += `<td class="${active}" id="cell-${r}-${c}">
+                    <div class="cell-0">${dp[r][c][0]}</div>
+                    <div class="cell-1">${dp[r][c][1]}</div>
+                </td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `</table>`;
+        document.getElementById('table-area').innerHTML = html;
+    }
+
+    function updateStatus(msg) { document.getElementById('status-bar').innerText = msg; }
+
+    function runStep() {
+        if (state === 'BASE') {
+            for (let k = 1; k <= Math.min(zero, limit); k++) dp[k][0][0] = 1;
+            for (let k = 1; k <= Math.min(one, limit); k++) dp[0][k][1] = 1;
+            renderCode([2]);
+            state = 'LOOP';
+            updateStatus("基礎情況已填入。開始 O(1) 優化轉移...");
+        } else if (state === 'LOOP') {
+            renderCode([6, 8, 10, 12]);
+            
+            // 視覺化來源標記
+            let addSrc = [], subSrc = [];
+
+            // 結尾 0
+            dp[i][j][0] = (dp[i-1][j][0] + dp[i-1][j][1]) % MOD;
+            addSrc.push(`cell-${i-1}-${j}`);
+            if (i > limit) {
+                dp[i][j][0] = (dp[i][j][0] - dp[i-limit-1][j][1] + MOD) % MOD;
+                subSrc.push(`cell-${i-limit-1}-${j}`);
+            }
+
+            // 結尾 1
+            dp[i][j][1] = (dp[i][j-1][0] + dp[i][j-1][1]) % MOD;
+            addSrc.push(`cell-${i}-${j-1}`);
+            if (j > limit) {
+                dp[i][j][1] = (dp[i][j][1] - dp[i][j-limit-1][0] + MOD) % MOD;
+                subSrc.push(`cell-${i}-${j-limit-1}`);
+            }
+
+            // 標記顏色
+            addSrc.forEach(id => document.getElementById(id).classList.add('source-add'));
+            subSrc.forEach(id => document.getElementById(id).classList.add('source-add', 'source-sub'));
+            
+            updateStatus(`計算 dp[${i}][${j}]：加項(綠) 減項(紅)。不再需要遍歷 limit 區間！`);
+            
+            j++;
+            if (j > one) { j = 1; i++; }
+            if (i > zero) state = 'END';
+
+            setTimeout(() => {
+                document.querySelectorAll('.source-add, .source-sub').forEach(e => {
+                    e.classList.remove('source-add');
+                    e.classList.remove('source-sub');
+                });
+            }, 500);
+        } else if (state === 'END') {
+            const ans = (dp[zero][one][0] + dp[zero][one][1]) % MOD;
+            updateStatus(`完成！最終答案：${ans}`);
+            document.getElementById('stepBtn').disabled = true;
+        }
+        renderTable();
+    }
+
+    initDP();
+</script>
+</body>
+</html>

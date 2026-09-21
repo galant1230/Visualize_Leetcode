@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Stable Arrays DP 視覺化 - 純文字邏輯版</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --code-bg: #1e1e1e;
+            --zero-color: #d63031;
+            --one-color: #0984e3;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; line-height: 1.5; }
+        .layout { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; max-width: 1500px; margin: auto; }
+        
+        /* 左側：邏輯與思路 */
+        .info-section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow-y: auto; max-height: 90vh; }
+        .card { background: #f1f5f9; padding: 15px; border-left: 5px solid var(--primary); margin-bottom: 15px; border-radius: 4px; }
+        .thought-card { background: #fffaf0; border-left-color: #fd7e14; }
+        .formula-box { background: white; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-family: 'Courier New', monospace; margin: 10px 0; font-weight: bold; }
+        
+        /* 右側：表格與代碼 */
+        .viz-section { display: flex; flex-direction: column; gap: 20px; }
+        .code-block { background: var(--code-bg); color: #d4d4d4; padding: 20px; border-radius: 12px; font-family: 'Fira Code', monospace; font-size: 13px; }
+        .table-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow-x: auto; }
+        
+        /* 視覺化元素 */
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; }
+        .cell-0 { color: var(--zero-color); font-weight: bold; }
+        .cell-1 { color: var(--one-color); font-weight: bold; }
+        .active-cell { background-color: #fef9c3; outline: 2px solid #facc15; }
+        .source-cell { background-color: #dcfce7 !important; transition: 0.2s; }
+        .h { background: #3e4451; color: #fff; border-left: 3px solid #61dafb; display: block; margin: 0 -20px; padding: 0 20px; }
+        
+        .controls { margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .btn { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-test { background: #64748b; color: white; }
+        input { width: 40px; padding: 5px; border: 1px solid #cbd5e1; border-radius: 4px; }
+        #status-bar { margin-top: 10px; font-weight: bold; color: var(--primary); min-height: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+    <div class="info-section">
+        <h2>Stable Arrays I 思路解析</h2>
+        
+        <div class="card">
+            <strong>題目任務：</strong><br>
+            使用 <strong>zero</strong> 個 0 和 <strong>one</strong> 個 1 構造數組。限制條件是：連續的 0 或 1 的長度不能超過 <strong>limit</strong>。
+        </div>
+
+        <div class="card thought-card">
+            <strong>1. 狀態定義 (DP State)</strong><br>
+            我們定義 <strong>dp[i][j][k]</strong> 為：<br>
+            - <strong>i</strong>：已使用的 0 的數量<br>
+            - <strong>j</strong>：已使用的 1 的數量<br>
+            - <strong>k</strong>：最後一個放入的數字 (0 或 1)
+        </div>
+
+        <div class="card thought-card">
+            <strong>2. 狀態轉移方程式 (Transition)</strong><br>
+            為了保證「穩定性」，如果目前最後放的是 0，則這組 0 之前必須接一個 1。
+            <div class="formula-box">
+                dp[i][j][0] = sum( dp[i-x][j][1] ) <br>
+                其中 x 範圍從 1 到 min(i, limit)
+            </div>
+            同理，如果目前最後放的是 1：
+            <div class="formula-box">
+                dp[i][j][1] = sum( dp[i][j-y][0] ) <br>
+                其中 y 範圍從 1 到 min(j, limit)
+            </div>
+        </div>
+
+        <div class="card thought-card">
+            <strong>3. 基礎情況 (Base Cases)</strong><br>
+            當只有一種顏色且長度不超過 limit 時，只有 1 種排列法：
+            <div class="formula-box">
+                dp[i][0][0] = 1 (1 <= i <= limit)<br>
+                dp[0][j][1] = 1 (1 <= j <= limit)
+            </div>
+        </div>
+
+        <div class="controls">
+            <strong>設定：</strong>
+            0: <input type="number" id="zero" value="3">
+            1: <input type="number" id="one" value="3">
+            L: <input type="number" id="limit" value="2">
+            <button class="btn btn-primary" onclick="initDP()">重置</button>
+            <button class="btn btn-primary" id="stepBtn" onclick="runStep()">下一步 (Step)</button>
+        </div>
+        <div class="controls">
+            範例：
+            <button class="btn btn-test" onclick="setParams(1, 1, 2)">1,1,2 (Ans: 2)</button>
+            <button class="btn btn-test" onclick="setParams(1, 2, 1)">1,2,1 (Ans: 1)</button>
+            <button class="btn btn-test" onclick="setParams(3, 3, 2)">3,3,2 (Ans: 14)</button>
+        </div>
+        <div id="status-bar">點擊重置開始...</div>
+    </div>
+
+    <div class="viz-section">
+        <div class="code-block" id="code-area"></div>
+        <div class="table-container" id="table-area"></div>
+    </div>
+</div>
+
+<script>
+    const MOD = 1000000007;
+    let zero, one, limit, dp, i, j, state;
+
+    const codeLines = [
+        "MOD = 10**9 + 7",
+        "dp = [[[0, 0] for _ in range(one + 1)] ...]",
+        "for i in range(1, min(zero, limit) + 1): dp[i][0][0] = 1",
+        "for j in range(1, min(one, limit) + 1): dp[0][j][1] = 1",
+        "for i in range(1, zero + 1):",
+        "    for j in range(1, one + 1):",
+        "        # 計算結尾為 0 的方案數",
+        "        for x in range(1, min(i, limit) + 1):",
+        "            dp[i][j][0] = (dp[i][j][0] + dp[i-x][j][1]) % MOD",
+        "        # 計算結尾為 1 的方案數",
+        "        for y in range(1, min(j, limit) + 1):",
+        "            dp[i][j][1] = (dp[i][j][1] + dp[i][j-y][0]) % MOD",
+        "return (dp[zero][one][0] + dp[zero][one][1]) % MOD"
+    ];
+
+    function setParams(z, o, l) {
+        document.getElementById('zero').value = z;
+        document.getElementById('one').value = o;
+        document.getElementById('limit').value = l;
+        initDP();
+    }
+
+    function initDP() {
+        zero = parseInt(document.getElementById('zero').value);
+        one = parseInt(document.getElementById('one').value);
+        limit = parseInt(document.getElementById('limit').value);
+        dp = Array.from({length: zero + 1}, () => Array.from({length: one + 1}, () => [0, 0]));
+        i = 1; j = 1;
+        state = 'BASE';
+        document.getElementById('stepBtn').disabled = false;
+        updateStatus("已初始化。");
+        renderCode(-1);
+        renderTable();
+    }
+
+    function renderCode(highlightIdx) {
+        document.getElementById('code-area').innerHTML = codeLines.map((line, idx) => {
+            let space = line.startsWith(' ') ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '';
+            if (line.includes('        ')) space = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+            return `<div class="${idx === highlightIdx ? 'h' : ''}">${space}${line.trim()}</div>`;
+        }).join('');
+    }
+
+    function renderTable() {
+        let html = `<table><tr><th>i(0)\\j(1)</th>`;
+        for (let x = 0; x <= one; x++) html += `<th>${x}</th>`;
+        html += `</tr>`;
+        for (let r = 0; r <= zero; r++) {
+            html += `<tr><th>${r}</th>`;
+            for (let c = 0; c <= one; c++) {
+                let active = (r === i && c === j && state === 'LOOP') ? 'active-cell' : '';
+                html += `<td class="${active}" id="cell-${r}-${c}">
+                    <div class="cell-0">${dp[r][c][0]}</div>
+                    <div class="cell-1">${dp[r][c][1]}</div>
+                </td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `</table>`;
+        document.getElementById('table-area').innerHTML = html;
+    }
+
+    function updateStatus(msg) { document.getElementById('status-bar').innerText = msg; }
+
+    function runStep() {
+        if (state === 'BASE') {
+            for (let k = 1; k <= Math.min(zero, limit); k++) dp[k][0][0] = 1;
+            for (let k = 1; k <= Math.min(one, limit); k++) dp[0][k][1] = 1;
+            renderCode(2);
+            state = 'LOOP';
+            updateStatus("基礎情況已填入 (第一列與第一欄)。");
+        } else if (state === 'LOOP') {
+            renderCode(8);
+            let s0 = 0, s1 = 0;
+            let sources = [];
+            
+            for (let x = 1; x <= Math.min(i, limit); x++) {
+                s0 = (s0 + dp[i-x][j][1]) % MOD;
+                sources.push(`cell-${i-x}-${j}`);
+            }
+            dp[i][j][0] = s0;
+
+            for (let y = 1; y <= Math.min(j, limit); y++) {
+                s1 = (s1 + dp[i][j-y][0]) % MOD;
+                sources.push(`cell-${i}-${j-y}`);
+            }
+            dp[i][j][1] = s1;
+
+            sources.forEach(sid => document.getElementById(sid).classList.add('source-cell'));
+            updateStatus(`計算 dp[${i}][${j}]：結尾放 0 來自左上方(藍)，結尾放 1 來自左上方(紅)。`);
+            
+            j++;
+            if (j > one) { j = 1; i++; }
+            if (i > zero) state = 'END';
+
+            setTimeout(() => {
+                document.querySelectorAll('.source-cell').forEach(e => e.classList.remove('source-cell'));
+            }, 500);
+        } else if (state === 'END') {
+            renderCode(12);
+            const ans = (dp[zero][one][0] + dp[zero][one][1]) % MOD;
+            updateStatus(`計算完成！最終方案總數為：${ans}`);
+            document.getElementById('stepBtn').disabled = true;
+        }
+        renderTable();
+    }
+
+    initDP();
+</script>
+</body>
+</html>

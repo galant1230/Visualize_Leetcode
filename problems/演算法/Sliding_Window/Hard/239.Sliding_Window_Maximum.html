@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>LeetCode 239 - 終極學習手冊 (五大解法 + 視覺化)</title>
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --primary: #58a6ff; --text: #c9d1d9;
+      --green: #3fb950; --keyword: #ff7b72; --func: #d2a8ff; --num: #79c0ff; --comment: #8b949e; --purple: #bc8cff;
+    }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 15px; margin: 0; overflow-x: hidden; }
+    
+    .app-container { display: grid; grid-template-columns: 55% 45%; gap: 15px; height: 95vh; }
+
+    /* 左側面板 */
+    .left-panel { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding-right: 5px; }
+    .header-info { background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid #30363d; }
+    .theory-box { background: rgba(88, 166, 255, 0.05); border: 1px solid rgba(88, 166, 255, 0.2); border-radius: 8px; padding: 15px; margin-top: 10px; font-size: 13px; line-height: 1.6; }
+    
+    .nav-bar { display: flex; gap: 5px; margin-top: 12px; flex-wrap: wrap; }
+    .nav-btn { padding: 6px 12px; border: 1px solid #444; border-radius: 4px; background: #21262d; color: var(--text); cursor: pointer; font-size: 12px; transition: 0.2s; }
+    .nav-btn.active { background: #1f6feb; border-color: #58a6ff; box-shadow: 0 0 10px rgba(31, 111, 235, 0.4); }
+
+    /* 畫布區 */
+    .viz-canvas { 
+      background: #010409; border: 1px solid #30363d; border-radius: 8px; 
+      min-height: 380px; position: relative; display: flex; flex-direction: column; align-items: center; 
+      padding-top: 40px; margin-top: 10px;
+    }
+
+    .array-row { display: flex; gap: 6px; z-index: 10; margin-bottom: 40px; }
+    .node { 
+      width: 40px; height: 45px; border: 1px solid #30363d; background: #161b22;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-size: 14px; border-radius: 4px; transition: 0.3s;
+    }
+    .node.active { border-color: var(--primary); background: rgba(88, 166, 255, 0.1); box-shadow: 0 0 8px var(--primary); }
+    .node.is-max { border-color: var(--green); color: var(--green); transform: scale(1.1); }
+
+    .struct-zone { margin-top: auto; margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; }
+    .struct-bucket { 
+      border: 2px solid #30363d; border-top: none; width: 110px; height: 160px;
+      display: flex; flex-direction: column-reverse; padding: 6px;
+      background: rgba(188, 140, 255, 0.03); border-radius: 0 0 10px 10px;
+    }
+    .struct-item { background: var(--purple); color: #000; font-weight: bold; margin: 2px 0; border-radius: 3px; text-align: center; padding: 4px; font-size: 12px; font-family: monospace; animation: slideIn 0.3s ease; }
+
+    /* 右側代碼面板 */
+    .right-panel { background: #010409; border: 1px solid #30363d; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
+    .code-title { background: #161b22; padding: 12px; font-size: 14px; border-bottom: 1px solid #30363d; font-weight: bold; color: var(--primary); }
+    .code-area { padding: 15px; font-family: 'Fira Code', monospace; font-size: 13px; line-height: 1.6; overflow-y: auto; white-space: pre; flex-grow: 1; }
+    
+    /* 複雜度表格 */
+    .comp-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    .comp-table th, .comp-table td { border: 1px solid #30363d; padding: 6px; text-align: left; }
+    .comp-table th { background: #161b22; color: var(--primary); }
+
+    /* 高亮色彩 */
+    .c-kw { color: var(--keyword); } .c-fn { color: var(--func); } .c-num { color: var(--num); } .c-cm { color: var(--comment); } .c-str { color: var(--str); }
+    .status-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; height: 140px; margin-top: 10px; }
+    .status-box { background: #010409; border: 1px solid #30363d; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 11px; overflow-y: auto; }
+    .tag { display: inline-block; background: var(--green); color: black; padding: 1px 6px; border-radius: 3px; margin: 2px; font-weight: bold; }
+
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="left-panel">
+    <div class="header-info">
+      <h2 style="margin:0 0 8px 0; color:var(--primary);">239. Sliding Window Maximum</h2>
+      <p style="font-size: 13px; margin: 0; opacity: 0.9;">
+        <strong>題目：</strong> 給定一個數組 <code>nums</code> 與視窗大小 <code>k</code>，請回傳視窗在移動過程中，每個當下視窗內部的最大值。
+      </p>
+      
+      <div class="theory-box" id="theory-text">
+        </div>
+
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Algorithm</th>
+            <th>Time Complexity</th>
+            <th>Space Complexity</th>
+          </tr>
+        </thead>
+        <tbody id="comp-body">
+          </tbody>
+      </table>
+
+      <div class="nav-bar" id="nav-bar">
+        <button class="nav-btn active" onclick="setAlgo('brute')">1. Brute Force</button>
+        <button class="nav-btn" onclick="setAlgo('seg')">2. Segment Tree</button>
+        <button class="nav-btn" onclick="setAlgo('heap')">3. Max Heap</button>
+        <button class="nav-btn" onclick="setAlgo('dp')">4. DP (Blocks)</button>
+        <button class="nav-btn" onclick="setAlgo('deque')">5. Deque (Optimal)</button>
+      </div>
+    </div>
+
+    <div class="viz-canvas" id="canvas"></div>
+
+    <div style="display:flex; gap:8px;">
+      <button class="nav-btn" style="flex:1" onclick="reset()">Reset</button>
+      <button class="nav-btn active" style="flex:2; background:var(--green); color:black; font-weight:bold; border:none;" onclick="step()">Next Step (執行下一步)</button>
+    </div>
+
+    <div class="status-row">
+      <div class="status-box" id="log-box"></div>
+      <div class="status-box" id="out-box"></div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="code-title">Python3 Code - <span id="algo-name">BRUTE</span></div>
+    <div class="code-area" id="code-content"></div>
+  </div>
+</div>
+
+<script>
+const nums = [1, 3, -1, -3, 5, 3, 6, 7];
+const k = 3;
+let currentKey = 'brute';
+let state = { i: 0, res: [], q: [], heap: [] };
+
+const algoData = {
+  brute: {
+    title: "暴力解法 (Brute Force)",
+    theory: "<strong>思路：</strong> 直接遍歷所有可能的起始位置，對每個視窗內的 k 個元素進行線性搜索找最大值。這是最直觀但最慢的做法。",
+    time: "O(n * k)",
+    space: "O(1) (排除輸出)",
+    code: `<span class="c-kw">class</span> <span class="c-fn">Solution</span>:
+    <span class="c-kw">def</span> <span class="c-fn">maxSlidingWindow</span>(self, nums, k):
+        output = []
+        <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-fn">len</span>(nums) - k + <span class="c-num">1</span>):
+            maxi = nums[i]
+            <span class="c-kw">for</span> j <span class="c-kw">in</span> <span class="c-fn">range</span>(i, i + k):
+                maxi = <span class="c-fn">max</span>(maxi, nums[j])
+            output.<span class="c-fn">append</span>(maxi)
+        <span class="c-kw">return</span> output`
+  },
+  seg: {
+    title: "線段樹 (Segment Tree)",
+    theory: "<strong>思路：</strong> 將數組預處理成線段樹，支持 O(log n) 的區間查詢。對於滑動視窗，我們不斷查詢 [i, i+k-1] 區間的最大值。",
+    time: "O(n * log n)",
+    space: "O(n)",
+    code: `<span class="c-kw">class</span> <span class="c-fn">SegmentTree</span>:
+    <span class="c-kw">def</span> <span class="c-fn">__init__</span>(self, N, A):
+        self.n = N
+        <span class="c-kw">while</span> (self.n & (self.n - <span class="c-num">1</span>)) != <span class="c-num">0</span>: self.n += <span class="c-num">1</span>
+        self.tree = [<span class="c-fn">float</span>(<span class="c-str">'-inf'</span>)] * (<span class="c-num">2</span> * self.n)
+        <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-fn">range</span>(N): self.tree[self.n + i] = A[i]
+        <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-fn">range</span>(self.n - <span class="c-num">1</span>, <span class="c-num">0</span>, -<span class="c-num">1</span>):
+            self.tree[i] = <span class="c-fn">max</span>(self.tree[i << <span class="c-num">1</span>], self.tree[i << <span class="c-num">1</span> | <span class="c-num">1</span>])
+
+    <span class="c-kw">def</span> <span class="c-fn">query</span>(self, l, r):
+        res, l, r = <span class="c-fn">float</span>(<span class="c-str">'-inf'</span>), l + self.n, r + self.n + <span class="c-num">1</span>
+        <span class="c-kw">while</span> l < r:
+            <span class="c-kw">if</span> l & <span class="c-num">1</span>: res = <span class="c-fn">max</span>(res, self.tree[l]); l += <span class="c-num">1</span>
+            <span class="c-kw">if</span> r & <span class="c-num">1</span>: r -= <span class="c-num">1</span>; res = <span class="c-fn">max</span>(res, self.tree[r])
+            l >>= <span class="c-num">1</span>; r >>= <span class="c-num">1</span>
+        <span class="c-kw">return</span> res`
+  },
+  heap: {
+    title: "最大堆 (Max Heap)",
+    theory: "<strong>思路：</strong> 維護一個最大堆存儲 (值, 索引)。每次移動視窗將新元素加入堆，若堆頂元素的索引已不在視窗內，則將其彈出。",
+    time: "O(n * log n)",
+    space: "O(n)",
+    code: `<span class="c-kw">class</span> <span class="c-fn">Solution</span>:
+    <span class="c-kw">def</span> <span class="c-fn">maxSlidingWindow</span>(self, nums, k):
+        heap, output = [], []
+        <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-fn">len</span>(nums)):
+            heapq.<span class="c-fn">heappush</span>(heap, (-nums[i], i))
+            <span class="c-kw">if</span> i >= k - <span class="c-num">1</span>:
+                <span class="c-kw">while</span> heap[<span class="c-num">0</span>][<span class="c-num">1</span>] <= i - k: heapq.<span class="c-fn">heappop</span>(heap)
+                output.<span class="c-fn">append</span>(-heap[<span class="c-num">0</span>][<span class="c-num">0</span>])
+        <span class="c-kw">return</span> output`
+  },
+  dp: {
+    title: "分塊預處理 (DP)",
+    theory: "<strong>思路：</strong> 將數組分成 k 大小的塊。計算每一塊內『從左向右』與『從右向左』的前綴最大值。視窗最大值即為兩個區間最大值的交集。",
+    time: "O(n)",
+    space: "O(n)",
+    code: `<span class="c-kw">class</span> <span class="c-fn">Solution</span>:
+    <span class="c-kw">def</span> <span class="c-fn">maxSlidingWindow</span>(self, nums, k):
+        n = <span class="c-fn">len</span>(nums)
+        leftMax, rightMax = [<span class="c-num">0</span>]*n, [<span class="c-num">0</span>]*n
+        <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-fn">range</span>(n):
+            <span class="c-kw">if</span> i % k == <span class="c-num">0</span>: leftMax[i] = nums[i]
+            <span class="c-kw">else</span>: leftMax[i] = <span class="c-fn">max</span>(leftMax[i-1], nums[i])
+            j = n - <span class="c-num">1</span> - i
+            <span class="c-kw">if</span> (j + <span class="c-num">1</span>) % k == <span class="c-num">0</span>: rightMax[j] = nums[j]
+            <span class="c-kw">else</span>: rightMax[j] = <span class="c-fn">max</span>(rightMax[j+1], nums[j])
+        <span class="c-kw">return</span> [<span class="c-fn">max</span>(leftMax[i+k-1], rightMax[i]) <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-fn">range</span>(n-k+1)]`
+  },
+  deque: {
+    title: "單調隊列 (Monotonic Deque)",
+    theory: "<strong>思路：</strong> 使用雙向隊列維護一個『遞減』的索引。新元素進來時，彈出隊尾所有比它小的元素，保持隊首永遠是當前視窗最大值的索引。",
+    time: "O(n)",
+    space: "O(k)",
+    code: `<span class="c-kw">class</span> <span class="c-fn">Solution</span>:
+    <span class="c-kw">def</span> <span class="c-fn">maxSlidingWindow</span>(self, nums, k):
+        q, output = <span class="c-fn">deque</span>(), []
+        <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-fn">len</span>(nums)):
+            <span class="c-kw">while</span> q <span class="c-kw">and</span> nums[q[-<span class="c-num">1</span>]] < nums[i]: q.<span class="c-fn">pop</span>()
+            q.<span class="c-fn">append</span>(i)
+            <span class="c-kw">if</span> q[<span class="c-num">0</span>] <= i - k: q.<span class="c-fn">popleft</span>()
+            <span class="c-kw">if</span> i >= k - <span class="c-num">1</span>: output.<span class="c-fn">append</span>(nums[q[<span class="c-num">0</span>]])
+        <span class="c-kw">return</span> output`
+  }
+};
+
+function setAlgo(key) {
+  currentKey = key;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  const data = algoData[key];
+  document.getElementById('algo-name').innerText = key.toUpperCase();
+  document.getElementById('theory-text').innerHTML = data.theory;
+  document.getElementById('comp-body').innerHTML = `<tr><td>${data.title}</td><td>${data.time}</td><td>${data.space}</td></tr>`;
+  reset();
+}
+
+function reset() {
+  state = { i: 0, res: [], q: [], heap: [] };
+  document.getElementById('code-content').innerHTML = algoData[currentKey].code;
+  document.getElementById('log-box').innerHTML = '> Initialized.';
+  document.getElementById('out-box').innerHTML = 'Result:';
+  render();
+}
+
+function step() {
+  const i = state.i;
+  if (['brute', 'seg', 'dp'].includes(currentKey)) {
+    if (i > nums.length - k) return;
+    state.res.push(Math.max(...nums.slice(i, i + k)));
+  } else if (currentKey === 'heap') {
+    if (i >= nums.length) return;
+    state.heap.push({v: nums[i], idx: i});
+    state.heap.sort((a,b) => b.v - a.v);
+    while(state.heap[0].idx <= i - k) state.heap.shift();
+    if (i >= k - 1) state.res.push(state.heap[0].v);
+  } else if (currentKey === 'deque') {
+    if (i >= nums.length) return;
+    while(state.q.length && nums[state.q[state.q.length-1]] < nums[i]) state.q.pop();
+    state.q.push(i);
+    if (state.q[0] <= i - k) state.q.shift();
+    if (i >= k - 1) state.res.push(nums[state.q[0]]);
+  }
+  document.getElementById('log-box').innerHTML += `<div>> Processed step ${i}</div>`;
+  state.i++;
+  render();
+}
+
+function render() {
+  const canvas = document.getElementById('canvas');
+  canvas.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'array-row';
+  nums.forEach((n, idx) => {
+    const d = document.createElement('div');
+    d.className = 'node';
+    let active = (currentKey==='heap'||currentKey==='deque') ? (idx<=state.i-1 && idx>state.i-1-k) : (idx>=state.i-1 && idx<state.i-1+k);
+    if (active) d.classList.add('active');
+    if (currentKey === 'deque' && state.q[0] === idx) d.classList.add('is-max');
+    d.innerHTML = `<div>${n}</div><div style="font-size:9px;opacity:0.5">${idx}</div>`;
+    row.appendChild(d);
+  });
+  canvas.appendChild(row);
+
+  if (currentKey === 'dp') {
+    const nodeW = 46;
+    for(let j=1; j<nums.length/k; j++) {
+        const l = document.createElement('div');
+        l.style = `position:absolute; top:20px; bottom:20px; border-left:2px dashed #f0883e; left: calc(50% - ${(nums.length/2 - j*k)*nodeW}px); opacity:0.6;`;
+        canvas.appendChild(l);
+    }
+  }
+
+  if (['heap', 'deque'].includes(currentKey)) {
+    const sz = document.createElement('div');
+    sz.className = 'struct-zone';
+    const b = document.createElement('div');
+    b.className = 'struct-bucket';
+    const items = currentKey === 'heap' ? state.heap.map(x=>x.v) : state.q.map(x=>nums[x]);
+    items.forEach(v => {
+      const it = document.createElement('div');
+      it.className = 'struct-item';
+      it.innerText = v;
+      b.appendChild(it);
+    });
+    sz.appendChild(b);
+    canvas.appendChild(sz);
+  }
+
+  const out = document.getElementById('out-box');
+  out.innerHTML = 'Result: <br>' + state.res.map(v => `<span class="tag">${v}</span>`).join('');
+  out.scrollTop = out.scrollHeight;
+}
+
+setAlgo('brute');
+</script>
+</body>
+</html>

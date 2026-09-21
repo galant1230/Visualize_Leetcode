@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 97. Interleaving String - 專業演算法實驗室</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #8b949e;
+        }
+        body { 
+            background: #010409; color: var(--text); 
+            font-family: 'Fira Code', 'Cascadia Code', 'Microsoft JhengHei', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; overflow: hidden;
+        }
+        
+        .widget-card {
+            width: 1560px; height: 920px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            display: flex; overflow: hidden;
+        }
+
+        /* --- 左側面板 --- */
+        .sidebar {
+            width: 480px; display: flex; flex-direction: column;
+            border-right: 1px solid var(--border); background: #0d1117; flex-shrink: 0;
+        }
+        
+        .section { padding: 25px; border-bottom: 1px solid var(--border); }
+        .problem-title { font-size: 24px; font-weight: bold; color: var(--text); margin-bottom: 12px; }
+        
+        .mode-toggle {
+            display: flex; background: #010409; border-radius: 8px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--border);
+        }
+        .mode-btn {
+            flex: 1; padding: 10px; border: none; background: transparent; color: var(--comment); cursor: pointer; border-radius: 6px; font-size: 13px; font-weight: bold; transition: 0.3s;
+        }
+        .mode-btn.active { background: var(--blue); color: #fff; }
+
+        /* 邏輯卡片 */
+        .logic-card {
+            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 8px;
+            padding: 18px; margin-top: 5px;
+        }
+        .card-title { font-size: 11px; font-weight: bold; color: var(--blue); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .thought-item { margin-bottom: 15px; padding: 12px; border-left: 3px solid var(--border); transition: 0.3s; }
+        .thought-item.active { border-color: var(--orange); background: var(--highlight); }
+        .thought-header { font-weight: bold; color: var(--orange); font-size: 14px; margin-bottom: 5px; }
+        .thought-detail { font-size: 12.5px; color: var(--comment); line-height: 1.6; }
+
+        .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .comp-box { background: #010409; padding: 12px; border-radius: 6px; border: 1px solid var(--border); text-align: center; }
+        .comp-val { font-size: 16px; font-weight: bold; color: var(--green); margin-top: 4px; }
+
+        /* --- 右側內容區 --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #010409; }
+        
+        .string-viz {
+            padding: 20px 45px; background: #0d1117; border-bottom: 1px solid var(--border);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .str-row { display: flex; align-items: center; font-family: 'Fira Code', monospace; gap: 8px; }
+        .str-label { width: 40px; color: var(--comment); font-size: 13px; font-weight: bold; }
+        .char-unit { 
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border); border-radius: 4px; font-size: 15px; background: #161b22;
+        }
+        .char-unit.active-s1 { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 8px rgba(88, 166, 255, 0.2); }
+        .char-unit.active-s2 { border-color: var(--purple); color: var(--purple); box-shadow: 0 0 8px rgba(188, 140, 255, 0.2); }
+        .char-unit.target { border-color: var(--orange); color: var(--orange); background: rgba(210, 153, 34, 0.1); }
+
+        .editor { flex: 1; padding: 25px 45px; overflow-y: auto; line-height: 1.7; font-size: 14px; }
+        .line { display: block; padding-left: 55px; position: relative; opacity: 0.3; color: #8b949e; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); color: #e6edf3; box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 10px; width: 35px; text-align: right; color: #484f58; font-size: 12px; }
+
+        .bottom-panel { height: 360px; display: grid; grid-template-columns: 1fr 450px; border-top: 1px solid var(--border); background: #0d1117; }
+        .viz-area { padding: 20px; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        .dp-table { border-collapse: collapse; font-family: 'Fira Code'; font-size: 14px; }
+        .dp-table th, .dp-table td { border: 1px solid var(--border); width: 40px; height: 40px; text-align: center; }
+        .active-cell { outline: 2px solid var(--orange); background: rgba(210, 153, 34, 0.1); color: var(--orange) !important; font-weight: bold; }
+
+        .terminal { padding: 25px; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        .log-box { 
+            height: 200px; overflow-y: auto; background: #010409; border: 1px solid var(--border); 
+            border-radius: 8px; padding: 15px; font-size: 13px; color: #8b949e; margin-bottom: 15px;
+            scroll-behavior: smooth;
+        }
+        .log-entry { margin-bottom: 6px; padding-left: 8px; border-left: 2px solid transparent; }
+        .log-entry.latest { border-left-color: var(--green); color: #fff; }
+
+        .controls { display: flex; gap: 10px; align-items: center; }
+        .step-btn { padding: 10px 20px; background: var(--panel); border: 1px solid var(--border); color: var(--text); cursor: pointer; border-radius: 6px; font-size: 13px; font-weight: bold; }
+        .reset-btn { border-color: var(--red); color: var(--red); background: rgba(248, 81, 73, 0.05); }
+        
+        /* 代碼高亮顏色 */
+        .kw { color: #ff7b72; } /* Keywords */
+        .fn { color: #d2a8ff; } /* Functions */
+        .num { color: #79c0ff; } /* Numbers */
+        .op { color: #ffa657; } /* Operators */
+        .bool { color: #ffab70; } /* Booleans */
+        .str { color: #a5d6ff; } /* Strings */
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="sidebar">
+        <div class="section">
+            <div class="problem-title">97. Interleaving String</div>
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="btn-std" onclick="switchMode('STD')">2D DP (Standard)</button>
+                <button class="mode-btn" id="btn-opt" onclick="switchMode('OPT')">1D DP (Optimal)</button>
+            </div>
+        </div>
+
+        <div class="section" style="flex:1; overflow-y: auto;">
+            <div class="logic-card" id="logic-content">
+                </div>
+
+            <div class="comp-grid">
+                <div class="comp-box"><div class="card-title">Time</div><div class="comp-val">O(M×N)</div></div>
+                <div class="comp-box"><div class="card-title">Space</div><div class="comp-val" id="space-val">O(M×N)</div></div>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <div class="card-title" style="margin-left:5px">測資案例</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <button class="step-btn" onclick="setTC('aabcc', 'dbbca', 'aadbbcbcac')">Case 1: Success</button>
+                    <button class="step-btn" onclick="setTC('aabcc', 'dbbca', 'aadbbbaccc')">Case 2: Failure</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="string-viz">
+            <div class="str-row" id="s1-viz"></div>
+            <div class="str-row" id="s2-viz"></div>
+            <div class="str-row" id="s3-viz"></div>
+        </div>
+
+        <div id="codeEditor" class="editor"></div>
+
+        <div class="bottom-panel">
+            <div class="viz-area">
+                <div id="viz-label" style="font-size: 11px; color: var(--comment); margin-bottom: 10px; letter-spacing: 1px;">DP DATA STATE</div>
+                <table class="dp-table" id="dpTable"></table>
+            </div>
+            <div class="terminal">
+                <div id="logBox" class="log-box"></div>
+                <div class="controls">
+                    <button class="step-btn reset-btn" onclick="resetSimulator()">Reset</button>
+                    <button class="step-btn" onclick="prev()">Prev</button>
+                    <button class="step-btn" style="color: var(--green); border-color: var(--green);" onclick="next()">Next (F10)</button>
+                    <div style="margin-left:auto; color: var(--orange); font-size: 24px; font-weight: bold;" id="finalRes">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let curStep = 0, s1 = "aabcc", s2 = "dbbca", s3 = "aadbbcbcac", steps = [], mode = 'STD';
+
+const codeStd = [
+    `<span class="kw">def</span> <span class="fn">isInterleave</span>(s1, s2, s3):`,
+    `    n, m <span class="op">=</span> <span class="fn">len</span>(s1), <span class="fn">len</span>(s2)`,
+    `    <span class="kw">if</span> n <span class="op">+</span> m <span class="op">!=</span> <span class="fn">len</span>(s3): <span class="kw">return</span> <span class="bool">False</span>`,
+    `    dp <span class="op">=</span> [[<span class="bool">False</span>] <span class="op">*</span> (m <span class="op">+</span> <span class="num">1</span>) <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(n <span class="op">+</span> <span class="num">1</span>)]`,
+    `    dp[<span class="num">0</span>][<span class="num">0</span>] <span class="op">=</span> <span class="bool">True</span>`,
+    `    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n <span class="op">+</span> <span class="num">1</span>):`,
+    `        <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(m <span class="op">+</span> <span class="num">1</span>):`,
+    `            <span class="kw">if</span> i <span class="op">></span> <span class="num">0</span>:`,
+    `                dp[i][j] <span class="op">|=</span> (dp[i<span class="op">-</span><span class="num">1</span>][j] <span class="op">and</span> s1[i<span class="op">-</span><span class="num">1</span>] <span class="op">==</span> s3[i<span class="op">+</span>j<span class="op">-</span><span class="num">1</span>])`,
+    `            <span class="kw">if</span> j <span class="op">></span> <span class="num">0</span>:`,
+    `                dp[i][j] <span class="op">|=</span> (dp[i][j<span class="op">-</span><span class="num">1</span>] <span class="op">and</span> s2[j<span class="op">-</span><span class="num">1</span>] <span class="op">==</span> s3[i<span class="op">+</span>j<span class="op">-</span><span class="num">1</span>])`,
+    `    <span class="kw">return</span> dp[n][m]`
+];
+
+const codeOpt = [
+    `<span class="kw">def</span> <span class="fn">isInterleave</span>(s1, s2, s3):`,
+    `    dp <span class="op">=</span> [<span class="bool">False</span>] <span class="op">*</span> (<span class="fn">len</span>(s2) <span class="op">+</span> <span class="num">1</span>)`,
+    `    dp[<span class="num">0</span>] <span class="op">=</span> <span class="bool">True</span>`,
+    `    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(s1) <span class="op">+</span> <span class="num">1</span>):`,
+    `        <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(s2) <span class="op">+</span> <span class="num">1</span>):`,
+    `            <span class="kw">if</span> i <span class="op">></span> <span class="num">0</span>:`,
+    `                dp[j] <span class="op">&=</span> (s1[i<span class="op">-</span><span class="num">1</span>] <span class="op">==</span> s3[i<span class="op">+</span>j<span class="op">-</span><span class="num">1</span>])`,
+    `            <span class="kw">if</span> j <span class="op">></span> <span class="num">0</span>:`,
+    `                dp[j] <span class="op">|=</span> (dp[j<span class="op">-</span><span class="num">1</span>] <span class="op">and</span> s2[j<span class="op">-</span><span class="num">1</span>] <span class="op">==</span> s3[i<span class="op">+</span>j<span class="op">-</span><span class="num">1</span>])`,
+    `    <span class="kw">return</span> dp[<span class="fn">len</span>(s2)]`
+];
+
+function generateSteps() {
+    let n = s1.length, m = s2.length, res = [];
+    if (mode === 'STD') {
+        let dp = Array.from({length: n + 1}, () => new Array(m + 1).fill(false));
+        dp[0][0] = true;
+        res.push({l: 5, msg: "初始化：(0, 0) 設為 True", dp: JSON.parse(JSON.stringify(dp)), i: 0, j: 0, type: 'BASE'});
+        for (let i = 0; i <= n; i++) {
+            for (let j = 0; j <= m; j++) {
+                if (i === 0 && j === 0) continue;
+                if (i > 0) {
+                    dp[i][j] |= (dp[i-1][j] && s1[i-1] === s3[i+j-1]);
+                    res.push({l: 9, msg: `(i:${i}, j:${j}) 檢查 s1：從上方 [i-1][j] 轉移`, dp: JSON.parse(JSON.stringify(dp)), i, j, a1: i-1, a3: i+j-1, type: 'S1'});
+                }
+                if (j > 0) {
+                    dp[i][j] |= (dp[i][j-1] && s2[j-1] === s3[i+j-1]);
+                    res.push({l: 10, msg: `(i:${i}, j:${j}) 檢查 s2：從左方 [i][j-1] 轉移`, dp: JSON.parse(JSON.stringify(dp)), i, j, a2: j-1, a3: i+j-1, type: 'S2'});
+                }
+            }
+        }
+    } else {
+        let dp = new Array(m + 1).fill(false);
+        dp[0] = true;
+        res.push({l: 3, msg: "1D 初始化：dp[0] 設為 True", dp: [...dp], i: 0, j: 0, type: 'BASE'});
+        for (let i = 0; i <= n; i++) {
+            for (let j = 0; j <= m; j++) {
+                if (i === 0 && j === 0) continue;
+                if (i > 0) {
+                    dp[j] = dp[j] && s1[i-1] === s3[i+j-1];
+                    res.push({l: 7, msg: `(i:${i}, j:${j}) 更新 dp[j]：繼承 s1 (舊值即上方)`, dp: [...dp], i, j, a1: i-1, a3: i+j-1, type: 'S1'});
+                }
+                if (j > 0) {
+                    dp[j] = dp[j] || (dp[j-1] && s2[j-1] === s3[i+j-1]);
+                    res.push({l: 9, msg: `(i:${i}, j:${j}) 更新 dp[j]：繼承 s2 (左側已更新值)`, dp: [...dp], i, j, a2: j-1, a3: i+j-1, type: 'S2'});
+                }
+            }
+        }
+    }
+    return res;
+}
+
+function update() {
+    const step = steps[curStep];
+    const lines = document.querySelectorAll('.line');
+    lines.forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    // Log Box 更新
+    const lb = document.getElementById('logBox');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry latest';
+    entry.innerHTML = `[Step ${curStep}] <b>At (i:${step.i}, j:${step.j})</b>: ${step.msg}`;
+    if (lb.lastChild) lb.lastChild.classList.remove('latest');
+    lb.appendChild(entry);
+    lb.scrollTop = lb.scrollHeight;
+
+    // 字串高亮
+    document.getElementById('s1-viz').innerHTML = `<span class="str-label">s1</span>` + s1.split('').map((c, idx) => `<div class="char-unit ${step.a1 === idx ? 'active-s1' : ''}">${c}</div>`).join('');
+    document.getElementById('s2-viz').innerHTML = `<span class="str-label">s2</span>` + s2.split('').map((c, idx) => `<div class="char-unit ${step.a2 === idx ? 'active-s2' : ''}">${c}</div>`).join('');
+    document.getElementById('s3-viz').innerHTML = `<span class="str-label">s3</span>` + s3.split('').map((c, idx) => `<div class="char-unit ${step.a3 === idx ? 'target' : ''}">${c}</div>`).join('');
+
+    // 思路高亮
+    document.querySelectorAll('.thought-item').forEach(el => el.classList.remove('active'));
+    if(step.type) {
+        const target = document.getElementById(`logic-${step.type.toLowerCase()}`);
+        if(target) target.classList.add('active');
+    }
+
+    // DP 表格繪製
+    const table = document.getElementById('dpTable');
+    if (mode === 'STD') {
+        let html = `<tr><th></th><th>ø</th>` + s2.split('').map(c => `<th>${c}</th>`).join('') + `</tr>`;
+        for (let i = 0; i <= s1.length; i++) {
+            html += `<tr><th>${i === 0 ? 'ø' : s1[i-1]}</th>`;
+            for (let j = 0; j <= s2.length; j++) {
+                let cls = (step.i === i && step.j === j) ? 'active-cell' : '';
+                html += `<td class="${cls}">${step.dp[i][j] ? 'T' : 'F'}</td>`;
+            }
+            html += `</tr>`;
+        }
+        table.innerHTML = html;
+    } else {
+        let html = `<tr><th>Idx</th>` + s2.split('').map((_, idx) => `<th>${idx}</th>`).join('') + `<th>${s2.length}</th></tr>`;
+        html += `<tr><th>dp</th>` + step.dp.map((v, idx) => `<td class="${step.j === idx ? 'active-cell' : ''}">${v ? 'T' : 'F'}</td>`).join('') + `</tr>`;
+        table.innerHTML = html;
+    }
+    document.getElementById('finalRes').innerText = (curStep === steps.length - 1) ? (step.dp[mode==='STD'?s1.length:s2.length] ? "TRUE" : "FALSE") : "-";
+}
+
+function switchMode(m) {
+    mode = m;
+    document.getElementById('btn-std').className = m === 'STD' ? 'mode-btn active' : 'mode-btn';
+    document.getElementById('btn-opt').className = m === 'OPT' ? 'mode-btn active' : 'mode-btn';
+    document.getElementById('space-val').innerText = m === 'STD' ? "O(M×N)" : "O(N)";
+    
+    const logicContainer = document.getElementById('logic-content');
+    if (m === 'STD') {
+        logicContainer.innerHTML = `
+            <div class="card-title">2D DP 狀態轉移</div>
+            <div class="thought-item" id="logic-base"><div class="thought-header">1. 狀態定義</div><div class="thought-detail">dp[i][j] 代表 s1[0...i] 與 s2[0...j] 是否能交錯成 s3[0...i+j]。</div></div>
+            <div class="thought-item" id="logic-s1"><div class="thought-header">2. 來自 s1 (上方)</div><div class="thought-detail">檢查 dp[i-1][j] 是否為 True，且當前 s1[i-1] 是否匹配 s3 字元。</div></div>
+            <div class="thought-item" id="logic-s2"><div class="thought-header">3. 來自 s2 (左方)</div><div class="thought-detail">檢查 dp[i][j-1] 是否為 True，且當前 s2[j-1] 是否匹配 s3 字元。</div></div>
+        `;
+    } else {
+        logicContainer.innerHTML = `
+            <div class="card-title">1D 空間優化邏輯</div>
+            <div class="thought-item" id="logic-base"><div class="thought-header">1. 空間壓縮</div><div class="thought-detail">在一維陣列中，當前 dp[j] 在更新前其實就是「上一列」的 dp[i-1][j]。</div></div>
+            <div class="thought-item" id="logic-s1"><div class="thought-header">2. 覆蓋更新 (s1)</div><div class="thought-detail">dp[j] = dp[j] and match。這是在判斷是否能從 2D 中的「上方」延伸下來。</div></div>
+            <div class="thought-item" id="logic-s2"><div class="thought-header">3. 繼承更新 (s2)</div><div class="thought-detail">dp[j] |= (dp[j-1] and match)。dp[j-1] 已在本輪更新，代表「左方」。</div></div>
+        `;
+    }
+    resetSimulator();
+}
+
+function setTC(w1, w2, w3) {
+    s1 = w1; s2 = w2; s3 = w3;
+    resetSimulator();
+}
+
+function resetSimulator() {
+    steps = generateSteps();
+    curStep = 0;
+    document.getElementById('logBox').innerHTML = '';
+    document.getElementById('codeEditor').innerHTML = (mode === 'STD' ? codeStd : codeOpt).map((l, i) => `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    update();
+}
+
+function next() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { if(curStep > 0) { curStep--; resetSimulator(); for(let i=0; i<curStep; i++) update(); } }
+document.addEventListener('keydown', (e) => { if(e.key === 'F10') next(); });
+
+switchMode('STD');
+</script>
+</body>
+</html>

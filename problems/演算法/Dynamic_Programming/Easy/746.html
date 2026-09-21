@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 746. Min Cost Climbing Stairs - 演算法實驗室</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #8b949e;
+        }
+        body { 
+            background: #010409; color: var(--text); 
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0;
+        }
+        
+        .widget-card {
+            width: 1150px; height: 820px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .header {
+            padding: 15px 25px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            background: #0d1117;
+        }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        input, button { 
+            background: var(--panel); color: var(--text); border: 1px solid var(--border); 
+            padding: 6px 12px; border-radius: 6px; font-size: 13px; outline: none;
+        }
+        button:hover { border-color: var(--blue); cursor: pointer; background: var(--highlight); }
+        .btn-reset { color: var(--red); border-color: var(--red); }
+
+        .content-grid { display: grid; grid-template-columns: 280px 1fr; flex: 1; overflow: hidden; }
+        
+        .sidebar { padding: 20px; border-right: 1px solid var(--border); overflow-y: auto; background: rgba(0,0,0,0.1); }
+        .sidebar h3 { color: var(--blue); margin-top: 0; }
+        .complexity-info { margin-top: 20px; padding: 12px; border-radius: 8px; background: #010409; border: 1px solid var(--border); font-family: monospace; font-size: 13px; }
+
+        .workspace { display: grid; grid-template-rows: 1fr 350px; overflow: hidden; }
+        
+        .editor-container { display: flex; flex-direction: column; background: #0d1117; }
+        .tabs { background: #010409; display: flex; border-bottom: 1px solid var(--border); }
+        .tab { padding: 10px 20px; font-size: 12px; color: var(--comment); border-right: 1px solid var(--border); cursor: pointer; font-family: 'Consolas', monospace; }
+        .tab.active { background: var(--panel); color: var(--text); border-top: 2px solid var(--orange); }
+        
+        .editor { 
+            padding: 20px; font-family: 'Fira Code', 'Consolas', monospace; 
+            font-size: 15px; line-height: 1.6; overflow-y: auto; flex: 1;
+        }
+        .line { display: block; padding-left: 50px; position: relative; opacity: 0.4; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 10px; color: #484f58; width: 30px; text-align: right; }
+
+        .kw { color: var(--purple); } .fn { color: var(--blue); } .num { color: var(--orange); } 
+        .op { color: #ff7b72; } .cmt { color: var(--comment); }
+
+        .viz-section { 
+            border-top: 1px solid var(--border); background: #0d1117; 
+            padding: 20px; display: grid; grid-template-columns: 1fr 320px; gap: 20px;
+        }
+        .viz-main { display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+        
+        .array-monitor { display: flex; gap: 8px; background: #010409; padding: 12px; border-radius: 8px; border: 1px solid var(--border); justify-content: center; }
+        .cell { 
+            width: 50px; height: 65px; border: 1px solid var(--border); border-radius: 6px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: var(--panel); position: relative; transition: 0.3s;
+        }
+        .cell.active { border-color: var(--green); background: rgba(63, 185, 80, 0.1); transform: translateY(-3px); }
+        .cell .idx { font-size: 9px; color: var(--comment); position: absolute; top: 3px; }
+        .cell .val { font-weight: bold; color: var(--blue); font-size: 14px; }
+        .cell .cost-tag { font-size: 9px; color: var(--orange); margin-top: 4px; border-top: 1px solid var(--border); width: 100%; text-align: center; }
+
+        .viz-bars { display: flex; align-items: flex-end; gap: 12px; height: 120px; justify-content: center; padding-top: 10px; }
+        .bar-container { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .bar-val { font-family: monospace; font-size: 11px; color: var(--blue); font-weight: bold; opacity: 0; transition: 0.3s; }
+        .bar-val.show { opacity: 1; }
+        .bar { width: 30px; background: #21262d; border-radius: 4px 4px 0 0; transition: 0.5s; }
+        .bar.active { background: var(--blue); box-shadow: 0 0 10px var(--blue); }
+        
+        .terminal { font-family: monospace; font-size: 13px; background: #010409; padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="header">
+        <div style="font-weight: bold; color: var(--blue); font-size: 16px;">最小花費爬樓梯模擬器 (746. Min Cost)</div>
+        <div class="controls">
+            <span>測資 Cost:</span>
+            <input type="text" id="inputCost" value="10, 15, 20, 5, 10, 20" style="width: 150px;" onchange="init()">
+            <button class="btn-reset" onclick="init()">重置</button>
+            <button onclick="prevStep()">上一步</button>
+            <button onclick="nextStep()" style="color: var(--green); border-color: var(--green); font-weight: bold;">下一步 (F10)</button>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="sidebar">
+            <h3>題目說明</h3>
+            <p>給你一個整數陣列 <b>cost</b>，其中 <b>cost[i]</b> 是從第 <b>i</b> 個台階向上爬的費用。</p>
+            <p>一旦支付費用，你可以選擇爬 <b>1</b> 或 <b>2</b> 階。你可以從第 <b>0</b> 或第 <b>1</b> 階開始。</p>
+            <p>目標是到達「樓層頂部」的<b>最小花費</b>。</p>
+            <div id="compBox" class="complexity-info"></div>
+        </div>
+
+        <div class="workspace">
+            <div class="editor-container">
+                <div class="tabs">
+                    <div class="tab active" id="t-bottomup" onclick="changeAlgo('bottomup')">1_bottom_up.py</div>
+                    <div class="tab" id="t-optimal" onclick="changeAlgo('optimal')">2_space_optimized.py</div>
+                </div>
+                <div id="codeEditor" class="editor"></div>
+            </div>
+
+            <div class="viz-section">
+                <div class="viz-main">
+                    <div style="color: var(--comment); font-size: 12px; margin-left: 40px;">DP Array (min_cost to reach/leave index)</div>
+                    <div class="array-monitor" id="arrayMonitor"></div>
+                    <div class="viz-bars" id="vizBars"></div>
+                </div>
+                <div class="terminal">
+                    <div style="color: var(--green); margin-bottom: 5px;">> 執行日誌</div>
+                    <div id="logMsg" style="color: var(--text); height: 80px; line-height: 1.5; font-size: 13px;">系統就緒</div>
+                    <div style="color: var(--orange); border-top: 1px solid var(--border); padding-top: 10px; font-weight: bold;">最終最小花費: <span id="retVal">-</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let curStep = 0, costs = [], curAlgo = 'bottomup', steps = [];
+
+const repo = {
+    bottomup: {
+        comp: "時間複雜度: O(n)\n空間複雜度: O(n)",
+        code: [
+            `<span class="kw">n</span> <span class="op">=</span> <span class="fn">len</span>(cost)`,
+            `<span class="kw">dp</span> <span class="op">=</span> [<span class="num">0</span>] <span class="op">*</span> (n <span class="op">+</span> <span class="num">1</span>)`,
+            `<span class="cmt"># dp[i] 代表到達第 i 階的最小累計花費</span>`,
+            `<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">2</span>, n <span class="op">+</span> <span class="num">1</span>):`,
+            `    <span class="kw">dp</span>[i] <span class="op">=</span> <span class="fn">min</span>(<span class="kw">dp</span>[i<span class="op">-</span><span class="num">1</span>] <span class="op">+</span> cost[i<span class="op">-</span><span class="num">1</span>], `,
+            `                <span class="kw">dp</span>[i<span class="op">-</span><span class="num">2</span>] <span class="op">+</span> cost[i<span class="op">-</span><span class="num">2</span>])`,
+            `<span class="kw">return</span> <span class="kw">dp</span>[n]`
+        ],
+        gen: (c) => {
+            let n = c.length;
+            let dp = Array(n + 1).fill(0);
+            let s = [{l:2, msg: "初始化 DP 陣列，長度為 n+1", data: [...dp]}];
+            
+            for(let i = 2; i <= n; i++) {
+                let option1 = dp[i-1] + c[i-1];
+                let option2 = dp[i-2] + c[i-2];
+                dp[i] = Math.min(option1, option2);
+                s.push({
+                    l: 5, 
+                    msg: `計算第 ${i} 階: \nmin(前一階 ${dp[i-1]}+${c[i-1]}, 前兩階 ${dp[i-2]}+${c[i-2]}) = ${dp[i]}`, 
+                    data: [...dp], 
+                    active: i
+                });
+            }
+            s.push({l:7, msg: "計算完成，回傳最後一個位置的值", data: [...dp], res: dp[n], active: n});
+            return s;
+        }
+    },
+    optimal: {
+        comp: "時間複雜度: O(n)\n空間複雜度: O(1)",
+        code: [
+            `<span class="kw">prev2</span>, <span class="kw">prev1</span> <span class="op">=</span> <span class="num">0</span>, <span class="num">0</span>`,
+            `<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">2</span>, <span class="fn">len</span>(cost) <span class="op">+</span> <span class="num">1</span>):`,
+            `    <span class="kw">curr</span> <span class="op">=</span> <span class="fn">min</span>(<span class="kw">prev1</span> <span class="op">+</span> cost[i<span class="op">-</span><span class="num">1</span>], <span class="kw">prev2</span> <span class="op">+</span> cost[i<span class="op">-</span><span class="num">2</span>])`,
+            `    <span class="kw">prev2</span>, <span class="kw">prev1</span> <span class="op">=</span> <span class="kw">prev1</span>, <span class="kw">curr</span>`,
+            `<span class="kw">return</span> <span class="kw">prev1</span>`
+        ],
+        gen: (c) => {
+            let n = c.length;
+            let p2 = 0, p1 = 0;
+            let s = [{l:1, msg: "使用兩個變數優化空間: prev2=0, prev1=0", data: ['p2:0', 'p1:0', ...Array(n-1).fill('-')]}];
+            
+            for(let i = 2; i <= n; i++) {
+                let curr = Math.min(p1 + c[i-1], p2 + c[i-2]);
+                s.push({
+                    l:3, 
+                    msg: `計算第 ${i} 階當前值: \nmin(prev1+cost[${i-1}], prev2+cost[${i-2}]) = ${curr}`,
+                    data: [...Array(i-2).fill('-'), `p2:${p2}`, `p1:${p1}`, `curr:${curr}`, ...Array(n-i).fill('-')],
+                    active: i
+                });
+                p2 = p1; p1 = curr;
+                s.push({
+                    l:4, 
+                    msg: `滾動更新變數: \nprev2 移向 prev1, prev1 移向 curr`,
+                    data: [...Array(i-1).fill('-'), `p2:${p2}`, `p1:${p1}`, ...Array(n-i).fill('-')],
+                    active: i
+                });
+            }
+            s.push({l:5, msg: "最終結果存放在 prev1", data: [...Array(n).fill('-'), `res:${p1}`], res: p1, active: n});
+            return s;
+        }
+    }
+};
+
+function changeAlgo(a) { curAlgo = a; init(); }
+
+function init() {
+    const raw = document.getElementById('inputCost').value;
+    costs = raw.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+    
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`t-${curAlgo}`).classList.add('active');
+    
+    document.getElementById('codeEditor').innerHTML = repo[curAlgo].code.map((l, i) => 
+        `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    document.getElementById('compBox').innerText = repo[curAlgo].comp;
+    
+    steps = repo[curAlgo].gen(costs);
+    curStep = 0;
+    update();
+}
+
+function update() {
+    const step = steps[curStep];
+    const lines = document.querySelectorAll('.line');
+    lines.forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    document.getElementById('logMsg').innerText = "> " + step.msg;
+    document.getElementById('retVal').innerText = step.res !== undefined ? step.res : '計算中...';
+    
+    // Array Monitor
+    const monitor = document.getElementById('arrayMonitor');
+    monitor.innerHTML = '';
+    
+    // 雖然 dp 是 n+1，但我們對齊 cost 顯示
+    step.data.forEach((v, i) => {
+        const cell = document.createElement('div');
+        cell.className = `cell ${i === step.active ? 'active' : ''}`;
+        const displayVal = v.toString().includes(':') ? v.split(':')[1] : v;
+        const tagVal = v.toString().includes(':') ? v.split(':')[0] : `dp[${i}]`;
+        
+        const costInfo = (i < costs.length) ? `Cost:${costs[i]}` : 'Top';
+        
+        cell.innerHTML = `
+            <span class="idx">${tagVal}</span>
+            <span class="val">${displayVal}</span>
+            <div class="cost-tag">${costInfo}</div>
+        `;
+        monitor.appendChild(cell);
+    });
+
+    // Bars
+    const bars = document.getElementById('vizBars');
+    bars.innerHTML = '';
+    step.data.forEach((v, i) => {
+        const container = document.createElement('div');
+        container.className = 'bar-container';
+        const numVal = parseInt(v.toString().split(':').pop()) || 0;
+        
+        const label = document.createElement('div');
+        label.className = `bar-val ${numVal >= 0 ? 'show' : ''}`;
+        label.innerText = numVal;
+        
+        const bar = document.createElement('div');
+        bar.className = `bar ${i === step.active ? 'active' : ''}`;
+        bar.style.height = `${Math.min(numVal * 2, 110)}px`;
+        
+        container.appendChild(label);
+        container.appendChild(bar);
+        bars.appendChild(container);
+    });
+}
+
+function nextStep() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prevStep() { if(curStep > 0) { curStep--; update(); } }
+
+document.addEventListener('keydown', (e) => {
+    if(e.key === 'F10') { nextStep(); e.preventDefault(); }
+});
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>125. Valid Palindrome - Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-easy: #00b8a3;
+      --lc-blue: #007aff;
+      --lc-green: #2cbb5d;
+      --lc-red: #ff2d55;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(0, 184, 163, 0.15);
+      color: var(--lc-easy);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 20px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 6px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+      color: var(--lc-text);
+      margin-bottom: 8px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 2px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-easy); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 480px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    /* === 改動重點：移除橫向滑動，改用 auto-wrap === */
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      padding: 30px 16px 25px 16px; /* 上留空間給指標，下留空間給 index */
+      margin-bottom: 16px;
+    }
+
+    .array-container {
+      display: flex;
+      flex-wrap: wrap; /* 自動換行，不再用橫向滾動條 */
+      gap: 28px 8px;   /* 上下留 28px 容納指標與索引，左右間距 8px */
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    .node {
+      width: 36px;
+      height: 36px;
+      background: #333;
+      border: 2px solid var(--lc-border);
+      color: white;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 0.95rem;
+      position: relative;
+      transition: all 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .node.active-left {
+      border-color: var(--lc-orange);
+      background: rgba(255, 161, 22, 0.25);
+    }
+    .node.active-right {
+      border-color: var(--lc-blue);
+      background: rgba(0, 122, 255, 0.25);
+    }
+    .node.same-pointer {
+      border-color: var(--lc-easy);
+      background: rgba(0, 184, 163, 0.25);
+    }
+    .node.skipped {
+      opacity: 0.35;
+      border-style: dashed;
+    }
+    .node.matched {
+      border-color: var(--lc-green);
+      background: rgba(44, 187, 93, 0.2);
+    }
+    .node.mismatched {
+      border-color: var(--lc-red);
+      background: rgba(255, 45, 85, 0.3);
+      color: var(--lc-red);
+    }
+
+    .ptr-container {
+      position: absolute;
+      top: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 2px;
+      align-items: center;
+    }
+
+    .ptr-label {
+      font-size: 0.6rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: white;
+      white-space: nowrap;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .p-left { background: var(--lc-orange); }
+    .p-right { background: var(--lc-blue); }
+
+    .idx-label {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      color: var(--lc-text-dim);
+      font-family: monospace;
+    }
+
+    .cleaned-view {
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    .cleaned-title { color: var(--lc-text-dim); margin-bottom: 6px; font-weight: bold; }
+    .cleaned-text {
+      background: #1e1e1e;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      color: var(--lc-easy);
+      word-break: break-all;
+    }
+
+    .control-panel {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 7px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-easy); color: #fff; }
+    .btn-primary:hover { background: #009684; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">125. Valid Palindrome</span>
+    <span class="lc-badge">Easy</span>
+    <span class="lc-tag">Two Pointers</span>
+    <span class="lc-tag">String</span>
+  </div>
+
+  <div class="config-tabs">
+    <div class="tab-group">
+      <button class="tab-btn active" id="algo-tp" onclick="setAlgo('tp')">雙指標法 (Two Pointers)</button>
+    </div>
+    <div class="tab-group">
+      <button class="tab-btn active" id="lang-py" onclick="setLang('py')">Python3</button>
+      <button class="tab-btn" id="lang-c" onclick="setLang('c')">C++</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            在考慮所有大寫轉小寫字元，並移除所有非英數字元（alphanumeric）後，若該字串正著讀與反著讀皆相同，則該字串為一個<b>迴文（Palindrome）</b>。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> s = "A man, a plan, a canal: Panama"</div>
+            <div><strong>Output:</strong> true</div>
+            <div style="color: var(--lc-text-dim); font-size: 0.78rem; margin-top: 2px;">清理後: "amanaplanacanalpanama"</div>
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 2:</div>
+            <div><strong>Input:</strong> s = "race a car"</div>
+            <div><strong>Output:</strong> false</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val" id="tc-val">O(n)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val" id="sc-val">O(1)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span id="codeTitle">🐍 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (State & Visualizer)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title" id="approach-title">💡 解題思路 (Two Pointers)</div>
+            <div id="approach-desc">使用左右指標 <code>left</code> 與 <code>right</code>。向內移動時過濾掉非英數字元，並比對轉換成小寫後的字元是否一致，達成原位（O(1) 空間）檢查。</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">準備開始模擬...</div>
+          </div>
+
+          <div class="stage" id="main-stage">
+            <div class="array-container" id="array-nodes"></div>
+          </div>
+
+          <div class="cleaned-view">
+            <div class="cleaned-title">當前有效比對字元 (Cleaned Pair)</div>
+            <div class="cleaned-text" id="cleaned-text">s[left] = ? | s[right] = ?</div>
+          </div>
+
+          <div class="control-panel" style="margin-top: 16px;">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleStr = "A man, a plan, a canal: Panama";
+    let lang = 'py';
+    let currentStep = 0;
+    let history = [];
+
+    const codes = {
+      tp: {
+        py: [
+          `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isPalindrome</span>(<span class="self">self</span>, s: str) -&gt; bool:`,
+          `        left, right = 0, len(s) - 1`,
+          `        <span class="kw">while</span> left &lt; right:`,
+          `            <span class="kw">while</span> left &lt; right <span class="kw">and not</span> s[left].isalnum():`,
+          `                left += 1`,
+          `            <span class="kw">while</span> left &lt; right <span class="kw">and not</span> s[right].isalnum():`,
+          `                right -= 1`,
+          `            <span class="kw">if</span> s[left].lower() != s[right].lower():`,
+          `                <span class="kw">return False</span>`,
+          `            left += 1`,
+          `            right -= 1`,
+          `        <span class="kw">return True</span>`
+        ],
+        c: [
+          `<span class="kw">class</span> <span class="fn">Solution</span> {`,
+          `<span class="kw">public</span>:`,
+          `    bool <span class="fn">isPalindrome</span>(string s) {`,
+          `        int left = 0, right = s.length() - 1;`,
+          `        <span class="kw">while</span> (left &lt; right) {`,
+          `            <span class="kw">while</span> (left &lt; right && !isalnum(s[left])) left++;`,
+          `            <span class="kw">while</span> (left &lt; right && !isalnum(s[right])) right--;`,
+          `            <span class="kw">if</span> (tolower(s[left]) != tolower(s[right])) {`,
+          `                <span class="kw">return false</span>;`,
+          `            }`,
+          `            left++; right--;`,
+          `        }`,
+          `        <span class="kw">return true</span>;`,
+          `    }`,
+          `};`
+        ]
+      }
+    };
+
+    function isAlphanumeric(c) {
+      return /^[a-zA-Z0-9]$/.test(c);
+    }
+
+    function setAlgo(a) { resetSim(); }
+    function setLang(l) { lang = l; resetSim(); }
+
+    function buildHistoryTwoPointers() {
+      history = [];
+      let left = 0;
+      let right = sampleStr.length - 1;
+      let matchedIndices = [];
+
+      history.push({
+        line: lang === 'py' ? 2 : 3,
+        title: "初始化雙指標",
+        desc: `設置 left = 0，right = ${right}。準備向內比對。`,
+        left, right, matchedIndices: [...matchedIndices], status: 'normal'
+      });
+
+      while (left < right) {
+        if (!isAlphanumeric(sampleStr[left])) {
+          history.push({
+            line: lang === 'py' ? 4 : 5,
+            title: `Skip 左指標非英數字 '${sampleStr[left]}'`,
+            desc: `s[${left}] ('${sampleStr[left]}') 非字母或數字，left 指標右移 (+1)。`,
+            left, right, matchedIndices: [...matchedIndices], status: 'skip-left'
+          });
+          left++;
+          continue;
+        }
+
+        if (!isAlphanumeric(sampleStr[right])) {
+          history.push({
+            line: lang === 'py' ? 6 : 6,
+            title: `Skip 右指標非英數字 '${sampleStr[right]}'`,
+            desc: `s[${right}] ('${sampleStr[right]}') 非字母或數字，right 指標左移 (-1)。`,
+            left, right, matchedIndices: [...matchedIndices], status: 'skip-right'
+          });
+          right--;
+          continue;
+        }
+
+        let charL = sampleStr[left].toLowerCase();
+        let charR = sampleStr[right].toLowerCase();
+        let isMatch = (charL === charR);
+
+        history.push({
+          line: lang === 'py' ? 8 : 7,
+          title: isMatch ? `比對成功: '${charL}' === '${charR}'` : `比對失敗: '${charL}' !== '${charR}'`,
+          desc: `轉小寫比對：s[${left}] ('${sampleStr[left]}' -> '${charL}') ${isMatch ? '==' : '!='} s[${right}] ('${sampleStr[right]}' -> '${charR}')。`,
+          left, right, matchedIndices: [...matchedIndices], status: isMatch ? 'match' : 'mismatch'
+        });
+
+        if (!isMatch) {
+          history.push({
+            line: lang === 'py' ? 9 : 8,
+            title: "回傳 False",
+            desc: "字元不吻合，該字串不是有效迴文。",
+            left, right, matchedIndices: [...matchedIndices], status: 'mismatch'
+          });
+          return;
+        }
+
+        matchedIndices.push(left, right);
+        left++;
+        right--;
+
+        history.push({
+          line: lang === 'py' ? 10 : 10,
+          title: "兩端指標向內收縮",
+          desc: "比對相符！兩端指標向內移動 (left+1, right-1)。",
+          left, right, matchedIndices: [...matchedIndices], status: 'normal'
+        });
+      }
+
+      history.push({
+        line: lang === 'py' ? 12 : 12,
+        title: "驗證成功！(Valid Palindrome)",
+        desc: "雙指標相遇或交錯，所有有效字元皆比對一致，回傳 True！",
+        left, right, matchedIndices: [...matchedIndices], status: 'final'
+      });
+    }
+
+    function resetSim() {
+      buildHistoryTwoPointers();
+      currentStep = 0;
+      updateUIElements();
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateLineHighlight(state.line);
+      document.getElementById('step-title').innerText = state.title;
+      document.getElementById('step-desc').innerText = state.desc;
+      document.getElementById('stepHint').innerText = state.title.toUpperCase();
+
+      renderStage(state);
+      renderCleanedPair(state);
+    }
+
+    function updateUIElements() {
+      document.getElementById('algo-tp').className = 'tab-btn active';
+      document.getElementById('lang-py').className = 'tab-btn ' + (lang === 'py' ? 'active' : '');
+      document.getElementById('lang-c').className = 'tab-btn ' + (lang === 'c' ? 'active' : '');
+
+      document.getElementById('tc-val').innerText = 'O(n)';
+      document.getElementById('sc-val').innerText = 'O(1)';
+      document.getElementById('approach-title').innerText = '💡 解題思路 (Two Pointers 雙指標)';
+      document.getElementById('approach-desc').innerText = '設置 left 與 right 雙指標從字串兩端向中間移動。若遇到逗號、空格等非英數字元則直接跳過；若皆為有效字元，轉為小寫比較。若全程皆吻合則為迴文。';
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codes.tp[lang]
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateLineHighlight(line) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if (document.getElementById('l' + line)) {
+        document.getElementById('l' + line).classList.add('active-line');
+      }
+    }
+
+    function renderStage(state) {
+      const container = document.getElementById('array-nodes');
+      container.innerHTML = '';
+
+      sampleStr.split('').forEach((char, idx) => {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.innerText = char === ' ' ? '␣' : char;
+
+        if (!isAlphanumeric(char)) {
+          node.classList.add('skipped');
+        }
+
+        let ptrs = '';
+        if (idx === state.left && idx === state.right) {
+          node.classList.add('same-pointer');
+          ptrs += `<div class="ptr-label p-left">L</div><div class="ptr-label p-right">R</div>`;
+        } else if (idx === state.left) {
+          node.classList.add('active-left');
+          ptrs += `<div class="ptr-label p-left">L</div>`;
+        } else if (idx === state.right) {
+          node.classList.add('active-right');
+          ptrs += `<div class="ptr-label p-right">R</div>`;
+        }
+
+        if (state.status === 'match' && (idx === state.left || idx === state.right)) {
+          node.className = 'node matched';
+        } else if (state.status === 'mismatch' && (idx === state.left || idx === state.right)) {
+          node.className = 'node mismatched';
+        } else if (state.matchedIndices && state.matchedIndices.includes(idx)) {
+          node.classList.add('matched');
+        }
+
+        if (ptrs) {
+          node.innerHTML += `<div class="ptr-container">${ptrs}</div>`;
+        }
+
+        node.innerHTML += `<div class="idx-label">[${idx}]</div>`;
+        container.appendChild(node);
+      });
+    }
+
+    function renderCleanedPair(state) {
+      const el = document.getElementById('cleaned-text');
+      if (state.left >= 0 && state.right < sampleStr.length) {
+        const cL = sampleStr[state.left];
+        const cR = sampleStr[state.right];
+        const validL = isAlphanumeric(cL);
+        const validR = isAlphanumeric(cR);
+
+        const textL = validL ? `'${cL}' -> '${cL.toLowerCase()}'` : `'${cL}' (無效字元)`;
+        const textR = validR ? `'${cR}' -> '${cR.toLowerCase()}'` : `'${cR}' (無效字元)`;
+
+        el.innerText = `s[${state.left}]: ${textL}  |  s[${state.right}]: ${textR}`;
+      } else {
+        el.innerText = `s[left] = ? | s[right] = ?`;
+      }
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

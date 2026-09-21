@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 494. Target Sum - 演算法實驗室</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #8b949e;
+            --font-main: 14px;
+        }
+        body { 
+            background: #010409; color: var(--text); 
+            font-family: 'Consolas', 'Monaco', 'Microsoft JhengHei', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; overflow: hidden;
+        }
+        
+        .widget-card {
+            width: 1400px; height: 920px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            display: flex; overflow: hidden;
+        }
+
+        /* --- 左側面板 --- */
+        .sidebar {
+            width: 460px; display: flex; flex-direction: column;
+            border-right: 1px solid var(--border); background: #0d1117; flex-shrink: 0;
+        }
+        
+        .section { padding: 25px; border-bottom: 1px solid var(--border); }
+        
+        .problem-header { margin-bottom: 12px; }
+        .problem-num { color: var(--orange); font-size: var(--font-main); font-weight: bold; }
+        .problem-title { font-size: 24px; font-weight: bold; color: var(--text); margin: 5px 0; }
+        
+        .leetcode-desc { 
+            font-size: var(--font-main); line-height: 1.6; color: #8b949e; background: #010409; 
+            padding: 15px; border-radius: 8px; border: 1px solid var(--border);
+        }
+
+        .logic-card {
+            background: rgba(88, 166, 255, 0.05); border: 1px solid var(--blue); border-radius: 8px;
+            padding: 18px; margin-top: 10px;
+        }
+        .card-title { font-size: 12px; font-weight: bold; color: var(--blue); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .math-formula { font-size: var(--font-main); line-height: 1.8; color: var(--text); }
+        .math-formula b { color: var(--orange); }
+        
+        .equation-box {
+            background: #010409; border: 1px solid var(--border); border-radius: 6px;
+            padding: 10px; margin-top: 8px; font-family: 'Times New Roman', serif; font-size: 15px; color: var(--purple);
+        }
+
+        .example-box {
+            margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.3); 
+            border-radius: 6px; font-size: var(--font-main); border-left: 4px solid var(--green);
+            line-height: 1.6;
+        }
+        .set-p { color: var(--green); font-weight: bold; }
+        .set-n { color: var(--red); font-weight: bold; }
+
+        .metrics-area { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-top: 10px; }
+        .complexity-board { display: flex; gap: 10px; margin-bottom: 10px; }
+        .tag { padding: 4px 10px; border-radius: 4px; border: 1px solid var(--blue); background: var(--highlight); font-size: 12px; color: var(--blue); }
+
+        .tc-grid { padding: 20px 25px; display: flex; flex-direction: column; gap: 10px; }
+        .tc-btn { padding: 14px; text-align: left; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; font-size: var(--font-main); }
+        .tc-btn.active { border-color: var(--green); background: rgba(63, 185, 80, 0.1); color: var(--green); }
+        
+        /* --- 右側內容區 --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #010409; }
+        .tabs { display: flex; background: #0d1117; border-bottom: 1px solid var(--border); padding-top: 15px; }
+        .tab { padding: 16px 30px; font-size: var(--font-main); color: var(--comment); border-right: 1px solid var(--border); cursor: pointer; }
+        .tab.active { background: var(--panel); color: var(--text); border-top: 2px solid var(--orange); }
+        
+        .editor { flex: 1; padding: 30px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: var(--font-main); line-height: 1.8; }
+        .line { display: block; padding-left: 55px; position: relative; opacity: 0.4; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 15px; width: 30px; text-align: right; color: #484f58; font-size: 12px; }
+
+        .bottom-panel { height: 400px; display: grid; grid-template-columns: 1fr 400px; border-top: 1px solid var(--border); background: #0d1117; }
+        .viz-area { padding: 30px; overflow: auto; }
+        .dp-table { border-collapse: collapse; font-family: 'Fira Code', monospace; font-size: var(--font-main); width: 100%; text-align: center; }
+        .dp-table th, .dp-table td { border: 1px solid var(--border); padding: 12px 8px; }
+        .active-cell { background: var(--highlight); outline: 2px solid var(--blue); z-index: 1; position: relative; color: var(--blue); font-weight: bold; }
+        .source-cell { background: rgba(210, 153, 34, 0.15); color: var(--orange); }
+
+        .terminal { padding: 25px; display: flex; flex-direction: column; border-left: 1px solid var(--border); }
+        .log-box { height: 220px; overflow-y: auto; background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 15px; font-size: 13px; color: #8b949e; margin-bottom: 20px; line-height: 1.6; }
+        .log-entry.latest { color: var(--text); border-left: 3px solid var(--blue); padding-left: 10px; background: rgba(88, 166, 255, 0.05); }
+
+        .controls { display: flex; gap: 8px; align-items: center; margin-top: auto; flex-wrap: wrap; }
+        .step-btn { padding: 10px 16px; background: var(--panel); border: 1px solid var(--border); color: var(--text); cursor: pointer; border-radius: 6px; font-weight: bold; font-size: 13px; transition: 0.2s; }
+        .step-btn:hover { background: var(--border); }
+        .btn-reset { border-color: var(--red); color: var(--red); }
+        .btn-next { border-color: var(--green); color: var(--green); }
+        
+        .result-display { margin-left: auto; text-align: right; }
+        .kw { color: var(--purple); } .fn { color: var(--blue); } .num { color: var(--orange); } .op { color: #ff7b72; } .cmt { color: var(--comment); font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="sidebar">
+        <div class="section">
+            <div class="problem-header">
+                <div class="problem-num">494. Medium</div>
+                <div class="problem-title">Target Sum</div>
+            </div>
+            <div class="leetcode-desc">
+                給定 <b>nums</b> 與 <b>target</b>。在每個整數前添加 <b>'+'</b> 或 <b>'-'</b> 組成表達式。
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="logic-card">
+                <div class="card-title">1. 數學轉換 (Reduction)</div>
+                設 <span class="set-p">P</span> 為加號子集，<span class="set-n">N</span> 為減號子集：<br>
+                <div class="math-formula">
+                    P - N = target<br>
+                    P + N = sum<br>
+                    <b>∴ P = (target + sum) / 2</b>
+                </div>
+                <div class="example-box" id="reductionEx"></div>
+            </div>
+
+            <div class="logic-card" style="border-color: var(--purple); background: rgba(188, 140, 255, 0.05);">
+                <div class="card-title" style="color: var(--purple);">2. 狀態轉移 (DP Equation)</div>
+                <div id="equationDisplay" class="equation-box"></div>
+            </div>
+        </div>
+
+        <div class="section" style="border-bottom: none;">
+            <div class="metrics-area">
+                <div class="complexity-board" id="metricsTags"></div>
+                <div id="logicText" class="logic-desc" style="line-height: 1.6; font-size: 13px;"></div>
+            </div>
+            <div class="tc-grid" style="padding: 20px 0;">
+                <button class="tc-btn active tc-item" onclick="setTC([1,1,1,1,1], 3, 0)">Ex 1: [1,1,1,1,1], target=3</button>
+                <button class="tc-btn tc-item" onclick="setTC([2,1,1], 2, 1)">Ex 2: [2,1,1], target=2</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="editor-container">
+            <div class="tabs">
+                <div class="tab active" id="tab-1d" onclick="switchAlgo('1d')">space_optimized_1d.py</div>
+                <div class="tab" id="tab-2d" onclick="switchAlgo('2d')">standard_2d_dp.py</div>
+            </div>
+            <div id="codeEditor" class="editor"></div>
+        </div>
+
+        <div class="bottom-panel">
+            <div class="viz-area">
+                <table class="dp-table" id="dpTable"></table>
+            </div>
+            <div class="terminal">
+                <div id="logBox" class="log-box"></div>
+                <div class="controls">
+                    <button class="step-btn" onclick="prev()">Prev</button>
+                    <button class="step-btn btn-next" onclick="next()">Next (F10)</button>
+                    <button class="step-btn btn-reset" onclick="resetSimulator()">Reset</button>
+                    <div class="result-display">
+                        <span id="finalRes" style="color: var(--orange); font-size: 26px; font-weight: bold;">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let curAlgo = '1d', curStep = 0, nums = [1,1,1,1,1], target = 3, steps = [];
+
+function updateReductionBox() {
+    let sSum = nums.reduce((a,b)=>a+b, 0);
+    let P_val = (sSum + target) / 2;
+    let box = document.getElementById('reductionEx');
+    
+    if ((sSum + target) % 2 !== 0 || Math.abs(target) > sSum) {
+        box.innerHTML = `<span style="color:var(--red)">此輸入無整數解 P</span>`;
+        return;
+    }
+
+    let exampleText = "";
+    if (target === 3 && sSum === 5) {
+        exampleText = `<br>例: <span class="set-p">P={1,1,1,1}</span>, <span class="set-n">N={1}</span>`;
+    }
+
+    box.innerHTML = `sum=${sSum}, <b>P = ${P_val}</b>${exampleText}`;
+    
+    // 更新方程式顯示
+    document.getElementById('equationDisplay').innerHTML = curAlgo === '1d' 
+        ? `dp[j] = dp[j] + dp[j - num]`
+        : `dp[i][j] = dp[i-1][j] + dp[i-1][j - num]`;
+}
+
+const algoData = {
+    '1d': {
+        tags: `<div class="tag">Time: O(N*P)</div><div class="tag">Space: O(P)</div>`,
+        logic: `核心邏輯：<b>倒序遍歷</b>。這能確保計算 <code>dp[j]</code> 時使用的 <code>dp[j-num]</code> 仍是上一輪的值，避免同一個數字被重複計算。`,
+        code: [
+            `<span class="kw">def</span> <span class="fn">findTargetSumWays</span>(nums, target):`,
+            `    s <span class="op">=</span> <span class="fn">sum</span>(nums)`,
+            `    <span class="kw">if</span> (s <span class="op">+</span> target) <span class="op">%</span> <span class="num">2</span> <span class="op">!=</span> <span class="num">0</span>: <span class="kw">return</span> <span class="num">0</span>`,
+            `    P <span class="op">=</span> (s <span class="op">+</span> target) <span class="op">//</span> <span class="num">2</span>`,
+            `    dp <span class="op">=</span> [<span class="num">0</span>] <span class="op">*</span> (P <span class="op">+</span> <span class="num">1</span>)`,
+            `    dp[<span class="num">0</span>] <span class="op">=</span> <span class="num">1</span>`,
+            `    <span class="kw">for</span> num <span class="kw">in</span> nums:`,
+            `        <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(P, num <span class="op">-</span> <span class="num">1</span>, <span class="op">-</span><span class="num">1</span>):`,
+            `            dp[j] <span class="op">+=</span> dp[j <span class="op">-</span> num]`,
+            `    <span class="kw">return</span> dp[P]`
+        ],
+        gen: (nArr, t) => {
+            let sSum = nArr.reduce((a,b)=>a+b, 0);
+            if ((sSum + t) % 2 !== 0 || Math.abs(t) > sSum) return [{l:3, msg:"無解", dp:[], res:0}];
+            let P = (sSum + t) / 2;
+            let dp = new Array(P + 1).fill(0);
+            dp[0] = 1;
+            let s = [{l: 6, msg: `初始化 dp[0]=1`, dp: [...dp]}];
+            for (let num of nArr) {
+                s.push({l: 7, msg: `處理數字 ${num}`, dp: [...dp]});
+                for (let j = P; j >= num; j--) {
+                    dp[j] += dp[j - num];
+                    s.push({l: 9, msg: `dp[${j}] += dp[${j-num}] -> ${dp[j]}`, dp: [...dp], j: j, src: j-num});
+                }
+            }
+            s.push({l: 10, msg: `完成！`, dp: [...dp], res: dp[P]});
+            return s;
+        }
+    },
+    '2d': {
+        tags: `<div class="tag">Time: O(N*P)</div><div class="tag">Space: O(N*P)</div>`,
+        logic: `核心邏輯：<code>dp[i][j]</code> 為前 i 個數湊出和 j 的方法。每一格都由「上一格」與「上一行偏移 num 的格子」相加。`,
+        code: [
+            `<span class="kw">def</span> <span class="fn">findTargetSumWays</span>(nums, target):`,
+            `    <span class="cmt"># dp[i][j]：使用前 i 個數字湊出子集和為 j 的方法數</span>`,
+            `    P <span class="op">=</span> (<span class="fn">sum</span>(nums) <span class="op">+</span> target) <span class="op">//</span> <span class="num">2</span>`,
+            `    n <span class="op">=</span> <span class="fn">len</span>(nums)`,
+            `    dp <span class="op">=</span> [[<span class="num">0</span>] <span class="op">*</span> (P <span class="op">+</span> <span class="num">1</span>) <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(n <span class="op">+</span> <span class="num">1</span>)]`,
+            `    dp[<span class="num">0</span>][<span class="num">0</span>] <span class="op">=</span> <span class="num">1</span>`,
+            `    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, n <span class="op">+</span> <span class="num">1</span>):`,
+            `        num <span class="op">=</span> nums[i-1]`,
+            `        <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(P <span class="op">+</span> <span class="num">1</span>):`,
+            `            dp[i][j] <span class="op">=</span> dp[i-1][j] + (dp[i-1][j-num] <span class="kw">if</span> j >= num <span class="kw">else</span> 0)`,
+            `    <span class="kw">return</span> dp[n][P]`
+        ],
+        gen: (nArr, t) => {
+            let sSum = nArr.reduce((a,b)=>a+b, 0);
+            let P = (sSum + t) / 2;
+            let n = nArr.length;
+            let dp = Array.from({length: n + 1}, () => new Array(P + 1).fill(0));
+            dp[0][0] = 1;
+            let s = [{l: 6, msg: "初始化 dp[0][0]=1", dp: JSON.parse(JSON.stringify(dp))}];
+            for (let i = 1; i <= n; i++) {
+                let num = nArr[i-1];
+                for (let j = 0; j <= P; j++) {
+                    dp[i][j] = dp[i-1][j] + (j >= num ? dp[i-1][j-num] : 0);
+                    s.push({l: 10, msg: `i=${i}, num=${num}, j=${j} -> ${dp[i][j]}`, dp: JSON.parse(JSON.stringify(dp)), i: i, j: j});
+                }
+            }
+            s.push({l: 11, msg: `完成！`, dp: JSON.parse(JSON.stringify(dp)), res: dp[n][P]});
+            return s;
+        }
+    }
+};
+
+function switchAlgo(id) {
+    curAlgo = id;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`tab-${id}`).classList.add('active');
+    document.getElementById('metricsTags').innerHTML = algoData[id].tags;
+    document.getElementById('logicText').innerHTML = algoData[id].logic;
+    resetSimulator();
+}
+
+function setTC(n, t, idx) {
+    nums = n; target = t;
+    document.querySelectorAll('.tc-item').forEach((b, i) => i === idx ? b.classList.add('active') : b.classList.remove('active'));
+    resetSimulator();
+}
+
+function resetSimulator() {
+    updateReductionBox();
+    steps = algoData[curAlgo].gen(nums, target);
+    curStep = 0;
+    document.getElementById('logBox').innerHTML = '';
+    document.getElementById('codeEditor').innerHTML = algoData[curAlgo].code.map((l, i) => `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    update();
+}
+
+function update() {
+    const step = steps[curStep];
+    const lines = document.querySelectorAll('.line');
+    lines.forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    const lb = document.getElementById('logBox');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry latest';
+    entry.innerText = `> ${step.msg}`;
+    if (lb.querySelector('.latest')) lb.querySelector('.latest').classList.remove('latest');
+    lb.appendChild(entry);
+    lb.scrollTop = lb.scrollHeight;
+
+    document.getElementById('finalRes').innerText = step.res !== undefined ? step.res : '...';
+
+    const table = document.getElementById('dpTable');
+    if (curAlgo === '1d') {
+        let h = `<tr><th>Sum (j)</th>` + (step.dp.length ? step.dp.map((_, k) => `<th class="${step.j===k?'active-cell':''}">${k}</th>`).join('') : '<th>-</th>') + `</tr>`;
+        let r = `<tr><td>dp[j]</td>` + (step.dp.length ? step.dp.map((v, k) => `<td class="${step.j===k?'active-cell':(step.src===k?'source-cell':'')}">${v}</td>`).join('') : '<td>-</td>') + `</tr>`;
+        table.innerHTML = h + r;
+    } else {
+        let h = `<tr><th>i \\ j</th>` + step.dp[0].map((_, k) => `<th>${k}</th>`).join('') + `</tr>`;
+        let b = step.dp.map((row, ri) => `<tr><td>${ri===0?'Init':nums[ri-1]}</td>` + row.map((v, ci) => `<td class="${step.i===ri && step.j===ci?'active-cell':''}">${v}</td>`).join('') + `</tr>`).join('');
+        table.innerHTML = h + b;
+    }
+}
+
+function next() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { if(curStep > 0) { curStep--; const lb = document.getElementById('logBox'); lb.removeChild(lb.lastChild); update(); lb.removeChild(lb.lastChild); } }
+
+document.addEventListener('keydown', (e) => { if(e.key === 'F10') next(); });
+switchAlgo('1d');
+</script>
+</body>
+</html>

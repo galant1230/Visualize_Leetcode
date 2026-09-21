@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 46 Permutations - Instructor Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --bg-editor: #1E1E1E; --bg-sidebar: #252526; --text-main: #D4D4D4;
+            --vscode-blue: #007ACC; --vscode-green: #6A9955; --vscode-purple: #C586C0;
+            --vscode-yellow: #DCDCAA; --vscode-orange: #CE9178; --accent: #FFA500;
+        }
+        body { background-color: #121212; color: var(--text-main); font-family: 'Fira Code', monospace; height: 100vh; overflow: hidden; padding: 0.75rem; }
+        .code-keyword { color: var(--vscode-purple); } .code-func { color: var(--vscode-yellow); }
+        .code-comment { color: var(--vscode-green); } .code-string { color: var(--vscode-orange); }
+        .active-line { background-color: rgba(173, 214, 255, 0.1); border-left: 3px solid var(--vscode-blue); }
+        
+        /* D3 Tree Styles */
+        .node circle { fill: #2d2d2d; stroke: #444; stroke-width: 2px; }
+        .node text { fill: #999; font-size: 11px; pointer-events: none; }
+        .link { fill: none; stroke: #333; stroke-width: 1.5px; }
+        .node-active circle { stroke: var(--accent); filter: drop-shadow(0 0 5px var(--accent)); }
+        .node-active text { fill: var(--accent); font-weight: bold; }
+        .link-active { stroke: var(--accent); stroke-width: 2px; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col gap-3">
+
+    <main class="flex flex-1 gap-3 overflow-hidden">
+        
+        <section class="w-1/4 flex flex-col gap-3 shrink-0">
+            <div class="bg-[#252526] p-4 rounded-md border border-[#333] flex flex-col shrink-0">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-orange-500 font-bold text-xs">46.</span>
+                    <h2 class="text-sm font-bold">Permutations (全排列)</h2>
+                </div>
+                <p class="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                    給定一個不含重複數字的數組 <code class="bg-[#333] px-1 text-blue-300">nums</code>，返回其所有可能的全排列。
+                </p>
+                <div class="bg-[#1e1e1e] p-2 rounded border border-[#444]">
+                    <span class="text-[9px] text-gray-500 font-bold block mb-1">CONSTRAINTS</span>
+                    <ul class="text-[10px] text-gray-400 list-disc list-inside space-y-0.5">
+                        <li>1 ≤ nums.length ≤ 6</li>
+                        <li>-10 ≤ nums[i] ≤ 10</li>
+                        <li>All integers in nums are <span class="text-blue-400">unique</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="bg-[#252526] p-4 rounded-md border border-[#333] flex-1 flex flex-col overflow-hidden">
+                <h3 class="text-[#569CD6] mb-3 text-[11px] font-bold uppercase">Complexity & Strategy</h3>
+                <div class="flex gap-2 mb-4">
+                    <span class="bg-[#333] text-orange-400 text-[10px] px-2 py-0.5 rounded border border-orange-900/50 font-bold">O(n · n!)</span>
+                    <span class="bg-[#333] text-green-400 text-[10px] px-2 py-0.5 rounded border border-green-900/50 font-bold">O(n!)</span>
+                </div>
+                <div class="text-[11px] text-gray-400 leading-relaxed overflow-y-auto custom-scrollbar pr-2">
+                    <p class="mb-2 font-bold text-gray-300">💡 核心思路：</p>
+                    <p class="mb-3">這是一道經典的 <b>Backtracking (回溯)</b> 問題。我們將問題建模為一棵「決策樹」：</p>
+                    <ul class="space-y-2 list-decimal list-inside text-gray-400">
+                        <li><b>路徑 (Path)：</b> 已選擇的數字清單。</li>
+                        <li><b>選擇列表 (Choices)：</b> 當前還沒被使用的數字。</li>
+                        <li><b>結束條件：</b> 路徑長度等於數組長度。</li>
+                        <li><b>狀態恢復：</b> 每次遞迴結束後，必須將選擇「彈出」，確保不影響同層的其他分支。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="bg-[#252526] p-3 rounded-md border border-[#333] shrink-0">
+                <span class="text-[9px] text-gray-500 font-bold block mb-2 uppercase">Test Cases</span>
+                <div class="flex flex-col gap-2">
+                    <button onclick="changeCase(0)" class="tc-btn text-left text-[10px] p-2 rounded bg-[#37373d] border-l-2 border-blue-500">nums = [1, 2, 3]</button>
+                    <button onclick="changeCase(1)" class="tc-btn text-left text-[10px] p-2 rounded bg-[#252526] border-l-2 border-transparent hover:bg-[#333]">nums = [0, 1]</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="w-[45%] flex flex-col gap-3 overflow-hidden">
+            <div class="flex-[3] bg-[#1E1E1E] rounded-md border border-[#333] relative">
+                <div class="absolute top-3 left-4 text-[10px] text-gray-600 font-bold uppercase tracking-widest">Decision Tree</div>
+                <div id="tree-viz" class="w-full h-full"></div>
+            </div>
+
+            <div class="flex-1 bg-[#1E1E1E] rounded-md border border-[#333] p-3 flex flex-col overflow-hidden">
+                <div class="text-[9px] text-gray-600 font-bold mb-2 uppercase italic">Result Gallery (Output)</div>
+                <div id="res-gallery" class="flex flex-wrap gap-2 overflow-y-auto custom-scrollbar"></div>
+            </div>
+
+            <div class="bg-[#252526] h-12 rounded-md border border-[#333] flex items-center justify-between px-6 shrink-0">
+                <div class="flex gap-4">
+                    <button onclick="prevStep()" class="text-gray-400 hover:text-white transition"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293V13.5a1 1 0 11-2 0V7.707L6.414 10a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414l-2.293-2.293z" transform="rotate(-90 10 10)"/></svg></button>
+                    <button id="play-btn" onclick="togglePlay()" class="text-[10px] bg-blue-600 px-5 py-1 rounded text-white font-bold hover:bg-blue-500">PLAY</button>
+                    <button onclick="nextStep()" class="text-gray-400 hover:text-white transition"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293V13.5a1 1 0 11-2 0V7.707L6.414 10a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414l-2.293-2.293z" transform="rotate(90 10 10)"/></svg></button>
+                </div>
+                <div class="text-[10px] font-mono text-gray-500">STEP <span id="step-count" class="text-blue-400">0</span> / <span id="total-steps">0</span></div>
+                <button onclick="resetSim()" class="text-[10px] text-gray-500 hover:underline">Reset</button>
+            </div>
+        </section>
+
+        <section class="w-[30%] flex flex-col gap-3 shrink-0">
+            <div class="h-1/2 bg-[#1E1E1E] rounded-md border border-[#333] overflow-hidden flex flex-col">
+                <div class="bg-[#252526] px-4 py-1.5 text-[10px] border-b border-[#333] text-gray-500 font-bold">PYTHON SOLUTION</div>
+                <div id="code-display" class="p-4 text-[10px] leading-relaxed overflow-auto custom-scrollbar flex-1 font-mono"></div>
+            </div>
+
+            <div class="flex-1 bg-[#252526] rounded-md border border-[#333] p-4 flex flex-col overflow-hidden">
+                <div class="text-[9px] text-gray-500 font-bold mb-2 uppercase">Backtracking Stack</div>
+                <div id="stack-container" class="flex-1 flex flex-col-reverse gap-1 overflow-y-auto custom-scrollbar mb-3 pr-1"></div>
+                <div class="h-1/3 border-t border-[#333] pt-2 overflow-hidden flex flex-col">
+                    <div class="text-[9px] text-gray-500 font-bold mb-1">EXECUTION LOG</div>
+                    <div id="log-container" class="flex-1 text-[9px] text-gray-400 overflow-y-auto custom-scrollbar font-mono italic"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 核心邏輯保持不變，但確保與 UI 元素 ID 匹配
+        const codeLines = [
+            'class Solution:', '    def permute(self, nums):', '        res = []', '        used = [False] * len(nums)', '', '        def backtrack(path):', '            if len(path) == len(nums):', '                res.append(path[:])', '                return', '', '            for i in range(len(nums)):', '                if used[i]: continue', '', '                used[i] = True', '                path.append(nums[i])', '                backtrack(path)', '                path.pop()', '                used[i] = False', '', '        backtrack([])', '        return res'
+        ];
+
+        let history = [], currentStep = 0, currentNums = [1, 2, 3], isPlaying = false, playInterval, treeData = null;
+
+        function initCode() {
+            const container = document.getElementById('code-display');
+            container.innerHTML = codeLines.map((line, i) => {
+                let formatted = line.replace(/class|def|if|for|in|return|True|False|continue/g, m => `<span class="code-keyword">${m}</span>`);
+                return `<div id="line-${i}" class="whitespace-pre px-2 relative"><span class="inline-block w-4 text-gray-600 mr-2 text-[8px] text-right">${i}</span>${formatted}</div>`;
+            }).join('');
+        }
+
+        function generateData(nums) {
+            const steps = [];
+            const resSnapshots = [];
+            const used = new Array(nums.length).fill(false);
+            const root = { name: "S", id: "root", children: [] };
+            let nodeIdCounter = 0;
+
+            function backtrack(path, d3Node) {
+                steps.push({ line: 6, path: [...path], used: [...used], nodeId: d3Node.id, log: `Depth: ${path.length}, check base case.` });
+                if (path.length === nums.length) {
+                    resSnapshots.push([...path]);
+                    steps.push({ line: 7, path: [...path], used: [...used], nodeId: d3Node.id, log: `<span class="text-green-500">Collected: [${path.join(',')}]</span>`, res: [...resSnapshots] });
+                    steps.push({ line: 8, path: [...path], used: [...used], nodeId: d3Node.id, log: "Return to previous level." });
+                    return;
+                }
+                for (let i = 0; i < nums.length; i++) {
+                    steps.push({ line: 11, path: [...path], used: [...used], nodeId: d3Node.id, log: `Checking nums[${i}]=${nums[i]}` });
+                    if (used[i]) continue;
+                    const child = { name: nums[i], id: `n${++nodeIdCounter}`, children: [] };
+                    d3Node.children.push(child);
+                    used[i] = true;
+                    path.push(nums[i]);
+                    steps.push({ line: 14, path: [...path], used: [...used], nodeId: child.id, log: `Choose ${nums[i]}`, res: [...resSnapshots] });
+                    backtrack(path, child);
+                    path.pop();
+                    used[i] = false;
+                    steps.push({ line: 16, path: [...path], used: [...used], nodeId: d3Node.id, log: `<span class="text-orange-400">Backtrack: Removed ${nums[i]}</span>`, res: [...resSnapshots] });
+                }
+            }
+            backtrack([], root);
+            return { steps, root };
+        }
+
+        let svg = d3.select("#tree-viz").append("svg").attr("width", "100%").attr("height", "100%").append("g").attr("transform", "translate(40,40)");
+        let treeLayout = d3.tree().size([420, 220]);
+
+        function renderAll() {
+            const step = history[currentStep];
+            d3.selectAll("#code-display div").classed("active-line", false);
+            d3.select(`#line-${step.line}`).classed("active-line", true);
+
+            const logBox = document.getElementById('log-container');
+            logBox.innerHTML += `<div>> ${step.log}</div>`;
+            logBox.scrollTop = logBox.scrollHeight;
+
+            const root = d3.hierarchy(treeData);
+            treeLayout(root);
+            const links = svg.selectAll(".link").data(root.links(), d => d.target.data.id);
+            links.enter().append("path").attr("class", "link").merge(links).attr("d", d3.linkVertical().x(d => d.x).y(d => d.y));
+            const nodes = svg.selectAll(".node").data(root.descendants(), d => d.data.id);
+            const nEnter = nodes.enter().append("g").attr("class", "node").attr("transform", d => `translate(${d.x},${d.y})`);
+            nEnter.append("circle").attr("r", 10);
+            nEnter.append("text").attr("dy", ".35em").attr("text-anchor", "middle").text(d => d.data.name);
+            svg.selectAll(".node").classed("node-active", d => d.data.id === step.nodeId);
+
+            const resSnap = step.res || [];
+            document.getElementById('res-gallery').innerHTML = resSnap.map(r => 
+                `<div class="bg-[#2D2D2D] border border-green-900/50 text-green-400 px-2 py-0.5 rounded text-[9px] font-bold">[${r.join(',')}]</div>`
+            ).join('');
+
+            const stack = [];
+            for(let i=0; i<=currentStep; i++){
+                if(history[i].line === 14) stack.push(history[i].path);
+                if(history[i].line === 16) stack.pop();
+            }
+            document.getElementById('stack-container').innerHTML = stack.map((s, i) => 
+                `<div class="bg-[#1e1e1e] border-l-2 border-blue-500 p-1.5 text-[9px] mb-1">backtrack([${s}])</div>`
+            ).join('');
+
+            document.getElementById('step-count').innerText = currentStep;
+        }
+
+        function nextStep() { if(currentStep < history.length-1) { currentStep++; renderAll(); } else pause(); }
+        function prevStep() { if(currentStep > 0) { currentStep--; document.getElementById('log-container').innerHTML = ''; renderAll(); } }
+        function togglePlay() { isPlaying ? pause() : play(); }
+        function play() { isPlaying = true; document.getElementById('play-btn').innerText = 'PAUSE'; playInterval = setInterval(nextStep, 500); }
+        function pause() { isPlaying = false; document.getElementById('play-btn').innerText = 'PLAY'; clearInterval(playInterval); }
+        function resetSim() { pause(); currentStep = 0; document.getElementById('log-container').innerHTML = ''; renderAll(); }
+
+        function changeCase(idx) {
+            currentNums = [[1,2,3], [0,1]][idx];
+            d3.selectAll('.tc-btn').classed('bg-[#37373d] border-blue-500', false).classed('bg-[#252526] border-transparent', true);
+            d3.select(`.tc-btn:nth-child(${idx+1})`).classed('bg-[#37373d] border-blue-500', true).classed('bg-[#252526] border-transparent', false);
+            const data = generateData(currentNums);
+            history = data.steps; treeData = data.root;
+            document.getElementById('total-steps').innerText = history.length - 1;
+            svg.selectAll("*").remove();
+            resetSim();
+        }
+
+        initCode();
+        changeCase(0);
+    </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jump Game II Visualizer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      padding: 2rem;
+      margin: 0;
+      color: #333;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .box-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .box {
+      width: 48px;
+      height: 48px;
+      background: #e0e0e0;
+      border-radius: 6px;
+      text-align: center;
+      line-height: 48px;
+      font-weight: bold;
+    }
+    .highlight {
+      background: #4caf50 !important;
+      color: white;
+    }
+    .reachable {
+      background: #c8e6c9;
+    }
+    .bestjump {
+      background: #ffc107 !important;
+      color: black;
+    }
+    .legend {
+      margin-top: 1rem;
+      font-size: 14px;
+    }
+    .legend span {
+      display: inline-block;
+      padding: 4px 8px;
+      margin-right: 10px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .code-box {
+      background: #272822;
+      color: #f8f8f2;
+      padding: 1rem;
+      border-radius: 6px;
+      margin: 2rem 0;
+      font-family: monospace;
+    }
+    .code-line {
+      padding: 2px 0;
+    }
+    .active-code {
+      background-color: #444;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      margin: 0.3rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      background: #007acc;
+      color: white;
+    }
+    input {
+      padding: 6px;
+      margin: 0.2rem;
+      width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🏃 Jump Game II Visualizer</h2>
+    <label>nums: <input id="inputNums" value="2,3,1,1,4" /></label>
+    <button onclick="start()">🔃 Start</button>
+    <button onclick="step()">➡️ Step</button>
+
+    <div class="box-row" id="numRow"></div>
+    <p class="legend">
+      <span style="background:#4caf50; color:white">pos</span>
+      <span style="background:#c8e6c9">reachable</span>
+      <span style="background:#ffc107">best_jump</span>
+    </p>
+    <p id="statusText">Status will appear here</p>
+    <p>
+      <strong>pos:</strong> <span id="posVal">0</span> |
+      <strong>jump:</strong> <span id="jumpVal">0</span> |
+      <strong>best_jump:</strong> <span id="bestVal">0</span> |
+      <strong>farthest:</strong> <span id="farthestVal">0</span>
+    </p>
+
+    <div class="code-box">
+      <div class="code-line" id="c1">pos = 0</div>
+      <div class="code-line" id="c2">while pos < n - 1:</div>
+      <div class="code-line" id="c3">&nbsp;&nbsp;&nbsp;&nbsp;farthest = 0</div>
+      <div class="code-line" id="c4">&nbsp;&nbsp;&nbsp;&nbsp;best_jump = pos + 1</div>
+      <div class="code-line" id="c5">&nbsp;&nbsp;&nbsp;&nbsp;for i in range(pos + 1, pos + nums[pos] + 1):</div>
+      <div class="code-line" id="c6">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if i + nums[i] > farthest:</div>
+      <div class="code-line" id="c7">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;farthest = i + nums[i]</div>
+      <div class="code-line" id="c8">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;best_jump = i</div>
+      <div class="code-line" id="c9">&nbsp;&nbsp;&nbsp;&nbsp;pos = best_jump</div>
+      <div class="code-line" id="c10">&nbsp;&nbsp;&nbsp;&nbsp;jump += 1</div>
+    </div>
+  </div>
+
+  <script>
+    let nums = [], pos = 0, jump = 0, best_jump = 0, farthest = 0, stepState = 0;
+
+    function start() {
+      nums = document.getElementById("inputNums").value.split(',').map(Number);
+      pos = 0;
+      jump = 0;
+      farthest = 0;
+      best_jump = 0;
+      stepState = 0;
+      document.getElementById("posVal").innerText = pos;
+      document.getElementById("jumpVal").innerText = jump;
+      document.getElementById("bestVal").innerText = best_jump;
+      document.getElementById("farthestVal").innerText = farthest;
+      document.getElementById("statusText").innerText = "Starting at pos = 0";
+      document.getElementById("numRow").innerHTML = nums.map((v, idx) => `<div class='box' id='box${idx}'>${v}</div>`).join('');
+      document.querySelectorAll(".code-line").forEach(c => c.classList.remove("active-code"));
+    }
+
+    function step() {
+      if (pos >= nums.length - 1) return;
+      document.querySelectorAll(".box").forEach(c => c.classList.remove("highlight", "reachable", "bestjump"));
+      document.querySelectorAll(".code-line").forEach(c => c.classList.remove("active-code"));
+
+      if (stepState === 0) {
+        farthest = 0;
+        best_jump = pos + 1;
+        document.getElementById("c3").classList.add("active-code");
+        document.getElementById("c4").classList.add("active-code");
+        document.getElementById("farthestVal").innerText = farthest;
+        document.getElementById("bestVal").innerText = best_jump;
+        stepState = 1;
+        return;
+      }
+
+      if (stepState === 1) {
+        document.getElementById("c5").classList.add("active-code");
+        document.getElementById("c6").classList.add("active-code");
+        document.getElementById("c7").classList.add("active-code");
+        document.getElementById("c8").classList.add("active-code");
+
+        for (let i = pos + 1; i <= pos + nums[pos] && i < nums.length; i++) {
+          document.getElementById("box" + i).classList.add("reachable");
+          if (i + nums[i] > farthest) {
+            farthest = i + nums[i];
+            best_jump = i;
+          }
+        }
+        document.getElementById("box" + best_jump).classList.add("bestjump");
+        document.getElementById("bestVal").innerText = best_jump;
+        document.getElementById("farthestVal").innerText = farthest;
+        stepState = 2;
+        return;
+      }
+
+      if (stepState === 2) {
+        pos = best_jump;
+        jump++;
+        document.getElementById("c9").classList.add("active-code");
+        document.getElementById("c10").classList.add("active-code");
+        document.getElementById("posVal").innerText = pos;
+        document.getElementById("jumpVal").innerText = jump;
+        document.getElementById("statusText").innerText = `Jumped to position ${pos}`;
+        document.getElementById("box" + pos).classList.add("highlight");
+        stepState = 0;
+      }
+    }
+  </script>
+</body>
+</html>

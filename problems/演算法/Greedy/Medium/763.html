@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>763. Partition Labels Debugger - Logic Pro</title>
+  <style>
+    :root {
+      --bg: #0d1117; --panel: #161b22; --border: #30363d;
+      --text: #c9d1d9; --blue: #66d9ef; --purple: #ae81ff;
+      --orange: #fd971f; --green: #a6e22e; --red: #f92672;
+      --vscode-bg: #272822; 
+      --kw: #66d9ef; --fn: #e6db74; --vr: #f8f8f2; --nm: #ae81ff; --st: #e6db74; --cm: #75715e;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', 'Consolas', sans-serif; }
+    body { background: #010409; color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+    /* --- 左側 (25%) --- */
+    .sidebar-l { width: 25%; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: #0d1117; overflow-y: auto; }
+    .section-header { padding: 12px 16px; font-size: 13px; font-weight: bold; color: #8b949e; border-bottom: 1px solid var(--border); background: #161b22; text-transform: uppercase; }
+    
+    .p-header { padding: 20px 16px; border-bottom: 1px solid var(--border); }
+    .p-title { font-size: 22px; color: #fff; font-weight: 600; margin-bottom: 10px; }
+    .p-desc { font-size: 15px; line-height: 1.6; color: #d1d5db; margin-bottom: 15px; }
+    .p-constraints { font-size: 13px; color: #8b949e; background: #161b22; padding: 10px; border-radius: 4px; line-height: 1.5; }
+
+    .complexity-box { padding: 20px 16px; border-bottom: 1px solid var(--border); }
+    .tag { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: bold; margin-bottom: 10px; }
+    .tag-time { background: rgba(166, 226, 46, 0.1); color: var(--green); border: 1px solid var(--green); }
+    .tag-space { background: rgba(102, 217, 239, 0.1); color: var(--blue); border: 1px solid var(--blue); }
+    .logic-desc { font-size: 14px; line-height: 1.6; color: #8b949e; }
+
+    .dict-area { padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 5px; }
+    .dict-item { background: #161b22; border: 1px solid var(--border); border-radius: 4px; padding: 4px; text-align: center; font-size: 12px; transition: 0.2s; }
+    .dict-key { color: var(--blue); font-weight: bold; border-bottom: 1px solid var(--border); margin-bottom: 2px; }
+
+    .tc-area { padding: 5px 0; }
+    .tc-item { padding: 12px; margin: 8px 16px; background: #161b22; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    .tc-item:hover { background: #1c2128; }
+    .tc-item.active { border-color: var(--blue); background: rgba(102, 217, 239, 0.05); }
+
+    /* --- 中間 (45%) --- */
+    .main-arena { width: 45%; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+    .viz-top { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #010409; gap: 40px; }
+    
+    .string-container { display: flex; gap: 3px; padding: 25px 20px; background: #161b22; border-radius: 12px; position: relative; }
+    .char-box { width: 22px; height: 35px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #30363d; border-radius: 4px; background: #0d1117; z-index: 1; transition: 0.2s; }
+    .char-box.active { border-color: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .char-box.in-range { background: rgba(253, 151, 31, 0.15); border-color: var(--orange); }
+    .char-box.finalized { background: rgba(166, 226, 46, 0.1); border-color: var(--green); opacity: 0.6; }
+    
+    .char-letter { font-size: 13px; font-weight: bold; }
+    .char-index { font-size: 8px; color: #555; }
+
+    .marker { position: absolute; font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 3px; transition: 0.3s; z-index: 2; white-space: nowrap; }
+    .marker-start { background: var(--blue); color: #000; top: -10px; }
+    .marker-end { background: var(--orange); color: #000; top: -10px; }
+    .marker-i { color: var(--blue); bottom: -25px; font-size: 16px; width: 22px; text-align: center; }
+
+    .range-bar { position: absolute; bottom: 10px; height: 4px; background: var(--orange); transition: 0.3s; border-radius: 2px; }
+
+    .viz-bottom { height: 140px; background: #0d1117; padding: 15px; border-top: 1px solid var(--border); overflow-y: auto; font-family: 'Consolas', monospace; font-size: 14px; color: var(--green); }
+    .playback-bar { height: 70px; background: #161b22; display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .p-btn { padding: 10px 18px; border-radius: 6px; border: 1px solid #49483e; background: #3e3d32; color: #fff; cursor: pointer; font-size: 14px; }
+
+    /* --- 右側 (30%) --- */
+    .sidebar-r { width: 30%; background: var(--vscode-bg); display: flex; flex-direction: column; }
+    .line { display: block; padding-left: 60px; line-height: 1.7; font-size: 15px; position: relative; white-space: pre; color: #f8f8f2; font-family: 'Consolas', monospace; }
+    .line.active { background: #49483e; }
+    .line.active::before { content: ''; position: absolute; left: 0; width: 5px; height: 100%; background: var(--blue); }
+    .line-num { position: absolute; left: 0; width: 40px; text-align: right; color: #90908a; padding-right: 20px; font-size: 13px; }
+    .c-kw { color: var(--kw); } .c-fn { color: var(--fn); } .c-vr { color: var(--vr); } .c-nm { color: var(--nm); }
+    .var-monitor { flex: 1; border-top: 1px solid #49483e; padding: 15px; background: #272822; }
+    .var-row { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; border-bottom: 1px solid #3e3d32; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-l">
+  <div class="section-header">Description</div>
+  <div class="p-header">
+    <div class="p-title">763. Partition Labels</div>
+    <div class="p-desc">
+      給你一個字串 <code>s</code>，我們要將它盡可能切成最多的片段，使得每個字元最多只出現在其中一個片段中。回傳各片段長度的列表。
+    </div>
+    <div class="p-constraints">
+      • 1 <= s.length <= 500<br>
+      • <code>s</code> 僅由小寫英文字母組成
+    </div>
+  </div>
+
+  <div class="section-header">Complexity Analysis</div>
+  <div class="complexity-box">
+    <div class="tag tag-time">Time: O(N)</div>
+    <div class="tag tag-space">Space: O(1)</div>
+    <div class="logic-desc">
+      我們先記錄每個字元「最後出現的位置」。接著遍歷字串，用一個 <b>end</b> 指標動態維護當前片段必須延伸到的最遠邊界，當 <b>i == end</b> 時，代表一個完整的片段產生。
+    </div>
+  </div>
+
+  <div class="section-header">Last Occurrence</div>
+  <div id="lastDict" class="dict-area"></div>
+
+  <div class="section-header">Test Cases</div>
+  <div class="tc-area">
+    <div id="tc1" class="tc-item active" onclick="changeTC(1)">
+      <div style="font-size:12px; font-weight:bold; color:var(--blue)">Example 1</div>
+      <div style="font-size:11px; color:#8b949e; word-break:break-all">"ababcbacadefegdehijhklij"</div>
+    </div>
+    <div id="tc2" class="tc-item" onclick="changeTC(2)">
+      <div style="font-size:12px; font-weight:bold; color:var(--blue)">Example 2</div>
+      <div style="font-size:11px; color:#8b949e">"eccbbbbdec"</div>
+    </div>
+  </div>
+</div>
+
+<div class="main-arena">
+  <div class="viz-top">
+    <div class="string-container" id="strContainer">
+      <div id="marker-start" class="marker marker-start">START</div>
+      <div id="marker-end" class="marker marker-end">END</div>
+      <div id="marker-i" class="marker marker-i">↑</div>
+      <div id="range-indicator" class="range-bar"></div>
+    </div>
+    <div id="resultList" style="display:flex; gap:10px;"></div>
+  </div>
+  <div class="viz-bottom" id="logBox"></div>
+  <div class="playback-bar">
+    <button class="p-btn" onclick="reset()">Reset</button>
+    <button class="p-btn" onclick="prev()">Prev Step</button>
+    <button class="p-btn" id="playBtn" onclick="togglePlay()">Auto Play</button>
+    <button class="p-btn" onclick="next()" style="border-color:var(--blue); color:var(--blue); font-weight:bold;">Next Step</button>
+  </div>
+</div>
+
+<div class="sidebar-r">
+  <div class="section-header">solution.py (VS Code)</div>
+  <div id="codeArea" class="code-area"></div>
+  <div class="section-header">Variables Monitor</div>
+  <div id="varMonitor" class="var-monitor"></div>
+</div>
+
+<script>
+const testCases = {
+  1: "ababcbacadefegdehijhklij",
+  2: "eccbbbbdec"
+};
+let currentTC = { s: testCases[1], id: 1 };
+let steps = [], curStep = 0, isPlaying = false, timer = null;
+const CELL_TOTAL = 25;
+
+const codeLines = [
+  { t: '<span class="c-kw">class</span> <span class="c-fn">Solution</span>:', i:0 },
+  { t: '  <span class="c-kw">def</span> <span class="c-fn">partitionLabels</span>(self, s):', i:1 },
+  { t: '    <span class="c-vr">last</span> = {c: i <span class="c-kw">for</span> i, c <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(s)}', i:2 },
+  { t: '    <span class="c-vr">res</span>, <span class="c-vr">start</span>, <span class="c-vr">end</span> = [], <span class="c-nm">0</span>, <span class="c-nm">0</span>', i:2 },
+  { t: '    <span class="c-kw">for</span> <span class="c-vr">i</span>, <span class="c-vr">char</span> <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(s):', i:2 },
+  { t: '      <span class="c-vr">end</span> = <span class="c-fn">max</span>(end, last[char])', i:3 },
+  { t: '      <span class="c-kw">if</span> i == end:', i:3 },
+  { t: '        res.<span class="c-fn">append</span>(i - start + <span class="c-nm">1</span>)', i:4 },
+  { t: '        <span class="c-vr">start</span> = i + <span class="c-nm">1</span>', i:4 },
+  { t: '    <span class="c-kw">return</span> res', i:2 }
+];
+
+function generateSteps(s) {
+  let steps = [];
+  let last = {};
+  for(let i=0; i<s.length; i++) last[s[i]] = i;
+  steps.push({ ln: 2, last, i: -1, start: 0, end: 0, res: [], log: "掃描字串，建立各字母最後出現位置的字典。" });
+  steps.push({ ln: 3, last, i: -1, start: 0, end: 0, res: [], log: "初始化結果清單 res、區間起點 start 與終點 end。" });
+  let start = 0, end = 0, res = [];
+  for(let i=0; i<s.length; i++) {
+    steps.push({ ln: 4, last, i, start, end, res: [...res], char: s[i], log: `遍歷到索引 ${i}，字母為 '${s[i]}'` });
+    end = Math.max(end, last[s[i]]);
+    steps.push({ ln: 5, last, i, start, end, res: [...res], char: s[i], log: `更新當前片段必須延伸到的邊界 end = ${end}` });
+    if (i === end) {
+      steps.push({ ln: 6, last, i, start, end, res: [...res], log: "當前索引已達到邊界！準備切分片段。" });
+      res.push(i - start + 1);
+      steps.push({ ln: 7, last, i, start, end, res: [...res], log: `片段長度 ${i-start+1} 已加入 res。` });
+      start = i + 1;
+      steps.push({ ln: 8, last, i, start, end, res: [...res], log: `移動下個片段起點 start 到 ${start}。` });
+    }
+  }
+  steps.push({ ln: 9, last, i: s.length-1, start, end, res: [...res], log: "遍歷結束，回傳所有片段長度。", finished: true });
+  return steps;
+}
+
+function update() {
+  const step = steps[curStep];
+  const s = currentTC.s;
+  document.getElementById('lastDict').innerHTML = Object.keys(step.last).sort().map(k => `
+    <div class="dict-item" style="${step.char === k ? 'border-color:var(--blue); background:rgba(102,217,239,0.1);' : ''}">
+      <div class="dict-key">${k}</div>
+      <div style="color:#fff">${step.last[k]}</div>
+    </div>
+  `).join('');
+  const container = document.getElementById('strContainer');
+  container.querySelectorAll('.char-box').forEach(b => b.remove());
+  for(let j=0; j<s.length; j++) {
+    const box = document.createElement('div');
+    box.className = `char-box ${j === step.i ? 'active' : ''} ${j >= step.start && j <= step.end && step.i !== -1 ? 'in-range' : ''} ${j < step.start ? 'finalized' : ''}`;
+    box.innerHTML = `<span class="char-letter">${s[j]}</span><span class="char-index">${j}</span>`;
+    container.appendChild(box);
+  }
+  const mStart = document.getElementById('marker-start'), mEnd = document.getElementById('marker-end'), mi = document.getElementById('marker-i'), indicator = document.getElementById('range-indicator');
+  if (step.i !== -1) {
+    const baseX = 20;
+    mStart.style.left = `${baseX + step.start * CELL_TOTAL}px`;
+    mEnd.style.left = `${baseX + step.end * CELL_TOTAL}px`;
+    mi.style.left = `${baseX + step.i * CELL_TOTAL}px`;
+    mEnd.style.top = step.start === step.end ? "-28px" : "-10px";
+    indicator.style.left = `${baseX + step.start * CELL_TOTAL}px`;
+    indicator.style.width = `${(step.end - step.start + 1) * CELL_TOTAL - 3}px`;
+    [mStart, mEnd, mi, indicator].forEach(el => el.style.opacity = 1);
+  } else { [mStart, mEnd, mi, indicator].forEach(el => el.style.opacity = 0); }
+  document.getElementById('resultList').innerHTML = step.res.map(r => `<div style="padding:4px 12px; background:var(--green); color:#000; border-radius:12px; font-weight:bold; font-size:12px">${r}</div>`).join('');
+  document.getElementById('varMonitor').innerHTML = `<div class="var-row"><span>i</span><span class="c-nm">${step.i}</span></div><div class="var-row"><span>start</span><span class="c-blue">${step.start}</span></div><div class="var-row"><span>end</span><span class="c-nm" style="color:var(--orange)">${step.end}</span></div><div class="var-row"><span>res</span><span class="c-vr">[${step.res.join(', ')}]</span></div>`;
+  document.querySelectorAll('.line').forEach((l, idx) => l.classList.toggle('active', idx === step.ln));
+  const logBox = document.getElementById('logBox');
+  const div = document.createElement('div'); div.innerHTML = `> ${step.log}`;
+  logBox.appendChild(div); logBox.scrollTop = logBox.scrollHeight;
+}
+
+function changeTC(id) {
+  currentTC = { s: testCases[id], id: id };
+  document.getElementById('tc1').classList.toggle('active', id === 1);
+  document.getElementById('tc2').classList.toggle('active', id === 2);
+  reset();
+}
+
+function reset() {
+  steps = generateSteps(currentTC.s); curStep = 0; isPlaying = false; clearInterval(timer);
+  document.getElementById('logBox').innerHTML = ''; update();
+}
+function next() { if (curStep < steps.length - 1) { curStep++; update(); } }
+function prev() { if (curStep > 0) { curStep--; update(); } }
+function togglePlay() {
+  isPlaying = !isPlaying;
+  document.getElementById('playBtn').innerText = isPlaying ? "Pause" : "Auto Play";
+  if (isPlaying) timer = setInterval(() => { if(curStep < steps.length - 1) next(); else togglePlay(); }, 600);
+  else clearInterval(timer);
+}
+
+document.getElementById('codeArea').innerHTML = codeLines.map((l, i) => `<div class="line"><span class="line-num">${i+1}</span><span style="margin-left:${l.i*20}px">${l.t}</span></div>`).join('');
+reset();
+</script>
+</body>
+</html>

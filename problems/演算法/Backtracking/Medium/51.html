@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N-Queens 演算法視覺化模擬器</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1E1E1E;
+            color: #D4D4D4;
+            font-family: 'Fira Code', monospace;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .vs-code-bg { background-color: #1E1E1E; }
+        .vs-sidebar-bg { background-color: #252526; }
+        .vs-border { border-color: #3C3C3C; }
+        .highlight-line { background-color: #37373D; border-left: 3px solid #007ACC; }
+        .cell-active { animation: pulse 0.6s ease-in-out; }
+        @keyframes pulse {
+            0% { background-color: #264F78; transform: scale(1); }
+            50% { background-color: #3E91E2; transform: scale(1.05); }
+            100% { background-color: transparent; transform: scale(1); }
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        const N_QUEENS_CODE = [
+            "def solveNQueens(n):", // 0
+            "    res = []",          // 1
+            "    board = [['.'] * n for _ in range(n)]", // 2
+            "    cols = set()",      // 3
+            "    posDiag = set() # r+c", // 4
+            "    negDiag = set() # r-c", // 5
+            "",
+            "    def backtrack(r):", // 7
+            "        if r == n:",    // 8
+            "            res.append([''.join(row) for row in board])", // 9
+            "            return",    // 10
+            "",
+            "        for c in range(n):", // 12
+            "            if c in cols or (r+c) in posDiag or (r-c) in negDiag:", // 13
+            "                continue", // 14
+            "",
+            "            board[r][c] = 'Q'", // 16
+            "            cols.add(c)", // 17
+            "            posDiag.add(r+c)", // 18
+            "            negDiag.add(r-c)", // 19
+            "            backtrack(r + 1)", // 20
+            "",
+            "            board[r][c] = '.'", // 22
+            "            cols.remove(c)", // 23
+            "            posDiag.remove(r+c)", // 24
+            "            negDiag.remove(r-c)", // 25
+            "",
+            "    backtrack(0)", // 27
+            "    return res"    // 28
+        ];
+
+        const App = () => {
+            const [n, setN] = useState(4);
+            const [steps, setSteps] = useState([]);
+            const [currentStep, setCurrentStep] = useState(0);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const timerRef = useRef(null);
+
+            // 演算法核心：預先計算所有步驟
+            const generateSteps = (val) => {
+                const history = [];
+                const board = Array(val).fill(0).map(() => Array(val).fill('.'));
+                const cols = new Set();
+                const posDiag = new Set();
+                const negDiag = new Set();
+
+                const record = (line, vars = {}) => {
+                    history.push({
+                        line,
+                        board: JSON.parse(JSON.stringify(board)),
+                        vars: {
+                            r: vars.r ?? null,
+                            c: vars.c ?? null,
+                            cols: Array.from(cols),
+                            posDiag: Array.from(posDiag),
+                            negDiag: Array.from(negDiag),
+                        }
+                    });
+                };
+
+                const backtrack = (r) => {
+                    record(8, {r});
+                    if (r === val) {
+                        record(9, {r});
+                        return;
+                    }
+
+                    for (let c = 0; c < val; c++) {
+                        record(12, {r, c});
+                        record(13, {r, c});
+                        if (cols.has(c) || posDiag.has(r + c) || negDiag.has(r - c)) {
+                            record(14, {r, c});
+                            continue;
+                        }
+
+                        board[r][c] = 'Q';
+                        cols.add(c);
+                        posDiag.add(r + c);
+                        negDiag.add(r - c);
+                        record(16, {r, c});
+                        record(20, {r, c});
+                        
+                        backtrack(r + 1);
+
+                        board[r][c] = '.';
+                        cols.remove(c);
+                        posDiag.remove(r + c);
+                        negDiag.remove(r - c);
+                        record(22, {r, c});
+                    }
+                };
+
+                record(1);
+                record(2);
+                record(27);
+                backtrack(0);
+                record(28);
+                return history;
+            };
+
+            useEffect(() => {
+                const newSteps = generateSteps(n);
+                setSteps(newSteps);
+                setCurrentStep(0);
+                setIsPlaying(false);
+            }, [n]);
+
+            useEffect(() => {
+                if (isPlaying) {
+                    timerRef.current = setInterval(() => {
+                        setCurrentStep(prev => {
+                            if (prev >= steps.length - 1) {
+                                setIsPlaying(false);
+                                return prev;
+                            }
+                            return prev + 1;
+                        });
+                    }, 500);
+                } else {
+                    clearInterval(timerRef.current);
+                }
+                return () => clearInterval(timerRef.current);
+            }, [isPlaying, steps]);
+
+            const stepData = steps[currentStep] || { board: [], vars: {}, line: 0 };
+
+            return (
+                <div className="flex flex-col h-full w-full overflow-hidden">
+                    {/* Top Switcher */}
+                    <div className="vs-sidebar-bg p-4 flex items-center justify-between border-b vs-border">
+                        <div className="flex space-x-4 items-center">
+                            <h1 className="text-blue-400 font-bold text-lg mr-4">LeetCode 51. N-Queens</h1>
+                            <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm">Backtracking</button>
+                            <button className="text-gray-500 px-3 py-1 text-sm hover:bg-gray-700 rounded transition">Bitmask Optimization</button>
+                        </div>
+                        <div className="text-xs text-gray-500">Language: Python 3</div>
+                    </div>
+
+                    <div className="flex flex-1 overflow-hidden">
+                        {/* Left Column */}
+                        <div className="w-[25%] vs-sidebar-bg border-r vs-border flex flex-col p-6 overflow-y-auto no-scrollbar">
+                            <section className="mb-8">
+                                <h3 className="text-blue-400 mb-2 font-semibold">Problem</h3>
+                                <p className="text-sm leading-relaxed text-gray-400">
+                                    The <b>n-queens</b> puzzle is the problem of placing n queens on an n×n chessboard such that no two queens attack each other.
+                                </p>
+                                <div className="mt-4 p-3 bg-black bg-opacity-20 rounded text-xs">
+                                    <span className="text-yellow-500 font-bold">Constraints:</span>
+                                    <ul className="list-disc ml-4 mt-1 opacity-70">
+                                        <li>1 ≤ n ≤ 9</li>
+                                    </ul>
+                                </div>
+                            </section>
+
+                            <section className="mb-8">
+                                <h3 className="text-green-500 mb-2 font-semibold">Complexity</h3>
+                                <div className="flex gap-2 mb-4">
+                                    <span className="bg-red-900 bg-opacity-30 text-red-400 px-2 py-1 rounded text-xs">Time: O(N!)</span>
+                                    <span className="bg-blue-900 bg-opacity-30 text-blue-400 px-2 py-1 rounded text-xs">Space: O(N)</span>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                    使用回溯法遍歷每一行。利用三組集合(cols, posDiag, negDiag)實現 $O(1)$ 的衝突檢測。
+                                </p>
+                            </section>
+
+                            <section>
+                                <h3 className="text-gray-300 mb-2 font-semibold text-sm">Test Cases</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {[1, 4, 8].map(val => (
+                                        <button 
+                                            key={val}
+                                            onClick={() => setN(val)}
+                                            className={`px-4 py-2 text-xs rounded transition ${n === val ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`}
+                                        >
+                                            n = {val}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
+
+                        {/* Middle Column */}
+                        <div className="w-[45%] flex flex-col p-6 gap-6 overflow-hidden">
+                            <div className="flex-1 bg-black bg-opacity-10 rounded-xl flex items-center justify-center relative border vs-border overflow-hidden">
+                                <div 
+                                    className="grid gap-1"
+                                    style={{ 
+                                        gridTemplateColumns: `repeat(${n}, 1fr)`,
+                                        width: `${Math.min(n * 60, 400)}px`
+                                    }}
+                                >
+                                    {stepData.board.flat().map((cell, idx) => {
+                                        const r = Math.floor(idx / n);
+                                        const c = idx % n;
+                                        const isEven = (r + c) % 2 === 0;
+                                        const isActive = stepData.vars.r === r && stepData.vars.c === c;
+                                        return (
+                                            <div 
+                                                key={idx}
+                                                className={`aspect-square flex items-center justify-center rounded-sm text-2xl relative
+                                                    ${isEven ? 'bg-[#2D2D2D]' : 'bg-[#252526]'}
+                                                    ${isActive ? 'ring-2 ring-blue-500 z-10 cell-active' : ''}
+                                                `}
+                                            >
+                                                {cell === 'Q' && <span className="drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">👑</span>}
+                                                {isActive && cell === '.' && <div className="w-2 h-2 bg-blue-500 rounded-full opacity-50"></div>}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="absolute top-4 left-4 text-xs text-gray-600">Chessboard Visualization</div>
+                            </div>
+
+                            <div className="h-40 vs-sidebar-bg rounded-lg border vs-border p-4 flex flex-col">
+                                <div className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Set Tracker (Conflict Detection)</div>
+                                <div className="grid grid-cols-3 gap-2 flex-1">
+                                    <div className="bg-black bg-opacity-30 p-2 rounded">
+                                        <div className="text-[10px] text-red-400 mb-1">cols</div>
+                                        <div className="flex flex-wrap gap-1">
+                                            {stepData.vars.cols?.map(v => <span key={v} className="bg-red-900 bg-opacity-40 px-1 rounded text-[10px]">{v}</span>)}
+                                        </div>
+                                    </div>
+                                    <div className="bg-black bg-opacity-30 p-2 rounded">
+                                        <div className="text-[10px] text-green-400 mb-1">posDiag (r+c)</div>
+                                        <div className="flex flex-wrap gap-1">
+                                            {stepData.vars.posDiag?.map(v => <span key={v} className="bg-green-900 bg-opacity-40 px-1 rounded text-[10px]">{v}</span>)}
+                                        </div>
+                                    </div>
+                                    <div className="bg-black bg-opacity-30 p-2 rounded">
+                                        <div className="text-[10px] text-purple-400 mb-1">negDiag (r-c)</div>
+                                        <div className="flex flex-wrap gap-1">
+                                            {stepData.vars.negDiag?.map(v => <span key={v} className="bg-purple-900 bg-opacity-40 px-1 rounded text-[10px]">{v}</span>)}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="h-16 flex items-center justify-between px-4 bg-gray-800 rounded-lg border vs-border">
+                                <div className="flex gap-4">
+                                    <button onClick={() => {setIsPlaying(false); setCurrentStep(Math.max(0, currentStep-1))}} className="hover:text-blue-400">⏮</button>
+                                    <button onClick={() => setIsPlaying(!isPlaying)} className="hover:text-blue-400 w-8">
+                                        {isPlaying ? "⏸" : "▶"}
+                                    </button>
+                                    <button onClick={() => {setIsPlaying(false); setCurrentStep(Math.min(steps.length-1, currentStep+1))}} className="hover:text-blue-400">⏭</button>
+                                    <button onClick={() => {setIsPlaying(false); setCurrentStep(0)}} className="hover:text-red-400">🔄</button>
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                    Step: <span className="text-blue-400">{currentStep + 1}</span> / {steps.length}
+                                </div>
+                                <div className="w-32 bg-gray-700 h-1 rounded-full overflow-hidden">
+                                    <div className="h-full bg-blue-500 transition-all duration-300" style={{width: `${((currentStep+1)/steps.length)*100}%`}}></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Column */}
+                        <div className="w-[30%] vs-sidebar-bg border-l vs-border flex flex-col">
+                            <div className="p-4 border-b vs-border text-xs font-semibold text-gray-500 flex justify-between">
+                                <span>solution.py</span>
+                                <span className="text-green-600">● Debugging</span>
+                            </div>
+                            <div className="flex-1 overflow-y-auto no-scrollbar p-2 text-sm leading-6">
+                                {N_QUEENS_CODE.map((line, idx) => (
+                                    <div key={idx} className={`flex ${stepData.line === idx ? 'highlight-line' : ''}`}>
+                                        <span className="w-8 text-right pr-4 text-gray-600 text-xs select-none">{idx + 1}</span>
+                                        <pre className="whitespace-pre">{line || ' '}</pre>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="h-[250px] border-t vs-border p-4 bg-black bg-opacity-20">
+                                <div className="text-xs text-blue-400 mb-3 uppercase font-bold tracking-widest">Variable Watcher</div>
+                                <div className="space-y-2 text-xs">
+                                    <div className="flex justify-between py-1 border-b border-gray-800">
+                                        <span className="text-gray-500">current_row (r)</span>
+                                        <span className="text-yellow-500 font-bold">{stepData.vars.r ?? 'None'}</span>
+                                    </div>
+                                    <div className="flex justify-between py-1 border-b border-gray-800">
+                                        <span className="text-gray-500">current_col (c)</span>
+                                        <span className="text-yellow-500 font-bold">{stepData.vars.c ?? 'None'}</span>
+                                    </div>
+                                    <div className="flex justify-between py-1 border-b border-gray-800">
+                                        <span className="text-gray-500">line_active</span>
+                                        <span className="text-blue-400">{stepData.line}</span>
+                                    </div>
+                                    <div className="mt-4 text-[10px] text-gray-600 italic">
+                                        * Each queen placement checks 3 sets to ensure no horizontal, vertical, or diagonal attacks.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

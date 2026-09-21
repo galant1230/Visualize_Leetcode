@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 3418 Interactive Tutorial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'JetBrains Mono', monospace; background-color: #1e1e1e; color: #d4d4d4; }
+        .vscode-sidebar { background-color: #252526; }
+        .vscode-active-line { background-color: #264f78; border-left: 3px solid #007acc; transition: all 0.1s; }
+        .cell-highlight { animation: pulse 0.4s ease-out; }
+        @keyframes pulse {
+            0% { background-color: #264f78; }
+            100% { background-color: transparent; }
+        }
+        .code-syntax-keyword { color: #569cd6; }
+        .code-syntax-func { color: #dcdcaa; }
+        .code-syntax-comment { color: #6a9955; }
+        .code-syntax-digit { color: #b5cea8; }
+        .code-syntax-string { color: #ce9178; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-[13px]">
+
+    <div class="h-9 vscode-sidebar flex items-center px-4 border-b border-[#333] justify-between">
+        <div class="flex items-center gap-2 bg-[#1e1e1e] px-4 h-full border-t border-[#007acc] text-xs">
+            <span class="text-blue-400">py</span> solution.py
+        </div>
+        <div class="text-gray-500 text-[10px] uppercase tracking-widest">3418. Maximum Amount of Money Robot Can Earn</div>
+    </div>
+
+    <div class="flex-1 flex overflow-hidden">
+        <aside class="w-1/4 vscode-sidebar flex flex-col border-r border-[#333] overflow-y-auto scrollbar-hide p-5 gap-6">
+            <section>
+                <h2 class="text-blue-400 font-bold mb-2">題目描述</h2>
+                <p class="text-gray-400 leading-relaxed">
+                    機器人從 (0, 0) 出發到 (m-1, n-1)。<br>
+                    遇到負值扣錢，但擁有 <span class="text-yellow-500 font-bold">2 次抵消強盜</span> 的特殊能力（負值變 0）。
+                </p>
+            </section>
+
+            <section class="bg-[#1a1a1b] p-4 rounded border border-[#333]">
+                <h2 class="text-blue-400 font-bold mb-3 border-b border-[#333] pb-1">解題思路</h2>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-white font-bold underline">1. 狀態定義</p>
+                        <p class="text-gray-400">dp[i][j][k]：到達座標 (i, j) 時，使用了 k 次能力後的最高金幣數。</p>
+                    </div>
+                    <div>
+                        <p class="text-white font-bold underline">2. 轉移方程</p>
+                        <p class="text-gray-400">不使用能力：繼承前一格同樣 k 狀態的最大值 + 當前格子金幣。</p>
+                        <p class="text-gray-400 mt-1 text-blue-300">使用能力 (限 coins < 0)：繼承前一格 (k-1) 狀態的最大值，當前格視為 0。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="text-gray-500 font-bold mb-2">限制條件</h2>
+                <ul class="text-gray-500 list-disc list-inside">
+                    <li>網格大小最高 500 x 500</li>
+                    <li>能力使用上限：2 次</li>
+                    <li>結果可能為負數</li>
+                </ul>
+            </section>
+
+            <div class="mt-auto">
+                <button onclick="loadCase(0)" class="w-full text-left p-2 mb-2 rounded bg-[#37373d] border-l-4 border-blue-500 text-xs">範例 1: 3x3 混合網格</button>
+                <button onclick="loadCase(1)" class="w-full text-left p-2 rounded bg-[#2d2d2d] border-l-4 border-transparent text-xs text-gray-500">範例 2: 2x2 小型網格</button>
+            </div>
+        </aside>
+
+        <main class="w-[45%] flex flex-col p-6 gap-6">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-gray-500 uppercase tracking-widest text-xs">動態矩陣演化</h3>
+                <div id="step-counter" class="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px]">STEP: 0</div>
+            </div>
+
+            <div id="grid-container" class="grid gap-2 p-4 bg-[#252526] rounded border border-[#333] shadow-2xl overflow-auto"></div>
+
+            <div class="flex-1 flex flex-col min-h-0">
+                <h3 class="font-bold text-gray-500 mb-2 uppercase tracking-widest text-xs text-center">三維 DP 狀態 (k=0 | k=1 | k=2)</h3>
+                <div id="dp-table" class="grid gap-2 overflow-y-auto scrollbar-hide pr-2"></div>
+            </div>
+
+            <div class="bg-[#252526] h-14 rounded border border-[#333] flex items-center justify-around px-8 shadow-inner">
+                <button onclick="prevStep()" class="text-gray-400 hover:text-white">上一步</button>
+                <button onclick="togglePlay()" id="play-btn" class="bg-blue-500 hover:bg-blue-400 text-white px-6 py-1 rounded font-bold">自動播放</button>
+                <button onclick="nextStep()" class="text-gray-400 hover:text-white">下一步</button>
+                <button onclick="resetSim()" class="text-red-500 text-[10px]">重置</button>
+            </div>
+        </main>
+
+        <aside class="w-[30%] vscode-sidebar border-l border-[#333] flex flex-col overflow-hidden">
+            <div class="p-4 flex-1 flex flex-col min-h-0">
+                <h3 class="text-gray-500 font-bold mb-4 uppercase text-xs">完整解決方案 (Python)</h3>
+                <div id="code-area" class="font-mono text-[11px] leading-5 overflow-y-auto whitespace-pre pr-4 scrollbar-hide">
+<div id="line-0"><span class="code-syntax-keyword">class</span> <span class="code-syntax-func">Solution</span>:</div><div id="line-1">    <span class="code-syntax-keyword">def</span> <span class="code-syntax-func">maximumAmount</span>(self, coins):</div><div id="line-2">        m, n = <span class="code-syntax-func">len</span>(coins), <span class="code-syntax-func">len</span>(coins[0])</div><div id="line-3">        dp = [[[-<span class="code-syntax-func">float</span>(<span class="code-syntax-string">'inf'</span>)] * <span class="code-syntax-digit">3</span> <span class="code-syntax-keyword">for</span> _ <span class="code-syntax-keyword">in</span> <span class="code-syntax-func">range</span>(n)] <span class="code-syntax-keyword">for</span> _ <span class="code-syntax-keyword">in</span> <span class="code-syntax-func">range</span>(m)]</div><div id="line-4">        </div><div id="line-5">        <span class="code-syntax-comment"># 初始化起點 (0, 0) 的三種能力狀態</span></div><div id="line-6">        dp[<span class="code-syntax-digit">0</span>][<span class="code-syntax-digit">0</span>][<span class="code-syntax-digit">0</span>] = coins[<span class="code-syntax-digit">0</span>][<span class="code-syntax-digit">0</span>]</div><div id="line-7">        <span class="code-syntax-keyword">for</span> k <span class="code-syntax-keyword">in</span> <span class="code-syntax-func">range</span>(<span class="code-syntax-digit">1</span>, <span class="code-syntax-digit">3</span>):</div><div id="line-8">            dp[<span class="code-syntax-digit">0</span>][<span class="code-syntax-digit">0</span>][k] = <span class="code-syntax-func">max</span>(dp[<span class="code-syntax-digit">0</span>][<span class="code-syntax-digit">0</span>][k-<span class="code-syntax-digit">1</span>], <span class="code-syntax-digit">0</span> <span class="code-syntax-keyword">if</span> coins[<span class="code-syntax-digit">0</span>][<span class="code-syntax-digit">0</span>] &lt; <span class="code-syntax-digit">0</span> <span class="code-syntax-keyword">else</span> coins[<span class="code-syntax-digit">0</span>][<span class="code-syntax-digit">0</span>])</div><div id="line-9">            </div><div id="line-10">        <span class="code-syntax-keyword">for</span> i <span class="code-syntax-keyword">in</span> <span class="code-syntax-func">range</span>(m):</div><div id="line-11">            <span class="code-syntax-keyword">for</span> j <span class="code-syntax-keyword">in</span> <span class="code-syntax-func">range</span>(n):</div><div id="line-12">                <span class="code-syntax-keyword">if</span> i == <span class="code-syntax-digit">0</span> <span class="code-syntax-keyword">and</span> j == <span class="code-syntax-digit">0</span>: <span class="code-syntax-keyword">continue</span></div><div id="line-13">                <span class="code-syntax-keyword">for</span> k <span class="code-syntax-keyword">in</span> <span class="code-syntax-func">range</span>(<span class="code-syntax-digit">3</span>):</div><div id="line-14">                    <span class="code-syntax-comment"># --- 不使用能力：從上方或左方轉移 ---</span></div><div id="line-15">                    res = -<span class="code-syntax-func">float</span>(<span class="code-syntax-string">'inf'</span>)</div><div id="line-16">                    <span class="code-syntax-keyword">if</span> i &gt; <span class="code-syntax-digit">0</span>: res = <span class="code-syntax-func">max</span>(res, dp[i-<span class="code-syntax-digit">1</span>][j][k])</div><div id="line-17">                    <span class="code-syntax-keyword">if</span> j &gt; <span class="code-syntax-digit">0</span>: res = <span class="code-syntax-func">max</span>(res, dp[i][j-<span class="code-syntax-digit">1</span>][k])</div><div id="line-18">                    dp[i][j][k] = res + coins[i][j]</div><div id="line-19">                    </div><div id="line-20">                    <span class="code-syntax-comment"># --- 使用能力：抵消當前強盜 (限負值) ---</span></div><div id="line-21">                    <span class="code-syntax-keyword">if</span> coins[i][j] &lt; <span class="code-syntax-digit">0</span> <span class="code-syntax-keyword">and</span> k &gt; <span class="code-syntax-digit">0</span>:</div><div id="line-22">                        res_p = -<span class="code-syntax-func">float</span>(<span class="code-syntax-string">'inf'</span>)</div><div id="line-23">                        <span class="code-syntax-keyword">if</span> i &gt; <span class="code-syntax-digit">0</span>: res_p = <span class="code-syntax-func">max</span>(res_p, dp[i-<span class="code-syntax-digit">1</span>][j][k-<span class="code-syntax-digit">1</span>])</div><div id="line-24">                        <span class="code-syntax-keyword">if</span> j &gt; <span class="code-syntax-digit">0</span>: res_p = <span class="code-syntax-func">max</span>(res_p, dp[i][j-<span class="code-syntax-digit">1</span>][k-<span class="code-syntax-digit">1</span>])</div><div id="line-25">                        dp[i][j][k] = <span class="code-syntax-func">max</span>(dp[i][j][k], res_p)</div><div id="line-26">                        </div><div id="line-27">        <span class="code-syntax-keyword">return</span> <span class="code-syntax-func">max</span>(dp[m-<span class="code-syntax-digit">1</span>][n-<span class="code-syntax-digit">1</span>])</div>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-[#1e1e1e] border-t border-[#333]">
+                <h3 class="text-gray-500 font-bold mb-2 uppercase text-[10px]">Watcher</h3>
+                <div class="grid grid-cols-2 gap-2 text-[11px]">
+                    <div class="flex justify-between border-b border-[#333] pb-1"><span class="text-blue-300">pos</span><span id="w-pos">(0,0)</span></div>
+                    <div class="flex justify-between border-b border-[#333] pb-1"><span class="text-blue-300">k</span><span id="w-k">0</span></div>
+                    <div class="flex justify-between border-b border-[#333] pb-1"><span class="text-blue-300">coins[i][j]</span><span id="w-coin">0</span></div>
+                    <div class="flex justify-between border-b border-[#333] pb-1"><span class="text-green-400 font-bold">dp_val</span><span id="w-res">-</span></div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const cases = [
+            { grid: [[0,1,-1],[1,-2,3],[2,-3,4]], m: 3, n: 3 },
+            { grid: [[10,-5],[-5,10]], m: 2, n: 2 }
+        ];
+
+        let curC = 0, steps = [], curS = -1, pInt = null;
+
+        function runDP() {
+            const { grid, m, n } = cases[curC];
+            steps = [];
+            let dp = Array.from({length: m}, () => Array.from({length: n}, () => [-1e9, -1e9, -1e9]));
+
+            for (let i = 0; i < m; i++) {
+                for (let j = 0; j < n; j++) {
+                    for (let k = 0; k < 3; k++) {
+                        let line = 18;
+                        if (i === 0 && j === 0) {
+                            dp[0][0][0] = grid[0][0];
+                            dp[0][0][1] = grid[0][0] < 0 ? 0 : grid[0][0];
+                            dp[0][0][2] = grid[0][0] < 0 ? 0 : grid[0][0];
+                            line = 8;
+                        } else {
+                            let res = -1e9;
+                            if (i > 0) res = Math.max(res, dp[i-1][j][k]);
+                            if (j > 0) res = Math.max(res, dp[i][j-1][k]);
+                            dp[i][j][k] = res + grid[i][j];
+
+                            if (grid[i][j] < 0 && k > 0) {
+                                let res_p = -1e9;
+                                if (i > 0) res_p = Math.max(res_p, dp[i-1][j][k-1]);
+                                if (j > 0) res_p = Math.max(res_p, dp[i][j-1][k-1]);
+                                if (res_p > dp[i][j][k]) {
+                                    dp[i][j][k] = res_p;
+                                    line = 25;
+                                }
+                            }
+                        }
+                        steps.push({ i, j, k, val: dp[i][j][k], coin: grid[i][j], line });
+                    }
+                }
+            }
+            renderBase();
+        }
+
+        function renderBase() {
+            const { grid, m, n } = cases[curC];
+            const gc = document.getElementById('grid-container');
+            gc.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+            gc.innerHTML = grid.flat().map((v, idx) => `
+                <div id="cell-${Math.floor(idx/n)}-${idx%n}" class="h-10 flex items-center justify-center rounded border border-[#333] font-bold ${v<0?'text-red-500':'text-green-500'}">${v}</div>
+            `).join('');
+
+            const dt = document.getElementById('dp-table');
+            dt.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+            dt.innerHTML = grid.flat().map((_, idx) => {
+                const r = Math.floor(idx/n), c = idx%n;
+                return `<div id="dp-box-${r}-${c}" class="p-1 border border-[#333] rounded bg-[#111] text-[10px]">
+                    <div id="dp-${r}-${c}-0" class="text-gray-600">k0: -</div>
+                    <div id="dp-${r}-${c}-1" class="text-gray-600">k1: -</div>
+                    <div id="dp-${r}-${c}-2" class="text-gray-600">k2: -</div>
+                </div>`;
+            }).join('');
+            curS = -1;
+            document.getElementById('step-counter').innerText = `STEP: 0`;
+        }
+
+        function updateUI(idx) {
+            const s = steps[idx];
+            document.querySelectorAll('[id^="cell-"]').forEach(e => e.classList.remove('border-blue-500', 'bg-blue-900/30'));
+            document.getElementById(`cell-${s.i}-${s.j}`).classList.add('border-blue-500', 'bg-blue-900/30');
+
+            const dpElem = document.getElementById(`dp-${s.i}-${s.j}-${s.k}`);
+            dpElem.innerText = `k${s.k}: ${s.val === -1e9 ? '-inf' : s.val}`;
+            dpElem.className = "text-blue-400 font-bold cell-highlight";
+            
+            document.getElementById('w-pos').innerText = `(${s.i}, ${s.j})`;
+            document.getElementById('w-k').innerText = s.k;
+            document.getElementById('w-coin').innerText = s.coin;
+            document.getElementById('w-res').innerText = s.val;
+
+            document.querySelectorAll('[id^="line-"]').forEach(e => e.classList.remove('vscode-active-line'));
+            document.getElementById(`line-${s.line}`).classList.add('vscode-active-line');
+            document.getElementById('step-counter').innerText = `STEP: ${idx+1}`;
+        }
+
+        function nextStep() {
+            if (curS < steps.length - 1) updateUI(++curS);
+            else { clearInterval(pInt); pInt = null; document.getElementById('play-btn').innerText = "播放結束"; }
+        }
+
+        function prevStep() {
+            if (curS > 0) {
+                curS--; renderBase();
+                for(let i=0; i<=curS; i++) updateUI(i);
+            }
+        }
+
+        function togglePlay() {
+            if (pInt) { clearInterval(pInt); pInt = null; document.getElementById('play-btn').innerText = "自動播放"; }
+            else { pInt = setInterval(nextStep, 300); document.getElementById('play-btn').innerText = "暫停"; }
+        }
+
+        function resetSim() {
+            clearInterval(pInt); pInt = null; curS = -1; renderBase();
+            document.getElementById('play-btn').innerText = "自動播放";
+            document.querySelectorAll('[id^="line-"]').forEach(e => e.classList.remove('vscode-active-line'));
+        }
+
+        function loadCase(i) {
+            curC = i;
+            document.querySelectorAll('aside button').forEach((b, idx) => {
+                b.classList.toggle('border-blue-500', idx === i);
+                b.classList.toggle('text-gray-500', idx !== i);
+            });
+            runDP();
+        }
+
+        runDP();
+    </script>
+</body>
+</html>

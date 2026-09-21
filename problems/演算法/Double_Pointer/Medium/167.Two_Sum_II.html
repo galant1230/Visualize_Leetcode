@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>Two Sum II: 演算法全解析工具</title>
+  <style>
+    :root {
+      --primary: #64ffda; --accent: #f39c12; --bg: #0a192f;
+      --card-bg: #112240; --text: #ccd6f6; --text-dim: #8892b0; --success: #2ecc71; --error: #ff4d4d;
+      --kw: #c792ea; --fn: #82aaff; --str: #ecc48d; --num: #f78c6c; --comment: #637777;
+    }
+    body {
+      font-family: 'Consolas', 'Microsoft JhengHei', monospace; background: var(--bg);
+      color: var(--text); padding: 20px; margin: 0; line-height: 1.4;
+    }
+    .dashboard { max-width: 1450px; margin: auto; display: grid; grid-template-columns: 350px 1fr 1fr; gap: 15px; }
+    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #233554; }
+    .full-width { grid-column: span 3; }
+    
+    /* 題目與範例區 */
+    .problem-header { margin-bottom: 15px; padding: 15px; border-left: 4px solid var(--primary); background: rgba(0,0,0,0.2); }
+    .example-tag { display: inline-block; padding: 2px 8px; background: #233554; border-radius: 4px; font-size: 0.8rem; margin-right: 5px; cursor: pointer; border: 1px solid transparent; }
+    .example-tag.active { border-color: var(--primary); color: var(--primary); }
+
+    /* 代碼高亮樣式 */
+    .code-window { background: #011627; padding: 15px; border-radius: 8px; font-size: 0.85rem; height: 450px; overflow-y: auto; position: relative; }
+    .line { white-space: pre; border-left: 4px solid transparent; padding-left: 10px; color: #d6deeb; margin-bottom: 2px; }
+    .active-line { background: #1d3b53; border-left-color: var(--primary); transition: 0.2s; }
+    .kw { color: var(--kw); } .fn { color: var(--fn); } .str { color: var(--str); } .num { color: var(--num); } .cmt { color: var(--comment); }
+
+    /* 陣列視覺化 */
+    .array-container { display: flex; justify-content: center; gap: 5px; margin: 35px 0; min-height: 100px; align-items: flex-end; }
+    .element-wrapper { display: flex; flex-direction: column; align-items: center; width: 50px; }
+    .element {
+      width: 42px; height: 42px; background: #233554; border: 2px solid #444; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; font-weight: bold; transition: 0.3s;
+    }
+    .element.active-p1 { border-color: var(--primary); box-shadow: 0 0 10px var(--primary); }
+    .element.active-p2 { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
+    .element.hit { background: var(--success); color: var(--bg); border-color: var(--success); transform: scale(1.1); }
+    .ptr-label { font-size: 0.75rem; font-weight: bold; margin-bottom: 5px; }
+
+    /* 日誌系統 */
+    .log-container {
+      height: 500px; overflow-y: auto; background: #011627; padding: 10px; border-radius: 8px;
+      font-size: 0.85rem; display: flex; flex-direction: column-reverse;
+    }
+    .log-entry { margin-bottom: 5px; border-bottom: 1px solid #0d283d; padding: 2px 0; }
+    .log-success { color: var(--success); font-weight: bold; }
+    .log-warn { color: var(--accent); }
+
+    button { background: #233554; border: 1px solid var(--primary); color: var(--primary); padding: 6px 15px; border-radius: 4px; cursor: pointer; margin: 2px; }
+    button:hover { background: var(--primary); color: var(--bg); }
+    .btn-algo.active { background: var(--primary); color: var(--bg); }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  <div class="card full-width">
+    <h3>🔍 167. Two Sum II - Input Array Is Sorted</h3>
+    <div class="problem-header">
+      <strong>題目：</strong>在已排序陣列中尋找兩數之和等於 <code>target</code>。回傳 1-indexed 索引。<br>
+      <div style="margin-top:10px;" id="example-selectors">
+        <span class="example-tag active" onclick="setExample(1)">範例 1: [2,7,11,15], T=9</span>
+        <span class="example-tag" onclick="setExample(2)">範例 2: [2,3,4], T=6</span>
+        <span class="example-tag" onclick="setExample(3)">範例 3: [-1,0], T=-1</span>
+      </div>
+      <div id="example-desc" style="font-size: 0.85rem; color: var(--text-dim); margin-top: 5px;">
+        Explanation: 2 + 7 = 9. Return [1, 2].
+      </div>
+    </div>
+    <div style="text-align:center">
+      <button class="btn-algo active" onclick="switchAlgo('brute')">1. Brute Force</button>
+      <button class="btn-algo" onclick="switchAlgo('binary')">2. Binary Search</button>
+      <button class="btn-algo" onclick="switchAlgo('hash')">3. Hash Map</button>
+      <button class="btn-algo" onclick="switchAlgo('twoPtr')">4. Two Pointers</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🖥️ Step Log</h3>
+    <div class="log-container" id="logConsole"></div>
+  </div>
+
+  <div class="card">
+    <div style="text-align:center; margin-bottom:15px;">
+      <button id="stepBtn" onclick="runStep()" style="background:var(--accent); color:white; border:none; padding:8px 20px;">NEXT STEP</button>
+      <button onclick="reset()">RESET</button>
+    </div>
+    <div class="array-container" id="arrayVisual"></div>
+    <div id="status-display" style="text-align:center; font-size:1.1rem; border-top:1px solid #233554; padding-top:10px;">
+      Checking: <span id="formula" style="color:var(--primary)">-</span>
+    </div>
+    <div id="extra-viz" style="margin-top:20px;"></div>
+  </div>
+
+  <div class="card">
+    <h3>🐍 Python Implementation</h3>
+    <div class="code-window" id="codeDisplay"></div>
+    <div id="complexity" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.2); font-size:0.85rem;"></div>
+  </div>
+</div>
+
+<script>
+const codes = {
+  brute: `
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(numbers)):
+    <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(i + <span class="num">1</span>, <span class="fn">len</span>(numbers)):
+        <span class="kw">if</span> numbers[i] + numbers[j] == target:
+            <span class="kw">return</span> [i + <span class="num">1</span>, j + <span class="num">1</span>]`,
+  binary: `
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(numbers)):
+    l, r = i + <span class="num">1</span>, <span class="fn">len</span>(numbers) - <span class="num">1</span>
+    tmp = target - numbers[i]
+    <span class="kw">while</span> l <= r:
+        mid = l + (r - l) // <span class="num">2</span>
+        <span class="kw">if</span> numbers[mid] == tmp:
+            <span class="kw">return</span> [i + <span class="num">1</span>, mid + <span class="num">1</span>]
+        <span class="kw">elif</span> numbers[mid] < tmp:
+            l = mid + <span class="num">1</span>
+        <span class="kw">else</span>:
+            r = mid - <span class="num">1</span>`,
+  hash: `
+mp = {} <span class="cmt"># value -> index</span>
+<span class="kw">for</span> i, num <span class="kw">in</span> <span class="fn">enumerate</span>(numbers):
+    tmp = target - num
+    <span class="kw">if</span> tmp <span class="kw">in</span> mp:
+        <span class="kw">return</span> [mp[tmp], i + <span class="num">1</span>]
+    mp[num] = i + <span class="num">1</span>`,
+  twoPtr: `
+l, r = <span class="num">0</span>, <span class="fn">len</span>(numbers) - <span class="num">1</span>
+<span class="kw">while</span> l < r:
+    curSum = numbers[l] + numbers[r]
+    <span class="kw">if</span> curSum == target:
+        <span class="kw">return</span> [l + <span class="num">1</span>, r + <span class="num">1</span>]
+    <span class="kw">elif</span> curSum < target:
+        l += <span class="num">1</span>
+    <span class="kw">else</span>:
+        r -= <span class="num">1</span>`
+};
+
+const scenarios = {
+  1: { nums: [2, 7, 11, 15], target: 9, desc: "Explanation: 2 + 7 = 9. Return [1, 2]." },
+  2: { nums: [2, 3, 4], target: 6, desc: "Explanation: 2 + 4 = 6. Return [1, 3]." },
+  3: { nums: [-1, 0], target: -1, desc: "Explanation: -1 + 0 = -1. Return [1, 2]." }
+};
+
+let currentAlgo = 'brute';
+let currentNums = scenarios[1].nums;
+let currentTarget = scenarios[1].target;
+let i = 0, j = 1, l = 0, r = 0, mid = -1, finished = false, mp = {};
+
+function switchAlgo(a) {
+  currentAlgo = a;
+  document.querySelectorAll('.btn-algo').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(a.toLowerCase())));
+  reset();
+}
+
+function setExample(n) {
+  currentNums = scenarios[n].nums;
+  currentTarget = scenarios[n].target;
+  document.getElementById('example-desc').innerText = scenarios[n].desc;
+  document.querySelectorAll('.example-tag').forEach((t, idx) => t.classList.toggle('active', idx + 1 === n));
+  reset();
+}
+
+function reset() {
+  i = 0; j = 1; finished = false; mp = {}; mid = -1;
+  l = 0; r = currentNums.length - 1;
+  document.getElementById('logConsole').innerHTML = '';
+  document.getElementById('extra-viz').innerHTML = '';
+  document.getElementById('stepBtn').disabled = false;
+  document.getElementById('formula').innerText = '-';
+  
+  // Render Code
+  const codeWin = document.getElementById('codeDisplay');
+  codeWin.innerHTML = codes[currentAlgo].trim().split('\n').map((ln, idx) => `<div class="line" id="line-${idx}">${ln}</div>`).join('');
+  
+  const comp = { brute: 'O(n²), O(1)', binary: 'O(n log n), O(1)', hash: 'O(n), O(n)', twoPtr: 'O(n), O(1)' };
+  document.getElementById('complexity').innerHTML = `<strong>Complexity:</strong> Time ${comp[currentAlgo].split(',')[0]} | Space ${comp[currentAlgo].split(',')[1]}`;
+  
+  renderArray();
+}
+
+function renderArray(h1 = -1, h2 = -1, isWin = false) {
+  const container = document.getElementById('arrayVisual');
+  container.innerHTML = '';
+  currentNums.forEach((num, idx) => {
+    const w = document.createElement('div');
+    w.className = 'element-wrapper';
+    const ptr = document.createElement('div');
+    ptr.className = 'ptr-label';
+    
+    if (currentAlgo === 'brute') { if(idx===i) ptr.innerText='i'; if(idx===j) ptr.innerText='j'; }
+    else if (currentAlgo === 'binary') { if(idx===i) ptr.innerText='i'; if(idx===l) ptr.innerText='L'; if(idx===r) ptr.innerText='R'; if(idx===mid) ptr.innerText='M'; }
+    else if (currentAlgo === 'hash') { if(idx===i) ptr.innerText='curr'; }
+    else if (currentAlgo === 'twoPtr') { if(idx===l) ptr.innerText='L'; if(idx===r) ptr.innerText='R'; }
+
+    const el = document.createElement('div');
+    el.className = 'element';
+    if (idx === h1) el.classList.add('active-p1');
+    if (idx === h2) el.classList.add('active-p2');
+    if (isWin && (idx === h1 || idx === h2)) { el.classList.remove('active-p1', 'active-p2'); el.classList.add('hit'); }
+    el.innerText = num;
+    w.append(ptr, el);
+    container.append(w);
+  });
+}
+
+function addLog(m, type='') {
+  const log = document.getElementById('logConsole');
+  log.innerHTML = `<div class="log-entry log-${type}">> ${m}</div>` + log.innerHTML;
+}
+
+function highlight(lineIdx) {
+  document.querySelectorAll('.line').forEach(l => l.classList.remove('active-line'));
+  const el = document.getElementById(`line-${lineIdx}`);
+  if (el) {
+    el.classList.add('active-line');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function runStep() {
+  if (finished) return;
+  
+  if (currentAlgo === 'brute') {
+    highlight(1);
+    let sum = currentNums[i] + currentNums[j];
+    document.getElementById('formula').innerText = `${currentNums[i]} + ${currentNums[j]} = ${sum}`;
+    if (sum === currentTarget) {
+      highlight(3); addLog(`Match! [${i+1}, ${j+1}]`, 'success');
+      renderArray(i, j, true); finished = true;
+    } else {
+      addLog(`i=${i}, j=${j} (Sum:${sum}) != ${currentTarget}`);
+      j++;
+      if (j >= currentNums.length) { i++; j = i + 1; }
+      if (i >= currentNums.length - 1) { addLog('End of search'); finished = true; }
+      renderArray(i, j);
+    }
+  }
+
+  else if (currentAlgo === 'binary') {
+    let tmp = currentTarget - currentNums[i];
+    if (mid === -1) {
+      highlight(1); l = i + 1; r = currentNums.length - 1;
+      addLog(`Fixed i=${i} (${currentNums[i]}), seeking ${tmp}`);
+    }
+    highlight(4);
+    mid = Math.floor((l + r) / 2);
+    document.getElementById('formula').innerText = `Seek: ${tmp}, Found: nums[${mid}]=${currentNums[mid]}`;
+    
+    if (currentNums[mid] === tmp) {
+      highlight(6); addLog('Binary Search Found!', 'success');
+      renderArray(i, mid, true); finished = true;
+    } else {
+      if (l > r) { i++; mid = -1; addLog('Not found for this i, shifting...'); }
+      else if (currentNums[mid] < tmp) { highlight(8); l = mid + 1; addLog('Too small, L move'); }
+      else { highlight(10); r = mid - 1; addLog('Too large, R move'); }
+      renderArray(i, mid);
+    }
+  }
+
+  else if (currentAlgo === 'hash') {
+    highlight(2);
+    let num = currentNums[i];
+    let tmp = currentTarget - num;
+    document.getElementById('formula').innerText = `Target:${currentTarget}, Curr:${num}, Need:${tmp}`;
+    
+    if (mp[tmp] !== undefined) {
+      highlight(5); addLog(`Map contains ${tmp}!`, 'success');
+      renderArray(mp[tmp]-1, i, true); finished = true;
+    } else {
+      highlight(6);
+      addLog(`Map set {${num}: ${i+1}}`);
+      mp[num] = i + 1;
+      document.getElementById('extra-viz').innerHTML = `<div style="font-size:0.8rem">Map: ${JSON.stringify(mp)}</div>`;
+      i++;
+      if (i >= currentNums.length) finished = true;
+      renderArray(i);
+    }
+  }
+
+  else if (currentAlgo === 'twoPtr') {
+    highlight(2);
+    let sum = currentNums[l] + currentNums[r];
+    document.getElementById('formula').innerText = `${currentNums[l]} + ${currentNums[r]} = ${sum}`;
+    
+    if (sum === currentTarget) {
+      highlight(4); addLog('Target Reached!', 'success');
+      renderArray(l, r, true); finished = true;
+    } else if (sum < currentTarget) {
+      highlight(6); addLog(`${sum} < ${currentTarget}, Left++`);
+      l++; renderArray();
+    } else {
+      highlight(8); addLog(`${sum} > ${currentTarget}, Right--`);
+      r--; renderArray();
+    }
+  }
+}
+
+switchAlgo('brute');
+</script>
+</body>
+</html>

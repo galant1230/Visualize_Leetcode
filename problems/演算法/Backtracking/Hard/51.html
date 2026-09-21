@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 51. N-Queens 專業調試實驗室</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;700&display=swap');
+        :root { --vs-bg: #1E1E1E; --vs-sidebar: #252526; --vs-border: #3C3C3C; }
+        body { background-color: var(--vs-bg); color: #D4D4D4; font-family: 'Inter', sans-serif; margin: 0; height: 100vh; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        .kw { color: #C586C0; } .fn { color: #DCDCAA; } .st { color: #CE9178; } .cn { color: #569CD6; } .co { color: #6A9955; }
+        .active-line { background-color: #37373D; border-left: 3px solid #007ACC; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .cell-queen { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #454545; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const CODE_BASIC = [
+            { t: "class Solution:", i: 0 },
+            { t: "    def solveNQueens(self, n: int) -> List[List[str]]:", i: 1 },
+            { t: "        board = ['.' * n for _ in range(n)]", i: 2 },
+            { t: "        self.backtrack(board, 0)", i: 2 },
+            { t: "        return self.res", i: 2 },
+            { t: "", i: 0 },
+            { t: "    def backtrack(self, board, row):", i: 1 },
+            { t: "        if row == len(board):", i: 2 },
+            { t: "            self.res.append(board[:])", i: 3 },
+            { t: "            return", i: 3 },
+            { t: "        for col in range(len(board)):", i: 2 },
+            { t: "            if not self.isValid(board, row, col):", i: 3 },
+            { t: "                continue", i: 4 },
+            { t: "            board[row] = board[row][:col] + 'Q' + board[row][col+1:]", i: 3 },
+            { t: "            self.backtrack(board, row + 1)", i: 3 },
+            { t: "            board[row] = board[row][:col] + '.' + board[row][col+1:]", i: 3 },
+            { t: "", i: 0 },
+            { t: "    def isValid(self, board, row, col):", i: 1 },
+            { t: "        for i in range(row): # 檢查垂直列", i: 2 },
+            { t: "            if board[i][col] == 'Q': return False", i: 3 },
+            { t: "        for i, j in zip(range(row-1,-1,-1), range(col+1,n)): # 右上斜線", i: 2 },
+            { t: "            if board[i][j] == 'Q': return False", i: 3 },
+            { t: "        for i, j in zip(range(row-1,-1,-1), range(col-1,-1,-1)): # 左上斜線", i: 2 },
+            { t: "            if board[i][j] == 'Q': return False", i: 3 },
+            { t: "        return True", i: 2 }
+        ];
+
+        const CODE_SET = [
+            { t: "class Solution:", i: 0 },
+            { t: "    def solveNQueens(self, n: int):", i: 1 },
+            { t: "        board = [['.'] * n for _ in range(n)]", i: 2 },
+            { t: "        cols, diag1, diag2 = set(), set(), set()", i: 2 },
+            { t: "        def backtracking(row):", i: 2 },
+            { t: "            if row == n:", i: 3 },
+            { t: "                res.append([''.join(r) for r in board])", i: 4 },
+            { t: "                return", i: 4 },
+            { t: "            for col in range(n):", i: 3 },
+            { t: "                if col in cols or row-col in diag1 or row+col in diag2:", i: 4 },
+            { t: "                    continue", i: 5 },
+            { t: "                board[row][col] = 'Q'", i: 4 },
+            { t: "                cols.add(col); diag1.add(row-col); diag2.add(row+col)", i: 4 },
+            { t: "                backtracking(row + 1)", i: 4 },
+            { t: "                board[row][col] = '.'; cols.remove(col)", i: 4 },
+            { t: "                diag1.remove(row-col); diag2.remove(row+col)", i: 4 }
+        ];
+
+        const highlight = (text) => {
+            return text.replace(/\b(class|def|if|not|return|for|in|zip|range|set|self|None)\b/g, '<span class="kw">$1</span>')
+                       .replace(/\b(solveNQueens|backtrack|backtracking|isValid|append|len|add|remove|join)\b/g, '<span class="fn">$1</span>')
+                       .replace(/'[^']*'/g, '<span class="st">$&</span>')
+                       .replace(/\b(True|False|int|str|List)\b/g, '<span class="cn">$1</span>')
+                       .replace(/#.*$/g, '<span class="co">$&</span>');
+        };
+
+        const App = () => {
+            const [n, setN] = useState(4);
+            const [mode, setMode] = useState('basic');
+            const [cur, setCur] = useState(0);
+            const [playing, setPlaying] = useState(false);
+            const [steps, setSteps] = useState([]);
+            const timer = useRef(null);
+
+            const generateSteps = (val, isSet) => {
+                const history = [];
+                const board = Array(val).fill(0).map(() => Array(val).fill('.'));
+                const res = [];
+                const cols = new Set(), d1 = new Set(), d2 = new Set();
+
+                const log = (line, r, c, msg, isValidVal = null, reason = "") => {
+                    history.push({ 
+                        line, r, c, msg, isValid: isValidVal, reason,
+                        qCount: board.flat().filter(cell => cell === 'Q').length,
+                        board: board.map(row => [...row]),
+                        res: [...res],
+                        sets: { cols: new Set(cols), d1: new Set(d1), d2: new Set(d2) }
+                    });
+                };
+
+                const backtrack = (r) => {
+                    log(isSet ? 4 : 6, r, null, `進入第 ${r} 行`);
+                    if (r === val) {
+                        res.push(board.map(row => row.join('')));
+                        log(isSet ? 6 : 8, r, null, `🎉 找到解！`);
+                        return;
+                    }
+                    for (let c = 0; c < val; c++) {
+                        let conflict = false, m = "安全";
+                        if (isSet) {
+                            if (cols.has(c)) { conflict = true; m = "列衝突"; }
+                            else if (d1.has(r - c)) { conflict = true; m = "主對角線衝突"; }
+                            else if (d2.has(r + c)) { conflict = true; m = "副對角線衝突"; }
+                        } else {
+                            for(let i=0; i<r; i++) if(board[i][c]==='Q') { conflict=true; m="垂直列衝突"; log(19, r, c, m, false, m); break; }
+                            if(!conflict) for(let i=r-1, j=c+1; i>=0 && j<val; i--, j++) if(board[i][j]==='Q') { conflict=true; m="右上對角線"; log(21, r, c, m, false, m); break; }
+                            if(!conflict) for(let i=r-1, j=c-1; i>=0 && j>=0; i--, j--) if(board[i][j]==='Q') { conflict=true; m="左上對角線"; log(23, r, c, m, false, m); break; }
+                        }
+                        if (conflict) { if(isSet) log(10, r, c, m, false, m); continue; }
+                        board[r][c] = 'Q';
+                        if (isSet) { cols.add(c); d1.add(r-c); d2.add(r+c); }
+                        log(isSet ? 12 : 13, r, c, "放置成功", true);
+                        backtrack(r + 1);
+                        board[r][c] = '.';
+                        if (isSet) { cols.delete(c); d1.delete(r-c); d2.delete(r+c); }
+                        log(isSet ? 14 : 15, r, c, "回溯清理", true);
+                    }
+                };
+                backtrack(0);
+                return history;
+            };
+
+            useEffect(() => { setSteps(generateSteps(n, mode === 'set')); setCur(0); setPlaying(false); }, [n, mode]);
+            useEffect(() => {
+                if (playing) { timer.current = setInterval(() => { setCur(v => v < steps.length - 1 ? v + 1 : (setPlaying(false), v)); }, 350); }
+                else clearInterval(timer.current); return () => clearInterval(timer.current);
+            }, [playing, steps]);
+
+            const s = steps[cur] || { board: [], res: [], msg: "", isValid: true, reason: "", qCount: 0, r:0, c:0, sets: {cols:new Set(), d1:new Set(), d2:new Set()} };
+
+            return (
+                <div className="flex h-screen w-screen overflow-hidden text-sm">
+                    {/* LEFT PANEL: 題目描述 & 思路 */}
+                    <div className="w-1/4 bg-[#252526] border-r border-[#3c3c3c] flex flex-col p-6 overflow-y-auto custom-scroll">
+                        <h1 className="text-xl font-bold text-white mb-2 font-mono">51. N-Queens</h1>
+                        <div className="flex gap-2 mb-6">
+                            <span className="text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded">Hard</span>
+                            <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded">Backtracking</span>
+                        </div>
+
+                        <section className="mb-6">
+                            <h3 className="text-[11px] font-bold text-gray-300 uppercase tracking-widest mb-2 border-b border-white/5 pb-1">題目描述</h3>
+                            <p className="text-[12px] text-gray-400 leading-relaxed">
+                                按照國際象棋的規則，皇后可以攻擊與之處在同一行、同一列或同一條斜線上的棋子。
+                                <br/><br/>
+                                <strong>n 皇后問題</strong> 研究的是如何將 <span className="text-white">n</span> 個皇后放置在 <span className="text-white">n×n</span> 的棋盤上，並且使皇后彼此之間不能相互攻擊。
+                                <br/><br/>
+                                給你一個整數 <span className="text-white">n</span> ，返回所有不同的 <strong>n 皇后問題</strong> 的解決方案。
+                            </p>
+                        </section>
+
+                        <section className="mb-6">
+                            <h3 className="text-[11px] font-bold text-gray-300 uppercase tracking-widest mb-2 border-b border-white/5 pb-1">範例 (n=4)</h3>
+                            <div className="bg-black/30 p-3 rounded-lg border border-white/5 font-mono text-[10px] text-gray-500">
+                                輸出: [[".Q..","...Q","Q...","..Q."],<br/>["..Q.","Q...","...Q",".Q.."]]
+                            </div>
+                        </section>
+
+                        <section className="mb-6">
+                            <h3 className="text-[11px] font-bold text-blue-400 uppercase tracking-widest mb-2">當前解題思路</h3>
+                            <div className="text-[12px] text-gray-400 bg-blue-500/5 p-3 rounded-lg border border-blue-500/10 leading-relaxed">
+                                {mode === 'basic' ? (
+                                    <p><strong>暴力掃描 (Basic)：</strong><br/>使用 `isValid` 函數向上檢查「正上方」、「左上方」、「右上方」三個方向是否已有皇后。時間複雜度較高但直觀。</p>
+                                ) : (
+                                    <p><strong>集合優化 (Set)：</strong><br/>利用數學特性判定斜線：<br/>1. 主對角線: <span className="text-yellow-500">r-c</span> 為定值<br/>2. 副對角線: <span className="text-green-500">r+c</span> 為定值<br/>查詢降為 $O(1)$。</p>
+                                )}
+                            </div>
+                        </section>
+
+                        <div className="mt-auto space-y-4 pt-4 border-t border-white/5">
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">複雜度</h3>
+                                    <div className="flex gap-2 font-mono text-[10px]">
+                                        <span className="text-white">T: O(N!)</span>
+                                        <span className="text-white">S: O(N)</span>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">棋盤大小</h3>
+                                    <div className="flex gap-1">
+                                        {[4, 5, 8].map(v => (
+                                            <button key={v} onClick={() => setN(v)} className={`w-8 h-8 rounded border transition-all text-[10px] font-mono ${n===v?'bg-blue-600 border-blue-400 text-white':'bg-[#37373d] border-[#45454d] text-gray-400'}`}>{v}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* MIDDLE PANEL: 動態視覺化 */}
+                    <div className="flex-1 flex flex-col p-6 bg-[#1e1e1e] gap-4 items-center">
+                        <div className="w-full flex-1 flex flex-col bg-[#252526] rounded-2xl border border-[#3c3c3c] shadow-2xl overflow-hidden relative">
+                            {/* Live Watcher Header */}
+                            <div className="bg-black/40 py-4 px-6 border-b border-white/10 flex justify-between items-center">
+                                <div className="flex gap-10">
+                                    <div><span className="block text-[9px] text-gray-500 font-bold uppercase tracking-tighter">Current Pos</span><span className="text-blue-400 font-mono text-xl font-bold">{s.r ?? '-'}/{s.c ?? '-'}</span></div>
+                                    <div><span className="block text-[9px] text-gray-500 font-bold uppercase tracking-tighter">isValid</span><span className={`font-mono text-xl font-bold ${s.isValid === false ? 'text-red-500' : 'text-green-500'}`}>{s.isValid === false ? 'FALSE' : 'TRUE'}</span></div>
+                                    <div><span className="block text-[9px] text-gray-500 font-bold uppercase tracking-tighter">Q Count</span><span className="text-yellow-500 font-mono text-xl font-bold">{s.qCount}/{n}</span></div>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[9px] text-gray-500 font-bold uppercase mb-1">Live Trace</span>
+                                    <span className={`text-[11px] font-mono px-3 py-1 rounded-full border ${s.isValid === false ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-blue-500/10 border-blue-500/20 text-blue-300'}`}>
+                                        {s.msg} {s.reason && `(${s.reason})`}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Chessboard */}
+                            <div className="flex-1 flex items-center justify-center p-4">
+                                <div className="grid gap-2 bg-black/20 p-6 rounded-3xl border border-white/5" style={{ gridTemplateColumns: `repeat(${n}, minmax(40px, 60px))` }}>
+                                    {s.board.map((row, r) => row.map((cell, c) => (
+                                        <div key={`${r}-${c}`} className={`aspect-square flex items-center justify-center text-4xl transition-all duration-200 rounded-xl ${(r+c)%2===0 ? 'bg-[#2d2d2d]' : 'bg-[#37373d]'} ${s.r===r && s.c===c ? 'ring-4 ring-blue-500 scale-105 z-10 shadow-2xl' : ''}`}>
+                                            {cell === 'Q' && <span className="cell-queen">👑</span>}
+                                            {s.r===r && s.c===c && cell === '.' && <div className={`w-3 h-3 rounded-full ${s.isValid === false ? 'bg-red-500' : 'bg-green-500'} animate-ping`}/>}
+                                        </div>
+                                    )))}
+                                </div>
+                            </div>
+
+                            {/* Results accumulate (Pushed up) */}
+                            <div className="h-44 bg-black/40 border-t border-white/10 p-4 flex flex-col">
+                                <div className="text-[10px] text-gray-400 font-bold uppercase flex justify-between px-2 mb-3">
+                                    <span>Solutions Found: {s.res.length}</span>
+                                    <span className="text-blue-500 italic">res collection</span>
+                                </div>
+                                <div className="flex gap-5 overflow-x-auto no-scrollbar px-2 pb-2 h-full items-center">
+                                    {s.res.map((sol, i) => (
+                                        <div key={i} className="flex-shrink-0 h-28 aspect-square bg-[#1a1a1a] border border-blue-500/30 rounded-lg p-2 flex flex-col gap-1 shadow-xl">
+                                            {sol.map((r, ri) => <div key={ri} className="flex gap-1 h-full">{r.split('').map((c, ci) => <div key={ci} className={`flex-1 rounded-[1px] ${c==='Q'?'bg-blue-400 shadow-[0_0_5px_rgba(96,165,250,0.4)]':'bg-white/5'}`}/>)}</div>)}
+                                            <div className="text-[8px] text-center text-gray-600 mt-1 font-mono">#{i+1}</div>
+                                        </div>
+                                    ))}
+                                    {s.res.length === 0 && <div className="w-full text-center text-gray-700 font-mono text-xs italic tracking-widest uppercase">Searching Tree...</div>}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Player Controls */}
+                        <div className="w-full max-w-xl h-20 bg-[#252526] rounded-2xl border border-[#3c3c3c] flex items-center px-10 gap-8 shadow-xl">
+                            <div className="flex gap-5">
+                                <button onClick={() => setCur(Math.max(0, cur-1))} className="text-gray-500 hover:text-white transition-transform active:scale-75">⏮</button>
+                                <button onClick={() => setPlaying(!playing)} className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${playing ? 'bg-red-500' : 'bg-blue-600'}`}>{playing ? '⏸' : '▶'}</button>
+                                <button onClick={() => setCur(Math.min(steps.length-1, cur+1))} className="text-gray-500 hover:text-white transition-transform active:scale-75">⏭</button>
+                            </div>
+                            <div className="flex-1">
+                                <div className="h-1.5 w-full bg-[#1e1e1e] rounded-full overflow-hidden mb-2"><div className="h-full bg-blue-500 transition-all duration-300" style={{width: `${((cur+1)/steps.length)*100}%`}}></div></div>
+                                <div className="flex justify-between text-[10px] font-mono text-gray-500 uppercase tracking-widest"><span>DFS Process</span><span>Step {cur+1} / {steps.length}</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RIGHT PANEL: 完整原始碼與記憶體監控 */}
+                    <div className="w-[30%] bg-[#1e1e1e] border-l border-[#3c3c3c] flex flex-col">
+                        <div className="flex h-12 bg-[#252526] border-b border-[#3c3c3c]">
+                            <button onClick={() => setMode('basic')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest transition-all ${mode==='basic'?'text-white bg-[#1e1e1e] border-b-2 border-blue-500':'text-gray-500 hover:bg-[#2d2d2d]'}`}>isValid Scan</button>
+                            <button onClick={() => setMode('set')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest transition-all ${mode==='set'?'text-white bg-[#1e1e1e] border-b-2 border-blue-500':'text-gray-500 hover:bg-[#2d2d2d]'}`}>Set Optimization</button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 no-scrollbar custom-scroll">
+                            {(mode === 'basic' ? CODE_BASIC : CODE_SET).map((line, i) => (
+                                <div key={i} className={`flex min-h-[1.2rem] items-center ${s.line === i ? 'active-line' : ''}`}>
+                                    <span className="w-8 text-right pr-4 text-gray-800 text-[9px] font-mono select-none">{i+1}</span>
+                                    <pre className="text-[11px] code-font" style={{ marginLeft: `${line.i * 1.5}rem` }} dangerouslySetInnerHTML={{ __html: highlight(line.t) }} />
+                                </div>
+                            ))}
+                        </div>
+                        {mode === 'set' && (
+                            <div className="h-40 bg-[#161616] border-t border-[#3c3c3c] p-5 font-mono">
+                                <div className="text-[10px] text-gray-600 mb-3 font-bold uppercase tracking-widest flex justify-between"><span>Hash Memory Monitor</span> <span className="text-green-500 animate-pulse text-[8px]">ACTIVE</span></div>
+                                <div className="space-y-2 text-[11px]">
+                                    <div className="flex gap-2"><span className="text-pink-400 w-12">cols:</span> <span className="text-gray-400">{"{" + Array.from(s.sets.cols).join(", ") + "}"}</span></div>
+                                    <div className="flex gap-2"><span className="text-yellow-400 w-12">diag1:</span> <span className="text-gray-400">{"{" + Array.from(s.sets.d1).join(", ") + "}"}</span></div>
+                                    <div className="flex gap-2"><span className="text-green-400 w-12">diag2:</span> <span className="text-gray-400">{"{" + Array.from(s.sets.d2).join(", ") + "}"}</span></div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

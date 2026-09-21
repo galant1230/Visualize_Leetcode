@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>213. House Robber II - Multi-Strategy Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; min-height: 100px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 6px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 5px 10px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .tree-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; height: 380px; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 12px; }
+    
+    .houses-container { display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; gap: 12px; padding: 20px; overflow-x: auto; }
+    .house-item { background: #1e1e1e; border: 2px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 8px; font-family: monospace; transition: all 0.3s ease; position: relative; min-width: 80px; min-height: 120px; }
+    .house-item.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.15); box-shadow: 0 0 12px rgba(255, 161, 22, 0.3); transform: translateY(-6px); }
+    .house-item.disabled { border-color: var(--red); opacity: 0.3; filter: grayscale(1); }
+
+    .house-icon { font-size: 1.8rem; margin-bottom: 4px; }
+    .house-val { font-weight: bold; color: var(--orange); font-size: 1rem; }
+    .house-idx { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; }
+
+    .memo-tree-container { position: relative; width: 100%; height: 100%; min-width: 500px; min-height: 350px; }
+
+    svg.tree-svg-canvas { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+    .tree-edge { stroke: #334155; stroke-width: 2.5; stroke-dasharray: 6; animation: dash 30s linear infinite; transition: all 0.4s ease; }
+    .tree-edge.active { stroke: var(--orange); stroke-width: 4; stroke-dasharray: none; filter: drop-shadow(0px 0px 6px var(--orange)); }
+    .tree-edge.completed { stroke: var(--green); stroke-dasharray: none; opacity: 0.8; }
+    .tree-edge-label { fill: #94a3b8; font-size: 11px; font-weight: 600; font-family: monospace; text-anchor: middle; }
+
+    .tree-node-group { cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .tree-node-circle { fill: #1e293b; stroke: #475569; stroke-width: 2.5; transition: all 0.3s ease; rx: 24px; ry: 24px; }
+    .tree-node-group.visiting .tree-node-circle { fill: #2e1065; stroke: var(--orange); stroke-width: 3.5; filter: drop-shadow(0 0 10px rgba(255, 161, 22, 0.6)); }
+    .tree-node-group.cached .tree-node-circle { fill: #3b0764; stroke: var(--purple); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5)); }
+    .tree-node-group.completed .tree-node-circle { fill: #064e3b; stroke: var(--green); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(80, 250, 123, 0.4)); }
+    .tree-node-group.pruned .tree-node-circle { fill: #450a0a; stroke: var(--red); stroke-width: 2.5; }
+
+    .tree-node-text-title { fill: #f8fafc; font-size: 13px; font-weight: bold; font-family: monospace; text-anchor: middle; }
+    .tree-node-text-sub { fill: #38bdf8; font-size: 11px; font-weight: bold; font-family: monospace; text-anchor: middle; }
+    .tree-node-badge { fill: #0f172a; stroke: #334155; stroke-width: 1; }
+
+    .tree-legend { display: flex; gap: 12px; align-items: center; font-size: 0.72rem; }
+    .legend-item { display: flex; align-items: center; gap: 4px; color: var(--text-dim); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+    .dp-table { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .table-item { background: #1e1e1e; border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; min-width: 48px; }
+    .table-item.active-curr { border-color: var(--orange); color: var(--orange); font-weight: bold; background: rgba(255, 161, 22, 0.15); transform: scale(1.08); }
+
+    .var-badge { font-family: monospace; padding: 2px 6px; border-radius: 4px; background: #222; border: 1px solid var(--border); font-size: 0.78rem; }
+    .var-badge.highlight { border-color: var(--orange); color: var(--orange); font-weight: bold; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 68px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">213. House Robber II</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Circular Recursion</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. DP (Top-Down + Memo)</button>
+      <button class="algo-btn" onclick="setAlgo(2)">3. DP (Two Sub-arrays)</button>
+      <button class="algo-btn" onclick="setAlgo(3)">4. DP (Space Optimized)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: [2,3,2]</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: [1,2,3,1]</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: [1,2,3]</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          你是一個專業的小偷，計劃偷竊沿街的房屋。這個地方的所有房屋都<b>圍成一個圓圈</b>。<br>
+          這意味著第一間房屋和最後一間房屋是相鄰的。同時，相鄰的房屋裝有防盜系統。<br>
+          請計算在<b>不觸動報警系統</b>的情況下，今晚能夠偷竊到的<b>最高金額</b>。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(2^n)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(n)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="stack-title">📚 Call Stack (歷程紀錄)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 狀態與遞迴樹視覺化 (Tree Visualizer)</span>
+          <div class="tree-legend" id="legend-box">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--orange);"></span>Visiting</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--green);"></span>Computed</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--purple);"></span>Memoized</div>
+          </div>
+        </div>
+
+        <div class="tree-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="pos-label">Current Range: </span>
+              <span id="pos-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="extra-label">Sub-problem: </span>
+              <span id="extra-display" style="font-weight: bold; color: var(--purple);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="aux-label">Return Value: </span>
+              <span id="aux-display" class="var-badge highlight">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Max Loot: </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.1rem; color: var(--green);">0</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current State / Result:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">步驟說明 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Pure Circular Recursion
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">rob</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        <span class="kw">if</span> len(nums) == <span class="cls">1</span>: <span class="kw">return</span> nums[<span class="cls">0</span>]`,
+       `        <span class="kw">def</span> <span class="fn">dfs</span>(i, end):`,
+       `            <span class="kw">if</span> i > end: <span class="kw">return</span> <span class="cls">0</span>`,
+       `            <span class="kw">return</span> max(dfs(i + <span class="cls">1</span>, end), nums[i] + dfs(i + <span class="cls">2</span>, end))`,
+       `        <span class="cm"># 拆解為兩狀況取 Max：偷 house[0] 就不偷 house[n-1]，反之亦然</span>`,
+       `        <span class="kw">return</span> max(dfs(<span class="cls">0</span>, len(nums) - <span class="cls">2</span>), dfs(<span class="cls">1</span>, len(nums) - <span class="cls">1</span>))`],
+      
+      // 2. DP (Top-Down + Memo)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">rob</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        <span class="kw">if</span> len(nums) == <span class="cls">1</span>: <span class="kw">return</span> nums[<span class="cls">0</span>]`,
+       `        <span class="kw">def</span> <span class="fn">rob_range</span>(start, end):`,
+       `            memo = {}`,
+       `            <span class="kw">def</span> <span class="fn">dfs</span>(i):`,
+       `                <span class="kw">if</span> i > end: <span class="kw">return</span> <span class="cls">0</span>`,
+       `                <span class="kw">if</span> i <span class="kw">in</span> memo: <span class="kw">return</span> memo[i]`,
+       `                memo[i] = max(dfs(i + <span class="cls">1</span>), nums[i] + dfs(i + <span class="cls">2</span>))`,
+       `                <span class="kw">return</span> memo[i]`,
+       `            <span class="kw">return</span> dfs(start)`,
+       `        <span class="kw">return</span> max(rob_range(<span class="cls">0</span>, len(nums) - <span class="cls">2</span>), rob_range(<span class="cls">1</span>, len(nums) - <span class="cls">1</span>))`],
+
+      // 3. DP (Two Sub-arrays Bottom-Up)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">rob</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        <span class="kw">if</span> len(nums) == <span class="cls">1</span>: <span class="kw">return</span> nums[<span class="cls">0</span>]`,
+       `        <span class="kw">def</span> <span class="fn">rob_linear</span>(arr):`,
+       `            dp = [<span class="cls">0</span>] * (len(arr) + <span class="cls">1</span>)`,
+       `            dp[<span class="cls">1</span>] = arr[<span class="cls">0</span>]`,
+       `            <span class="kw">for</span> i <span class="kw">in</span> range(<span class="cls">2</span>, len(arr) + <span class="cls">1</span>):`,
+       `                dp[i] = max(dp[i - <span class="cls">1</span>], dp[i - <span class="cls">2</span>] + arr[i - <span class="cls">1</span>])`,
+       `            <span class="kw">return</span> dp[-<span class="cls">1</span>]`,
+       `        <span class="kw">return</span> max(rob_linear(nums[:-<span class="cls">1</span>]), rob_linear(nums[<span class="cls">1</span>:]))`],
+
+      // 4. DP (Space Optimized)
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">rob</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+       `        <span class="kw">if</span> len(nums) == <span class="cls">1</span>: <span class="kw">return</span> nums[<span class="cls">0</span>]`,
+       `        <span class="kw">def</span> <span class="fn">rob_linear</span>(arr):`,
+       `            rob1, rob2 = <span class="cls">0</span>, <span class="cls">0</span>`,
+       `            <span class="kw">for</span> n <span class="kw">in</span> arr:`,
+       `                temp = max(n + rob1, rob2)`,
+       `                rob1, rob2 = rob2, temp`,
+       `            <span class="kw">return</span> rob2`,
+       `        <span class="kw">return</span> max(rob_linear(nums[:-<span class="cls">1</span>]), rob_linear(nums[<span class="cls">1</span>:]))`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Pure Circular Recursion (分治遞迴)",
+        time: "O(2^n)", space: "O(n)",
+        idea: "<b>解法思路：</b>首尾房屋相連構成環。可將問題拆解為兩部分線形探索：<br>1. <b>不包含最後一家</b>：<code>dfs(0, n-2)</code><br>2. <b>不包含第一家</b>：<code>dfs(1, n-1)</code><br>最後求兩者之最大值。若 nums 長度為 1 則直接回傳該數值。"
+      },
+      {
+        title: "2. Dynamic Programming (Top-Down + Memo)",
+        time: "O(n)", space: "O(n)",
+        idea: "<b>解法思路：</b>對兩個拆解出來的子問題 <code>[0, n-2]</code> 和 <code>[1, n-1]</code> 分別進行記憶化搜尋 (Top-Down DFS + Memo Cache)，避免重複計算相同的子問題。"
+      },
+      {
+        title: "3. Dynamic Programming (Two Sub-arrays Bottom-Up)",
+        time: "O(n)", space: "O(n)",
+        idea: "<b>解法思路：</b>分別切出 <code>nums[:-1]</code> 與 <code>nums[1:]</code> 兩個獨立陣列，套用 LeetCode 198 的一維 DP 狀態轉移方程：<code>dp[i] = max(dp[i-1], dp[i-2] + nums[i-1])</code>。"
+      },
+      {
+        title: "4. Dynamic Programming (Space Optimized)",
+        time: "O(n)", space: "O(1)",
+        idea: "<b>解法思路：</b>對於兩個切片的線性 DP 流程，維護 <code>rob1</code> 與 <code>rob2</code> 滾動變數取代整個 DP 陣列，達成空間複雜度 O(1)。"
+      }
+    ];
+
+    const presets = [
+      {
+        title: "Example 1", nums: [2, 3, 2], expected: 3,
+        explanation: "You cannot rob house 1 (money = 2) and then rob house 3 (money = 2), because they are adjacent houses.<br>Total max loot = 3."
+      },
+      {
+        title: "Example 2", nums: [1, 2, 3, 1], expected: 4,
+        explanation: "Rob house 1 (money = 1) and then rob house 3 (money = 3).<br>Total max loot = 1 + 3 = 4."
+      },
+      {
+        title: "Example 3", nums: [1, 2, 3], expected: 3,
+        explanation: "Rob house 2 (money = 3).<br>Total max loot = 3."
+      }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title} (nums = [${p.nums.join(', ')}])</div>
+        <div><b>Input:</b> nums = [${p.nums.join(', ')}] | <b>Output:</b> ${p.expected}</div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b><br>${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const nums = presets[currentPreset].nums;
+
+      if (nums.length === 1) {
+        history.push({
+          line: 2, phase: "⚡ 【Single House Edge Case】",
+          desc: `僅有一間房屋 (金額: $${nums[0]})，直接回傳答案`,
+          i: 0, resVal: nums[0], stack: [], treeNodes: [], treeEdges: [], result: nums[0]
+        });
+        return;
+      }
+
+      switch(currentAlgo) {
+        case 0: buildRecursionSteps(nums); break;
+        case 1: buildTopDownSteps(nums); break;
+        case 2: buildBottomUpSteps(nums); break;
+        case 3: buildSpaceOptSteps(nums); break;
+      }
+    }
+
+    // 1. Pure Circular Recursion
+    function buildRecursionSteps(nums) {
+      const stack = [];
+      const treeNodes = [];
+      const treeEdges = [];
+      let counter = 0;
+
+      function dfs(i, end, parentId = null, stepType = "", subTag = "") {
+        const nodeId = ++counter;
+        const nodeObj = { id: nodeId, val: i, parentId, stepType, state: 'visiting', res: null };
+        treeNodes.push(nodeObj);
+        if (parentId) treeEdges.push({ from: parentId, to: nodeId, label: stepType });
+
+        stack.push({ fnName: `dfs (${subTag})`, args: `i=${i}, end=${end}` });
+
+        history.push({
+          line: 4, phase: `⏬ 【${subTag} Call】dfs(i=${i}, end=${end})`,
+          desc: i <= end ? `探訪房屋 ${i} (金額: $${nums[i]})` : `超越範圍 (i=${i} > end=${end})`,
+          i, range: `[${i}..${end}]`, subTag, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        if (i > end) {
+          nodeObj.state = 'pruned'; nodeObj.res = 0;
+          history.push({
+            line: 4, phase: `🏁 【Base Case】`, desc: `超出區間範圍，回傳 0`,
+            i, range: `[${i}..${end}]`, subTag, resVal: 0, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+          stack.pop();
+          return 0;
+        }
+
+        let skipVal = dfs(i + 1, end, nodeId, "skip(+1)", subTag);
+        let robVal = nums[i] + dfs(i + 2, end, nodeId, "rob(+2)", subTag);
+        let maxVal = Math.max(skipVal, robVal);
+
+        nodeObj.state = 'completed'; nodeObj.res = maxVal;
+
+        history.push({
+          line: 5, phase: `🔙 【Max Return】dfs(${i}) = $${maxVal}`,
+          desc: `區間 ${subTag} House ${i}：max(不偷:$${skipVal}, 偷:$${robVal}) = $${maxVal}`,
+          i, range: `[${i}..${end}]`, subTag, resVal: maxVal, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+        });
+
+        stack.pop();
+        return maxVal;
+      }
+
+      history.push({
+        line: 7, phase: "🚀 【Case A Start】", desc: "情況 A：不偷最後一家，搜尋範圍 [0.." + (nums.length - 2) + "]",
+        subTag: "Case A", stack: [], treeNodes: [], treeEdges: [], result: "Running..."
+      });
+      const resA = dfs(0, nums.length - 2, null, "", "Case A");
+
+      history.push({
+        line: 7, phase: "🚀 【Case B Start】", desc: "情況 B：不偷第一家，搜尋範圍 [1.." + (nums.length - 1) + "]",
+        subTag: "Case B", stack: [], treeNodes: [], treeEdges: [], result: "Running..."
+      });
+      const resB = dfs(1, nums.length - 1, null, "", "Case B");
+
+      const finalRes = Math.max(resA, resB);
+      history.push({
+        line: 7, phase: "🎉 【Complete】", desc: `比較兩情況：max(Case A: $${resA}, Case B: $${resB}) = $${finalRes}`,
+        subTag: "Result", resVal: finalRes, stack: [], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: null, result: finalRes
+      });
+    }
+
+    // 2. DP (Top-Down + Memo)
+    function buildTopDownSteps(nums) {
+      const stack = [];
+      const treeNodes = [];
+      const treeEdges = [];
+      let counter = 0;
+
+      function robRange(start, end, subTag) {
+        const memo = {};
+
+        function dfs(i, parentId = null, stepType = "") {
+          const nodeId = ++counter;
+          const nodeObj = { id: nodeId, val: i, parentId, stepType, state: 'visiting', res: null };
+          treeNodes.push(nodeObj);
+          if (parentId) treeEdges.push({ from: parentId, to: nodeId, label: stepType });
+
+          stack.push({ fnName: `dfs (${subTag})`, args: `i=${i}` });
+
+          history.push({
+            line: 6, phase: `⏬ 【${subTag} Call】dfs(${i})`,
+            desc: i <= end ? `探訪房屋 ${i}，檢查 Memo...` : `超出區間 (i=${i})`,
+            i, range: `[${start}..${end}]`, subTag, cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+
+          if (i > end) {
+            nodeObj.state = 'pruned'; nodeObj.res = 0;
+            history.push({
+              line: 6, phase: `🏁 【Base Case】`, desc: `超出範圍，傳回 0`,
+              i, range: `[${start}..${end}]`, subTag, resVal: 0, cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+            });
+            stack.pop();
+            return 0;
+          }
+
+          if (i in memo) {
+            nodeObj.state = 'cached'; nodeObj.res = memo[i];
+            history.push({
+              line: 7, phase: `🟪 【Memo Hit】memo[${i}] = $${memo[i]}`,
+              desc: `命中快取 memo[${i}] = $${memo[i]}`,
+              i, range: `[${start}..${end}]`, subTag, resVal: memo[i], cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+            });
+            stack.pop();
+            return memo[i];
+          }
+
+          let skipVal = dfs(i + 1, nodeId, "skip(+1)");
+          let robVal = nums[i] + dfs(i + 2, nodeId, "rob(+2)");
+          let maxVal = Math.max(skipVal, robVal);
+
+          memo[i] = maxVal;
+          nodeObj.state = 'completed'; nodeObj.res = maxVal;
+
+          history.push({
+            line: 8, phase: `💾 【Store Memo】memo[${i}] = $${maxVal}`,
+            desc: `寫入快取 memo[${i}] = $${maxVal}`,
+            i, range: `[${start}..${end}]`, subTag, resVal: maxVal, cache: { ...memo }, stack: [...stack], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: nodeId, result: "Running..."
+          });
+
+          stack.pop();
+          return maxVal;
+        }
+
+        return dfs(start);
+      }
+
+      history.push({
+        line: 11, phase: "🚀 【Case A Top-Down】", desc: "執行 Case A: 區間 [0.." + (nums.length - 2) + "]",
+        subTag: "Case A", stack: [], treeNodes: [], treeEdges: [], result: "Running..."
+      });
+      const resA = robRange(0, nums.length - 2, "Case A");
+
+      history.push({
+        line: 11, phase: "🚀 【Case B Top-Down】", desc: "執行 Case B: 區間 [1.." + (nums.length - 1) + "]",
+        subTag: "Case B", stack: [], treeNodes: [], treeEdges: [], result: "Running..."
+      });
+      const resB = robRange(1, nums.length - 1, "Case B");
+
+      const finalRes = Math.max(resA, resB);
+      history.push({
+        line: 11, phase: "🎉 【Complete】", desc: `最終比較：max(Case A: $${resA}, Case B: $${resB}) = $${finalRes}`,
+        subTag: "Result", resVal: finalRes, stack: [], treeNodes: JSON.parse(JSON.stringify(treeNodes)), treeEdges: [...treeEdges], activeNode: null, result: finalRes
+      });
+    }
+
+    // 3. Bottom-Up DP (Two Sub-arrays)
+    function buildBottomUpSteps(nums) {
+      function robLinear(arr, subTag) {
+        const dp = new Array(arr.length + 1).fill(0);
+        dp[1] = arr[0];
+
+        history.push({
+          line: 6, phase: `【Init DP (${subTag})】`, desc: `初始化狀態 dp[1] = $${arr[0]}`,
+          i: 1, subTag, dp: [...dp], result: "Running..."
+        });
+
+        for (let i = 2; i <= arr.length; i++) {
+          const skip = dp[i - 1];
+          const rob = dp[i - 2] + arr[i - 1];
+          dp[i] = Math.max(skip, rob);
+
+          history.push({
+            line: 8, phase: `➕ 【dp[${i}] (${subTag})】`,
+            desc: `計算前 ${i} 個房屋收益: max(不偷:$${skip}, 偷:$${rob}) => dp[${i}] = $${dp[i]}`,
+            i, subTag, currVal: dp[i], dp: [...dp], result: "Running..."
+          });
+        }
+        return dp[arr.length];
+      }
+
+      history.push({
+        line: 10, phase: "🚀 【Sub-array A (Excl Last)】", desc: "計算子陣列 A: nums[0.." + (nums.length - 2) + "]",
+        subTag: "Case A", result: "Running..."
+      });
+      const resA = robLinear(nums.slice(0, -1), "Case A");
+
+      history.push({
+        line: 10, phase: "🚀 【Sub-array B (Excl First)】", desc: "計算子陣列 B: nums[1.." + (nums.length - 1) + "]",
+        subTag: "Case B", result: "Running..."
+      });
+      const resB = robLinear(nums.slice(1), "Case B");
+
+      const finalRes = Math.max(resA, resB);
+      history.push({
+        line: 10, phase: "🎉 【Complete】", desc: `最終解答：max(Case A: $${resA}, Case B: $${resB}) = $${finalRes}`,
+        subTag: "Result", result: finalRes
+      });
+    }
+
+    // 4. Space Optimized
+    function buildSpaceOptSteps(nums) {
+      function robLinear(arr, subTag) {
+        let rob1 = 0, rob2 = 0;
+        history.push({
+          line: 5, phase: `【Init Vars (${subTag})】`, desc: `初始化 rob1 = 0, rob2 = 0`,
+          i: -1, subTag, rob1, rob2, result: "Running..."
+        });
+
+        for (let idx = 0; idx < arr.length; idx++) {
+          const val = arr[idx];
+          const temp = Math.max(val + rob1, rob2);
+          rob1 = rob2;
+          rob2 = temp;
+
+          history.push({
+            line: 7, phase: `🔄 【House ${idx} (${subTag})】`,
+            desc: `temp = max(偷:$${val}+$${rob1}, 不偷:$${rob2}) = $${temp} | 更新 (rob1, rob2)`,
+            i: idx, subTag, rob1, rob2, temp, result: "Running..."
+          });
+        }
+        return rob2;
+      }
+
+      history.push({
+        line: 10, phase: "🚀 【Space Opt A】", desc: "計算 Case A (排除最後一家)",
+        subTag: "Case A", result: "Running..."
+      });
+      const resA = robLinear(nums.slice(0, -1), "Case A");
+
+      history.push({
+        line: 10, phase: "🚀 【Space Opt B】", desc: "計算 Case B (排除第一家)",
+        subTag: "Case B", result: "Running..."
+      });
+      const resB = robLinear(nums.slice(1), "Case B");
+
+      const finalRes = Math.max(resA, resB);
+      history.push({
+        line: 10, phase: "🎉 【Complete】", desc: `優化計算完畢：max(Case A: $${resA}, Case B: $${resB}) = $${finalRes}`,
+        subTag: "Result", rob2: finalRes, result: finalRes
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const p = presets[currentPreset];
+
+      if (currentAlgo === 0 || currentAlgo === 1) {
+        // SVG Tree Visualizer
+        let nodes = state.treeNodes || [];
+        let edges = state.treeEdges || [];
+
+        wrapper.innerHTML = `
+          <div class="memo-tree-container" id="tree-container">
+            <svg class="tree-svg-canvas" id="tree-svg-root"></svg>
+          </div>`;
+
+        const svg = document.getElementById('tree-svg-root');
+        if (nodes.length === 0) return;
+
+        const nodeMap = {};
+        nodes.forEach(n => { nodeMap[n.id] = { ...n, children: [] }; });
+        let root = null;
+
+        nodes.forEach(n => {
+          if (n.parentId && nodeMap[n.parentId]) {
+            nodeMap[n.parentId].children.push(nodeMap[n.id]);
+          } else {
+            root = nodeMap[n.id];
+          }
+        });
+
+        let leafCounter = 0;
+        function assignX(node) {
+          if (!node.children || node.children.length === 0) {
+            leafCounter++;
+            node.x = leafCounter;
+          } else {
+            node.children.forEach(c => assignX(c));
+            const firstX = node.children[0].x;
+            const lastX = node.children[node.children.length - 1].x;
+            node.x = (firstX + lastX) / 2;
+          }
+        }
+        if (root) assignX(root);
+
+        function assignY(node, depth = 0) {
+          node.depth = depth;
+          if (node.children) {
+            node.children.forEach(c => assignY(c, depth + 1));
+          }
+        }
+        if (root) assignY(root);
+
+        const totalLeaves = Math.max(leafCounter, 1);
+        const maxDepth = Math.max(...Object.values(nodeMap).map(n => n.depth), 1);
+
+        const svgWidth = Math.max(wrapper.clientWidth - 30, totalLeaves * 75);
+        const svgHeight = Math.max(wrapper.clientHeight - 30, (maxDepth + 1) * 70 + 40);
+
+        svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+
+        const marginX = 45;
+        const marginY = 40;
+        const availableW = svgWidth - marginX * 2;
+        const availableH = svgHeight - marginY * 2;
+
+        const scaleX = totalLeaves > 1 ? availableW / (totalLeaves - 1) : availableW / 2;
+        const scaleY = maxDepth > 0 ? availableH / maxDepth : 0;
+
+        Object.values(nodeMap).forEach(n => {
+          n.px = totalLeaves > 1 ? marginX + (n.x - 1) * scaleX : svgWidth / 2;
+          n.py = marginY + n.depth * scaleY;
+        });
+
+        edges.forEach(e => {
+          const fromNode = nodeMap[e.from];
+          const toNode = nodeMap[e.to];
+          if (fromNode && toNode) {
+            const isEdgeActive = (state.activeNode === e.to);
+            const isCompleted = toNode.state === 'completed' || toNode.state === 'cached';
+            const midY = (fromNode.py + toNode.py) / 2;
+            const d = `M ${fromNode.px} ${fromNode.py} C ${fromNode.px} ${midY}, ${toNode.px} ${midY}, ${toNode.px} ${toNode.py}`;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('class', `tree-edge ${isEdgeActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`);
+            svg.appendChild(path);
+          }
+        });
+
+        Object.values(nodeMap).forEach(n => {
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          let cls = `tree-node-group ${n.state}`;
+          if (state.activeNode === n.id) cls += " visiting";
+          g.setAttribute('class', cls);
+          g.setAttribute('transform', `translate(${n.px}, ${n.py})`);
+
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          circle.setAttribute('x', -26); circle.setAttribute('y', -22);
+          circle.setAttribute('width', 52); circle.setAttribute('height', 44);
+          circle.setAttribute('class', 'tree-node-circle');
+          g.appendChild(circle);
+
+          const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          titleText.setAttribute('y', n.res !== null ? -4 : 4);
+          titleText.setAttribute('class', 'tree-node-text-title');
+          titleText.textContent = `i=${n.val}`;
+          g.appendChild(titleText);
+
+          if (n.res !== null) {
+            const subText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            subText.setAttribute('y', 13);
+            subText.setAttribute('class', 'tree-node-text-sub');
+            subText.textContent = `$${n.res}`;
+            g.appendChild(subText);
+          }
+          svg.appendChild(g);
+        });
+
+      } else {
+        // Houses Linear Array Render
+        let html = `<div class="houses-container">`;
+        for (let idx = 0; idx < p.nums.length; idx++) {
+          let cls = "house-item";
+          let isDisabled = false;
+
+          if (state.subTag === "Case A" && idx === p.nums.length - 1) isDisabled = true;
+          if (state.subTag === "Case B" && idx === 0) isDisabled = true;
+
+          let isActive = false;
+          if (!isDisabled) {
+            if (currentAlgo === 2) isActive = (state.i === (state.subTag === "Case B" ? idx : idx + 1));
+            else isActive = (state.i === (state.subTag === "Case B" ? idx - 1 : idx));
+          }
+
+          if (isDisabled) cls += " disabled";
+          else if (isActive) cls += " active";
+
+          html += `
+            <div class="${cls}">
+              <div class="house-icon">🏠</div>
+              <div class="house-val">$${p.nums[idx]}</div>
+              <div class="house-idx">House ${idx}</div>
+            </div>
+          `;
+        }
+        html += `</div>`;
+        wrapper.innerHTML = html;
+      }
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      // Stack Panel
+      const stackBox = document.getElementById('stack-display');
+      if (currentAlgo === 0 || currentAlgo === 1) {
+        const stackData = state.stack || [];
+        stackBox.innerHTML = stackData.length === 0 
+          ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Call Stack Empty</div>`
+          : stackData.map(f => `
+              <div class="stack-frame">
+                <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.75rem;">(${f.args})</span></div>
+              </div>
+            `).join('');
+        document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+      } else {
+        stackBox.innerHTML = `<div style="color:var(--text-dim); text-align:center; margin:auto;">Iterative Method (No Dynamic Call Stack)</div>`;
+        document.getElementById('stackDepthHint').innerText = `Iterative`;
+      }
+
+      // Variable Display
+      document.getElementById('pos-display').innerText = state.range || (state.i !== undefined && state.i >= 0 ? `House ${state.i}` : "-");
+      document.getElementById('extra-display').innerText = state.subTag || "-";
+      document.getElementById('aux-display').innerText = state.resVal !== undefined ? `$${state.resVal}` : (state.rob2 !== undefined ? `rob2=$${state.rob2}` : "-");
+
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (state.cache) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Memo Cache (${state.subTag}):</span>
+            <div class="dp-table">
+              ${Object.keys(state.cache).length === 0 ? '<span style="color:#666; font-size:0.75rem;">{}</span>' : 
+                Object.entries(state.cache).map(([idx, val]) => `
+                <div class="table-item ${state.i == idx ? 'active-curr' : ''}">
+                  <span style="font-size: 0.6rem; color: var(--text-dim);">idx ${idx}</span>
+                  <span>$${val}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (state.dp) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">DP Table (${state.subTag}):</span>
+            <div class="dp-table">
+              ${state.dp.map((val, idx) => `
+                <div class="table-item ${state.i === idx ? 'active-curr' : ''}">
+                  <span style="font-size: 0.6rem; color: var(--text-dim);">${idx === 0 ? '0' : 'H' + idx}</span>
+                  <span>$${val}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        dynPanel.innerHTML = '';
+      }
+
+      // Result Panel
+      const statusEl = document.getElementById('status-display');
+      statusEl.innerText = state.result !== "Running..." ? `$${state.result}` : `$${state.currVal || state.resVal || state.rob2 || 0}`;
+
+      const resEl = document.getElementById('result-text');
+      resEl.innerText = state.result !== "Running..." ? `Max Money Robbed = $${state.result}` : "Computing...";
+      resEl.style.color = state.result !== "Running..." ? "var(--green)" : "var(--text-dim)";
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

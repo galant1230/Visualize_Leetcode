@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 416. Partition Equal Subset Sum - 演算法實驗室</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #58a6ff; --purple: #bc8cff;
+            --orange: #d29922; --green: #3fb950; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #8b949e;
+        }
+        body { 
+            background: #010409; color: var(--text); 
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0;
+        }
+        
+        .widget-card {
+            width: 1200px; height: 850px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .header {
+            padding: 15px 25px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            background: #0d1117;
+        }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        input, button { 
+            background: var(--panel); color: var(--text); border: 1px solid var(--border); 
+            padding: 6px 12px; border-radius: 6px; font-size: 13px; outline: none;
+        }
+        button:hover { border-color: var(--blue); cursor: pointer; background: var(--highlight); }
+
+        .content-grid { display: grid; grid-template-columns: 280px 1fr; flex: 1; overflow: hidden; }
+        
+        .sidebar { padding: 20px; border-right: 1px solid var(--border); overflow-y: auto; background: rgba(0,0,0,0.1); }
+        .sidebar h3 { color: var(--blue); margin-top: 0; }
+        .complexity-info { margin-top: 20px; padding: 12px; border-radius: 8px; background: #010409; border: 1px solid var(--border); font-family: monospace; font-size: 13px; }
+
+        .workspace { display: grid; grid-template-rows: 1fr 380px; overflow: hidden; }
+        
+        .editor-container { display: flex; flex-direction: column; background: #0d1117; }
+        .tabs { background: #010409; display: flex; border-bottom: 1px solid var(--border); }
+        .tab { padding: 10px 20px; font-size: 12px; color: var(--comment); border-right: 1px solid var(--border); cursor: pointer; }
+        .tab.active { background: var(--panel); color: var(--text); border-top: 2px solid var(--orange); }
+        
+        .editor { padding: 20px; font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.5; overflow-y: auto; flex: 1; }
+        .line { display: block; padding-left: 45px; position: relative; opacity: 0.4; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 10px; color: #484f58; width: 25px; text-align: right; }
+
+        .kw { color: var(--purple); } .fn { color: var(--blue); } .num { color: var(--orange); } .op { color: #ff7b72; } .cmt { color: var(--comment); }
+
+        .viz-section { 
+            border-top: 1px solid var(--border); background: #0d1117; 
+            padding: 15px; display: grid; grid-template-columns: 1fr 300px; gap: 15px;
+        }
+        .matrix-container { overflow: auto; display: flex; flex-direction: column; align-items: center; }
+        table { border-collapse: collapse; font-family: monospace; font-size: 12px; }
+        td, th { border: 1px solid var(--border); min-width: 35px; height: 35px; text-align: center; padding: 0 5px; }
+        th { color: var(--comment); background: rgba(0,0,0,0.2); }
+        .td-true { color: var(--green); font-weight: bold; background: rgba(63, 185, 80, 0.05); }
+        .td-false { color: #30363d; }
+        .td-active { border: 2px solid var(--blue); background: var(--highlight); z-index: 2; }
+        .td-prev { background: rgba(188, 140, 255, 0.15); border: 1px dashed var(--purple); }
+
+        .terminal { background: #010409; padding: 15px; border-radius: 8px; border: 1px solid var(--border); font-family: monospace; }
+        .status-tag { padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-bottom: 10px; display: inline-block; }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="header">
+        <div style="font-weight: bold; color: var(--blue);">Partition Equal Subset Sum 實驗室</div>
+        <div class="controls">
+            <span>快速切換測資:</span>
+            <button onclick="setExample([1, 5, 11, 5])">Ex 1</button>
+            <button onclick="setExample([1, 2, 3, 5])">Ex 2</button>
+            <span>Nums:</span>
+            <input type="text" id="inputNums" value="1, 5, 11, 5" style="width: 110px;" onchange="init()">
+            <button onclick="init()" class="btn-reset">重置</button>
+            <button onclick="prevStep()">上一步</button>
+            <button onclick="nextStep()" style="color: var(--green); border-color: var(--green); font-weight: bold;">下一步 (F10)</button>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="sidebar">
+            <h3>演算法思路</h3>
+            <p>這是一個 <b>0/1 背包問題</b> 的變體：</p>
+            <p>1. 如果總和 <b>Sum</b> 為奇數，絕對無法平分。</p>
+            <p>2. 目標是在數組中找到一個子集，使其和等於 <b>Sum / 2</b>。</p>
+            <p>3. 使用一維 DP 優化空間，必須<b>由後往前</b>更新以避免重複使用同一個數字。</p>
+            
+            <div id="compBox" class="complexity-info">
+                時間複雜度: O(n * target)<br>
+                空間複雜度: O(target)<br>
+                (target = Sum / 2)
+            </div>
+            
+            <div id="targetInfo" style="margin-top:20px; color: var(--orange); font-weight: bold;"></div>
+        </div>
+
+        <div class="workspace">
+            <div class="editor-container">
+                <div class="tabs">
+                    <div class="tab active">1d_space_optimized.py</div>
+                </div>
+                <div id="codeEditor" class="editor"></div>
+            </div>
+
+            <div class="viz-section">
+                <div class="matrix-container" id="matrixView"></div>
+                <div class="terminal">
+                    <div class="status-tag" id="statusTag" style="background: var(--highlight); color: var(--blue);">準備執行</div>
+                    <div id="logMsg" style="color: var(--text); font-size: 13px; line-height: 1.6; height: 120px; overflow-y: auto;"></div>
+                    <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+                        <span style="color: var(--comment);">Result:</span> <span id="retVal" style="font-weight: bold;">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let curStep = 0, nums = [], target = 0, steps = [];
+
+const codeLines = [
+    `<span class="kw">total_sum</span> <span class="op">=</span> <span class="fn">sum</span>(nums)`,
+    `<span class="kw">if</span> total_sum <span class="op">%</span> <span class="num">2</span> <span class="op">!=</span> <span class="num">0</span>: <span class="kw">return False</span>`,
+    `<span class="kw">target</span> <span class="op">=</span> total_sum <span class="op">//</span> <span class="num">2</span>`,
+    `<span class="kw">dp</span> <span class="op">=</span> [<span class="kw">True</span>] <span class="op">+</span> [<span class="kw">False</span>] <span class="op">*</span> target`,
+    `<span class="kw">for</span> num <span class="kw">in</span> nums:`,
+    `    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(target, num <span class="op">-</span> <span class="num">1</span>, <span class="op">-</span><span class="num">1</span>):`,
+    `        <span class="kw">dp</span>[i] <span class="op">=</span> <span class="kw">dp</span>[i] <span class="kw">or</span> <span class="kw">dp</span>[i <span class="op">-</span> num]`,
+    `<span class="kw">return</span> <span class="kw">dp</span>[target]`
+];
+
+function setExample(arr) {
+    document.getElementById('inputNums').value = arr.join(', ');
+    init();
+}
+
+function init() {
+    const raw = document.getElementById('inputNums').value;
+    nums = raw.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+    const sum = nums.reduce((a,b) => a+b, 0);
+    
+    document.getElementById('codeEditor').innerHTML = codeLines.map((l, i) => `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    
+    steps = [];
+    if (sum % 2 !== 0) {
+        target = Math.floor(sum / 2);
+        document.getElementById('targetInfo').innerText = `Total Sum: ${sum} (奇數)\nTarget: 無法達成`;
+        steps.push({l: 1, msg: `計算總和為 ${sum}`, dp: Array(5).fill(false)});
+        steps.push({l: 2, msg: `${sum} 是奇數，直接回傳 False`, dp: Array(5).fill(false), res: "False"});
+    } else {
+        target = sum / 2;
+        document.getElementById('targetInfo').innerText = `Total Sum: ${sum}\nTarget: ${target}`;
+        genSteps();
+    }
+    curStep = 0;
+    update();
+}
+
+function genSteps() {
+    let dp = Array(target + 1).fill(false);
+    dp[0] = true;
+    
+    steps.push({l: 1, msg: "計算總和並確認為偶數", dp: [...dp]});
+    steps.push({l: 3, msg: `目標子集和 target = ${target}`, dp: [...dp]});
+    steps.push({l: 4, msg: "初始化 DP 陣列: dp[0]=True (代表和為 0 必可行)", dp: [...dp]});
+    
+    for (let nIdx = 0; nIdx < nums.length; nIdx++) {
+        let num = nums[nIdx];
+        steps.push({l: 5, msg: `考慮數字 nums[${nIdx}] = ${num}`, dp: [...dp], activeNum: nIdx});
+        
+        for (let i = target; i >= num; i--) {
+            let prevStatus = dp[i];
+            let fromPrev = dp[i - num];
+            dp[i] = dp[i] || fromPrev;
+            
+            steps.push({
+                l: 7,
+                msg: `更新 dp[${i}]: \ndp[${i}] = ${prevStatus} ∨ dp[${i}-${num}](${fromPrev}) \n結果: ${dp[i]}`,
+                dp: [...dp],
+                activeIdx: i,
+                activePrev: i - num,
+                activeNum: nIdx
+            });
+            if (i === target && dp[target]) break;
+        }
+        if (dp[target]) {
+            steps.push({l: 7, msg: `已找到目標和 ${target}！提早結束循環。`, dp: [...dp], activeNum: nIdx, activeIdx: target});
+            break;
+        }
+    }
+    steps.push({l: 8, msg: `最終檢查 dp[target]: ${dp[target]}`, dp: [...dp], res: dp[target].toString(), activeIdx: target});
+}
+
+function update() {
+    const step = steps[curStep];
+    if (!step) return;
+
+    const lines = document.querySelectorAll('.line');
+    lines.forEach((l, i) => i === step.l - 1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    document.getElementById('logMsg').innerText = "> " + step.msg;
+    document.getElementById('retVal').innerText = step.res || "計算中...";
+    
+    const container = document.getElementById('matrixView');
+    container.innerHTML = '';
+    
+    const table = document.createElement('table');
+    const trH = document.createElement('tr');
+    trH.innerHTML = '<th>i</th>' + step.dp.map((_, i) => `<th>${i}</th>`).join('');
+    table.appendChild(trH);
+    
+    const trD = document.createElement('tr');
+    let html = `<td><b>dp</b></td>`;
+    step.dp.forEach((v, idx) => {
+        let cls = v ? 'td-true' : 'td-false';
+        if (idx === step.activeIdx) cls += ' td-active';
+        if (idx === step.activePrev) cls += ' td-prev';
+        html += `<td class="${cls}">${v ? 'T' : 'F'}</td>`;
+    });
+    trD.innerHTML = html;
+    table.appendChild(trD);
+    container.appendChild(table);
+
+    const status = document.getElementById('statusTag');
+    if (step.activeNum !== undefined) {
+        status.innerText = `Nums[${step.activeNum}] = ${nums[step.activeNum]}`;
+        status.style.background = "var(--highlight)";
+    } else {
+        status.innerText = "就緒";
+    }
+}
+
+function nextStep() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prevStep() { if(curStep > 0) { curStep--; update(); } }
+
+document.addEventListener('keydown', (e) => {
+    if(e.key === 'F10') { nextStep(); e.preventDefault(); }
+});
+
+init();
+</script>
+</body>
+</html>

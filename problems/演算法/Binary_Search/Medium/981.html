@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 981. TimeMap Visualizer - Final</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', monospace; height: 100vh; overflow: hidden; }
+        .sidebar-item { background-color: #252526; border: 1px solid #333; border-radius: 6px; padding: 12px; }
+        .active-line { background-color: #264f78 !important; border-left: 4px solid #007acc !important; }
+        .kw { color: #569cd6; } .fn { color: #dcdcaa; } .st { color: #ce9178; } .sf { color: #9cdcfe; } .tp { color: #4ec1ff; }
+        #code-display div { padding: 0 12px; border-left: 4px solid transparent; white-space: pre; line-height: 1.5; }
+        .data-card { background: #2d2d2d; border: 1px solid #444; border-radius: 4px; position: relative; }
+        .search-mid { border-color: #a855f7; background: rgba(168, 85, 247, 0.2); }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <header class="h-12 border-b border-zinc-800 flex items-center px-6 justify-between bg-[#252526] shrink-0">
+        <div class="font-bold text-sm text-white">#981 Time Based Key-Value Store</div>
+        <div class="flex gap-4 text-[10px] font-mono">
+            <span class="text-green-400">TIME: O(log N)</span>
+            <span class="text-blue-400">SPACE: O(N)</span>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden p-3 gap-3">
+        
+        <section class="w-1/4 flex flex-col gap-3 shrink-0">
+            <div class="sidebar-item">
+                <h2 class="text-blue-400 font-bold mb-2 text-[10px] uppercase">● 題目敘述</h2>
+                <p class="text-[11px] text-zinc-400 leading-relaxed">
+                    設計一個 Key-Value 存儲，<span class="text-white">get(key, timestamp)</span> 必須回傳 <span class="text-yellow-500">timestamp_prev <= timestamp</span> 的最大值。
+                </p>
+            </div>
+
+            <div class="sidebar-item flex-1 flex flex-col overflow-hidden">
+                <h2 class="text-blue-400 font-bold mb-2 text-[10px] uppercase">● 操作序列 (Example 1)</h2>
+                <div id="case-list" class="space-y-2 overflow-y-auto pr-1 text-[9px]">
+                    </div>
+            </div>
+        </section>
+
+        <section class="w-[45%] flex flex-col gap-3">
+            <div class="sidebar-item flex-1 flex flex-col overflow-hidden">
+                <div class="flex justify-between items-center mb-3 border-b border-zinc-800 pb-2">
+                    <span class="text-zinc-500 text-[10px] uppercase">Hashmap Storage (self.keyStore)</span>
+                    <span id="current-action" class="text-[10px] text-yellow-500 font-bold font-mono"></span>
+                </div>
+                <div id="db-visual" class="flex-1 overflow-y-auto space-y-4 pr-1"></div>
+            </div>
+
+            <div class="sidebar-item h-16 flex items-center justify-between shrink-0">
+                <div class="flex gap-2">
+                    <button onclick="prevStep()" class="px-4 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-xs border border-zinc-600 text-white">上一步</button>
+                    <button onclick="nextStep()" class="px-6 py-1 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-500">下一步</button>
+                    <button onclick="reset()" class="px-4 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-xs border border-zinc-600 text-white">重置</button>
+                </div>
+                <div class="text-right font-mono text-[10px]">
+                    STEP: <span id="cur-step" class="text-white font-bold">0</span> / <span id="total-steps">0</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="w-[30%] flex flex-col gap-3">
+            <div class="sidebar-item flex-1 flex flex-col overflow-hidden p-0">
+                <div class="bg-[#323233] px-4 py-1 text-[9px] text-zinc-400 font-bold">PYTHON IMPLEMENTATION</div>
+                <div id="code-display" class="p-4 text-[11px] overflow-y-auto flex-1 font-mono"></div>
+            </div>
+            <div class="sidebar-item h-1/3">
+                <h2 class="text-blue-400 font-bold mb-2 text-[10px] uppercase">● Watcher</h2>
+                <div id="watcher" class="text-[11px] space-y-1 font-mono"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const scenario = [
+            { op: "set", key: "foo", val: "bar", ts: 1, out: "null" },
+            { op: "get", key: "foo", ts: 1, out: "bar" },
+            { op: "get", key: "foo", ts: 3, out: "bar" },
+            { op: "set", key: "foo", val: "bar2", ts: 4, out: "null" },
+            { op: "get", key: "foo", ts: 4, out: "bar2" },
+            { op: "get", key: "foo", ts: 5, out: "bar2" },
+            { op: "get", key: "foo", ts: 0, out: '""' }
+        ];
+
+        let steps = [];
+        let stepIdx = 0;
+
+        function generateSteps() {
+            const s = []; const db = {};
+            scenario.forEach(action => {
+                if (action.op === "set") {
+                    if (!db[action.key]) db[action.key] = [];
+                    s.push({ line: 5, type: "set", db: JSON.parse(JSON.stringify(db)), key: action.key, val: action.val, ts: action.ts, msg: "檢查 Key" });
+                    db[action.key].push([action.val, action.ts]);
+                    s.push({ line: 8, type: "set", db: JSON.parse(JSON.stringify(db)), key: action.key, val: action.val, ts: action.ts, msg: "插入數值" });
+                } else {
+                    const vals = db[action.key] || [];
+                    let l = 0, r = vals.length - 1, res = "";
+                    s.push({ line: 11, type: "get", db: JSON.parse(JSON.stringify(db)), key: action.key, ts: action.ts, l, r, res, msg: "開始搜尋" });
+                    while (l <= r) {
+                        let m = Math.floor((l+r)/2);
+                        s.push({ line: 14, type: "get", db: JSON.parse(JSON.stringify(db)), key: action.key, ts: action.ts, l, r, m, res, msg: `檢查 mid=${m}` });
+                        if (vals[m][1] <= action.ts) { res = vals[m][0]; l = m + 1; s.push({ line: 16, type: "get", db: JSON.parse(JSON.stringify(db)), key: action.key, ts: action.ts, l, r, m, res, msg: "符合，向右找" }); }
+                        else { r = m - 1; s.push({ line: 19, type: "get", db: JSON.parse(JSON.stringify(db)), key: action.key, ts: action.ts, l, r, m, res, msg: "太大，向左找" }); }
+                    }
+                    s.push({ line: 20, type: "get", db: JSON.parse(JSON.stringify(db)), key: action.key, ts: action.ts, res, msg: "返回結果" });
+                }
+            });
+            return s;
+        }
+
+        function drawCode() {
+            const py = ["class TimeMap:","    def __init__(self):","        self.keyStore = {}","","    def set(self, key: str, value: str, ts: int):","        if key not in self.keyStore:","            self.keyStore[key] = []","        self.keyStore[key].append([value, ts])","","    def get(self, key: str, ts: int) -> str:","        res, values = \"\", self.keyStore.get(key, [])","        l, r = 0, len(values) - 1","        while l <= r:","            m = (l + r) // 2","            if values[m][1] <= ts:","                res = values[m][0]","                l = m + 1","            else:","                r = m - 1","        return res"];
+            document.getElementById('code-display').innerHTML = py.map((line, i) => {
+                let f = line.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/\b(class|def|if|not|in|while|else|return)\b/g, '<span class="kw">$1</span>')
+                    .replace(/\b(set|get|append|__init__)\b/g, '<span class="fn">$1</span>')
+                    .replace(/\b(self)\b/g, '<span class="sf">$1</span>')
+                    .replace(/\b(str|int)\b/g, '<span class="tp">$1</span>')
+                    .replace(/("")/g, '<span class="st">$1</span>');
+                return `<div id="ln-${i+1}">${f}</div>`;
+            }).join('');
+        }
+
+        function update() {
+            const s = steps[stepIdx];
+            document.querySelectorAll('#code-display div').forEach(d => d.classList.remove('active-line'));
+            document.getElementById(`ln-${s.line}`)?.classList.add('active-line');
+            const dbVis = document.getElementById('db-visual');
+            dbVis.innerHTML = Object.entries(s.db).map(([k, list]) => `
+                <div class="sidebar-item border-l-2 ${s.key === k ? 'border-blue-500' : 'border-zinc-700'} mb-2">
+                    <div class="text-[9px] text-zinc-500 font-bold mb-2">KEY: "${k}"</div>
+                    <div class="flex flex-wrap gap-2">
+                        ${list.map((item, idx) => {
+                            let cls = "data-card"; let ptrs = [];
+                            if (s.key === k) {
+                                if (idx === s.m) cls += " search-mid";
+                                if (idx === s.l) ptrs.push('<span class="bg-green-500 text-[8px] px-1 rounded">L</span>');
+                                if (idx === s.r) ptrs.push('<span class="bg-red-500 text-[8px] px-1 rounded">R</span>');
+                            }
+                            return `<div class="${cls} p-2 min-w-[65px] text-center">
+                                <div class="text-[8px] text-zinc-500">ts:${item[1]}</div>
+                                <div class="text-xs text-white font-bold">"${item[0]}"</div>
+                                <div class="absolute -bottom-2 left-0 right-0 flex justify-center gap-0.5">${ptrs.join('')}</div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>`).join('');
+            document.getElementById('current-action').textContent = `${s.type.toUpperCase()}(${s.key}, ${s.ts})`;
+            document.getElementById('watcher').innerHTML = `<div class="bg-zinc-900/50 p-2 rounded border border-zinc-800 space-y-1">
+                <div class="flex justify-between"><span>Target:</span><span>${s.ts}</span></div>
+                <div class="flex justify-between"><span>L:</span><span class="text-green-400">${s.l??'-'}</span></div>
+                <div class="flex justify-between"><span>R:</span><span class="text-red-400">${s.r??'-'}</span></div>
+                <div class="flex justify-between text-yellow-500 font-bold"><span>res:</span><span>"${s.res}"</span></div>
+                </div><div class="mt-2 text-blue-300 italic text-[10px]">>> ${s.msg}</div>`;
+            document.getElementById('cur-step').textContent = stepIdx + 1;
+            document.getElementById('total-steps').textContent = steps.length;
+            document.querySelectorAll('#case-list > div').forEach((el, i) => {
+                el.classList.toggle('bg-blue-900/40', s.key === scenario[i].key && s.ts === scenario[i].ts);
+            });
+        }
+
+        function reset() { stepIdx = 0; steps = generateSteps(); update(); }
+        function nextStep() { if (stepIdx < steps.length - 1) { stepIdx++; update(); } }
+        function prevStep() { if (stepIdx > 0) { stepIdx--; update(); } }
+
+        document.getElementById('case-list').innerHTML = scenario.map((a, i) => `
+            <div class="p-2 bg-zinc-800/30 rounded border border-zinc-700 text-[8px]">
+                <div class="flex justify-between text-blue-400"><b>${a.op}</b><span>#${i+1}</span></div>
+                <div class="text-zinc-500">[${a.key}, ${a.val?'"'+a.val+'", ':''}${a.ts}]</div>
+                <div class="text-zinc-400">Out: <b class="text-green-500">${a.out}</b></div>
+            </div>`).join('');
+
+        drawCode(); reset();
+    </script>
+</body>
+</html>

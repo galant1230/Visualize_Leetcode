@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>79. Word Search - Full Step-by-Step DFS Visualization</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --green: #50fa7b;
+      --cyan: #8be9fd;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+
+    /* 版面布局：左欄寬 680px，右欄自動填滿 */
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 680px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    /* Python 程式碼區塊 (顯示寬度優化) */
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.88rem; overflow-x: auto; max-height: 460px; }
+    .code-line { padding: 3px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    /* Call Stack 區塊 */
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; min-height: 140px; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 6px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 6px 10px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* 控制與動態狀態 */
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .word-tracker { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .char-chip { padding: 3px 8px; background: #222; border: 1px solid var(--border); border-radius: 4px; font-family: monospace; font-size: 0.85rem; font-weight: bold; color: var(--text-dim); }
+    .char-chip.matched { border-color: var(--green); background: rgba(80, 250, 123, 0.15); color: var(--green); }
+    .char-chip.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.25); color: var(--orange); transform: scale(1.08); }
+
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; }
+
+    /* 2D Board Cell 網格設計 */
+    .tree-wrapper { background: #080808; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; height: 400px; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+    
+    .board-grid { display: grid; gap: 6px; margin: auto; }
+    .board-cell { width: 50px; height: 50px; border: 2px solid var(--border); background: #1e1e1e; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; font-size: 1.1rem; font-weight: bold; color: var(--text); position: relative; transition: all 0.2s; }
+    .board-cell .pos-tag { font-size: 0.55rem; color: var(--text-dim); position: absolute; top: 2px; left: 4px; font-weight: normal; }
+    .board-cell.visited { border-color: var(--purple); background: rgba(139, 92, 246, 0.2); color: #c4b5fd; }
+    .board-cell.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.3); color: #fff; transform: scale(1.08); box-shadow: 0 0 10px var(--orange); z-index: 2; }
+    .board-cell.success { border-color: var(--green); background: rgba(80, 250, 123, 0.3); color: var(--green); box-shadow: 0 0 10px var(--green); }
+    .board-cell.pruned { border-color: var(--hard); background: rgba(255, 45, 85, 0.25); color: var(--hard); transform: scale(0.95); }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 68px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">79. Word Search</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: board, word = "ABCCED"</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: board, word = "SEE"</button>
+    <button class="tab-btn" onclick="setPreset(2)">Ex 3: board, word = "ABCB"</button>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄 (680px)：放大 Python 程式碼、題目描述、Call Stack -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個 <code>m x n</code> 的字元矩陣 <code>board</code> 和一個字串 <code>word</code>。若 <code>word</code> 存在於網格中，傳回 <code>true</code>；否則傳回 <code>false</code>。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val">O(M * N * 3^L)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val">O(L)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (DFS 遞迴歷程)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄：核心三要素、2D Board 視覺化、狀態追蹤 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="idea-box">
+          <div class="idea-title">💡 回溯法 (Backtracking) 核心三要素</div>
+          <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+            <li><b>Choice (選擇)</b>：向右、下、左、上 4 個方向延伸試探下一個字元。</li>
+            <li><b>Base Cases (邊界)</b>：<code>k == len(word)</code> (匹配成功) 或 越界/字母不一致/已走訪 (剪枝)。</li>
+            <li><b>Backtrack (撤銷)</b>：恢復單元格字元 <code>board[r][c] = temp</code>，退回上一格。</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 2D Board & DFS 歷程視覺化</span>
+          <span style="font-size:0.7rem; color:var(--text-dim);">🟡 當前 | 🟣 走訪中 | 🟢 成功 | 🔴 剪枝</span>
+        </div>
+
+        <div class="tree-wrapper">
+          <div class="board-grid" id="board-grid"></div>
+        </div>
+
+        <div class="path-container">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Target Word Matching:</span>
+            <div class="word-tracker" id="word-tracker"></div>
+          </div>
+
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Grid (r, c): </span>
+              <span id="pos-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Match Index (k): </span>
+              <span id="k-display" style="font-weight: bold; color: var(--orange);">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Final Search Result:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Searching...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">步驟說明 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeLines = [
+      `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">exist</span>(<span class="self">self</span>, board: List[List[str]], word: str) -> bool:`,
+      `        R, C = len(board), len(board[0])`,
+      `        <span class="kw">def</span> <span class="fn">dfs</span>(r, c, k):`,
+      `            <span class="kw">if</span> k == len(word): <span class="kw">return True</span>  <span class="cm"># 1. 全部字母匹配成功</span>`,
+      `            <span class="kw">if</span> r < 0 <span class="kw">or</span> r >= R <span class="kw">or</span> c < 0 <span class="kw">or</span> c >= C <span class="kw">or</span> board[r][c] != word[k]:`,
+      `                <span class="kw">return False</span>                 <span class="cm"># 2. 越界/重複走訪('#')/字母不符（剪枝）</span>`,
+      `            temp, board[r][c] = board[r][c], <span class="cm">'#'</span>  <span class="cm"># 標記為已走訪</span>`,
+      `            <span class="kw">for</span> dr, dc <span class="kw">in</span> [(0,1), (1,0), (0,-1), (-1,0)]: <span class="cm"># 右, 下, 左, 上</span>`,
+      `                <span class="kw">if</span> dfs(r + dr, c + dc, k + 1): <span class="kw">return True</span>`,
+      `            board[r][c] = temp  <span class="cm"># 3. 回溯撤銷標記</span>`,
+      `            <span class="kw">return False</span>`,
+      `        <span class="kw">for</span> r <span class="kw">in</span> range(R):`,
+      `            <span class="kw">for</span> c <span class="kw">in</span> range(C):`,
+      `                <span class="kw">if</span> dfs(r, c, 0): <span class="kw">return True</span>`,
+      `        <span class="kw">return False</span>`
+    ];
+
+    const presets = [
+      {
+        title: "Example 1",
+        board: [
+          ['A','B','C','E'],
+          ['S','F','C','S'],
+          ['A','D','E','E']
+        ],
+        word: "ABCCED",
+        output: "true",
+        explanation: "Starting at (0,0) -> 'A' -> 'B' -> 'C' -> 'C' -> 'E' -> 'D'. Path found!"
+      },
+      {
+        title: "Example 2",
+        board: [
+          ['A','B','C','E'],
+          ['S','F','C','S'],
+          ['A','D','E','E']
+        ],
+        word: "SEE",
+        output: "true",
+        explanation: "Starting at (1,3) -> 'S' -> 'E' -> 'E'. Path found!"
+      },
+      {
+        title: "Example 3",
+        board: [
+          ['A','B','C','E'],
+          ['S','F','C','S'],
+          ['A','D','E','E']
+        ],
+        word: "ABCB",
+        output: "false",
+        explanation: "'B' cannot be reused in the same search path. Search backtracks and fails."
+      }
+    ];
+
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      const boardStr = JSON.stringify(p.board);
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Board:</b> ${boardStr}</div>
+        <div><b>Word:</b> "${p.word}" | <b>Output:</b> ${p.output}</div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codeLines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    // 重新建構：超詳細、極微步（Micro-steps）歷史步驟錄製
+    function buildSteps() {
+      history = [];
+      const p = presets[currentPreset];
+      const board = JSON.parse(JSON.stringify(p.board));
+      const word = p.word;
+      const R = board.length;
+      const C = board[0].length;
+
+      let currentStack = [];
+      let visitedCells = {};
+      let foundOverall = false;
+
+      function pushFrame(r, c, k) { currentStack.push({ fnName: "dfs", args: `r=${r}, c=${c}, k=${k}` }); }
+      function popFrame() { currentStack.pop(); }
+
+      history.push({
+        line: 2, phase: "【初始化】",
+        desc: `初始化 Board (${R}x${C})，掃描 (0,0) 開始尋找首字元 word[0] = '${word[0]}'`,
+        stack: [], pos: null, k: 0, visitedCells: {}, result: "Searching..."
+      });
+
+      const dirNames = ["右 (0,1)", "下 (1,0)", "左 (0,-1)", "上 (-1,0)"];
+      const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+
+      function dfs(r, c, k) {
+        pushFrame(r, c, k);
+
+        // Step: 進入 dfs 函數
+        history.push({
+          line: 3, phase: "⏬ 【Call DFS】進入遞迴",
+          desc: `呼叫 dfs(r=${r}, c=${c}, k=${k})，試探匹配 word[${k}] = '${word[k] || ""}'`,
+          stack: JSON.parse(JSON.stringify(currentStack)), pos: {r, c}, k,
+          visitedCells: JSON.parse(JSON.stringify(visitedCells)), result: "Searching..."
+        });
+
+        // Step: Line 4 檢查 Base Case (k == len(word))
+        if (k === word.length) {
+          history.push({
+            line: 4, phase: "🎯 【Base Case】k == len(word) (成功!)",
+            desc: `匹配完畢！成功找到完整單字 "${word}"！`,
+            stack: JSON.parse(JSON.stringify(currentStack)), pos: {r, c}, k,
+            visitedCells: JSON.parse(JSON.stringify(visitedCells)), result: "TRUE (Found)"
+          });
+          popFrame();
+          return true;
+        }
+
+        // Step: Line 5-6 檢查邊界條件與字元不相符
+        let isOOB = (r < 0 || r >= R || c < 0 || c >= C);
+        let curChar = isOOB ? "OOB" : board[r][c];
+
+        if (isOOB || curChar !== word[k]) {
+          let cellKey = `${r},${c}`;
+          let failReason = isOOB 
+            ? "越界 (Out of Bounds)" 
+            : (curChar === '#' ? "已存取過 ('#')" : `'${curChar}' != '${word[k]}' (字元不符合)`);
+
+          if (!isOOB) visitedCells[cellKey] = "pruned";
+
+          history.push({
+            line: 6, phase: "💥 【Pruned】觸發剪枝",
+            desc: `(r=${r}, c=${c}) 原因：${failReason}。返回 False 彈回上一層。`,
+            stack: JSON.parse(JSON.stringify(currentStack)), pos: isOOB ? null : {r, c}, k,
+            visitedCells: JSON.parse(JSON.stringify(visitedCells)), result: "Searching..."
+          });
+
+          if (!isOOB && visitedCells[cellKey] === "pruned") delete visitedCells[cellKey];
+          popFrame();
+          return false;
+        }
+
+        // Line 7: 比對成功，標記為已走訪
+        let temp = board[r][c];
+        board[r][c] = '#';
+        let cellKey = `${r},${c}`;
+        visitedCells[cellKey] = "visited";
+
+        history.push({
+          line: 7, phase: `✅ 【Match】'${temp}' 匹配成功`,
+          desc: `(r=${r}, c=${c}) 字元 '${temp}' == word[${k}]，暫存標記為 '#'`,
+          stack: JSON.parse(JSON.stringify(currentStack)), pos: {r, c}, k,
+          visitedCells: JSON.parse(JSON.stringify(visitedCells)), result: "Searching..."
+        });
+
+        // Line 8-9: 依序試探 4 個方向
+        for (let i = 0; i < 4; i++) {
+          let [dr, dc] = dirs[i];
+          let nr = r + dr, nc = c + dc;
+
+          history.push({
+            line: 8, phase: `🧭 【Check Direction】嘗試向${dirNames[i]}`,
+            desc: `準備從 (r=${r}, c=${c}) 移動到 (${nr}, ${nc})，試探 word[${k+1}]`,
+            stack: JSON.parse(JSON.stringify(currentStack)), pos: {r, c}, k,
+            visitedCells: JSON.parse(JSON.stringify(visitedCells)), result: "Searching..."
+          });
+
+          if (dfs(nr, nc, k + 1)) {
+            visitedCells[cellKey] = "success";
+            history.push({
+              line: 9, phase: "🎉 【Return True】向下傳遞成功狀態",
+              desc: `子呼叫成功，(r=${r}, c=${c}) 亦回傳 True`,
+              stack: JSON.parse(JSON.stringify(currentStack)), pos: {r, c}, k,
+              visitedCells: JSON.parse(JSON.stringify(visitedCells)), result: "TRUE (Found)"
+            });
+            popFrame();
+            return true;
+          }
+        }
+
+        // Line 10: 4個方向皆無效，執行 Backtrack 撤銷標記
+        board[r][c] = temp;
+        delete visitedCells[cellKey];
+
+        history.push({
+          line: 10, phase: "↩️ 【Backtrack】4方向皆失敗，撤銷標記",
+          desc: `(r=${r}, c=${c}) 恢復字元 '${temp}'，回溯返回上一層`,
+          stack: JSON.parse(JSON.stringify(currentStack)), pos: {r, c}, k,
+          visitedCells: JSON.parse(JSON.stringify(visitedCells)), result: "Searching..."
+        });
+
+        popFrame();
+        return false;
+      }
+
+      // 主迴圈掃描起點
+      for (let r = 0; r < R; r++) {
+        for (let c = 0; c < C; c++) {
+          history.push({
+            line: 12, phase: `🔍 【Scan Grid】檢查 (r=${r}, c=${c})`,
+            desc: `檢查格 (r=${r}, c=${c}) 字元 '${board[r][c]}' 是否等於首字元 '${word[0]}'`,
+            stack: [], pos: {r, c}, k: 0, visitedCells: {}, result: "Searching..."
+          });
+
+          if (board[r][c] === word[0]) {
+            if (dfs(r, c, 0)) {
+              foundOverall = true;
+              break;
+            }
+          } else {
+            history.push({
+              line: 13, phase: "⏭️ 【Skip】首字不符",
+              desc: `'${board[r][c]}' != '${word[0]}'，跳過此起點`,
+              stack: [], pos: {r, c}, k: 0, visitedCells: {}, result: "Searching..."
+            });
+          }
+        }
+        if (foundOverall) break;
+      }
+
+      if (!foundOverall) {
+        history.push({
+          line: 15, phase: "❌ 【Search Finished】搜尋結束",
+          desc: `所有起點與路徑均已試探完畢，找不到單字 "${word}"。`,
+          stack: [], pos: null, k: 0, visitedCells: {}, result: "FALSE (Not Found)"
+        });
+      }
+    }
+
+    function renderBoard(pos, visitedCells) {
+      const p = presets[currentPreset];
+      const board = p.board;
+      const gridEl = document.getElementById('board-grid');
+      gridEl.innerHTML = '';
+      gridEl.style.gridTemplateColumns = `repeat(${board[0].length}, 50px)`;
+
+      for (let r = 0; r < board.length; r++) {
+        for (let c = 0; c < board[0].length; c++) {
+          let cellKey = `${r},${c}`;
+          let cellDiv = document.createElement('div');
+          let cls = "board-cell";
+
+          if (pos && pos.r === r && pos.c === c) cls += " active";
+          else if (visitedCells[cellKey] === "success") cls += " success";
+          else if (visitedCells[cellKey] === "visited") cls += " visited";
+          else if (visitedCells[cellKey] === "pruned") cls += " pruned";
+
+          cellDiv.className = cls;
+          cellDiv.innerHTML = `
+            <span class="pos-tag">${r},${c}</span>
+            <span>${board[r][c]}</span>
+          `;
+          gridEl.appendChild(cellDiv);
+        }
+      }
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = stackData.length === 0 
+        ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Stack Empty</div>`
+        : stackData.map(f => `
+            <div class="stack-frame">
+              <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.75rem;">(${f.args})</span></div>
+            </div>
+          `).join('');
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      const word = presets[currentPreset].word;
+      const trackerEl = document.getElementById('word-tracker');
+      trackerEl.innerHTML = word.split('').map((ch, idx) => {
+        let cls = "char-chip";
+        if (idx < state.k) cls += " matched";
+        else if (idx === state.k && state.pos) cls += " active";
+        return `<div class="${cls}">${ch}</div>`;
+      }).join('');
+
+      document.getElementById('pos-display').innerText = state.pos ? `(${state.pos.r}, ${state.pos.c})` : "None";
+      document.getElementById('k-display').innerText = state.k !== undefined ? state.k : "0";
+
+      const resEl = document.getElementById('result-text');
+      resEl.innerText = state.result || "Searching...";
+      resEl.style.color = state.result.includes("TRUE") ? "var(--green)" : (state.result.includes("FALSE") ? "var(--hard)" : "var(--text-dim)");
+
+      renderBoard(state.pos, state.visitedCells || {});
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

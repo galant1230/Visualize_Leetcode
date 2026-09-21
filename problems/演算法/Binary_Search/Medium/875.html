@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>875. Koko Eating Bananas - Binary Search 精細版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Fira Code', 'JetBrains Mono', monospace;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .sidebar { background-color: #252526; }
+        .active-line {
+            background-color: rgba(38, 79, 120, 0.5);
+            border-left: 3px solid #007acc;
+        }
+        .token-keyword { color: #569cd6; }
+        .token-function { color: #dcdcaa; }
+        .token-comment { color: #6a9955; }
+        .token-number { color: #b5cea8; }
+        .cell-highlight {
+            animation: pulse 0.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { border-color: #007acc; background-color: #264f78; }
+            50% { border-color: #4fc1ff; background-color: #3e3e42; }
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <header class="h-14 border-b border-zinc-800 flex items-center px-6 justify-between bg-[#252526]">
+        <div class="font-bold text-lg text-white flex items-center gap-2">
+            <span class="text-yellow-500">#875</span> Koko Eating Bananas
+        </div>
+        <div class="flex gap-2">
+            <button onclick="switchAlgo('binary')" id="btn-binary" class="px-4 py-1 rounded bg-blue-600 text-white text-sm">Binary Search</button>
+            <button onclick="switchAlgo('brute')" id="btn-brute" class="px-4 py-1 rounded bg-zinc-700 hover:bg-zinc-600 text-sm">Brute Force</button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden p-4 gap-4">
+        
+        <section class="w-1/4 flex flex-col gap-4 overflow-y-auto hide-scrollbar">
+            <div class="sidebar p-6 rounded-md">
+                <h2 class="text-blue-400 font-bold mb-2">題目約束</h2>
+                <p class="text-sm text-zinc-400">
+                    piles[i] 是香蕉數量，h 是警察回來的時間。Koko 必須找出最小速度 k，使得總耗時 ≤ h。
+                </p>
+            </div>
+            <div class="sidebar p-6 rounded-md flex-1">
+                <h2 class="text-blue-400 font-bold mb-4">測資選擇</h2>
+                <div class="space-y-2" id="test-case-list">
+                    </div>
+            </div>
+        </section>
+
+        <section class="w-[45%] flex flex-col gap-4">
+            <div class="sidebar flex-1 rounded-md p-6 flex flex-col relative overflow-hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-zinc-500 text-sm uppercase tracking-widest">Eating Visualization</h2>
+                    <div class="text-sm">速度 k = <span id="display-k" class="text-yellow-400 font-bold">-</span></div>
+                </div>
+                
+                <div id="visual-area" class="flex flex-col gap-4 justify-center flex-1">
+                    </div>
+
+                <div class="mt-4 pt-4 border-t border-zinc-800">
+                    <div class="flex justify-between items-center mb-2 text-xs">
+                        <span class="text-zinc-500">Total Time Spent</span>
+                        <span id="time-ratio" class="font-mono text-white">- / -</span>
+                    </div>
+                    <div class="w-full bg-zinc-800 h-3 rounded-full overflow-hidden">
+                        <div id="time-progress" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar h-20 rounded-md flex items-center justify-between px-8">
+                <div class="flex gap-4">
+                    <button onclick="prevStep()" class="p-2 hover:bg-zinc-700 rounded text-zinc-400">上一步</button>
+                    <button onclick="togglePlay()" id="play-btn" class="px-6 py-2 bg-blue-600 text-white rounded-md text-sm">播放</button>
+                    <button onclick="nextStep()" class="p-2 hover:bg-zinc-700 rounded text-zinc-400">下一步</button>
+                    <button onclick="resetSim()" class="p-2 hover:bg-zinc-700 rounded text-zinc-400">重置</button>
+                </div>
+                <div class="text-xs font-mono text-zinc-500">STEP: <span id="current-step" class="text-zinc-200">0</span></div>
+            </div>
+        </section>
+
+        <section class="w-[30%] flex flex-col gap-4 overflow-hidden">
+            <div class="sidebar flex-1 rounded-md overflow-hidden flex flex-col">
+                <div class="bg-[#323233] px-4 py-2 text-[10px] text-zinc-400">PYTHON DEBUGGER</div>
+                <div id="code-area" class="p-4 text-[11px] leading-5 overflow-y-auto flex-1 bg-[#1e1e1e] font-mono"></div>
+            </div>
+            <div class="sidebar h-1/3 rounded-md p-6">
+                <h2 class="text-blue-400 font-bold mb-3 text-sm">變數監控 (Watcher)</h2>
+                <div id="watcher-list" class="space-y-2 text-xs font-mono"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const testCases = [
+            { piles: [3, 6, 7, 11], h: 8 },
+            { piles: [30, 11, 23, 4, 20], h: 5 },
+            { piles: [30, 11, 23, 4, 20], h: 6 }
+        ];
+
+        const binaryCode = [
+            "l, r = 1, max(piles)",
+            "while l <= r:",
+            "    mid = (l + r) // 2",
+            "    total_time = 0",
+            "    for pile in piles:",
+            "        total_time += math.ceil(pile / mid)",
+            "    if total_time <= h:",
+            "        r = mid - 1",
+            "    else:",
+            "        l = mid + 1",
+            "return l"
+        ];
+
+        const bruteCode = [
+            "speed = 1",
+            "while True:",
+            "    totalTime = 0",
+            "    for pile in piles:",
+            "        totalTime += math.ceil(pile / speed)",
+            "    if totalTime <= h:",
+            "        return speed",
+            "    speed += 1"
+        ];
+
+        let currentAlgo = 'binary';
+        let currentIdx = 0;
+        let steps = [];
+        let currentStepIdx = 0;
+        let isPlaying = false;
+        let timer = null;
+
+        function generateSteps() {
+            const { piles, h } = testCases[currentIdx];
+            const res = [];
+            
+            if (currentAlgo === 'binary') {
+                let l = 1, r = Math.max(...piles);
+                res.push({ line: 0, l, r, mid: null, curP: null, curPT: null, totalT: 0, msg: "初始化邊界 [1, max(piles)]" });
+                
+                while (l <= r) {
+                    res.push({ line: 1, l, r, mid: null, curP: null, curPT: null, totalT: 0, msg: "檢查搜尋區間" });
+                    let mid = Math.floor((l + r) / 2);
+                    res.push({ line: 2, l, r, mid, curP: null, curPT: null, totalT: 0, msg: `嘗試速度 k = ${mid}` });
+                    
+                    let totalT = 0;
+                    res.push({ line: 3, l, r, mid, curP: null, curPT: null, totalT: 0, msg: "初始化 total_time = 0" });
+                    
+                    for (let i = 0; i < piles.length; i++) {
+                        let p = piles[i];
+                        let pt = Math.ceil(p / mid);
+                        totalT += pt;
+                        res.push({ line: 5, l, r, mid, curP: i, curPT: pt, totalT: totalT, msg: `Pile[${i}]=${p} 需 ${pt}h` });
+                    }
+                    
+                    res.push({ line: 6, l, r, mid, curP: null, curPT: null, totalT: totalT, msg: `總耗時 ${totalT}h 是否 <= ${h}h?` });
+                    if (totalT <= h) {
+                        res.push({ line: 7, l, r, mid, curP: null, curPT: null, totalT: totalT, msg: "速度足夠，嘗試更慢的速度 (往左找)" });
+                        r = mid - 1;
+                    } else {
+                        res.push({ line: 9, l, r, mid, curP: null, curPT: null, totalT: totalT, msg: "太慢了，必須增加速度 (往右找)" });
+                        l = mid + 1;
+                    }
+                }
+                res.push({ line: 10, l, r, mid: null, curP: null, curPT: null, totalT: 0, msg: `找到最小速度 k = ${l}` });
+            } else {
+                let s = 1;
+                while(true) {
+                    res.push({ line: 0, l: s, r: null, mid: s, curP: null, curPT: null, totalT: 0, msg: `嘗試速度 k = ${s}` });
+                    let tt = 0;
+                    for (let i = 0; i < piles.length; i++) {
+                        let p = piles[i];
+                        let pt = Math.ceil(p / s);
+                        tt += pt;
+                        res.push({ line: 4, l: s, r: null, mid: s, curP: i, curPT: pt, totalT: tt, msg: `Pile[${i}] 需 ${pt}h` });
+                    }
+                    if (tt <= h) {
+                        res.push({ line: 6, l: s, r: null, mid: s, curP: null, curPT: null, totalT: tt, msg: "找到速度！" });
+                        break;
+                    }
+                    s++;
+                }
+            }
+            return res;
+        }
+
+        function renderCode() {
+            const lines = currentAlgo === 'binary' ? binaryCode : bruteCode;
+            document.getElementById('code-area').innerHTML = lines.map((line, i) => `
+                <div id="line-${i}" class="px-2 whitespace-pre flex">
+                    <span class="w-8 text-zinc-600 text-right mr-4 select-none">${i}</span>
+                    <span>${line.replace(/\b(def|while|if|elif|else|return|for|in)\b/g, '<span class="token-keyword">$1</span>')}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateUI() {
+            const step = steps[currentStepIdx];
+            const { piles, h } = testCases[currentIdx];
+            const k = step.mid || step.l || 1;
+
+            // Code highlight
+            document.querySelectorAll('#code-area div').forEach(el => el.classList.remove('active-line'));
+            document.getElementById(`line-${step.line}`)?.classList.add('active-line');
+
+            // Visualization
+            document.getElementById('display-k').textContent = k;
+            document.getElementById('visual-area').innerHTML = piles.map((p, i) => {
+                const pt = Math.ceil(p / k);
+                const isActive = step.curP === i;
+                return `
+                    <div class="flex items-center gap-4">
+                        <div class="w-8 text-xs ${isActive ? 'text-yellow-400 font-bold' : 'text-zinc-500'}">${p}</div>
+                        <div class="flex-1 bg-zinc-900 h-6 rounded border ${isActive ? 'border-yellow-500 cell-highlight' : 'border-zinc-800'} relative overflow-hidden">
+                            <div class="bg-yellow-600/40 h-full transition-all duration-300" style="width: ${Math.min(100, (p/Math.max(...piles))*100)}%"></div>
+                            <div class="absolute inset-0 flex items-center justify-end px-3 text-[9px] text-zinc-400">${pt}h</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Progress bar
+            const ratioText = document.getElementById('time-ratio');
+            ratioText.textContent = `${step.totalT}h / ${h}h`;
+            ratioText.className = step.totalT <= h ? 'font-mono text-green-400' : 'font-mono text-red-400';
+            document.getElementById('time-progress').style.width = `${Math.min(100, (step.totalT/h)*100)}%`;
+            document.getElementById('time-progress').className = `h-full transition-all duration-300 ${step.totalT <= h ? 'bg-green-600' : 'bg-red-600'}`;
+
+            // Watcher
+            const watcher = document.getElementById('watcher-list');
+            watcher.innerHTML = `
+                <div class="flex justify-between border-b border-zinc-800 pb-1"><span>Target H:</span> <span>${h}</span></div>
+                <div class="flex justify-between border-b border-zinc-800 pb-1"><span>L (Min):</span> <span class="text-blue-400">${step.l}</span></div>
+                <div class="flex justify-between border-b border-zinc-800 pb-1"><span>R (Max):</span> <span class="text-red-400">${step.r || '-'}</span></div>
+                <div class="flex justify-between border-b border-zinc-800 pb-1"><span>Mid (Speed):</span> <span class="text-yellow-500 font-bold">${step.mid || '-'}</span></div>
+                <div class="flex justify-between border-b border-zinc-800 pb-1"><span>Current Pile:</span> <span>${step.curP !== null ? piles[step.curP] : '-'}</span></div>
+                <div class="flex justify-between border-b border-zinc-800 pb-1"><span>Total Time:</span> <span class="text-white">${step.totalT}h</span></div>
+                <div class="mt-4 text-zinc-400 italic leading-relaxed">> ${step.msg}</div>
+            `;
+            document.getElementById('current-step').textContent = currentStepIdx;
+        }
+
+        function loadTestCase(idx) {
+            currentIdx = idx;
+            document.getElementById('test-case-list').innerHTML = testCases.map((tc, i) => `
+                <button onclick="loadTestCase(${i})" class="w-full text-left p-2 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] border ${i === idx ? 'border-blue-500' : 'border-zinc-700'}">
+                    Ex ${i+1}: piles=[${tc.piles}], h=${tc.h}
+                </button>
+            `).join('');
+            resetSim();
+        }
+
+        function switchAlgo(type) {
+            currentAlgo = type;
+            document.getElementById('btn-binary').className = type === 'binary' ? 'px-4 py-1 rounded bg-blue-600 text-white text-sm' : 'px-4 py-1 rounded bg-zinc-700 hover:bg-zinc-600 text-sm';
+            document.getElementById('btn-brute').className = type === 'brute' ? 'px-4 py-1 rounded bg-blue-600 text-white text-sm' : 'px-4 py-1 rounded bg-zinc-700 hover:bg-zinc-600 text-sm';
+            renderCode();
+            resetSim();
+        }
+
+        function resetSim() { stopAutoPlay(); currentStepIdx = 0; steps = generateSteps(); updateUI(); }
+        function nextStep() { if (currentStepIdx < steps.length - 1) { currentStepIdx++; updateUI(); } else stopAutoPlay(); }
+        function prevStep() { if (currentStepIdx > 0) { currentStepIdx--; updateUI(); } }
+        function togglePlay() { isPlaying ? stopAutoPlay() : startAutoPlay(); }
+        function startAutoPlay() { isPlaying = true; document.getElementById('play-btn').textContent = "暫停"; timer = setInterval(nextStep, 300); }
+        function stopAutoPlay() { isPlaying = false; document.getElementById('play-btn').textContent = "播放"; clearInterval(timer); }
+
+        loadTestCase(0);
+        renderCode();
+    </script>
+</body>
+</html>
