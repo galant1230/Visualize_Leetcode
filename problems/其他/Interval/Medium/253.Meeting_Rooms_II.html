@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>253. Meeting Rooms II - Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 110px; max-height: 180px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .array-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 260px; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 16px; }
+    
+    .interval-board { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 750px; background: #151821; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
+    .interval-row { display: flex; align-items: center; gap: 10px; font-family: monospace; font-size: 0.8rem; }
+    .interval-label { width: 130px; text-align: right; color: var(--text-dim); font-size: 0.75rem; font-weight: bold; }
+    .interval-track { flex: 1; height: 36px; background: #1e1e1e; border-radius: 4px; border: 1px solid var(--border); position: relative; display: flex; align-items: center; }
+    
+    .interval-bar { position: absolute; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.75rem; color: #fff; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    .bar-room-0 { background: rgba(0, 122, 255, 0.5); border: 1px solid var(--blue); }
+    .bar-room-1 { background: rgba(80, 250, 123, 0.5); border: 1px solid var(--green); }
+    .bar-room-2 { background: rgba(139, 92, 246, 0.5); border: 1px solid var(--purple); }
+    .bar-room-3 { background: rgba(255, 161, 22, 0.5); border: 1px solid var(--orange); }
+    .bar-active { border: 2px solid #fff; box-shadow: 0 0 12px rgba(255, 255, 255, 0.8); z-index: 3; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+  <!-- KaTeX for math formula rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">253. Meeting Rooms II</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Min-Heap (Priority Queue) O(N log N)</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. Chronological Sweep-line / Two Pointers O(N log N)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: Standard ([[0,30],[5,10],[15,20]])</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: Sequential Edge ([[7,10],[2,4]])</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: Peak Overlap ([[1,10],[2,7],[3,19],[8,12],[10,20]])</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個會議時間區間陣列 <b>intervals</b>，其中 <code>intervals[i] = [start_i, end_i]</code>。請計算為安排所有會議，最少需要<b>多少間會議室</b>。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(N log N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(N)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Micro-steps Enabled</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 會議室分配與動態調度視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="array-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Meeting: </span>
+              <span id="pos-curr-display" style="font-weight: bold; color: var(--orange);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Earliest Free Room End: </span>
+              <span id="heap-min-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Active Rooms Required: </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.15rem; color: var(--green);">-</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Status / Output:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Min-Heap Priority Queue
+      [`<span class="kw">import</span> heapq`,
+       `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">minMeetingRooms</span>(<span class="self">self</span>, intervals: List[List[int]]) -> int:`,
+       `        <span class="kw">if</span> <span class="kw">not</span> intervals: <span class="kw">return</span> 0`,
+       `        intervals.sort(key=<span class="kw">lambda</span> x: x[0])`,
+       `        free_rooms = []  <span class="cm"># Min-Heap 保存各會議室的結束時間</span>`,
+       `        heapq.heappush(free_rooms, intervals[0][1])`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(1, len(intervals)):`,
+       `            <span class="kw">if</span> free_rooms[0] <= intervals[i][0]:`,
+       `                heapq.heappop(free_rooms)  <span class="cm"># 舊會議已結束，釋放會議室</span>`,
+       `            heapq.heappush(free_rooms, intervals[i][1])`,
+       `        <span class="kw">return</span> len(free_rooms)`],
+
+      // 2. Chronological Sweep-line / Two Pointers
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">minMeetingRooms</span>(<span class="self">self</span>, intervals: List[List[int]]) -> int:`,
+       `        starts = sorted([i[0] <span class="kw">for</span> i <span class="kw">in</span> intervals])`,
+       `        ends = sorted([i[1] <span class="kw">for</span> i <span class="kw">in</span> intervals])`,
+       `        s_ptr = e_ptr = 0`,
+       `        used_rooms = 0`,
+       `        <span class="kw">while</span> s_ptr < len(intervals):`,
+       `            <span class="kw">if</span> starts[s_ptr] >= ends[e_ptr]:`,
+       `                used_rooms -= 1  <span class="cm"># 有會議結束，空出一間</span>`,
+       `                e_ptr += 1`,
+       `            used_rooms += 1  <span class="cm"># 安排新會議，佔用一間</span>`,
+       `            s_ptr += 1`,
+       `        <span class="kw">return</span> used_rooms`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Min-Heap / Priority Queue (最小堆疊動態分配)",
+        time: "O(N log N)", space: "O(N)",
+        idea: `<b>解法思路：</b>我們需要知道當前所有「使用中會議室」何時會被釋放：<br>
+1. <b>按會議開始時間排序 (Sort by Start Time)：</b> 確保依時間順序安排會議。<br>
+2. <b>維護 Min-Heap：</b> Heap 頂端保存<b>最快結束</b>的會議室之結束時間 <code>free_rooms[0]</code>。<br>
+3. <b>動態判斷與復用：</b> 對於新會議 <code>intervals[i]</code>：<br>
+&nbsp;&nbsp;&nbsp;&nbsp;• <b>有空會議室 (無重疊)：</b> 若 <code>free_rooms[0] <= intervals[i][0]</code>，代表最先結束的會議室已經空出來，執行 <code>heappop()</code> 予以復用。<br>
+&nbsp;&nbsp;&nbsp;&nbsp;• <b>無空會議室 (重疊)：</b> 必須開闢一間新會議室。<br>
+4. 最後推入當前會議的結束時間 <code>heappush(free_rooms, intervals[i][1])</code>。堆疊的大小即為需要的最小會議室數量！`
+      },
+      {
+        title: "2. Chronological Sweep-line (上下車事件 / 雙指標法)",
+        time: "O(N log N)", space: "O(N)",
+        idea: `<b>解法思路：</b>把會議拆解為「開始」與「結束」獨立時間事件：<br>
+1. 將所有 <code>start</code> 與 <code>end</code> 分別獨立排序。<br>
+2. 使用雙指標 <code>s_ptr</code> 與 <code>e_ptr</code> 模擬時間推移：<br>
+&nbsp;&nbsp;&nbsp;&nbsp;• 若 <code>starts[s_ptr] >= ends[e_ptr]</code>，代表在當前會議開始前已有會議結束，房數 $-1$（<code>e_ptr++</code>）。<br>
+&nbsp;&nbsp;&nbsp;&nbsp;• 無論如何，新會議開始均需房數 $+1$（<code>s_ptr++</code>）。<br>
+3. 最終 <code>used_rooms</code> 歷史最大值即為解答。`
+      }
+    ];
+
+    const presets = [
+      { title: "Example 1", intervals: [[0, 30], [5, 10], [15, 20]], expected: "2", explanation: "[0,30] 與 [5,10] 重疊需 2 間。[15,20] 可復用 [5,10] 結束後的房間，總共需 2 間。" },
+      { title: "Example 2", intervals: [[7, 10], [2, 4]], expected: "1", explanation: "[2,4] 結束後 [7,10] 才開始，1 間會議室即可。 " },
+      { title: "Example 3", intervals: [[1, 10], [2, 7], [3, 19], [8, 12], [10, 20]], expected: "3", explanation: "在時間 3~7 之間同時有 3 個會議並行，至少需要 3 間會議室。" }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      const ideaCard = document.getElementById('idea-card');
+      ideaCard.innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+      if (window.renderMathInElement) {
+        renderMathInElement(ideaCard);
+      }
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input:</b> intervals = ${JSON.stringify(p.intervals)}</div>
+        <div><b>Expected Min Rooms:</b> <span style="color:var(--green)">${p.expected}</span></div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- Granular History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const { intervals } = JSON.parse(JSON.stringify(presets[currentPreset]));
+
+      if (currentAlgo === 0) {
+        buildMinHeapSteps(intervals);
+      } else {
+        buildSweepLineSteps(intervals);
+      }
+    }
+
+    // 1. Min-Heap Strategy
+    function buildMinHeapSteps(intervals) {
+      let sorted = JSON.parse(JSON.stringify(intervals));
+
+      history.push({
+        line: 3, phase: "⚡ 【Step 1: 準備資料】",
+        desc: `原始會議清單: <code>${JSON.stringify(intervals)}</code>`,
+        sorted: JSON.parse(JSON.stringify(sorted)), heap: [], roomAssignments: [], result: "Running..."
+      });
+
+      sorted.sort((a, b) => a[0] - b[0]);
+      history.push({
+        line: 4, phase: "🔀 【Step 2: 按 Start 時間升冪排序】",
+        desc: `排序後會議: <code>${JSON.stringify(sorted)}</code>`,
+        sorted: JSON.parse(JSON.stringify(sorted)), heap: [], roomAssignments: [], result: "Running..."
+      });
+
+      let heap = []; // Min-heap store end times
+      let roomAssignments = []; // { interval, roomIdx }
+      let rooms = []; // rooms[r] = last free time
+
+      // First meeting
+      let first = sorted[0];
+      heap.push(first[1]);
+      rooms.push(first[1]);
+      roomAssignments.push({ inv: first, roomIdx: 0 });
+
+      history.push({
+        line: 6, phase: "🟢 【Step 3: 安排第一個會議】",
+        desc: `分配 <b>Room 0</b> 給第一個會議 <code>[${first.join(',')}]</code>，Heap 加入結束時間 <code>${first[1]}</code>`,
+        sorted, heap: [...heap], roomAssignments: JSON.parse(JSON.stringify(roomAssignments)), activeIdx: 0, curr: first, stage: "ALLOCATE_NEW", result: "Running..."
+      });
+
+      for (let i = 1; i < sorted.length; i++) {
+        let curr = sorted[i];
+        let minEnd = Math.min(...heap);
+
+        if (minEnd <= curr[0]) {
+          // Reuse room
+          let roomToReuse = rooms.findIndex(rEnd => rEnd === minEnd);
+          // remove minEnd from heap
+          let heapIdx = heap.indexOf(minEnd);
+          heap.splice(heapIdx, 1);
+
+          rooms[roomToReuse] = curr[1];
+          heap.push(curr[1]);
+          heap.sort((a, b) => a - b);
+          roomAssignments.push({ inv: curr, roomIdx: roomToReuse });
+
+          history.push({
+            line: 8, phase: `🔄 【復用會議室: Room ${roomToReuse}】`,
+            desc: `當前會議 <code>[${curr.join(',')}]</code> 的 start (${curr[0]}) >= 最早空房結束時間 (${minEnd})。<b>復用 Room ${roomToReuse}</b>！`,
+            sorted, heap: [...heap], roomAssignments: JSON.parse(JSON.stringify(roomAssignments)), activeIdx: i, curr, stage: "REUSE", result: "Running..."
+          });
+        } else {
+          // Open new room
+          let newRoomIdx = rooms.length;
+          rooms.push(curr[1]);
+          heap.push(curr[1]);
+          heap.sort((a, b) => a - b);
+          roomAssignments.push({ inv: curr, roomIdx: newRoomIdx });
+
+          history.push({
+            line: 10, phase: `➕ 【無空房重疊：開闢 Room ${newRoomIdx}】`,
+            desc: `當前會議 <code>[${curr.join(',')}]</code> 的 start (${curr[0]}) < 最早空房結束時間 (${minEnd})。所有會議室全滿，<b>開闢 Room ${newRoomIdx}</b>！`,
+            sorted, heap: [...heap], roomAssignments: JSON.parse(JSON.stringify(roomAssignments)), activeIdx: i, curr, stage: "NEW_ROOM", result: "Running..."
+          });
+        }
+      }
+
+      history.push({
+        line: 11, phase: "🎉 【Complete: 最終會議室數量】",
+        desc: `所有會議安排完畢！共需 <b style="color:var(--green); font-size:1.1rem;">${heap.length}</b> 間會議室。`,
+        sorted, heap: [...heap], roomAssignments: JSON.parse(JSON.stringify(roomAssignments)), curr: null, stage: "DONE", result: heap.length
+      });
+    }
+
+    // 2. Sweep-line Strategy
+    function buildSweepLineSteps(intervals) {
+      let starts = intervals.map(i => i[0]).sort((a, b) => a - b);
+      let ends = intervals.map(i => i[1]).sort((a, b) => a - b);
+
+      history.push({
+        line: 3, phase: "⚡ 【Step 1: 分離 Start / End 陣列並排序】",
+        desc: `Starts: <code>${JSON.stringify(starts)}</code><br>Ends: <code>${JSON.stringify(ends)}</code>`,
+        starts, ends, sPtr: 0, ePtr: 0, usedRooms: 0, result: "Running..."
+      });
+
+      let sPtr = 0, ePtr = 0, usedRooms = 0;
+      while (sPtr < intervals.length) {
+        let currStart = starts[sPtr];
+        let currEnd = ends[ePtr];
+
+        if (currStart >= currEnd) {
+          usedRooms--;
+          ePtr++;
+          history.push({
+            line: 8, phase: "🔽 【會議結束：釋放 1 間會議室】",
+            desc: `當前 Start (${currStart}) >= 最早 End (${currEnd})，表示有會議已結束！房間數 -1 = ${usedRooms}，<code>e_ptr++</code>`,
+            starts, ends, sPtr, ePtr, usedRooms, stage: "FREE", result: "Running..."
+          });
+        }
+
+        usedRooms++;
+        sPtr++;
+        history.push({
+          line: 10, phase: "🔼 【新會議開始：佔用 1 間會議室】",
+          desc: `安排 Start (${currStart}) 的新會議，房間數 +1 = <b>${usedRooms}</b>，<code>s_ptr++</code>`,
+          starts, ends, sPtr, ePtr, usedRooms, stage: "OCCUPY", result: "Running..."
+        });
+      }
+
+      history.push({
+        line: 11, phase: "🎉 【Complete: 模擬結束】",
+        desc: `掃描完成！最少需要 <b style="color:var(--green); font-size:1.1rem;">${usedRooms}</b> 間會議室。`,
+        starts, ends, sPtr, ePtr, usedRooms, stage: "DONE", result: usedRooms
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      
+      if (currentAlgo === 0) {
+        renderHeapVisualizer(state, wrapper);
+      } else {
+        renderSweepVisualizer(state, wrapper);
+      }
+    }
+
+    function renderHeapVisualizer(state, wrapper) {
+      const sorted = state.sorted || presets[currentPreset].intervals;
+
+      let maxCoord = 30;
+      sorted.forEach(inv => maxCoord = Math.max(maxCoord, inv[1] + 2));
+
+      // Group by roomIdx
+      let maxRoom = 0;
+      (state.roomAssignments || []).forEach(a => maxRoom = Math.max(maxRoom, a.roomIdx));
+
+      let html = `<div class="interval-board">`;
+
+      for (let r = 0; r <= maxRoom; r++) {
+        html += `
+          <div class="interval-row">
+            <div class="interval-label" style="color:var(--cyan)">Room ${r}:</div>
+            <div class="interval-track">
+        `;
+
+        (state.roomAssignments || []).filter(a => a.roomIdx === r).forEach(a => {
+          let leftPct = (a.inv[0] / maxCoord) * 100;
+          let widthPct = Math.max(((a.inv[1] - a.inv[0]) / maxCoord) * 100, 3);
+          let isAct = (state.curr && state.curr[0] === a.inv[0] && state.curr[1] === a.inv[1]);
+          let barCls = `bar-room-${r % 4}`;
+
+          html += `<div class="interval-bar ${barCls} ${isAct ? 'bar-active' : ''}" style="left:${leftPct}%; width:${widthPct}%;">[${a.inv.join(',')}]</div>`;
+        });
+
+        html += `</div></div>`;
+      }
+
+      html += `</div>`;
+      wrapper.innerHTML = html;
+    }
+
+    function renderSweepVisualizer(state, wrapper) {
+      const starts = state.starts || [];
+      const ends = state.ends || [];
+
+      let html = `
+        <div style="display:flex; flex-direction:column; gap:16px; width:100%; max-width:650px;">
+          <div>
+            <div style="font-size:0.8rem; color:var(--text-dim); margin-bottom:6px; font-weight:bold;">Starts Array (s_ptr = ${state.sPtr}):</div>
+            <div style="display:flex; gap:8px;">
+              ${starts.map((v, i) => `
+                <div style="padding:8px 14px; background:#1e1e1e; border:1px solid ${i === state.sPtr ? 'var(--orange)' : 'var(--border)'}; border-radius:4px; font-family:monospace; font-weight:bold; color:${i === state.sPtr ? 'var(--orange)' : '#fff'};">
+                  ${v}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:0.8rem; color:var(--text-dim); margin-bottom:6px; font-weight:bold;">Ends Array (e_ptr = ${state.ePtr}):</div>
+            <div style="display:flex; gap:8px;">
+              ${ends.map((v, i) => `
+                <div style="padding:8px 14px; background:#1e1e1e; border:1px solid ${i === state.ePtr ? 'var(--cyan)' : 'var(--border)'}; border-radius:4px; font-family:monospace; font-weight:bold; color:${i === state.ePtr ? 'var(--cyan)' : '#fff'};">
+                  ${v}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack / Trace Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟 (Step):</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          <div><b>• 當前 Stage:</b> <span style="color:var(--medium); font-weight:bold;">${state.stage || 'INIT'}</span></div>
+          <div><b>• 當前檢查區間:</b> <span style="color:var(--cyan); font-weight:bold;">${state.curr ? `[${state.curr.join(',')}]` : '-'}</span></div>
+        </div>
+      `;
+
+      // Dynamic Variables
+      document.getElementById('pos-curr-display').innerText = state.curr ? `[${state.curr.join(',')}]` : "-";
+      
+      if (currentAlgo === 0) {
+        const minHeapEnd = (state.heap && state.heap.length > 0) ? Math.min(...state.heap) : "-";
+        document.getElementById('heap-min-display').innerText = `${minHeapEnd}`;
+        document.getElementById('status-display').innerText = state.heap ? `${state.heap.length} Rooms` : "-";
+      } else {
+        document.getElementById('heap-min-display').innerText = state.ends ? `${state.ends[state.ePtr] || '-'}` : "-";
+        document.getElementById('status-display').innerText = `${state.usedRooms || 0} Rooms`;
+      }
+
+      // Dynamic Panel
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (currentAlgo === 0) {
+        dynPanel.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Min-Heap (Free Rooms End Times):</span>
+            <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
+              ${(state.heap || []).map((v) => `
+                <div style="background:#222; border:1px solid var(--cyan); padding:3px 8px; border-radius:4px; font-family:monospace; font-size:0.75rem; color:var(--cyan); font-weight:bold;">
+                  End: ${v}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        dynPanel.innerHTML = `
+          <div style="display:flex; gap:20px; align-items:center;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Current Used Rooms:</span>
+              <span style="color:var(--green); font-weight:bold; font-size:0.9rem; margin-left:6px;">${state.usedRooms || 0}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Result Text
+      const resEl = document.getElementById('result-text');
+      if (state.result !== "Running...") {
+        resEl.innerHTML = `Minimum Meeting Rooms Required = <b style="color:var(--green); font-size:1.1rem;">${state.result}</b>`;
+      } else {
+        resEl.innerHTML = "Simulating meeting room allocations...";
+      }
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

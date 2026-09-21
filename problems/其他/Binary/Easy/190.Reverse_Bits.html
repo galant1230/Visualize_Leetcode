@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>190. Reverse Bits - Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(80, 250, 123, 0.15); color: var(--green); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .lang-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .lang-btn.active { background: var(--purple); color: #fff; border-color: #d6acff; }
+
+    /* 左右區域比例：左欄 420px，右欄 1fr */
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 420px 1fr; gap: 14px; }
+    @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.75rem; line-height: 1.45; word-break: break-all; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.75rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 10px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; } .type { color: #8be9fd; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 90px; max-height: 160px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .array-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 280px; padding: 16px; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
+    
+    .bit-row-container { display: flex; flex-direction: column; gap: 4px; background: #151821; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+    .bit-row-label { display: flex; justify-content: space-between; font-size: 0.75rem; font-family: monospace; color: var(--text-dim); margin-bottom: 2px; }
+    .bit-grid { display: flex; flex-wrap: wrap; gap: 3px; justify-content: flex-start; }
+    .bit-cell { flex: 0 0 calc(3.125% - 3px); min-width: 24px; height: 38px; background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; transition: all 0.2s ease; }
+    .bit-idx { font-size: 0.58rem; color: var(--text-dim); line-height: 1; }
+    .bit-val { font-size: 0.85rem; font-weight: bold; color: #888; line-height: 1.2; }
+    .bit-one { border-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+    .bit-one .bit-val { color: var(--green); }
+    .bit-active { border-color: var(--orange); background: rgba(255, 161, 22, 0.25); transform: scale(1.08); box-shadow: 0 0 8px rgba(255, 161, 22, 0.5); }
+    .bit-active .bit-val { color: #fff; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">190. Reverse Bits</span>
+    <span class="badge">Easy / Bit Manipulation</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Language:</span>
+      <button class="lang-btn active" onclick="setLang('python')">Python</button>
+      <button class="lang-btn" onclick="setLang('c')">C Version</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Bit-by-Bit Shift Loop</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. Divide & Conquer Mask Swap</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: 43261596</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: 4294967293</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: 1</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄 (寬度 420px) -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與限制</div>
+        <div class="problem-desc">
+          反轉給定的 <b>32 位無符號整數 (32-bit Unsigned Integer)</b> 的二進位位元。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(1)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">💻 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄 (1fr) -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 32 位元動態轉換視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="array-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Input n (Decimal): </span>
+              <span id="n-curr-display" style="font-weight: bold; color: var(--orange); font-size: 1rem;">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Result res (Decimal): </span>
+              <span id="res-curr-display" style="font-weight: bold; color: var(--cyan); font-size: 1rem;">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current Result Binary:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.82rem; color: var(--green);">-</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = {
+      python: [
+        // 0. Bit-by-Bit Shift Loop
+        [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+         `    <span class="kw">def</span> <span class="fn">reverseBits</span>(<span class="self">self</span>, n: int) -> int:`,
+         `        res = 0`,
+         `        <span class="kw">for</span> _ <span class="kw">in</span> range(32):`,
+         `            res = (res << 1) | (n & 1)`,
+         `            n >>= 1`,
+         `        <span class="kw">return</span> res`],
+
+        // 1. Mask Swap
+        [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+         `    <span class="kw">def</span> <span class="fn">reverseBits</span>(<span class="self">self</span>, n: int) -> int:`,
+         `        n = ((n & 0xffff0000) >> 16) | ((n & 0x0000ffff) << 16)`,
+         `        n = ((n & 0xff00ff00) >> 8)  | ((n & 0x00ff00ff) << 8)`,
+         `        n = ((n & 0xf0f0f0f0) >> 4)  | ((n & 0x0f0f0f0f) << 4)`,
+         `        n = ((n & 0xcccccc) >> 2)  | ((n & 0x33333333) << 2)`,
+         `        n = ((n & 0xaaaaaaaa) >> 1)  | ((n & 0x55555555) << 1)`,
+         `        <span class="kw">return</span> n`]
+      ],
+      c: [
+        // 0. Bit-by-Bit Shift Loop C
+        [`<span class="type">uint32_t</span> <span class="fn">reverseBits</span>(<span class="type">uint32_t</span> n) {`,
+         `    <span class="type">uint32_t</span> res = 0;`,
+         `    <span class="kw">for</span> (<span class="type">int</span> i = 0; i < 32; i++) {`,
+         `        res = (res << 1) | (n & 1);`,
+         `        n >>= 1;`,
+         `    }`,
+         `    <span class="kw">return</span> res;`,
+         `}`],
+
+        // 1. Mask Swap C
+        [`<span class="type">uint32_t</span> <span class="fn">reverseBits</span>(<span class="type">uint32_t</span> n) {`,
+         `    n = ((n & 0xffff0000) >> 16) | ((n & 0x0000ffff) << 16);`,
+         `    n = ((n & 0xff00ff00) >> 8)  | ((n & 0x00ff00ff) << 8);`,
+         `    n = ((n & 0xf0f0f0f0) >> 4)  | ((n & 0x0f0f0f0f) << 4);`,
+         `    n = ((n & 0xaaaaaaaa) >> 2)  | ((n & 0x33333333) << 2);`,
+         `    n = ((n & 0xaaaaaaaa) >> 1)  | ((n & 0x55555555) << 1);`,
+         `    <span class="kw">return</span> n;`,
+         `}`]
+      ]
+    };
+
+    const strategyInfo = [
+      {
+        title: "1. Bit-by-Bit Shift (逐位移位組合)",
+        time: "O(1) - 固定走訪 32 個 Bit", space: "O(1)",
+        idea: `<b>解法思路：</b><br>
+固定循環 32 次[cite: 1]：<br>
+1. 透過 <code>(n & 1)</code> 取出當前 <code>n</code> 的最低位元[cite: 1]。<br>
+2. 將結果 <code>res</code> 左移一位騰出位置，並併入該位元：<code>res = (res << 1) | (n & 1)</code>[cite: 1]。<br>
+3. <code>n</code> 右移一位：<code>n >>= 1</code>[cite: 1]。`
+      },
+      {
+        title: "2. Divide & Conquer Mask Swap (分治法位元對調)",
+        time: "O(1) - 僅需要 5 次位元運算", space: "O(1)",
+        idea: `<b>解法思路：</b><br>
+類似 Merge Sort 的分治思想：<br>
+1. 先對調高 16 位與低 16 位。<br>
+2. 再對調相鄰 8 位 (Byte 對調)。<br>
+3. 依次對調相鄰 4 位、2 位、1 位，僅需 5 步即可全數反轉！`
+      }
+    ];
+
+    const presets = [
+      { title: "Ex 1: 43261596", n: 43261596, expected: "964176192 (00000010100101000001111010011100)" },
+      { title: "Ex 2: 4294967293", n: 4294967293, expected: "3221225471 (10111111111111111111111111111111)" },
+      { title: "Ex 3: 1", n: 1, expected: "2147483648 (10000000000000000000000000000000)" }
+    ];
+
+    let currentLang = 'python';
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setLang(lang) {
+      currentLang = lang;
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(lang)));
+      renderCode();
+      reset();
+    }
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input n:</b> ${p.n}</div>
+        <div><b>Expected Output:</b> <span style="color:var(--green)">${p.expected}</span></div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentLang][currentAlgo];
+      document.getElementById('code-title').innerText = currentLang === 'python' ? "🐍 Python 程式碼解法" : "⚡ C 語言程式碼解法";
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function to32BitArray(num) {
+      let arr = [];
+      for (let i = 31; i >= 0; i--) {
+        arr.push((num >>> i) & 1);
+      }
+      return arr;
+    }
+
+    function to32BitStr(num) {
+      return to32BitArray(num).join('');
+    }
+
+    /* ---------------- History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const origN = presets[currentPreset].n >>> 0; // Unsigned 32-bit
+
+      if (currentAlgo === 0) {
+        buildLoopSteps(origN);
+      } else {
+        buildMaskSteps(origN);
+      }
+    }
+
+    // Algo 0: Loop Shift
+    function buildLoopSteps(origN) {
+      const isC = currentLang === 'c';
+      let n = origN;
+      let res = 0;
+
+      history.push({
+        line: isC ? 1 : 2, phase: "⚡ 【初始化 res = 0】",
+        desc: `建立變數 <code>res = 0</code>，準備進行 32 次位元轉移。`,
+        n, res, stepNum: 0, activeBitN: null, activeBitRes: null
+      });
+
+      for (let i = 0; i < 32; i++) {
+        const lsb = n & 1;
+        const nextRes = ((res << 1) | lsb) >>> 0;
+        const nextN = (n >>> 1);
+
+        history.push({
+          line: isC ? 3 : 4, phase: `🔄 【第 ${i + 1} 位元轉移: res = (res << 1) | (${n} & 1)】`,
+          desc: `取得 <code>n</code> 最右位 LSB = <b>${lsb}</b>。<br>將 <code>res</code> (${res}) 左移 1 位並接上 LSB 得到 <code>res = ${nextRes}</code>。`,
+          n, res: nextRes, stepNum: i + 1, activeBitN: 0, activeBitRes: 0
+        });
+
+        history.push({
+          line: isC ? 4 : 5, phase: `➡️ 【n 右移 1 位: n >>= 1】`,
+          desc: `<code>n</code> 右移一位：由 <code>${n}</code> 變為 <code>${nextN}</code>。`,
+          n: nextN, res: nextRes, stepNum: i + 1, activeBitN: null, activeBitRes: null
+        });
+
+        res = nextRes;
+        n = nextN;
+      }
+
+      history.push({
+        line: isC ? 6 : 6, phase: "🎉 【Complete: 成功反轉 32 位元】",
+        desc: `已完成所有 32 位元反轉！最終結果 Decimal: <b>${res >>> 0}</b>`,
+        n, res, stepNum: 32, activeBitN: null, activeBitRes: null
+      });
+    }
+
+    // Algo 1: Mask Swap
+    function buildMaskSteps(origN) {
+      const isC = currentLang === 'c';
+      let n = origN;
+
+      history.push({
+        line: 0, phase: "⚡ 【初始 32 位元狀態】",
+        desc: `輸入數字 <code>n = ${n}</code> (${to32BitStr(n)})`,
+        n, stepName: "Start"
+      });
+
+      // Step 1: Swap 16
+      n = (((n & 0xffff0000) >>> 16) | ((n & 0x0000ffff) << 16)) >>> 0;
+      history.push({
+        line: 1, phase: "🔀 【Step 1: 高 16 位與低 16 位對調】",
+        desc: `利用遮罩 <code>0xffff0000</code> 與 <code>0x0000ffff</code> 將前後 16 位元互換。`,
+        n, stepName: "Swap 16 bits"
+      });
+
+      // Step 2: Swap 8
+      n = (((n & 0xff00ff00) >>> 8) | ((n & 0x00ff00ff) << 8)) >>> 0;
+      history.push({
+        line: 2, phase: "🔀 【Step 2: 相鄰 8 位 (Byte) 對調】",
+        desc: `利用遮罩 <code>0xff00ff00</code> 與 <code>0x00ff00ff</code> 對調相鄰 8 位元。`,
+        n, stepName: "Swap 8 bits"
+      });
+
+      // Step 3: Swap 4
+      n = (((n & 0xf0f0f0f0) >>> 4) | ((n & 0x0f0f0f0f) << 4)) >>> 0;
+      history.push({
+        line: 3, phase: "🔀 【Step 3: 相鄰 4 位 (Nibble) 對調】",
+        desc: `利用遮罩 <code>0xf0f0f0f0</code> 與 <code>0x0f0f0f0f</code> 對調每 4 位元。`,
+        n, stepName: "Swap 4 bits"
+      });
+
+      // Step 4: Swap 2
+      n = (((n & 0x33333333) << 2) | ((n & 0xcccccccc) >>> 2)) >>> 0;
+      history.push({
+        line: 4, phase: "🔀 【Step 4: 相鄰 2 位對調】",
+        desc: `利用遮罩對調每 2 個位元。`,
+        n, stepName: "Swap 2 bits"
+      });
+
+      // Step 5: Swap 1
+      n = (((n & 0x55555555) << 1) | ((n & 0xaaaaaaaa) >>> 1)) >>> 0;
+      history.push({
+        line: 5, phase: "🔀 【Step 5: 相鄰 1 位對調】",
+        desc: `利用遮罩 <code>0x55555555</code> 與 <code>0xaaaaaaaa</code> 對調奇偶位元。`,
+        n, stepName: "Swap 1 bit"
+      });
+
+      history.push({
+        line: 6, phase: "🎉 【Complete: 完成位元反轉】",
+        desc: `完成分治對調！最終結果 Decimal: <b>${n}</b>`,
+        n, stepName: "Done"
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      let html = "";
+
+      if (currentAlgo === 0) {
+        // Bit-by-bit Visualization (n and res)
+        const nArr = to32BitArray(state.n);
+        const resArr = to32BitArray(state.res);
+
+        // Render N
+        html += `
+          <div class="bit-row-container">
+            <div class="bit-row-label">
+              <span>Input n (${state.n >>> 0})</span>
+              <span>Bit 31 (MSB) ← ... → Bit 0 (LSB)</span>
+            </div>
+            <div class="bit-grid">
+        `;
+        for (let b = 0; b < 32; b++) {
+          const bitIdx = 31 - b;
+          const val = nArr[b];
+          let cls = val === 1 ? " bit-one" : "";
+          if (state.activeBitN === bitIdx || (state.activeBitN === 0 && b === 31)) cls += " bit-active";
+
+          html += `
+            <div class="bit-cell ${cls}">
+              <span class="bit-idx">${bitIdx}</span>
+              <span class="bit-val">${val}</span>
+            </div>
+          `;
+        }
+        html += `</div></div>`;
+
+        // Render Res
+        html += `
+          <div class="bit-row-container">
+            <div class="bit-row-label">
+              <span>Result res (${state.res >>> 0})</span>
+              <span>Bit 31 (MSB) ← ... → Bit 0 (LSB)</span>
+            </div>
+            <div class="bit-grid">
+        `;
+        for (let b = 0; b < 32; b++) {
+          const bitIdx = 31 - b;
+          const val = resArr[b];
+          let cls = val === 1 ? " bit-one" : "";
+          if (state.activeBitRes === bitIdx || (state.activeBitRes === 0 && b === 31)) cls += " bit-active";
+
+          html += `
+            <div class="bit-cell ${cls}">
+              <span class="bit-idx">${bitIdx}</span>
+              <span class="bit-val">${val}</span>
+            </div>
+          `;
+        }
+        html += `</div></div>`;
+
+      } else {
+        // Mask Swap Visualization
+        const nArr = to32BitArray(state.n);
+        html += `
+          <div class="bit-row-container">
+            <div class="bit-row-label">
+              <span>Current Bit State (${state.stepName || ''})</span>
+              <span>Bit 31 (MSB) ← ... → Bit 0 (LSB)</span>
+            </div>
+            <div class="bit-grid">
+        `;
+        for (let b = 0; b < 32; b++) {
+          const bitIdx = 31 - b;
+          const val = nArr[b];
+          let cls = val === 1 ? " bit-one" : "";
+
+          html += `
+            <div class="bit-cell ${cls}">
+              <span class="bit-idx">${bitIdx}</span>
+              <span class="bit-val">${val}</span>
+            </div>
+          `;
+        }
+        html += `</div></div>`;
+      }
+
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟進度:</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          ${state.stepNum !== undefined ? `<div><b>• 當前處理 Bit 輪次:</b> <span style="color:var(--cyan); font-weight:bold;">${state.stepNum} / 32</span></div>` : ''}
+          <div><b>• 當前 n (10進位):</b> <span style="color:var(--green); font-weight:bold;">${state.n >>> 0}</span></div>
+        </div>
+      `;
+
+      // Controls
+      document.getElementById('n-curr-display').innerText = state.n !== undefined ? (state.n >>> 0) : "-";
+      document.getElementById('res-curr-display').innerText = state.res !== undefined ? (state.res >>> 0) : "-";
+      document.getElementById('result-text').innerText = to32BitStr(state.res !== undefined ? state.res : state.n);
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

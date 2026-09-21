@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>56. Merge Intervals - Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 110px; max-height: 180px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .array-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 260px; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 16px; }
+    
+    .interval-board { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 750px; background: #151821; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
+    .interval-row { display: flex; align-items: center; gap: 10px; font-family: monospace; font-size: 0.8rem; }
+    .interval-label { width: 130px; text-align: right; color: var(--text-dim); font-size: 0.75rem; font-weight: bold; }
+    .interval-track { flex: 1; height: 36px; background: #1e1e1e; border-radius: 4px; border: 1px solid var(--border); position: relative; display: flex; align-items: center; }
+    
+    .interval-bar { position: absolute; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.75rem; color: #fff; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    .bar-orig { background: rgba(0, 122, 255, 0.4); border: 1px solid var(--blue); }
+    .bar-curr { background: rgba(255, 161, 22, 0.5); border: 1px solid var(--orange); z-index: 2; }
+    .bar-merged { background: rgba(80, 250, 123, 0.4); border: 1px solid var(--green); color: #fff; }
+    .bar-active { background: rgba(255, 192, 30, 0.8); border: 2px solid #fff; box-shadow: 0 0 12px rgba(255, 192, 30, 0.8); z-index: 3; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+  <!-- KaTeX for math formula rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">56. Merge Intervals</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Sort & Greedy Merge O(N log N)</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. Connected Components Graph O(N²)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: Standard ([[1,3],[2,6],[8,10],[15,18]])</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: Contiguous Edge ([[1,4],[4,5]])</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: Unsorted Multi-Merge ([[4,7],[1,3],[2,5]])</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個區間陣列 <b>intervals</b>，其中 <code>intervals[i] = [start_i, end_i]</code>。請合併所有<b>重疊的區間</b>，並返回一個不重疊且覆蓋輸入中所有區間的陣列。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(N log N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(N)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Micro-steps Enabled</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 區間動態合併視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="array-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Interval: </span>
+              <span id="pos-curr-display" style="font-weight: bold; color: var(--orange);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Last Merged Top: </span>
+              <span id="last-top-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Result Count: </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.15rem; color: var(--green);">-</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Status / Output:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Sort & Greedy Merge
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">merge</span>(<span class="self">self</span>, intervals: List[List[int]]) -> List[List[int]]:`,
+       `        intervals.sort(key=<span class="kw">lambda</span> x: x[0])`,
+       `        res = []`,
+       `        <span class="kw">for</span> interval <span class="kw">in</span> intervals:`,
+       `            <span class="kw">if</span> <span class="kw">not</span> res <span class="kw">or</span> res[-1][1] < interval[0]:`,
+       `                res.append(interval)`,
+       `            <span class="kw">else</span>:`,
+       `                res[-1][1] = max(res[-1][1], interval[1])`,
+       `        <span class="kw">return</span> res`],
+
+      // 2. Connected Components / Check Overlap Concept
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">merge</span>(<span class="self">self</span>, intervals: List[List[int]]) -> List[List[int]]:`,
+       `        <span class="cm"># 抽象概念：Graph / 連通分量合併</span>`,
+       `        intervals.sort(key=<span class="kw">lambda</span> x: x[0])`,
+       `        merged = []`,
+       `        <span class="kw">for</span> current <span class="kw">in</span> intervals:`,
+       `            <span class="kw">if</span> <span class="kw">not</span> merged <span class="kw">or</span> merged[-1][1] < current[0]:`,
+       `                merged.append(current)`,
+       `            <span class="kw">else</span>:`,
+       `                merged[-1][1] = max(merged[-1][1], current[1])`,
+       `        <span class="kw">return</span> merged`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Sort & Greedy Merge (排序與貪婪一次掃描)",
+        time: "O(N log N)", space: "O(N)",
+        idea: `<b>解法思路：</b>因為原始陣列區間可能是亂序，我們必須先進行排序：<br>
+1. <b>按開頭排序 (Sort by Start)：</b> 將所有區間依據 <code>start</code> 升冪排序。這樣能確保所有可能重疊的區間在陣列中皆相鄰。<br>
+2. <b>維護結果陣列與重疊判斷：</b> 依序遍歷每個區間 <code>interval</code>：<br>
+&nbsp;&nbsp;&nbsp;&nbsp;• <b>無重疊狀況：</b> 若 <code>res</code> 為空，或者上一個區間的結尾小於當前區間開頭，代表無重疊，直接 <code>res.append(interval)</code>。<br>
+&nbsp;&nbsp;&nbsp;&nbsp;• <b>有重疊狀況：</b> 當前區間開頭 $\\le$ 上一個區間結尾。這時候我們只需要延伸上一個區間的右界：<br>
+$$\\text{重疊條件與更新：} \\text{res}[-1][1] = \\max(\\text{res}[-1][1], \\text{interval}[1])$$<br>
+3. <b>單次掃描完成：</b> 排序後僅需 $O(N)$ 一次遍歷即可完成所有重疊合併。`
+      },
+      {
+        title: "2. Graph Connected Components / Local Comparison (圖連通分量與局部合併)",
+        time: "O(N log N)", space: "O(N)",
+        idea: "<b>解法思路：</b>若不先排序，重疊關係會形成一個無向圖 (Graph Connected Components)，建圖需 $O(N^2)$。因此最優策略依舊是先排序將圖降維至 1D 軸，再進行連通邊的連續合併。"
+      }
+    ];
+
+    const presets = [
+      { title: "Example 1", intervals: [[1, 3], [2, 6], [8, 10], [15, 18]], expected: "[[1,6],[8,10],[15,18]]", explanation: "區間 [1,3] 與 [2,6] 重疊，合併為 [1,6]。其餘無重疊。" },
+      { title: "Example 2", intervals: [[1, 4], [4, 5]], expected: "[[1,5]]", explanation: "區間 [1,4] 與 [4,5] 在邊界 4 處相接，視為重疊合併為 [1,5]。" },
+      { title: "Example 3", intervals: [[4, 7], [1, 3], [2, 5]], expected: "[[1,7]]", explanation: "原陣列未排序！排序後為 [[1,3],[2,5],[4,7]]，三者連續重疊最終合併為 [1,7]。" }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      const ideaCard = document.getElementById('idea-card');
+      ideaCard.innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+      if (window.renderMathInElement) {
+        renderMathInElement(ideaCard);
+      }
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input:</b> intervals = ${JSON.stringify(p.intervals)}</div>
+        <div><b>Expected Output:</b> <span style="color:var(--green)">${p.expected}</span></div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- Granular History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const { intervals } = JSON.parse(JSON.stringify(presets[currentPreset]));
+
+      let sortedIntervals = JSON.parse(JSON.stringify(intervals));
+
+      history.push({
+        line: 2, phase: "⚡ 【Step 1: 準備資料】",
+        desc: `原始輸入陣列: <code>${JSON.stringify(intervals)}</code>`,
+        sorted: JSON.parse(JSON.stringify(sortedIntervals)), res: [], curr: null, result: "Running..."
+      });
+
+      // Sort
+      sortedIntervals.sort((a, b) => a[0] - b[0]);
+      history.push({
+        line: 2, phase: "🔀 【Step 2: 依據 Start 升冪排序】",
+        desc: `排序後陣列: <code>${JSON.stringify(sortedIntervals)}</code>，確保重疊區間相鄰。`,
+        sorted: JSON.parse(JSON.stringify(sortedIntervals)), res: [], curr: null, result: "Running..."
+      });
+
+      let res = [];
+      for (let i = 0; i < sortedIntervals.length; i++) {
+        let curr = sortedIntervals[i];
+
+        if (res.length === 0) {
+          res.push([...curr]);
+          history.push({
+            line: 6, phase: `📥 【Phase 1: 放入首個區間】`,
+            desc: `<code>res</code> 為空，直接放入第一個區間 <code>[${curr.join(',')}]</code>`,
+            sorted: sortedIntervals, res: JSON.parse(JSON.stringify(res)), curr, activeIdx: i, stage: "PUSH", result: "Running..."
+          });
+        } else {
+          let last = res[res.length - 1];
+          // Check overlap
+          if (last[1] < curr[0]) {
+            res.push([...curr]);
+            history.push({
+              line: 6, phase: `👈 【無重疊: 直接 Append】`,
+              desc: `上個區間結尾 (${last[1]}) < 當前區間開頭 (${curr[0]})，無重疊！放入 <code>[${curr.join(',')}]</code>`,
+              sorted: sortedIntervals, res: JSON.parse(JSON.stringify(res)), curr, activeIdx: i, stage: "NO_OVERLAP", result: "Running..."
+            });
+          } else {
+            let oldLast = [...last];
+            last[1] = Math.max(last[1], curr[1]);
+            history.push({
+              line: 8, phase: `🔄 【發生重疊: 合併延伸右界】`,
+              desc: `當前區間開頭 (${curr[0]}) <= 上個區間結尾 (${oldLast[1]})！重疊合併，將右界更新為 <code>max(${oldLast[1]}, ${curr[1]}) = ${last[1]}</code>`,
+              sorted: sortedIntervals, res: JSON.parse(JSON.stringify(res)), curr, activeIdx: i, stage: "MERGE", result: "Running..."
+            });
+          }
+        }
+      }
+
+      history.push({
+        line: 9, phase: "🎉 【Complete: 區間合併完成】",
+        desc: `處理完畢！最終合併結果: <b style="color:var(--green);">${JSON.stringify(res)}</b>`,
+        sorted: sortedIntervals, res: JSON.parse(JSON.stringify(res)), curr: null, stage: "DONE", result: JSON.stringify(res)
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const sorted = state.sorted || presets[currentPreset].intervals;
+
+      // Calculate max boundary
+      let maxCoord = 18;
+      sorted.forEach(inv => {
+        maxCoord = Math.max(maxCoord, inv[1] + 2);
+      });
+
+      let html = `<div class="interval-board">`;
+
+      // Row 1: Sorted Intervals
+      html += `
+        <div class="interval-row">
+          <div class="interval-label">Sorted Intervals:</div>
+          <div class="interval-track">
+      `;
+      sorted.forEach((inv, idx) => {
+        let leftPct = (inv[0] / maxCoord) * 100;
+        let widthPct = Math.max(((inv[1] - inv[0]) / maxCoord) * 100, 2);
+        let isAct = (state.activeIdx === idx);
+        html += `<div class="interval-bar bar-orig ${isAct ? 'bar-active' : ''}" style="left:${leftPct}%; width:${widthPct}%;">[${inv.join(',')}]</div>`;
+      });
+      html += `</div></div>`;
+
+      // Row 2: Current Inspecting Interval
+      if (state.curr) {
+        let leftPct = (state.curr[0] / maxCoord) * 100;
+        let widthPct = Math.max(((state.curr[1] - state.curr[0]) / maxCoord) * 100, 2);
+        html += `
+          <div class="interval-row">
+            <div class="interval-label" style="color:var(--orange)">Inspecting:</div>
+            <div class="interval-track">
+              <div class="interval-bar bar-curr" style="left:${leftPct}%; width:${widthPct}%;">[${state.curr.join(',')}]</div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Row 3: Result Merged Intervals
+      html += `
+        <div class="interval-row">
+          <div class="interval-label" style="color:var(--green)">Merged (res):</div>
+          <div class="interval-track">
+      `;
+      if (state.res) {
+        state.res.forEach(inv => {
+          let leftPct = (inv[0] / maxCoord) * 100;
+          let widthPct = Math.max(((inv[1] - inv[0]) / maxCoord) * 100, 2);
+          html += `<div class="interval-bar bar-merged" style="left:${leftPct}%; width:${widthPct}%;">[${inv.join(',')}]</div>`;
+        });
+      }
+      html += `</div></div></div>`;
+
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack / Trace Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟 (Step):</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          <div><b>• 當前 Stage:</b> <span style="color:var(--medium); font-weight:bold;">${state.stage || 'INIT'}</span></div>
+          <div><b>• 正在檢查之區間:</b> <span style="color:var(--cyan); font-weight:bold;">${state.curr ? `[${state.curr.join(',')}]` : '-'}</span></div>
+        </div>
+      `;
+
+      // Positions Display
+      document.getElementById('pos-curr-display').innerText = state.curr ? `[${state.curr.join(',')}]` : "-";
+      const lastTop = (state.res && state.res.length > 0) ? state.res[state.res.length - 1] : null;
+      document.getElementById('last-top-display').innerText = lastTop ? `[${lastTop.join(',')}]` : "-";
+      document.getElementById('status-display').innerText = state.res ? `${state.res.length} Intervals` : "-";
+
+      // Dynamic Panel
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      dynPanel.innerHTML = `
+        <div>
+          <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Current Merged Results Array (res):</span>
+          <div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;">
+            ${(state.res || []).map((v) => `
+              <div style="background:#222; border:1px solid var(--green); padding:3px 8px; border-radius:4px; font-family:monospace; font-size:0.75rem; color:var(--green); font-weight:bold;">
+                [${v.join(', ')}]
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      // Result Text
+      const resEl = document.getElementById('result-text');
+      if (state.result !== "Running...") {
+        resEl.innerHTML = `Result = <b style="color:var(--green);">${state.result}</b>`;
+      } else {
+        resEl.innerHTML = "Scanning and merging overlapping intervals...";
+      }
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

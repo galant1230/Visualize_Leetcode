@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>191. Number of 1 Bits - Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(80, 250, 123, 0.15); color: var(--green); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    /* 調整左右區域寬度比：左欄縮小至 420px，右欄獲得更大空間 */
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 420px 1fr; gap: 14px; }
+    @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.78rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 10px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 90px; max-height: 160px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .array-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 280px; padding: 16px; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
+    
+    /* 32-Bit 容器 layout */
+    .bit-row-container { display: flex; flex-direction: column; gap: 4px; background: #151821; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+    .bit-row-label { display: flex; justify-content: space-between; font-size: 0.75rem; font-family: monospace; color: var(--text-dim); margin-bottom: 2px; }
+    
+    /* 緊湊型 32-bit 網格，允許 wrap 以確保在狹窄解析度下不溢出 */
+    .bit-grid { display: flex; flex-wrap: wrap; gap: 3px; justify-content: flex-start; }
+    
+    .bit-cell { 
+      flex: 0 0 calc(3.125% - 3px); 
+      min-width: 24px; 
+      height: 38px; 
+      background: #1e1e1e; 
+      border: 1px solid var(--border); 
+      border-radius: 4px; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      font-family: monospace; 
+      transition: all 0.2s ease; 
+    }
+    .bit-idx { font-size: 0.58rem; color: var(--text-dim); line-height: 1; }
+    .bit-val { font-size: 0.85rem; font-weight: bold; color: #888; line-height: 1.2; }
+    
+    /* Cell States */
+    .bit-one { border-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+    .bit-one .bit-val { color: var(--green); }
+    
+    .bit-check { background: rgba(255, 161, 22, 0.25); border-color: var(--orange); transform: scale(1.08); box-shadow: 0 0 8px rgba(255, 161, 22, 0.6); z-index: 2; }
+    .bit-check .bit-val { color: #fff; }
+
+    .bit-cleared { background: rgba(255, 85, 85, 0.25); border-color: var(--red); }
+    .bit-cleared .bit-val { color: var(--red); text-decoration: line-through; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">191. Number of 1 Bits</span>
+    <span class="badge">Easy</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Standard Bit Shift (逐位檢查 O(32))</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. Brian Kernighan (n & (n - 1) 快速消除)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">n = 11 (0000...1011)</button>
+      <button class="tab-btn" onclick="setPreset(1)">n = 128 (0000...10000000)</button>
+      <button class="tab-btn" onclick="setPreset(2)">n = 4294967293 (1111...1101)</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄 (寬度 420px) -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與限制</div>
+        <div class="problem-desc">
+          編寫一個函式，接收一個無符號 32 位整數 <b>n</b>，傳回其二進位表達式中 <b>1 的個數</b>（也被稱為漢明重量 Hamming Weight）。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(1) / O(32)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄 (佔據剩餘全部空間 1fr) -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 32-Bit 位元運算歷程視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="array-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">n (Decimal): </span>
+              <span id="n-dec-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">1 Bits Count (count): </span>
+              <span id="count-display" style="font-weight: bold; color: var(--green); font-size: 1.1rem;">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current Binary Representation:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.85rem; color: var(--orange);">0b0</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Bit Shift
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">hammingWeight</span>(<span class="self">self</span>, n: int) -> int:`,
+       `        count = 0`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(32):`,
+       `            <span class="cm"># 檢查最右邊位元 (LSB) 是否為 1</span>`,
+       `            <span class="kw">if</span> (n & 1) == 1:`,
+       `                count += 1`,
+       `            <span class="cm"># 無符號右移一位</span>`,
+       `            n >>= 1`,
+       `        <span class="kw">return</span> count`],
+
+      // 2. Brian Kernighan
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">hammingWeight</span>(<span class="self">self</span>, n: int) -> int:`,
+       `        count = 0`,
+       `        <span class="kw">while</span> n > 0:`,
+       `            <span class="cm"># n & (n - 1) 會清除最右邊的 1 (Lowest Set Bit)</span>`,
+       `            n = n & (n - 1)`,
+       `            count += 1`,
+       `        <span class="kw">return</span> count`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Standard Bit Shift (逐位檢查法)",
+        time: "O(1) - 恰好 32 次迴圈", space: "O(1)",
+        idea: `<b>解法思路：</b><br>
+利用 <code>n & 1</code> 取出最低位元 (LSB)，若是 1 則計數加 1。<br>
+每次檢查後將 <code>n</code> 右移一位 (<code>n >>= 1</code>)，共執行 32 次以檢查完整個 32-bit 整數。`
+      },
+      {
+        title: "2. Brian Kernighan's Algorithm (快速消 1 法)",
+        time: "O(k) - k 為二進位中 1 的個數", space: "O(1)",
+        idea: `<b>解法思路：</b><br>
+關鍵性質：<b><code>n & (n - 1)</code> 每次都會將二進位中最右側的第一個 1 (Lowest Set Bit) 轉化為 0</b>。<br>
+因此不需檢查所有 0，跳過中間無用的 0，執行幾次運算就代表有幾個 1！`
+      }
+    ];
+
+    const presets = [
+      { title: "n = 11", n: 11, expected: "3 (0b...00001011)" },
+      { title: "n = 128", n: 128, expected: "1 (0b...01000000)" },
+      { title: "n = 4294967293", n: 4294967293, expected: "31" }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input n:</b> ${p.n}</div>
+        <div><b>Expected 1 Bits Count:</b> <span style="color:var(--green)">${p.expected}</span></div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const startN = presets[currentPreset].n;
+
+      if (currentAlgo === 0) {
+        buildBitShiftSteps(startN);
+      } else {
+        buildKernighanSteps(startN);
+      }
+    }
+
+    // Helper: 轉成 32-bit 陣列 (索引 31 是 MSB, 0 是 LSB)
+    function to32BitArray(num) {
+      let arr = [];
+      for (let i = 31; i >= 0; i--) {
+        // 使用無符號位元運算 >>> 避免負數溢位
+        arr.push((num >>> i) & 1);
+      }
+      return arr; // length 32
+    }
+
+    // Algo 0: Bit Shift Step-by-Step
+    function buildBitShiftSteps(startN) {
+      let n = startN;
+      let count = 0;
+
+      history.push({
+        line: 2, phase: "⚡ 【初始化】",
+        desc: `準備進行 32-bit 位元逐一檢查。初始化 <code>count = 0</code>`,
+        nVal: n, count, checkBitIdx: null
+      });
+
+      for (let i = 0; i < 32; i++) {
+        const lsb = n & 1;
+
+        // 檢查當前 LSB (Bit 0)
+        history.push({
+          line: 5, phase: `🔍 【第 ${i+1}/32 步：檢查最右側 Bit 0】`,
+          desc: `執行 <code>n & 1</code>，當前 LSB (Lowest Significant Bit) 為 <b>${lsb}</b>。`,
+          nVal: n, count, checkBitIdx: 0
+        });
+
+        if (lsb === 1) {
+          count++;
+          history.push({
+            line: 6, phase: `🎉 【觸發 1：count + 1】`,
+            desc: `發現位元為 <b>1</b>！累加 <code>count = ${count}</code>。`,
+            nVal: n, count, checkBitIdx: 0, hitOne: true
+          });
+        }
+
+        // 右移
+        n = n >>> 1;
+        history.push({
+          line: 8, phase: `➡️ 【右移一位：n >>= 1】`,
+          desc: `將 <code>n</code> 無符號右移一位。所有位元向右平移。`,
+          nVal: n, count, checkBitIdx: null
+        });
+
+        // 若高位全部變 0 且已無需再檢查，可提前展示完畢感
+        if (n === 0 && i > 5) {
+          history.push({
+            line: 9, phase: "⚡ 【剩餘高位全為 0】",
+            desc: "剩餘高位皆為 0，繼續完成剩餘迴圈檢查。",
+            nVal: 0, count, checkBitIdx: null
+          });
+          break;
+        }
+      }
+
+      history.push({
+        line: 9, phase: "🎉 【Complete: 完成 32-bit 檢查】",
+        desc: `計算完畢！輸入整數的 1-bits 總個數為 <b>${count}</b>。`,
+        nVal: n, count, checkBitIdx: null
+      });
+    }
+
+    // Algo 1: Brian Kernighan's Algorithm
+    function buildKernighanSteps(startN) {
+      let n = startN;
+      let count = 0;
+
+      history.push({
+        line: 2, phase: "⚡ 【初始化】",
+        desc: `開始執行 Brian Kernighan 演算法。初始化 <code>count = 0</code>`,
+        nVal: n, count, nMinusOne: null
+      });
+
+      while (n > 0) {
+        const nMinus1 = (n - 1) >>> 0;
+        
+        // 找到 lowest set bit 索引 (從右向左第一個 1)
+        let lowestBitIdx = 0;
+        for (let i = 0; i < 32; i++) {
+          if (((n >>> i) & 1) === 1) {
+            lowestBitIdx = i;
+            break;
+          }
+        }
+
+        history.push({
+          line: 4, phase: `🔍 【迴圈條件：n (${n}) > 0】`,
+          desc: `準備尋找並清除最右邊第一個 1 (Bit 索引: ${lowestBitIdx})。<br>計算 <code>n - 1 = ${nMinus1}</code>。`,
+          nVal: n, count, nMinusOne: nMinus1, lowestBitIdx
+        });
+
+        const nextN = (n & (n - 1)) >>> 0;
+
+        history.push({
+          line: 5, phase: `💥 【執行 n = n & (n - 1)】`,
+          desc: `執行位元 AND 運算：最右側的 1 (Bit ${lowestBitIdx}) 被成功轉換為 <b>0</b>！<br><code>n</code> 從 ${n} 變為 ${nextN}。`,
+          nVal: nextN, prevN: n, count, clearedIdx: lowestBitIdx
+        });
+
+        count++;
+        history.push({
+          line: 6, phase: `🎉 【累加計數：count + 1】`,
+          desc: `成功消除一個 1，<code>count</code> 增加至 <b>${count}</b>。`,
+          nVal: nextN, count
+        });
+
+        n = nextN;
+      }
+
+      history.push({
+        line: 7, phase: "🎉 【Complete: n 已歸零】",
+        desc: `<code>n == 0</code> 迴圈結束。總共進行 ${count} 次運算，找到 <b>${count}</b> 個 1！`,
+        nVal: 0, count
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const nArr = to32BitArray(state.nVal || 0);
+
+      let html = "";
+
+      // 主 n 32-bit 位元展現
+      html += `
+        <div class="bit-row-container">
+          <div class="bit-row-label">
+            <span>n (32-Bit Representation)</span>
+            <span>Bit 31 (MSB) ← ... → Bit 0 (LSB)</span>
+          </div>
+          <div class="bit-grid">
+      `;
+
+      for (let i = 0; i < 32; i++) {
+        // bit-grid 順序：左邊為 Bit 31, 右邊為 Bit 0
+        const bitIdx = 31 - i;
+        const val = nArr[i];
+
+        let cls = "";
+        if (val === 1) cls += " bit-one";
+
+        // Bit Shift 檢查高亮
+        if (currentAlgo === 0 && state.checkBitIdx === bitIdx) {
+          cls += " bit-check";
+        }
+
+        // Kernighan 消除高亮
+        if (currentAlgo === 1 && state.clearedIdx === bitIdx) {
+          cls += " bit-cleared";
+        }
+
+        html += `
+          <div class="bit-cell ${cls}">
+            <span class="bit-idx">${bitIdx}</span>
+            <span class="bit-val">${val}</span>
+          </div>
+        `;
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+
+      // 如果是 Kernighan 演算法且存在 n - 1
+      if (currentAlgo === 1 && state.nMinusOne !== undefined && state.nMinusOne !== null) {
+        const nMinus1Arr = to32BitArray(state.nMinusOne);
+        html += `
+          <div class="bit-row-container" style="border-style: dashed; opacity: 0.85;">
+            <div class="bit-row-label" style="color: var(--medium)">
+              <span>n - 1 (輔助運算位元)</span>
+            </div>
+            <div class="bit-grid">
+        `;
+        for (let i = 0; i < 32; i++) {
+          const bitIdx = 31 - i;
+          const val = nMinus1Arr[i];
+          let cls = val === 1 ? " bit-one" : "";
+          html += `
+            <div class="bit-cell ${cls}">
+              <span class="bit-idx">${bitIdx}</span>
+              <span class="bit-val">${val}</span>
+            </div>
+          `;
+        }
+        html += `
+            </div>
+          </div>
+        `;
+      }
+
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack / Trace Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟進度 (Step):</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          <div><b>• 當前 1-Bits 計數:</b> <span style="color:var(--green); font-weight:bold; font-size:1.05rem;">${state.count || 0}</span></div>
+        </div>
+      `;
+
+      // Dynamic Variables
+      document.getElementById('n-dec-display').innerText = state.nVal !== undefined ? state.nVal : "-";
+      document.getElementById('count-display').innerText = state.count !== undefined ? state.count : "0";
+
+      // Result Text (Binary String)
+      const resEl = document.getElementById('result-text');
+      const binStr = (state.nVal >>> 0).toString(2).padStart(32, '0');
+      resEl.innerText = `0b${binStr}`;
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

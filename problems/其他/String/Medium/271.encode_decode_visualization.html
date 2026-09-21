@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>271. Encode and Decode Strings - Python Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-medium: #ffc01e;
+      --lc-blue: #007aff;
+      --lc-easy: #00b8a3;
+      --lc-red: #ff2d55;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(255, 192, 30, 0.15);
+      color: var(--lc-medium);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 15px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 4px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+
+    .example-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 12px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .example-title { color: var(--lc-text-dim); font-weight: bold; margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-medium); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      min-height: 300px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .string-container {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      min-height: 65px;
+    }
+
+    .char-unit {
+      width: 38px;
+      height: 48px;
+      background: #333;
+      border: 2px solid var(--lc-border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 1rem;
+      position: relative;
+      transition: all 0.2s;
+    }
+    .char-unit.delimiter { color: var(--lc-orange); border-color: rgba(255, 161, 22, 0.5); }
+    .char-unit.length-tag { color: var(--lc-medium); border-color: rgba(255, 192, 30, 0.5); }
+    .char-unit.chunk { background: rgba(0, 184, 163, 0.2); border-color: var(--lc-easy); color: #fff; }
+
+    .ptr-tag {
+      position: absolute;
+      bottom: -18px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      border-radius: 3px;
+      padding: 0 4px;
+    }
+    .ptr-i { background: var(--lc-red); color: white; }
+    .ptr-j { background: var(--lc-blue); color: white; }
+
+    .word-badge {
+      background: #333;
+      border: 1px solid var(--lc-border);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-weight: bold;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .word-badge.active { border-color: var(--lc-orange); background: rgba(255, 161, 22, 0.2); }
+    .word-badge.processed { border-color: var(--lc-easy); opacity: 0.6; }
+
+    .data-view {
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .data-title { color: var(--lc-text-dim); margin-bottom: 8px; font-weight: bold; }
+    .data-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+    .data-card {
+      background: #2a2a2a;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 110px;
+    }
+    .data-key { color: var(--lc-text-dim); font-size: 0.75rem; }
+    .data-val { color: var(--lc-orange); font-weight: bold; font-size: 0.95rem; }
+
+    .control-panel { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
+    .btn { background: #3e3e3e; color: var(--lc-text); border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-easy); color: #fff; }
+    .btn-primary:hover { background: #009684; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card { background: #1e1e1e; border: 1px solid var(--lc-border); padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .str { color: #f1fa8c; }
+    .num { color: #bd93f9; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">271. Encode and Decode Strings</span>
+    <span class="lc-badge">Medium</span>
+    <span class="lc-tag">Python 3</span>
+    <span class="lc-tag">String</span>
+    <span class="lc-tag">Design</span>
+    <span class="lc-tag">Two Pointers</span>
+  </div>
+
+  <div class="config-tabs">
+    <div class="tab-group">
+      <button class="tab-btn active" id="algo-chunk" onclick="setAlgo('chunk')">Sol 1: 長度前綴 + '#' (Length-Prefix Encoding)</button>
+      <button class="tab-btn" id="algo-escaped" onclick="setAlgo('escaped')">Sol 2: 轉義字符 (Escaping Character)</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述 (Problem)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            設計一個演算法，將字串列表（<code>List[str]</code>）轉換為單一字串（Encode），並能將該字串無損還原為原列表（Decode）。
+            <br><strong>設計挑戰：</strong> 字串內部可能包含任何可能的 256 個 ASCII 字元（包含 <code>#</code>、空格、甚至無效字元），因此簡單的符號分割法會失效。
+          </div>
+
+          <div class="example-box">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> ["neet", "code", "love", "you"]</div>
+            <div><strong>Encoded:</strong> "4#neet4#code4#love3#you"</div>
+            <div><strong>Output:</strong> ["neet", "code", "love", "you"]</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val" id="tc-val">O(N)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val" id="sc-val">O(1)*</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span>💻 Python 3 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (Visualizer)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title" id="approach-title">💡 解題思路</div>
+            <div id="approach-desc">---</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">點擊 Step 開始視覺化模擬...</div>
+          </div>
+
+          <div class="stage">
+            <div style="font-size: 0.8rem; color: var(--lc-text-dim); font-weight: bold;" id="stage-label-1">原始列表 (strs):</div>
+            <div class="string-container" id="nodes-words"></div>
+
+            <div style="font-size: 0.8rem; color: var(--lc-text-dim); font-weight: bold; margin-top: 8px;" id="stage-label-2">編碼字串 (Encoded String Stream):</div>
+            <div class="string-container" id="nodes-encoded"></div>
+          </div>
+
+          <div class="data-view">
+            <div class="data-title">狀態與變數追蹤</div>
+            <div class="data-grid" id="var-grid">
+              <div class="data-card">
+                <span class="data-key">Pointer i</span>
+                <span class="data-val" id="var-i">-</span>
+              </div>
+              <div class="data-card">
+                <span class="data-key">Pointer j</span>
+                <span class="data-val" id="var-j">-</span>
+              </div>
+              <div class="data-card" style="flex: 2;">
+                <span class="data-key" id="var-extra-key">目前累計結果 (res)</span>
+                <span class="data-val" id="var-extra-val">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-panel" style="margin-top: 16px;">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleStrs = ["neet", "code", "love", "you"];
+    let currentAlgo = 'chunk'; 
+    let currentStep = 0;
+    let history = [];
+
+    const pyCodes = {
+      'chunk': [
+        `<span class="kw">class</span> <span class="fn">Codec</span>:`,
+        `    <span class="kw">def</span> <span class="fn">encode</span>(<span class="kw">self</span>, strs: List[<span class="kw">str</span>]) -&gt; <span class="kw">str</span>:`,
+        `        res = <span class="str">""</span>`,
+        `        <span class="kw">for</span> s <span class="kw">in</span> strs:`,
+        `            res += <span class="kw">str</span>(len(s)) + <span class="str">"#"</span> + s`,
+        `        <span class="kw">return</span> res`,
+        ``,
+        `    <span class="kw">def</span> <span class="fn">decode</span>(<span class="kw">self</span>, s: <span class="kw">str</span>) -&gt; List[<span class="kw">str</span>]:`,
+        `        res, i = [], <span class="num">0</span>`,
+        `        <span class="kw">while</span> i &lt; len(s):`,
+        `            j = i`,
+        `            <span class="kw">while</span> s[j] != <span class="str">'#'</span>:`,
+        `                j += <span class="num">1</span>`,
+        `            length = <span class="kw">int</span>(s[i:j])`,
+        `            res.append(s[j + <span class="num">1</span> : j + <span class="num">1</span> + length])`,
+        `            i = j + <span class="num">1</span> + length`,
+        `        <span class="kw">return</span> res`
+      ],
+      'escaped': [
+        `<span class="kw">class</span> <span class="fn">Codec</span>:`,
+        `    <span class="kw">def</span> <span class="fn">encode</span>(<span class="kw">self</span>, strs: List[<span class="kw">str</span>]) -&gt; <span class="kw">str</span>:`,
+        `        <span class="str">"""將 '#' 轉義為 '##'，並用 ' # ' 分割"""</span>`,
+        `        <span class="kw">return</span> <span class="str">' # '</span>.join(s.replace(<span class="str">'#'</span>, <span class="str">'##'</span>) <span class="kw">for</span> s <span class="kw">in</span> strs)`,
+        ``,
+        `    <span class="kw">def</span> <span class="fn">decode</span>(<span class="kw">self</span>, s: <span class="kw">str</span>) -&gt; List[<span class="kw">str</span>]:`,
+        `        <span class="str">"""根據分割符還原，並解轉義"""</span>`,
+        `        <span class="kw">return</span> [s.replace(<span class="str">'##'</span>, <span class="str">'#'</span>) <span class="kw">for</span> s <span class="kw">in</span> s.split(<span class="str">' # '</span>)]`
+      ]
+    };
+
+    function setAlgo(a) { currentAlgo = a; resetSim(); }
+
+    function buildHistory() {
+      history = [];
+
+      if (currentAlgo === 'chunk') {
+        // ENCODE PHASE
+        let encodedStr = "";
+        history.push({
+          line: 2, title: "1. [Encode] 開始編碼",
+          desc: "初始化空字串 res，準備處理字串列表...",
+          wordIdx: -1, encodedStr: "", i: -1, j: -1, decodedList: [], chunkRange: null
+        });
+
+        sampleStrs.forEach((w, idx) => {
+          const chunk = w.length + "#" + w;
+          encodedStr += chunk;
+          history.push({
+            line: 4, title: `[Encode] 處理單字: "${w}"`,
+            desc: `格式化為 長度 + '#' + 單字 ➔ "${chunk}"，拼接到 res`,
+            wordIdx: idx, encodedStr: encodedStr, i: -1, j: -1, decodedList: [], chunkRange: null
+          });
+        });
+
+        history.push({
+          line: 5, title: "[Encode] 完成編碼",
+          desc: `得到最終編碼字串: "${encodedStr}"`,
+          wordIdx: -1, encodedStr: encodedStr, i: -1, j: -1, decodedList: [], chunkRange: null
+        });
+
+        // DECODE PHASE
+        let decodedList = [];
+        let i = 0;
+        history.push({
+          line: 8, title: "2. [Decode] 開始解碼",
+          desc: "設定雙指針 i = 0，準備掃描編碼字串...",
+          wordIdx: -1, encodedStr: encodedStr, i: 0, j: -1, decodedList: [...decodedList], chunkRange: null
+        });
+
+        while (i < encodedStr.length) {
+          let j = i;
+          history.push({
+            line: 10, title: `[Decode] 指針歸位: i = ${i}, j = ${i}`,
+            desc: `j 從 i 的位置 (${i}) 開始向右尋找分隔符 '#'...`,
+            wordIdx: -1, encodedStr: encodedStr, i: i, j: j, decodedList: [...decodedList], chunkRange: null
+          });
+
+          while (encodedStr[j] !== '#') {
+            j++;
+            history.push({
+              line: 12, title: `[Decode] 搜尋 '#': j 移至 ${j}`,
+              desc: `目前字元为 '${encodedStr[j-1]}'，繼續移動 j 尋找 '#'...`,
+              wordIdx: -1, encodedStr: encodedStr, i: i, j: j, decodedList: [...decodedList], chunkRange: null
+            });
+          }
+
+          const length = parseInt(encodedStr.substring(i, j));
+          history.push({
+            line: 13, title: `[Decode] 找到 '#'! 解析長度 = ${length}`,
+            desc: `切片 s[${i}:${j}] 解析得單字長度為 ${length}`,
+            wordIdx: -1, encodedStr: encodedStr, i: i, j: j, decodedList: [...decodedList], chunkRange: null
+          });
+
+          const word = encodedStr.substring(j + 1, j + 1 + length);
+          decodedList.push(word);
+          const chunkStart = j + 1;
+          const chunkEnd = j + 1 + length;
+
+          history.push({
+            line: 14, title: `[Decode] 切片擷取單字: "${word}"`,
+            desc: `取 s[${chunkStart}:${chunkEnd}] 得到單字 "${word}"，放入 res`,
+            wordIdx: -1, encodedStr: encodedStr, i: i, j: j, decodedList: [...decodedList], chunkRange: [chunkStart, chunkEnd - 1]
+          });
+
+          i = j + 1 + length;
+          history.push({
+            line: 15, title: `[Decode] 跳過已讀單字: i 移至 ${i}`,
+            desc: `更新 i = j + 1 + length (${i})，準備解析下一個區塊`,
+            wordIdx: -1, encodedStr: encodedStr, i: i, j: j, decodedList: [...decodedList], chunkRange: null
+          });
+        }
+
+        history.push({
+          line: 16, title: "3. [Decode] 解碼完成！",
+          desc: `完整還原原始字串列表: [${decodedList.map(x => `"${x}"`).join(', ')}]`,
+          wordIdx: -1, encodedStr: encodedStr, i: -1, j: -1, decodedList: [...decodedList], chunkRange: null
+        });
+
+      } else {
+        // Escaped Mode
+        const encoded = sampleStrs.map(s => s.replace(/#/g, '##')).join(' # ');
+        history.push({
+          line: 3, title: "[Encode] 轉義編碼",
+          desc: `將每個 # 替換為 ##，並用 ' # ' 分隔 ➔ "${encoded}"`,
+          wordIdx: -1, encodedStr: encoded, i: -1, j: -1, decodedList: [], chunkRange: null
+        });
+
+        history.push({
+          line: 7, title: "[Decode] 分割還原",
+          desc: `根據 ' # ' 分割並把 ## 還原為 # ➔ [${sampleStrs.map(x => `"${x}"`).join(', ')}]`,
+          wordIdx: -1, encodedStr: encoded, i: -1, j: -1, decodedList: [...sampleStrs], chunkRange: null
+        });
+      }
+    }
+
+    function resetSim() {
+      buildHistory();
+      currentStep = 0;
+      updateUIElements();
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateLineHighlight(state.line);
+      document.getElementById('step-title').innerText = state.title;
+      document.getElementById('step-desc').innerText = state.desc;
+      document.getElementById('stepHint').innerText = state.title.toUpperCase();
+
+      document.getElementById('var-i').innerText = state.i !== -1 ? state.i : '-';
+      document.getElementById('var-j').innerText = state.j !== -1 ? state.j : '-';
+      
+      const extraVal = state.decodedList.length > 0 
+        ? `[${state.decodedList.map(x => `"${x}"`).join(', ')}]`
+        : (state.encodedStr ? `"${state.encodedStr}"` : '-');
+      document.getElementById('var-extra-val').innerText = extraVal;
+
+      renderWords(state);
+      renderEncodedStream(state);
+    }
+
+    function updateUIElements() {
+      ['chunk', 'escaped'].forEach(a => {
+        document.getElementById(`algo-${a}`).className = 'tab-btn ' + (currentAlgo === a ? 'active' : '');
+      });
+
+      const tc = document.getElementById('tc-val');
+      const sc = document.getElementById('sc-val');
+      const title = document.getElementById('approach-title');
+      const desc = document.getElementById('approach-desc');
+
+      if (currentAlgo === 'chunk') {
+        tc.innerText = 'O(N)'; sc.innerText = 'O(1)*';
+        title.innerText = '💡 思路 1：長度前綴 + 分隔符 (Length-Prefix Encoding)';
+        desc.innerText = '每個字串編碼為 "長度 + # + 字串"。解碼時先用 j 找到 # 讀取數字長度，接著直接精確切片擷取內容。即使字串本身包含 # 也不會誤判。';
+      } else {
+        tc.innerText = 'O(N)'; sc.innerText = 'O(N)';
+        title.innerText = '💡 思路 2：轉義字符 (Escaping Character)';
+        desc.innerText = '將內容中的敏感符號 # 轉義為 ##，並以自訂分隔符（如 " # "）串接。解碼時分割後再反向替換。';
+      }
+    }
+
+    function renderCode() {
+      const codeList = pyCodes[currentAlgo];
+      document.getElementById('code-box').innerHTML = codeList
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateLineHighlight(line) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if (document.getElementById('l' + line)) {
+        document.getElementById('l' + line).classList.add('active-line');
+      }
+    }
+
+    function renderWords(state) {
+      const container = document.getElementById('nodes-words');
+      container.innerHTML = '';
+
+      sampleStrs.forEach((w, idx) => {
+        const badge = document.createElement('div');
+        badge.className = 'word-badge';
+        badge.innerText = `"${w}"`;
+
+        if (state.wordIdx === idx) badge.classList.add('active');
+        if (state.wordIdx > idx || state.decodedList.includes(w)) badge.classList.add('processed');
+
+        container.appendChild(badge);
+      });
+    }
+
+    function renderEncodedStream(state) {
+      const container = document.getElementById('nodes-encoded');
+      container.innerHTML = '';
+
+      if (!state.encodedStr) {
+        container.innerHTML = '<span style="color:var(--lc-text-dim); font-size:0.85rem;">(無數據)</span>';
+        return;
+      }
+
+      state.encodedStr.split('').forEach((char, idx) => {
+        const unit = document.createElement('div');
+        unit.className = 'char-unit';
+        unit.innerText = char;
+
+        if (char === '#') unit.classList.add('delimiter');
+        else if (!isNaN(char) && (idx === 0 || state.encodedStr[idx+1] === '#' || !isNaN(state.encodedStr[idx-1]))) {
+          unit.classList.add('length-tag');
+        }
+
+        if (state.chunkRange && idx >= state.chunkRange[0] && idx <= state.chunkRange[1]) {
+          unit.classList.add('chunk');
+        }
+
+        if (idx === state.i) {
+          const ptrI = document.createElement('div');
+          ptrI.className = 'ptr-tag ptr-i';
+          ptrI.innerText = 'i';
+          unit.appendChild(ptrI);
+        }
+
+        if (idx === state.j) {
+          const ptrJ = document.createElement('div');
+          ptrJ.className = 'ptr-tag ptr-j';
+          ptrJ.innerText = 'j';
+          unit.appendChild(ptrJ);
+        }
+
+        container.appendChild(unit);
+      });
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

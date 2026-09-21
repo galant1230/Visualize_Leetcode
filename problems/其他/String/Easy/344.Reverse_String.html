@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>LeetCode 344 - Reverse String 視覺化解法教學</title>
+  <style>
+    body { font-family: sans-serif; background: #f5f7fa; padding: 2rem; }
+    h1 { text-align: center; color: #007acc; }
+    .section {
+      max-width: 900px; 
+      margin: 1rem auto; 
+      background: white; 
+      padding: 1.5rem 2rem; 
+      border-radius: 10px; 
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    pre {
+      background: #272822; 
+      color: #f8f8f2; 
+      padding: 1rem; 
+      border-radius: 6px; 
+      overflow-x: auto;
+      font-family: monospace;
+    }
+    .code-line { padding: 2px 0; }
+    .active-code { background: #444; color: white; }
+    .tips {
+      background: #fef7dc; 
+      padding: 1rem; 
+      border-left: 6px solid #f1c40f; 
+      border-radius: 6px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.75rem; text-align: center; }
+  </style>
+</head>
+<body>
+
+<h1>LeetCode 344 - Reverse String 視覺化解法教學</h1>
+
+<div class="section">
+  <h2>📌 題目描述</h2>
+  <p>
+    給定一個以字元陣列形式存儲的字串 <code>s</code>，請原地（in-place）反轉該字串，且只能使用 O(1) 額外空間。
+  </p>
+  <p>
+    <strong>題目連結</strong>：<a href="https://leetcode.com/problems/reverse-string/" target="_blank">344. Reverse String</a>
+  </p>
+  <p><strong>範例：</strong></p>
+  <pre>
+Input: s = ["h","e","l","l","o"]
+Output: ["o","l","l","e","h"]
+  </pre>
+</div>
+
+<div class="section">
+  <h2>✅ 解法 1：使用 <code>swap()</code> 方法</h2>
+  <h3>🔹 思路：</h3>
+  <p>
+    定義一個 <code>swap(s, i, j)</code> 方法來交換字串中位置 <code>i</code> 與 <code>j</code> 的字元，再透過迴圈遍歷前半部分與對稱位置的字元進行交換。
+  </p>
+  <h3>🔹 Python 實作：</h3>
+  <pre>
+from typing import List
+
+class Solution:
+    def swap(self, s: List[str], i: int, j: int):
+        # 交換 s[i] 與 s[j]
+        s[i], s[j] = s[j], s[i]
+
+    def reverseString(self, s: List[str]) -> None:
+        length = len(s)
+        for i in range(length // 2):
+            self.swap(s, i, length - 1 - i)
+  </pre>
+  <h3>🔹 時間與空間複雜度：</h3>
+  <ul>
+    <li>時間複雜度：O(n)（遍歷字串前半部）</li>
+    <li>空間複雜度：O(1)（只使用常數額外空間）</li>
+  </ul>
+  <div class="tips">
+    💡 小技巧：定義 swap 函式可以讓程式碼更模組化、易讀，方便在其他題目中重複使用。
+  </div>
+</div>
+
+<div class="section">
+  <h2>✅ 解法 2：雙指針（Two Pointers）</h2>
+  <h3>🔹 思路：</h3>
+  <p>
+    設定左指針 <code>left</code> 和右指針 <code>right</code>，當 <code>left &lt; right</code> 時，交換 <code>s[left]</code> 與 <code>s[right]</code>，然後分別將指針向內移動，直到相遇。
+  </p>
+  <h3>🔹 Python 實作：</h3>
+  <pre>
+from typing import List
+
+class SolutionTwoPointers:
+    def reverseString(self, s: List[str]) -> None:
+        left, right = 0, len(s) - 1
+        while left < right:
+            s[left], s[right] = s[right], s[left]  # Pythonic 內建交換
+            left += 1
+            right -= 1
+  </pre>
+  <h3>🔹 時間與空間複雜度：</h3>
+  <ul>
+    <li>時間複雜度：O(n)</li>
+    <li>空間複雜度：O(1)</li>
+  </ul>
+  <div class="tips">
+    💡 小技巧：雙指針方法直觀易懂，適合所有初學者，也符合 Pythonic 風格。
+  </div>
+</div>
+
+<div class="section">
+  <h2>✅ 解法 3：使用切片（Slicing）</h2>
+  <h3>🔹 思路：</h3>
+  <p>
+    利用 Python 切片語法 <code>s[::-1]</code> 反轉列表，但需注意：這會產生新列表，故需使用 <code>s[:] = s[::-1]</code> 來原地修改。
+  </p>
+  <h3>🔹 Python 實作：</h3>
+  <pre>
+from typing import List
+
+class SolutionSlicing:
+    def reverseString(self, s: List[str]) -> None:
+        s[:] = s[::-1]
+  </pre>
+  <h3>🔹 時間與空間複雜度：</h3>
+  <ul>
+    <li>時間複雜度：O(n)</li>
+    <li>空間複雜度：O(n) （因為 s[::-1] 產生了新列表，但 s[:] 賦值後原地修改）</li>
+  </ul>
+  <div class="tips">
+    💡 小技巧：切片寫法簡潔，但注意會額外佔用 O(n) 空間；適用於面試中不要求極致空間優化的情境。
+  </div>
+</div>
+
+<div class="section">
+  <h2>✅ 解法 4：使用 <code>s.reverse()</code></h2>
+  <h3>🔹 思路：</h3>
+  <p>
+    Python 的內建方法 <code>s.reverse()</code> 可直接在原列表上反轉，不需額外空間，且語意清晰。
+  </p>
+  <h3>🔹 Python 實作：</h3>
+  <pre>
+from typing import List
+
+class SolutionInPlace:
+    def reverseString(self, s: List[str]) -> None:
+        s.reverse()
+  </pre>
+  <h3>🔹 時間與空間複雜度：</h3>
+  <ul>
+    <li>時間複雜度：O(n)</li>
+    <li>空間複雜度：O(1)</li>
+  </ul>
+  <div class="tips">
+    💡 小技巧：這是最簡潔且高效的原地反轉方法，推薦在面試中使用，但前提是你要確認這是被允許的方法。
+  </div>
+</div>
+
+<div class="section">
+  <h2>程式碼亮化效果</h2>
+  <p>下方展示部分解法的程式碼（以雙指針方法為例），高亮顯示每行邏輯：</p>
+  <div id="codeBox">
+    <div class="code-line" id="line1">left, right = 0, len(s) - 1</div>
+    <div class="code-line" id="line2">while left &lt; right:</div>
+    <div class="code-line" id="line3">    s[left], s[right] = s[right], s[left]</div>
+    <div class="code-line" id="line4">    left += 1</div>
+    <div class="code-line" id="line5">    right -= 1</div>
+  </div>
+  <div class="tips">
+    💡 小技巧：逐行理解交換的流程能幫助你更好地掌握原地修改的思路。
+  </div>
+</div>
+
+<div class="section">
+  <h2>⏱ 時間與空間複雜度總結</h2>
+  <table>
+    <tr><th>解法</th><th>時間複雜度</th><th>空間複雜度</th></tr>
+    <tr><td>swap() 方法</td><td>O(n)</td><td>O(1)</td></tr>
+    <tr><td>雙指針</td><td>O(n)</td><td>O(1)</td></tr>
+    <tr><td>切片（s[:] = s[::-1]）</td><td>O(n)</td><td>O(n)</td></tr>
+    <tr><td>s.reverse()</td><td>O(n)</td><td>O(1)</td></tr>
+  </table>
+</div>
+
+</body>
+</html>

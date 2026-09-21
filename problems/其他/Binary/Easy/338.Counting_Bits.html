@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>338. Counting Bits - Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(80, 250, 123, 0.15); color: var(--green); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .lang-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .lang-btn.active { background: var(--purple); color: #fff; border-color: #d6acff; }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 420px 1fr; gap: 14px; }
+    @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.75rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 10px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; } .type { color: #8be9fd; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 90px; max-height: 160px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .array-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 280px; padding: 16px; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
+    
+    .dp-container { display: flex; flex-direction: column; gap: 6px; background: #151821; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+    .dp-title { font-size: 0.78rem; font-family: monospace; color: var(--text-dim); }
+    .dp-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .dp-cell { min-width: 44px; height: 48px; background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; transition: all 0.2s; }
+    .dp-idx { font-size: 0.65rem; color: var(--text-dim); }
+    .dp-val { font-size: 1.05rem; font-weight: bold; color: #fff; }
+    .dp-cell.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.25); transform: scale(1.08); box-shadow: 0 0 10px rgba(255, 161, 22, 0.5); }
+    .dp-cell.ref { border-color: var(--cyan); background: rgba(139, 233, 253, 0.2); }
+    
+    .bit-row-container { display: flex; flex-direction: column; gap: 4px; background: #151821; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+    .bit-row-label { display: flex; justify-content: space-between; font-size: 0.75rem; font-family: monospace; color: var(--text-dim); margin-bottom: 2px; }
+    .bit-grid { display: flex; flex-wrap: wrap; gap: 3px; justify-content: flex-start; }
+    .bit-cell { flex: 0 0 calc(3.125% - 3px); min-width: 24px; height: 38px; background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; transition: all 0.2s ease; }
+    .bit-idx { font-size: 0.58rem; color: var(--text-dim); line-height: 1; }
+    .bit-val { font-size: 0.85rem; font-weight: bold; color: #888; line-height: 1.2; }
+    .bit-one { border-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+    .bit-one .bit-val { color: var(--green); }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">338. Counting Bits</span>
+    <span class="badge">Easy</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Language:</span>
+      <button class="lang-btn active" onclick="setLang('python')">Python</button>
+      <button class="lang-btn" onclick="setLang('c')">C Version</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Direct Bit Counting (Kernighan)</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. DP + Shift (ans[i>>1] + (i&1))</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">n = 5</button>
+      <button class="tab-btn" onclick="setPreset(1)">n = 8</button>
+      <button class="tab-btn" onclick="setPreset(2)">n = 12</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與限制</div>
+        <div class="problem-desc">
+          給定一個整數 <b>n</b>，計算從 <code>0</code> 到 <code>n</code> 間每個數字二進位中 <b>1 的個數</b>，並以陣列形式傳回。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(N log N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">💻 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 計算與記憶體陣列視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="array-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Number (i): </span>
+              <span id="i-curr-display" style="font-weight: bold; color: var(--orange); font-size: 1.1rem;">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Sub-Bit Counter: </span>
+              <span id="ref-idx-display" style="font-weight: bold; color: var(--cyan); font-size: 1.1rem;">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current Result Array:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.85rem; color: var(--green);">[]</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = {
+      python: [
+        // 0. Direct Bit Counting
+        [`<span class="kw">def</span> <span class="fn">count_one</span>(i):`,
+         `    counter = 0`,
+         `    <span class="kw">while</span>(i != 0):`,
+         `        i = i & (i - 1)`,
+         `        counter += 1`,
+         `    <span class="kw">return</span> counter`,
+         ``,
+         `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+         `    <span class="kw">def</span> <span class="fn">countBits</span>(<span class="self">self</span>, n: int) -> List[int]:`,
+         `        list1 = []`,
+         `        <span class="kw">for</span> i <span class="kw">in</span> range(n + 1):`,
+         `            list1.append(count_one(i))`,
+         `        <span class="kw">return</span> list1`],
+
+        // 1. DP + Shift
+        [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+         `    <span class="kw">def</span> <span class="fn">countBits</span>(<span class="self">self</span>, n: int) -> List[int]:`,
+         `        ans = [0] * (n + 1)`,
+         `        <span class="kw">for</span> i <span class="kw">in</span> range(1, n + 1):`,
+         `            ans[i] = ans[i >> 1] + (i & 1)`,
+         `        <span class="kw">return</span> ans`]
+      ],
+      c: [
+        // 0. Direct Bit Counting C
+        [`<span class="type">int</span> <span class="fn">count_one</span>(<span class="type">int</span> i) {`,
+         `    <span class="type">int</span> counter = 0;`,
+         `    <span class="kw">if</span> (i == 0) <span class="kw">return</span> 0;`,
+         `    <span class="kw">while</span> (i != 0) {`,
+         `        i = i & (i - 1);`,
+         `        counter++;`,
+         `    }`,
+         `    <span class="kw">return</span> counter;`,
+         `}`,
+         ``,
+         `<span class="type">int</span>* <span class="fn">countBits</span>(<span class="type">int</span> n, <span class="type">int</span>* returnSize) {`,
+         `    *returnSize = n + 1;`,
+         `    <span class="type">int</span>* array = (<span class="type">int</span>*)malloc(<span class="kw">sizeof</span>(<span class="type">int</span>) * (*returnSize));`,
+         `    <span class="kw">for</span> (<span class="type">int</span> i = 0; i <= n; i++) {`,
+         `        array[i] = count_one(i);`,
+         `    }`,
+         `    <span class="kw">return</span> array;`,
+         `}`],
+
+        // 1. DP + Shift C
+        [`<span class="type">int</span>* <span class="fn">countBits</span>(<span class="type">int</span> n, <span class="type">int</span>* returnSize) {`,
+         `    *returnSize = n + 1;`,
+         `    <span class="type">int</span>* ans = (<span class="type">int</span>*)malloc(<span class="kw">sizeof</span>(<span class="type">int</span>) * (*returnSize));`,
+         `    ans[0] = 0;`,
+         `    <span class="kw">for</span> (<span class="type">int</span> i = 1; i <= n; i++) {`,
+         `        ans[i] = ans[i >> 1] + (i & 1);`,
+         `    }`,
+         `    <span class="kw">return</span> ans;`,
+         `}`]
+      ]
+    };
+
+    const strategyInfo = [
+      {
+        title: "1. Direct Bit Counting (Brian Kernighan 逐字計算)",
+        time: "O(N log N)", space: "O(1)",
+        idea: `<b>解法思路：</b><br>
+利用 <code>i & (i - 1)</code> 每次消除最低位的 1。<br>
+跑迴圈從 <code>0</code> 到 <code>n</code>，對每一個整數呼叫 <code>count_one(i)</code> 計算二進位中 1 的個數，最後填入陣列。`
+      },
+      {
+        title: "2. DP + Bitwise Shift (動態規劃 O(N))",
+        time: "O(N)", space: "O(1)",
+        idea: `<b>解法思路：</b><br>
+利用位元移位性質：<code>i >> 1</code> 相當於剔除最低位元。<br>
+公式：<b><code>ans[i] = ans[i >> 1] + (i & 1)</code></b>，可以達到 O(N) 高效一次走訪完畢。`
+      }
+    ];
+
+    const presets = [
+      { title: "n = 5", n: 5, expected: "[0, 1, 1, 2, 1, 2]" },
+      { title: "n = 8", n: 8, expected: "[0, 1, 1, 2, 1, 2, 2, 3, 1]" },
+      { title: "n = 12", n: 12, expected: "[0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2]" }
+    ];
+
+    let currentLang = 'python';
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setLang(lang) {
+      currentLang = lang;
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(lang)));
+      renderCode();
+      reset();
+    }
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input n:</b> ${p.n}</div>
+        <div><b>Expected Output:</b> <span style="color:var(--green)">${p.expected}</span></div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentLang][currentAlgo];
+      document.getElementById('code-title').innerText = currentLang === 'python' ? "🐍 Python 程式碼解法" : "⚡ C 語言程式碼解法";
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const n = presets[currentPreset].n;
+      let resArr = [];
+
+      if (currentAlgo === 0) {
+        buildDirectSteps(n, resArr);
+      } else {
+        buildShiftDpSteps(n, resArr);
+      }
+    }
+
+    function to32BitArray(num) {
+      let arr = [];
+      for (let i = 31; i >= 0; i--) {
+        arr.push((num >>> i) & 1);
+      }
+      return arr;
+    }
+
+    // Direct Bit Count Steps
+    function buildDirectSteps(n, resArr) {
+      const isC = currentLang === 'c';
+      
+      history.push({
+        line: isC ? 12 : 10, phase: "⚡ 【初始化記憶體與陣列】",
+        desc: `準備動態配置大小為 ${n + 1} 的陣列 (從 0 到 ${n})。`,
+        i: null, ans: []
+      });
+
+      for (let i = 0; i <= n; i++) {
+        let tempI = i;
+        let counter = 0;
+
+        history.push({
+          line: isC ? 15 : 11, phase: `🔄 【外層 Loop: i = ${i}】`,
+          desc: `呼叫 <code>count_one(${i})</code> 計算 ${i} 的二進位 1 的數量。`,
+          i, subI: tempI, counter, ans: [...resArr]
+        });
+
+        if (tempI === 0) {
+          history.push({
+            line: isC ? 3 : 2, phase: `🔍 【count_one(${i}) - 特殊值 0】`,
+            desc: `數字為 0，直接傳回 0。`,
+            i, subI: 0, counter: 0, ans: [...resArr]
+          });
+        } else {
+          while (tempI !== 0) {
+            const nextI = tempI & (tempI - 1);
+            history.push({
+              line: isC ? 5 : 3, phase: `💥 【消除最低位 1: i = i & (i - 1)】`,
+              desc: `<code>${tempI} & ${tempI - 1}</code> 得到 <b>${nextI}</b>。`,
+              i, subI: nextI, counter, ans: [...resArr]
+            });
+            tempI = nextI;
+            counter++;
+          }
+        }
+
+        resArr.push(counter);
+        history.push({
+          line: isC ? 15 : 11, phase: `📝 【填入結果: array[${i}] = ${counter}】`,
+          desc: `<code>count_one(${i})</code> 計算結果為 <b>${counter}</b>，填入陣列第 ${i} 格。`,
+          i, counter, ans: [...resArr]
+        });
+      }
+
+      history.push({
+        line: isC ? 17 : 12, phase: "🎉 【Complete: 完成所有計算】",
+        desc: `完成計算！傳回結果陣列。`,
+        i: null, ans: [...resArr]
+      });
+    }
+
+    // Shift DP Steps
+    function buildShiftDpSteps(n, resArr) {
+      const isC = currentLang === 'c';
+      let ans = Array(n + 1).fill(0);
+
+      history.push({
+        line: isC ? 3 : 2, phase: "⚡ 【初始化 DP 陣列】",
+        desc: `宣告並初始化大小為 ${n + 1} 的陣列，設定 <code>ans[0] = 0</code>`,
+        i: 0, refIdx: null, ans: [...ans]
+      });
+
+      for (let i = 1; i <= n; i++) {
+        const ref = i >> 1;
+        const lsb = i & 1;
+        const val = ans[ref] + lsb;
+        ans[i] = val;
+
+        history.push({
+          line: isC ? 5 : 4, phase: `📝 【計算 ans[${i}] = ${val}】`,
+          desc: `根據移位公式：<code>ans[${i}] = ans[${ref}] (${ans[ref]}) + (i & 1) (${lsb}) = ${val}</code>。`,
+          i, refIdx: ref, lsb, ans: [...ans]
+        });
+      }
+
+      history.push({
+        line: isC ? 7 : 5, phase: "🎉 【Complete: 完成所有計算】",
+        desc: `已完成從 0 到 ${n} 所有數字的計算！`,
+        i: null, refIdx: null, ans: [...ans]
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const ansArr = state.ans || [];
+      
+      let html = "";
+
+      // DP / Result Array
+      html += `
+        <div class="dp-container">
+          <div class="dp-title">Result Array (${currentLang === 'c' ? 'int* array' : 'list1'}):</div>
+          <div class="dp-grid">
+      `;
+
+      for (let idx = 0; idx < ansArr.length; idx++) {
+        let cls = "dp-cell";
+        if (state.i === idx) cls += " active";
+        else if (state.refIdx === idx) cls += " ref";
+
+        html += `
+          <div class="${cls}">
+            <span class="dp-idx">[${idx}]</span>
+            <span class="dp-val">${ansArr[idx]}</span>
+          </div>
+        `;
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+
+      // 32-Bit Grid (i)
+      if (state.i !== null && state.i !== undefined) {
+        const showVal = state.subI !== undefined ? state.subI : state.i;
+        const bitArr = to32BitArray(showVal);
+        html += `
+          <div class="bit-row-container">
+            <div class="bit-row-label">
+              <span>Current Number 二進位結構 (${showVal})</span>
+              <span>Bit 31 (MSB) ← ... → Bit 0 (LSB)</span>
+            </div>
+            <div class="bit-grid">
+        `;
+
+        for (let b = 0; b < 32; b++) {
+          const bitIdx = 31 - b;
+          const val = bitArr[b];
+          let cls = val === 1 ? " bit-one" : "";
+
+          html += `
+            <div class="bit-cell ${cls}">
+              <span class="bit-idx">${bitIdx}</span>
+              <span class="bit-val">${val}</span>
+            </div>
+          `;
+        }
+
+        html += `
+            </div>
+          </div>
+        `;
+      }
+
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟進度:</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          <div><b>• 當前處理數字 (i):</b> <span style="color:var(--cyan); font-weight:bold;">${state.i !== null ? state.i : "Finished"}</span></div>
+          ${state.counter !== undefined ? `<div><b>• count_one 累加計數:</b> <span style="color:var(--green); font-weight:bold;">${state.counter}</span></div>` : ''}
+        </div>
+      `;
+
+      // Controls
+      document.getElementById('i-curr-display').innerText = state.i !== null ? state.i : "-";
+      document.getElementById('ref-idx-display').innerText = state.counter !== undefined ? `counter = ${state.counter}` : (state.refIdx !== null && state.refIdx !== undefined ? `ans[${state.refIdx}]` : "-");
+
+      document.getElementById('result-text').innerText = JSON.stringify(state.ans || []);
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>1680. Concatenation Debugger</title>
+    <style>
+        :root { --bg: #0d1117; --card: #161b22; --accent: #58a6ff; --kw: #ff7b72; --num: #79c0ff; --text: #c9d1d9; }
+        body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: grid; grid-template-columns: 350px 1fr 450px; gap: 20px; height: 98vh; }
+        .panel, .viz, .editor { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 20px; overflow-y: auto; }
+        .ln { white-space: pre; line-height: 1.6; border-left: 3px solid transparent; }
+        .highlight { background: rgba(88, 166, 255, 0.2); border-left-color: var(--accent); }
+        .kw { color: var(--kw); font-weight: bold; }
+        .num { color: var(--num); }
+        .bit-cell { display: inline-block; width: 22px; height: 22px; border: 1px solid #444; text-align: center; font-size: 10px; margin: 2px; }
+        .one { background: var(--accent); color: white; }
+        .btn-group { margin-top: 15px; display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <h3>📖 1680. Concatenation</h3>
+    <div style="font-size: 13px;">
+        <p><b>題目敘述:</b> 給定 n，將 1 到 n 的二進位串接，返回十進位值模 10^9+7。</p>
+        <p><b>範例 2:</b> n=3, Output=27<br>"1" + "10" + "11" = "11011"</p>
+        <p><b>核心思路:</b><br>每當遇到 2 的冪次，位元長度加 1。使用 <code>(ans << bit_length) | i</code> 進行拼接，避免字串操作。</p>
+    </div>
+    <div class="btn-group">
+        <button onclick="prev()">上一步</button> <button onclick="next()">下一步</button>
+        <button onclick="location.reload()">Reset</button>
+    </div>
+    <div id="log-console" style="margin-top:20px; color:var(--accent); border-top:1px solid #333; padding-top:10px;"></div>
+</div>
+
+<div class="viz">
+    <h4>變數監控中心</h4>
+    <div id="math-vars" style="color:var(--num); font-size: 14px;">ans: 0 | bit_length: 0</div>
+    <div>Current Binary State (ans):</div>
+    <div id="bit-viz" style="margin-top: 10px;"></div>
+</div>
+
+<div class="editor" id="code-view">
+    <div class="ln" id="l0"><span class="kw">class</span> Solution:</div>
+    <div class="ln" id="l1">    <span class="kw">def</span> concatenatedBinary(self, n: <span class="num">int</span>) -> <span class="num">int</span>:</div>
+    <div class="ln" id="l2">        ans, bit_length = <span class="num">0</span>, <span class="num">0</span></div>
+    <div class="ln" id="l3">        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">1</span>, n + <span class="num">1</span>):</div>
+    <div class="ln" id="l4">            <span class="kw">if</span> (i & (i - <span class="num">1</span>)) == <span class="num">0</span>:</div>
+    <div class="ln" id="l5">                bit_length += <span class="num">1</span></div>
+    <div class="ln" id="l6">            ans = ((ans << bit_length) | i) % <span class="num">1000000007</span></div>
+</div>
+
+<script>
+    let steps = [
+        {ans:0, bl:0, bin:"0", l:2, log:"初始化 ans=0, bit_length=0"},
+        {ans:1, bl:1, bin:"1", l:6, log:"i=1: ans=(0<<1)|1 = 1"},
+        {ans:6, bl:2, bin:"110", l:6, log:"i=2: ans=(1<<2)|2 = 6"},
+        {ans:27, bl:2, bin:"11011", l:6, log:"i=3: ans=(6<<2)|3 = 27"}
+    ];
+    let idx = 0;
+    function next() { if(idx < steps.length-1) idx++; render(); }
+    function prev() { if(idx > 0) idx--; render(); }
+    function render() {
+        let s = steps[idx];
+        document.getElementById('math-vars').innerText = `ans: ${s.ans} | bit_length: ${s.bl}`;
+        document.getElementById('log-console').innerText = s.log;
+        document.getElementById('bit-viz').innerHTML = s.bin.split('').map(b => 
+            `<div class="bit-cell ${b==='1'?'one':''}">${b}</div>`).join('');
+        document.querySelectorAll('.ln').forEach(el => el.classList.remove('highlight'));
+        document.getElementById('l'+s.l).classList.add('highlight');
+    }
+    render();
+</script>
+</body>
+</html>

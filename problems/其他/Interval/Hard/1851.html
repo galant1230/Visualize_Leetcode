@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VS Code Pro Debugger - 1851. Minimum Interval</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --vs-bg: #1e1e1e; --vs-side: #252526; --vs-editor: #1c1c1c; --vs-border: #3e3e42;
+            --vs-active-line: rgba(86, 156, 214, 0.1); --vs-accent: #007acc;
+            --token-kw: #c678dd; --token-fn: #61afef; --token-nm: #d19a66; --token-cm: #5c6370;
+            --text-main: #abb2bf;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--vs-bg); color: var(--text-main); margin: 0; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 5px; }
+        
+        .code-line { display: flex; width: 100%; border-left: 3px solid transparent; }
+        .active-line { background-color: var(--vs-active-line) !important; border-left: 3px solid var(--vs-accent) !important; }
+        .line-num { color: #636d83; width: 50px; text-align: right; padding-right: 20px; user-select: none; }
+        .kw { color: var(--token-kw); } .fn { color: var(--token-fn); } .nm { color: var(--token-nm); } .cm { color: var(--token-cm); }
+        
+        .vs-panel { background-color: var(--vs-editor); border: 1px solid var(--vs-border); border-radius: 6px; overflow: hidden; }
+        .interval-bar { position: absolute; height: 8px; border-radius: 4px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: #333; }
+        .interval-dot { position: absolute; height: 12px; width: 12px; border-radius: 50%; transition: all 0.3s; background: #333; transform: translate(-6px, -2px); }
+        .interval-label { position: absolute; top: -22px; font-weight: 600; font-size: 14px; color: #858585; transition: color 0.3s; white-space: nowrap; }
+        
+        .active-int { background-color: var(--vs-accent) !important; box-shadow: 0 0 12px var(--vs-accent); }
+        .active-label { color: white !important; font-size: 16px !important; }
+
+        #action-log { background: #000; color: #00ff00; font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 10px; border-top: 1px solid var(--vs-border); }
+        .log-entry { margin-bottom: 2px; border-left: 2px solid #00ff00; padding-left: 8px; animation: fadeIn 0.2s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .res-chip { padding: 2px 8px; border-radius: 4px; background: #2d2d2d; border: 1px solid #444; font-size: 10px; }
+        .res-active { border-color: #98c379; color: #98c379; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-sm">
+
+    <div class="h-9 vs-side flex items-center border-b border-[#2b2b2b] text-[11px]">
+        <div class="flex items-center gap-2 h-full px-4 bg-[#1c1c1c] text-white border-t border-white">
+            <span class="text-[#e06c75]"></span> solution.py
+        </div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        <aside class="w-1/4 bg-[#252526] border-r border-[#2b2b2b] p-6 overflow-y-auto custom-scrollbar flex flex-col gap-5">
+            <section>
+                <h2 class="text-white font-bold mb-3 text-lg">1851. Minimum Interval</h2>
+                <div class="text-[11px] leading-relaxed text-[#9ba1a9] space-y-4">
+                    <p>給你一個二維整數陣列 <code class="text-blue-400">intervals</code>，其中 <code class="text-blue-400">intervals[i] = [left_i, right_i]</code> 表示第 <code class="mono">i</code> 個區間。同時給你一個 <code class="text-blue-400">queries</code> 陣列。</p>
+                    <p>第 <code class="mono">j</code> 個查詢的答案是包含 <code class="mono">queries[j]</code> 的 <strong>最小區間大小</strong>。如果不存在這樣的區間，答案為 <code class="mono">-1</code>。</p>
+                    <p class="bg-black/30 p-2 rounded border border-white/5">
+                        <strong class="text-white block mb-1">規則：</strong>
+                        • 區間大小：<code class="mono">right - left + 1</code><br>
+                        • 包含：<code class="mono">left <= queries[j] <= right</code>
+                    </p>
+                </div>
+            </section>
+
+            <section class="vs-panel p-4 bg-[#1e1e1e]">
+                <h3 class="text-[10px] font-bold text-[#c678dd] uppercase mb-2 tracking-widest">Complexity Analysis</h3>
+                <div class="space-y-4 text-[11px]">
+                    <div>
+                        <span class="text-white font-bold block border-b border-white/10 mb-1">Time: O(N log N + M log M)</span>
+                        <p class="text-[#858585]">N 為區間數，M 為查詢數。需對 intervals 與 queries 進行排序，且每個區間最多進出 Heap 一次。</p>
+                    </div>
+                    <div>
+                        <span class="text-white font-bold block border-b border-white/10 mb-1">Space: O(N + M)</span>
+                        <p class="text-[#858585]">需額外儲存排序後的查詢索引，以及 Heap 最多存放 N 個區間。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="flex-1">
+                <h3 class="text-[10px] font-bold text-[#858585] uppercase mb-2">Test Cases</h3>
+                <div id="case-list" class="space-y-3"></div>
+            </section>
+        </aside>
+
+        <main class="flex-1 flex flex-col bg-[#1e1e1e] p-6 gap-4 overflow-hidden">
+            <div class="vs-panel flex-1 relative bg-[#1c1c1c] flex flex-col overflow-hidden">
+                <div class="p-4 flex justify-between items-center">
+                    <div class="text-[10px] text-blue-400 font-mono tracking-widest uppercase">Sweep Line Arena</div>
+                    <div id="res-display" class="flex gap-2 items-center"></div>
+                </div>
+                <div id="viz-stage" class="flex-1 relative mx-8 mb-6 mt-14 border-l border-b border-[#333]">
+                    <div id="sweep-line" class="absolute top-0 bottom-0 w-[2px] bg-blue-500 shadow-[0_0_15px_#3b82f6] z-50 transition-all duration-300 opacity-0">
+                        <div class="absolute -top-8 left-1/2 -translate-x-1/2 text-xs text-blue-400 font-bold bg-[#1e1e1e] px-2 border border-blue-500" id="q-label"></div>
+                    </div>
+                </div>
+                <div id="action-log" class="h-36 overflow-y-auto custom-scrollbar"></div>
+            </div>
+            
+            <div class="h-32 vs-panel bg-[#1c1c1c] p-4 flex gap-4">
+                <div class="flex-1">
+                    <div class="text-[10px] text-amber-500 font-mono tracking-widest uppercase mb-2">Min-Heap State (Size, EndTime)</div>
+                    <div id="heap-status" class="flex gap-2 overflow-x-auto pb-2 items-end min-h-[40px]"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between px-2">
+                <div class="flex gap-3">
+                    <button onclick="step(-1)" class="bg-[#333] hover:bg-[#444] text-white px-5 py-1.5 rounded text-xs transition">PREV</button>
+                    <button id="play-btn" onclick="togglePlay()" class="bg-[#007acc] hover:bg-[#118ad4] text-white px-8 py-1.5 rounded text-xs transition font-bold uppercase">Play</button>
+                    <button onclick="step(1)" class="bg-[#333] hover:bg-[#444] text-white px-5 py-1.5 rounded text-xs transition">NEXT</button>
+                </div>
+                <div class="text-[11px] mono text-[#636d83]">STEP <span id="cur-step" class="text-white">0</span> / <span id="total-step">0</span></div>
+            </div>
+        </main>
+
+        <aside class="w-[30%] bg-[#1c1c1c] border-l border-[#2b2b2b] flex flex-col">
+            <div class="flex-1 overflow-y-auto custom-scrollbar py-4">
+                <div id="editor-content" class="mono text-[13px] leading-[1.8]"></div>
+            </div>
+            <div class="h-72 bg-[#252526] border-t border-[#333] p-4 overflow-y-auto custom-scrollbar">
+                <div class="text-[10px] font-bold text-[#858585] uppercase mb-3 tracking-widest">Variable Watcher</div>
+                <div id="watcher-vars" class="space-y-1 mono text-[11px]"></div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const testCases = [
+            { 
+                intervals: [[1,4],[2,4],[3,6],[4,4]], 
+                queries: [2,3,4,5], 
+                out: [3,3,1,4], 
+                desc: "Example 1: intervals: [[1,4],[2,4],[3,6],[4,4]]  queries: [2,3,4,5]  out: [3,3,1,4] " 
+            },
+            { 
+                intervals: [[2,3],[2,5],[1,8],[20,25]], 
+                queries: [2,19,5,22], 
+                out: [2,-1,4,6], 
+                desc: "Example 2: intervals: [[2,3],[2,5],[1,8],[20,25]]  queries: [2,19,5,22]  out: [2,-1,4,6] " 
+            }
+        ];
+
+        const codeLines = [
+            { t: '<span class="kw">class</span> <span class="fn">Solution</span>:', l: 1 },
+            { t: '    <span class="kw">def</span> <span class="fn">minInterval</span>(self, intervals, queries):', l: 2 },
+            { t: '        intervals.sort()', l: 3 },
+            { t: '        sorted_q = <span class="fn">sorted</span>([(q, i) <span class="kw">for</span> i, q <span class="kw">in</span> <span class="fn">enumerate</span>(queries)])', l: 4 },
+            { t: '        res, i, min_heap = {}, <span class="nm">0</span>, []', l: 5 },
+            { t: '        <span class="kw">for</span> q, idx <span class="kw">in</span> sorted_q:', l: 6 },
+            { t: '            <span class="kw">while</span> i &lt; <span class="fn">len</span>(intervals) <span class="kw">and</span> intervals[i][<span class="nm">0</span>] &lt;= q:', l: 7 },
+            { t: '                l, r = intervals[i]', l: 8 },
+            { t: '                heapq.<span class="fn">heappush</span>(min_heap, (r - l + <span class="nm">1</span>, r))', l: 9 },
+            { t: '                i += <span class="nm">1</span>', l: 10 },
+            { t: '            <span class="kw">while</span> min_heap <span class="kw">and</span> min_heap[<span class="nm">0</span>][<span class="nm">1</span>] &lt; q:', l: 11 },
+            { t: '                heapq.<span class="fn">heappop</span>(min_heap)', l: 12 },
+            { t: '            res[idx] = min_heap[<span class="nm">0</span>][<span class="nm">0</span>] <span class="kw">if</span> min_heap <span class="kw">else</span> -<span class="nm">1</span>', l: 13 },
+            { t: '        <span class="kw">return</span> [res[i] <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(queries))]', l: 14 }
+        ];
+
+        let curStep = 0, steps = [], caseIdx = 0, timer = null;
+
+        function init() {
+            document.getElementById('editor-content').innerHTML = codeLines.map(line => `
+                <div class="code-line" id="line-${line.l}"><span class="line-num">${line.l}</span><pre class="m-0">${line.t}</pre></div>
+            `).join('');
+            document.getElementById('case-list').innerHTML = testCases.map((tc, idx) => `
+                <button onclick="changeCase(${idx})" class="w-full text-left p-2 rounded border ${caseIdx===idx?'border-blue-500 bg-[#1c1c1c]':'border-[#3e3e42] hover:bg-[#333]'} transition">
+                    <div class="text-[#abb2bf] font-bold text-[10px] mb-1">${tc.desc}</div>
+                </button>
+            `).join('');
+            generateSteps();
+            drawIntervals();
+            updateUI();
+        }
+
+        function generateSteps() {
+            const data = testCases[caseIdx];
+            // 這裡確保使用當前 case 的完整 intervals 和 queries
+            const si = [...data.intervals].sort((a,b)=>a[0]-b[0]);
+            const sq = data.queries.map((q, i) => ({q, idx: i})).sort((a,b)=>a.q-b.q);
+            let i = 0, heap = [], res = {};
+
+            const getVars = (ln, qObj, cur_l, cur_r) => ({
+                ln, i, heap: [...heap], 
+                q: qObj?.q ?? null, idx: qObj?.idx ?? null,
+                sorted_q: sq.map(x => `(${x.q}, ${x.idx})`),
+                intervals_i0: si[i]?.[0] ?? 'EOF',
+                l: cur_l, r: cur_r,
+                res: {...res}
+            });
+
+            steps = [{ ...getVars(5, null, null, null), msg: "⚡ 初始化：排序區間與查詢 (維持索引對應)。" }];
+
+            for (let qObj of sq) {
+                steps.push({ ...getVars(6, qObj, null, null), msg: `🔍 處理查詢 q = ${qObj.q} (原索引 ${qObj.idx})` });
+                while(i < si.length && si[i][0] <= qObj.q) {
+                    const [l, r] = si[i];
+                    steps.push({ ...getVars(7, qObj, null, null), msg: `檢查區間起點：${l} <= ${qObj.q}` });
+                    steps.push({ ...getVars(8, qObj, l, r), msg: `取出區間 [${l}, ${r}]` });
+                    heap.push({ len: r-l+1, end: r, id: i, label: `[${l},${r}]` });
+                    heap.sort((a,b) => a.len - b.len || a.end - b.end);
+                    steps.push({ ...getVars(9, qObj, l, r), msg: `📥 長度 ${r-l+1} 入堆` });
+                    i++;
+                    steps.push({ ...getVars(10, qObj, l, r), msg: `i 遞增至 ${i}` });
+                }
+                while(heap.length > 0 && heap[0].end < qObj.q) {
+                    const popped = heap[0];
+                    steps.push({ ...getVars(11, qObj, null, null), msg: `⚠️ 堆頂 [${popped.label}] 在 ${popped.end} 結束，已失效` });
+                    heap.shift();
+                    steps.push({ ...getVars(12, qObj, null, null), msg: `📤 彈出失效區間 (End < ${qObj.q})` });
+                }
+                res[qObj.idx] = heap.length > 0 ? heap[0].len : -1;
+                steps.push({ ...getVars(13, qObj, null, null), msg: `✅ 記錄結果：res[${qObj.idx}] = ${res[qObj.idx]}` });
+            }
+            steps.push({ ...getVars(14, null, null, null), msg: "🏁 根據原始順序返回結果陣列。" });
+            document.getElementById('total-step').innerText = steps.length - 1;
+        }
+
+        function drawIntervals() {
+            const stage = document.getElementById('viz-stage');
+            stage.querySelectorAll('.interval-bar, .interval-dot, .interval-label, .q-dot').forEach(e => e.remove());
+            const data = testCases[caseIdx];
+            const maxVal = Math.max(...data.intervals.flat(), ...data.queries) + 1;
+            const unit = stage.clientWidth / maxVal;
+
+            // 這裡使用排序前的原始資料進行繪製以符合 id 對應，或者視需求調整
+            data.intervals.forEach((it, idx) => {
+                const isPoint = (it[0] === it[1]);
+                const el = document.createElement('div');
+                el.id = `bar-${idx}`;
+                el.className = isPoint ? "interval-dot absolute" : "interval-bar absolute";
+                el.style.left = `${it[0] * unit}px`;
+                if (!isPoint) el.style.width = `${(it[1]-it[0]+1) * unit}px`;
+                el.style.top = `${idx * 28 + 30}px`;
+                const label = document.createElement('div');
+                label.className = "interval-label mono";
+                label.id = `label-${idx}`;
+                label.innerText = `[${it[0]}, ${it[1]}]`;
+                label.style.left = isPoint ? "15px" : "0px";
+                label.style.top = isPoint ? "-8px" : "-22px";
+                el.appendChild(label);
+                stage.appendChild(el);
+            });
+        }
+
+        function updateUI() {
+            const s = steps[curStep];
+            document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active-line'));
+            if(document.getElementById(`line-${s.ln}`)) document.getElementById(`line-${s.ln}`).classList.add('active-line');
+
+            const logBox = document.getElementById('action-log');
+            const logEntry = document.createElement('div');
+            logEntry.className = "log-entry";
+            logEntry.innerHTML = `<span class="text-[#888]">[STEP ${curStep}]</span> ${s.msg}`;
+            logBox.appendChild(logEntry);
+            logBox.scrollTop = logBox.scrollHeight;
+
+            const unit = document.getElementById('viz-stage').clientWidth / (Math.max(...testCases[caseIdx].intervals.flat(), ...testCases[caseIdx].queries) + 1);
+            const sweep = document.getElementById('sweep-line');
+            if (s.q !== null) {
+                sweep.style.transform = `translateX(${s.q * unit}px)`;
+                sweep.style.opacity = '1';
+                document.getElementById('q-label').innerText = `Q: ${s.q}`;
+            } else { sweep.style.opacity = '0'; }
+
+            document.querySelectorAll('.interval-bar, .interval-dot, .interval-label').forEach(el => el.classList.remove('active-int', 'active-label'));
+            s.heap.forEach(h => {
+                // 注意：這裡的 h.id 需要對應到 drawIntervals 產生的 bar-id
+                const b = document.getElementById(`bar-${h.id}`);
+                const l = document.getElementById(`label-${h.id}`);
+                if(b) b.classList.add('active-int');
+                if(l) l.classList.add('active-label');
+            });
+
+            document.getElementById('res-display').innerHTML = testCases[caseIdx].queries.map((_, idx) => `
+                <div class="res-chip mono ${s.res[idx] !== undefined ? 'res-active' : ''}">
+                    <span class="text-[#636d83]">R[${idx}]:</span> ${s.res[idx] ?? '?'}
+                </div>
+            `).join('');
+
+            const heapTop = s.heap[0];
+            document.getElementById('watcher-vars').innerHTML = `
+                <div class="py-1 border-b border-[#333]">
+                    <span class="text-[#636d83] block mb-1">sorted_q (q, orig_idx):</span>
+                    <span class="text-blue-300 text-[10px]">[${s.sorted_q.join(', ')}]</span>
+                </div>
+                <div class="flex justify-between border-b border-[#333] py-1"><span class="text-[#636d83]">Current q:</span> <span>${s.q ?? 'None'}</span></div>
+                <div class="flex justify-between border-b border-[#333] py-1"><span class="text-[#636d83]">Orig Index:</span> <span>${s.idx ?? 'None'}</span></div>
+                <div class="flex justify-between border-b border-[#333] py-1"><span class="text-[#636d83]">Next Int L:</span> <span>${s.intervals_i0}</span></div>
+                <div class="flex justify-between border-b border-[#333] py-1"><span class="text-[#636d83]">Active (L, R):</span> <span>${s.l !== null ? `(${s.l}, ${s.r})` : 'None'}</span></div>
+                <div class="flex justify-between border-b border-[#333] py-1"><span class="text-[#c678dd]">Heap Top End:</span> <span>${heapTop ? heapTop.end : 'None'}</span></div>
+                <div class="flex justify-between border-b border-[#333] py-1"><span class="text-[#d19a66]">Heap Top Size:</span> <span>${heapTop ? heapTop.len : 'None'}</span></div>
+                <div class="flex justify-between border-b border-[#333] py-1"><span class="text-[#98c379]">Result Map:</span> <span>{${Object.entries(s.res).map(([k,v])=>`${k}:${v}`).join(',')}}</span></div>
+            `;
+
+            document.getElementById('heap-status').innerHTML = s.heap.map(h => `
+                <div class="flex flex-col items-center bg-[#2c2d2e] p-2 border-t border-blue-500 min-w-[60px]">
+                    <span class="text-[9px] font-bold text-[#d19a66]">${h.len}, ${h.end}</span>
+                </div>
+            `).join('');
+            document.getElementById('cur-step').innerText = curStep;
+        }
+
+        function step(d) {
+            curStep = Math.max(0, Math.min(steps.length-1, curStep + d));
+            updateUI();
+        }
+
+        function togglePlay() {
+            if (timer) { clearInterval(timer); timer = null; document.getElementById('play-btn').innerText = "Play"; }
+            else { 
+                document.getElementById('play-btn').innerText = "Pause";
+                timer = setInterval(() => { if (curStep < steps.length-1) step(1); else togglePlay(); }, 1000);
+            }
+        }
+
+        function changeCase(i) {
+            caseIdx = i; curStep = 0; if(timer) togglePlay(); 
+            document.getElementById('action-log').innerHTML = '';
+            init();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

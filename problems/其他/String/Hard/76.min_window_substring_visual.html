@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 76. Minimum Window Substring 深度視覺化教學</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --code-bg: #1e293b;
+            --highlight: #334155;
+            --text-main: #334155;
+            --accent: #f59e0b;
+        }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f1f5f9; color: var(--text-main); line-height: 1.6; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        
+        h1 { text-align: center; color: #0f172a; font-size: 2.2rem; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #64748b; margin-bottom: 40px; }
+
+        /* 區塊樣式 */
+        .section { margin-bottom: 40px; padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; }
+        h2 { color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 0; }
+
+        /* 視覺化區域 */
+        .viz-container { background: #fff; padding: 40px 20px; border-radius: 12px; margin: 20px 0; position: relative; border: 2px solid #e2e8f0; }
+        .string-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+        .char-cell { width: 45px; height: 50px; display: flex; align-items: center; justify-content: center; border: 2px solid #cbd5e1; font-weight: 800; font-size: 1.4rem; border-radius: 8px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; background: white; }
+        .in-window { background: #eff6ff; border-color: #3b82f6; color: #2563eb; transform: translateY(-5px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        
+        /* 指標樣式 */
+        .ptr { position: absolute; left: 50%; transform: translateX(-50%); font-size: 12px; padding: 2px 10px; border-radius: 20px; color: white; font-weight: bold; white-space: nowrap; z-index: 10; }
+        .ptr-l { top: -35px; background: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+        .ptr-r { bottom: -35px; background: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.4); }
+
+        /* 互動控制台佈局 */
+        .interactive-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 25px; align-items: start; }
+        
+        /* 完整程式碼面板 */
+        .code-window { background: var(--code-bg); color: #e2e8f0; padding: 25px; border-radius: 12px; font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: 14px; line-height: 1.7; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+        .line { display: block; border-left: 4px solid transparent; padding-left: 15px; transition: background 0.2s; white-space: pre; }
+        .active-line { background: #334155; border-left-color: #3b82f6; color: #fff; }
+        
+        /* 變數面板 */
+        .status-panel { background: #f8fafc; border: 1px solid #e2e8f0; padding: 25px; border-radius: 12px; position: sticky; top: 20px; }
+        .stat-group { margin-bottom: 20px; }
+        .stat-label { font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; color: #0f172a; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding: 5px 0; }
+        .stat-value.highlight { color: var(--primary); }
+
+        .btn-group { display: flex; justify-content: center; gap: 15px; margin-top: 30px; }
+        button { padding: 12px 30px; cursor: pointer; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; transition: all 0.2s; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3); }
+        button:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
+        .msg-display { text-align: center; font-weight: 600; color: #2563eb; background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; min-height: 24px; border: 1px dashed #3b82f6; }
+
+        /* 語法高亮 */
+        .key { color: #c678dd; } /* def, while, if, return */
+        .com { color: #5c6370; font-style: italic; } /* comments */
+        .val { color: #d19a66; } /* numbers, strings */
+        .fn { color: #61afef; } /* functions */
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Minimum Window Substring</h1>
+    <p class="subtitle">LeetCode #76 · 滑動視窗 (Sliding Window) 互動式教學</p>
+
+    <div class="section">
+        <h2>題目敘述 & 複雜度分析</h2>
+        <p>在字串 <code>s</code> 中尋找包含字串 <code>t</code> 所有字元的<strong>最小子字串</strong>。</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="background: #fffbeb; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                <strong>範例輸入：</strong><br>
+                s: "ADOBECODEBANC"<br>
+                t: "ABC" → 輸出: "BANC"
+            </div>
+            <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
+                <strong>複雜度：</strong><br>
+                時間: $O(M + N)$<br>
+                空間: $O(K)$ (字元集大小)
+            </div>
+        </div>
+    </div>
+
+    <div class="viz-container">
+        <div class="msg-display" id="msg-text">點擊下方按鈕開始逐步執行 Python 程式碼</div>
+        <div class="string-row" id="s-row"></div>
+    </div>
+
+    <div class="interactive-grid">
+        <div class="code-window">
+<span class="line" id="l1"><span class="key">def</span> <span class="fn">minWindow</span>(s, t):</span>
+<span class="line" id="l2">    need = Counter(t) <span class="com"># 目標字頻</span></span>
+<span class="line" id="l3">    window = {} <span class="com"># 當前窗口字頻</span></span>
+<span class="line" id="l4">    left = right = valid = <span class="val">0</span></span>
+<span class="line" id="l5">    ans = [<span class="val">0</span>, float(<span class="val">'inf'</span>)] <span class="com"># [start, length]</span></span>
+<span class="line" id="l6"></span>
+<span class="line" id="l7">    <span class="key">while</span> right < len(s):</span>
+<span class="line" id="l8">        c = s[right]</span>
+<span class="line" id="l9">        right += <span class="val">1</span></span>
+<span class="line" id="l10">        <span class="key">if</span> c <span class="key">in</span> need:</span>
+<span class="line" id="l11">            window[c] = window.get(c, <span class="val">0</span>) + <span class="val">1</span></span>
+<span class="line" id="l12">            <span class="key">if</span> window[c] == need[c]:</span>
+<span class="line" id="l13">                valid += <span class="val">1</span></span>
+<span class="line" id="l14"></span>
+<span class="line" id="l15">        <span class="key">while</span> valid == len(need):</span>
+<span class="line" id="l16">            <span class="key">if</span> right - left < ans[<span class="val">1</span>]:</span>
+<span class="line" id="l17">                ans = [left, right - left]</span>
+<span class="line" id="l18">            d = s[left]</span>
+<span class="line" id="l19">            left += <span class="val">1</span></span>
+<span class="line" id="l20">            <span class="key">if</span> d <span class="key">in</span> need:</span>
+<span class="line" id="l21">                <span class="key">if</span> window[d] == need[d]:</span>
+<span class="line" id="l22">                    valid -= <span class="val">1</span></span>
+<span class="line" id="l23">                window[d] -= <span class="val">1</span></span>
+<span class="line" id="l24">    <span class="key">return</span> <span class="val">""</span> <span class="key">if</span> ans[<span class="val">1</span>] == float(<span class="val">'inf'</span>) <span class="key">else</span> s[ans[<span class="val">0</span>]:ans[<span class="val">0</span>]+ans[<span class="val">1</span>]]</span>
+        </div>
+
+        <div class="status-panel">
+            <div class="stat-group">
+                <div class="stat-label">當前指標</div>
+                <div class="stat-value">L: <span id="v-l">0</span> | R: <span id="v-r">0</span></div>
+            </div>
+            <div class="stat-group">
+                <div class="stat-label">達標種類 (Valid / Need)</div>
+                <div class="stat-value highlight" id="v-v">0 / 3</div>
+            </div>
+            <div class="stat-group">
+                <div class="stat-label">目前最短長度</div>
+                <div class="stat-value" id="v-len">∞</div>
+            </div>
+            <div class="stat-group">
+                <div class="stat-label">當前最佳解答</div>
+                <div class="stat-value" id="v-ans" style="color: var(--accent);">""</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button id="next-btn" onclick="runStep()">下一步 (Step Over)</button>
+        <button onclick="location.reload()" style="background: #64748b;">重新模擬</button>
+    </div>
+</div>
+
+<script>
+    const s = "ADOBECODEBANC";
+    const script = [
+        { l: 2, msg: "初始化：建立需求表 need = {A:1, B:1, C:1}", r: 0, le: 0, v: 0, len: Infinity, st: 0 },
+        { l: 7, msg: "外層迴圈：開始向右擴張 R 指標", r: 0, le: 0, v: 0 },
+        { l: 8, msg: "s[0] 是 'A'，滿足一個需求，valid = 1", r: 1, le: 0, v: 1 },
+        { l: 7, msg: "繼續移動 R，目前窗口還沒集齊 ABC...", r: 4, le: 0, v: 2 },
+        { l: 8, msg: "s[5] 是 'C'，現在 A,B,C 全齊了！valid = 3", r: 6, le: 0, v: 3 },
+        { l: 15, msg: "內層迴圈：valid == 3，開始嘗試收縮 L 優化長度", r: 6, le: 0, v: 3 },
+        { l: 17, msg: "紀錄第一個可行解：'ADOBEC' (長度 6)", r: 6, le: 0, v: 3, len: 6, st: 0 },
+        { l: 19, msg: "L 右移移除 'A'，valid 變回 2，跳出內層迴圈", r: 6, le: 1, v: 2, len: 6, st: 0 },
+        { l: 7, msg: "繼續擴張 R 尋找下一個 'A'...", r: 10, le: 1, v: 2 },
+        { l: 13, msg: "s[10] 是 'A'，valid 再次回到 3", r: 11, le: 1, v: 3 },
+        { l: 15, msg: "滿足條件，再次進入收縮模式", r: 11, le: 1, v: 3 },
+        { l: 17, msg: "目前的 'ODEBA' 長度 6，沒比紀錄短", r: 11, le: 5, v: 3, len: 6, st: 0 },
+        { l: 19, msg: "L 右移移除 'C'，不再達標", r: 11, le: 6, v: 2 },
+        { l: 8, msg: "R 繼續找最後一個 'C'...", r: 13, le: 6, v: 3 },
+        { l: 15, msg: "找到 'C'，窗口再次達標，瘋狂收縮 L...", r: 13, le: 6, v: 3 },
+        { l: 19, msg: "L 連續右移拋棄 'O','D','E'...", r: 13, le: 9, v: 3, len: 6, st: 0 },
+        { l: 17, msg: "發現更短解：'BANC' (長度 4)！更新紀錄", r: 13, le: 9, v: 3, len: 4, st: 9 },
+        { l: 24, msg: "遍歷結束，返回最終結果 'BANC'", r: 13, le: 10, v: 2, len: 4, st: 9 }
+    ];
+
+    let currentStep = 0;
+
+    function init() {
+        const row = document.getElementById('s-row');
+        s.split('').forEach((char, i) => {
+            row.innerHTML += `<div class="char-cell" id="c-${i}">${char}</div>`;
+        });
+        updateDisplay();
+    }
+
+    function updateDisplay() {
+        const data = script[currentStep];
+        
+        // 程式碼高亮
+        document.querySelectorAll('.line').forEach(el => el.classList.remove('active-line'));
+        const activeLine = document.getElementById('l' + data.l);
+        if (activeLine) activeLine.classList.add('active-line');
+
+        // 文字訊息
+        document.getElementById('msg-text').innerText = data.msg;
+
+        // 方格與指標
+        for (let i = 0; i < s.length; i++) {
+            const cell = document.getElementById('c-' + i);
+            cell.classList.remove('in-window');
+            cell.innerHTML = s[i];
+            
+            if (i >= data.le && i < data.r) {
+                cell.classList.add('in-window');
+            }
+            if (i === data.le) cell.innerHTML += `<span class="ptr ptr-l">L</span>`;
+            if (i === data.r - 1) cell.innerHTML += `<span class="ptr ptr-r">R</span>`;
+        }
+
+        // 變數更新
+        document.getElementById('v-l').innerText = data.le;
+        document.getElementById('v-r').innerText = data.r;
+        document.getElementById('v-v').innerText = `${data.v} / 3`;
+        
+        const bestLen = data.len || (currentStep > 0 ? script[currentStep-1].len : Infinity);
+        document.getElementById('v-len').innerText = bestLen === Infinity ? "∞" : bestLen;
+        
+        const start = data.st !== undefined ? data.st : (currentStep > 0 ? script[currentStep-1].st : 0);
+        document.getElementById('v-ans').innerText = bestLen === Infinity ? '""' : `"${s.substr(start, bestLen)}"`;
+    }
+
+    function runStep() {
+        if (currentStep < script.length - 1) {
+            currentStep++;
+            updateDisplay();
+        } else {
+            document.getElementById('next-btn').disabled = true;
+            document.getElementById('msg-text').style.background = "#dcfce7";
+            document.getElementById('msg-text').style.color = "#15803d";
+        }
+    }
+
+    init();
+</script>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</body>
+</html>

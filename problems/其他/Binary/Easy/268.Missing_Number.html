@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>268. Missing Number - Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(80, 250, 123, 0.15); color: var(--green); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .lang-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .lang-btn.active { background: var(--purple); color: #fff; border-color: #d6acff; }
+
+    /* 左右區域比例：左欄 420px，右欄 1fr */
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 420px 1fr; gap: 14px; }
+    @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.75rem; line-height: 1.45; word-break: break-all; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.75rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 10px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; } .type { color: #8be9fd; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 90px; max-height: 160px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .array-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 280px; padding: 16px; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
+    
+    .bit-row-container { display: flex; flex-direction: column; gap: 6px; background: #151821; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+    .bit-row-label { display: flex; justify-content: space-between; font-size: 0.78rem; font-family: monospace; color: var(--text-dim); margin-bottom: 2px; }
+    .num-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+    .num-cell { width: 48px; height: 48px; background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; transition: all 0.2s ease; }
+    .num-idx { font-size: 0.65rem; color: var(--text-dim); line-height: 1; }
+    .num-val { font-size: 1rem; font-weight: bold; color: var(--cyan); line-height: 1.2; }
+    .num-active { border-color: var(--orange); background: rgba(255, 161, 22, 0.25); transform: scale(1.1); box-shadow: 0 0 10px rgba(255, 161, 22, 0.5); }
+    .num-active .num-val { color: #fff; }
+    .num-match { border-color: var(--green); background: rgba(80, 250, 123, 0.15); }
+    .num-match .num-val { color: var(--green); }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">268. Missing Number</span>
+    <span class="badge">Easy / Bit & Math</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Language:</span>
+      <button class="lang-btn active" onclick="setLang('python')">Python</button>
+      <button class="lang-btn" onclick="setLang('c')">C Version</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Bitwise XOR (位元異或)</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. Gauss Sum Formula (高斯求和)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: [3, 0, 1]</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: [0, 1]</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: [9,6,4,2,3,5,7,0,1]</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄 (寬度 420px) -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與限制</div>
+        <div class="problem-desc">
+          給定一個包含 <code>n</code> 個不同數字的陣列 <code>nums</code>，這些數字取自範圍 <code>[0, n]</code>。請找出並傳回該範圍內唯一缺失的數字。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(n)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">💻 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄 (1fr) -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 動態歷程視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="array-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="accum-label">Current XOR Accumulator: </span>
+              <span id="accum-val" style="font-weight: bold; color: var(--orange); font-size: 1rem;">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Array Length (n): </span>
+              <span id="n-val" style="font-weight: bold; color: var(--cyan); font-size: 1rem;">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Status / Missing Number:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.85rem; color: var(--green);">-</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = {
+      python: [
+        // 0. XOR Solution
+        [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+         `    <span class="kw">def</span> <span class="fn">missingNumber</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+         `        res = len(nums)`,
+         `        <span class="kw">for</span> i, num <span class="kw">in</span> enumerate(nums):`,
+         `            res ^= i ^ num`,
+         `        <span class="kw">return</span> res`],
+
+        // 1. Gauss Sum Solution
+        [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+         `    <span class="kw">def</span> <span class="fn">missingNumber</span>(<span class="self">self</span>, nums: List[int]) -> int:`,
+         `        n = len(nums)`,
+         `        expected_sum = n * (n + 1) // 2`,
+         `        actual_sum = sum(nums)`,
+         `        <span class="kw">return</span> expected_sum - actual_sum`]
+      ],
+      c: [
+        // 0. XOR Solution C
+        [`<span class="type">int</span> <span class="fn">missingNumber</span>(<span class="type">int</span>* nums, <span class="type">int</span> numsSize) {`,
+         `    <span class="type">int</span> res = numsSize;`,
+         `    <span class="kw">for</span> (<span class="type">int</span> i = 0; i < numsSize; i++) {`,
+         `        res ^= i ^ nums[i];`,
+         `    }`,
+         `    <span class="kw">return</span> res;`,
+         `}`],
+
+        // 1. Gauss Sum Solution C
+        [`<span class="type">int</span> <span class="fn">missingNumber</span>(<span class="type">int</span>* nums, <span class="type">int</span> numsSize) {`,
+         `    <span class="type">int</span> expected_sum = numsSize * (numsSize + 1) / 2;`,
+         `    <span class="type">int</span> actual_sum = 0;`,
+         `    <span class="kw">for</span> (<span class="type">int</span> i = 0; i < numsSize; i++) {`,
+         `        actual_sum += nums[i];`,
+         `    }`,
+         `    <span class="kw">return</span> expected_sum - actual_sum;`,
+         `}`]
+      ]
+    };
+
+    const strategyInfo = [
+    {
+        title: "1. Bitwise XOR (異或位元運算)",
+        time: "O(n) - 單次迴圈走訪陣列", space: "O(1) - 無額外記憶體開銷",
+        idea: `<b>解法思路：</b><br>
+    利用 XOR 的特性：<code>x ^ x = 0</code> 且 <code>x ^ 0 = x</code>。<br>
+    將範圍 <code>[0, n]</code> 的所有索引/數字與陣列中出現的所有數進行連環 XOR。成對出現的數字都會被抵消為 0，最終剩下的數即為<b>缺失的數字</b>！<br><br>
+    <b>範例說明：</b><br>
+    例如傳入 <code>[3,0,1]</code>，完整範圍為 <code>[0,1,2,3]</code>。將兩者的每個數字全部進行 XOR 運算：<br>
+    <code>(3 ^ 0 ^ 1) ^ (0 ^ 1 ^ 2 ^ 3)</code><br>
+    經由交換律與結合律重排後，相同數字兩兩抵銷：<br>
+    <code>(0 ^ 0) ^ (1 ^ 1) ^ (3 ^ 3) ^ 2 = 0 ^ 0 ^ 0 ^ 2 = 2</code><br>
+    最終剩下的數即為 <b>2</b>。`
+    },
+    {
+        title: "2. Gauss Sum Formula (高斯等差數列求和)",
+        time: "O(n) - 計算陣列總和", space: "O(1) - 僅用數個變數紀錄",
+        idea: `<b>解法思路：</b><br>
+    1. 完整範圍 <code>[0, n]</code> 的理論總和可用等差求和公式算出：<code>n * (n + 1) / 2</code>。<br>
+    2. 扣除目前陣列實際元素的總和 <code>sum(nums)</code>。<br>
+    3. 兩者的差值即為缺失的數字！`
+    }
+    ];
+
+    const presets = [
+      { title: "Ex 1: [3, 0, 1]", nums: [3, 0, 1], expected: 2 },
+      { title: "Ex 2: [0, 1]", nums: [0, 1], expected: 2 },
+      { title: "Ex 3: [9,6,4,2,3,5,7,0,1]", nums: [9, 6, 4, 2, 3, 5, 7, 0, 1], expected: 8 }
+    ];
+
+    let currentLang = 'python';
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setLang(lang) {
+      currentLang = lang;
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(lang)));
+      renderCode();
+      reset();
+    }
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      document.getElementById('idea-card').innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input nums:</b> [${p.nums.join(', ')}] (n = ${p.nums.length})</div>
+        <div><b>Expected Missing:</b> <span style="color:var(--green); font-weight:bold;">${p.expected}</span></div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentLang][currentAlgo];
+      document.getElementById('code-title').innerText = currentLang === 'python' ? "🐍 Python 程式碼解法" : "⚡ C 語言程式碼解法";
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const nums = presets[currentPreset].nums;
+      const n = nums.length;
+
+      if (currentAlgo === 0) {
+        buildXORSteps(nums, n);
+      } else {
+        buildGaussSteps(nums, n);
+      }
+    }
+
+    // Algo 0: XOR Strategy
+    function buildXORSteps(nums, n) {
+      const isC = currentLang === 'c';
+      let res = n;
+
+      history.push({
+        line: isC ? 1 : 2, phase: "⚡ 【初始化 res = len(nums)】",
+        desc: `設定初始累計值 <code>res = n = ${n}</code>。`,
+        res, currIdx: null, currNum: null, nums
+      });
+
+      for (let i = 0; i < n; i++) {
+        const num = nums[i];
+        const oldRes = res;
+        res = res ^ i ^ num;
+
+        history.push({
+          line: isC ? 3 : 4, phase: `🔄 【第 ${i + 1} 步: 結合 index=${i}, val=${num}】`,
+          desc: `進行 XOR 運算: <code>res = ${oldRes} ^ ${i} ^ ${num} = ${res}</code>`,
+          res, currIdx: i, currNum: num, nums
+        });
+      }
+
+      history.push({
+        line: isC ? 5 : 5, phase: "🎉 【Complete: 成功找出缺號】",
+        desc: `遍歷結束，成對出現者皆已抵消！缺失的數字為: <b style="color:var(--green); font-size:1.1rem;">${res}</b>`,
+        res, currIdx: null, currNum: null, nums, isDone: true
+      });
+    }
+
+    // Algo 1: Gauss Sum Strategy
+    function buildGaussSteps(nums, n) {
+      const isC = currentLang === 'c';
+      const expectedSum = (n * (n + 1)) / 2;
+
+      history.push({
+        line: isC ? 1 : 2, phase: "📐 【計算理論總和 (Expected Sum)】",
+        desc: `長度 n = <b>${n}</b>，完整 0~${n} 的和為: <code>${n} * (${n} + 1) / 2 = ${expectedSum}</code>`,
+        expectedSum, actualSum: 0, currIdx: null, nums
+      });
+
+      let actualSum = 0;
+      for (let i = 0; i < n; i++) {
+        actualSum += nums[i];
+        history.push({
+          line: isC ? 4 : 4, phase: `加總陣列元素: nums[${i}] = ${nums[i]}`,
+          desc: `當前實際累加和 <code>actual_sum = ${actualSum}</code>`,
+          expectedSum, actualSum, currIdx: i, nums
+        });
+      }
+
+      const missing = expectedSum - actualSum;
+      history.push({
+        line: isC ? 6 : 5, phase: "🎉 【Complete: 兩總和相減】",
+        desc: `<code>expected_sum (${expectedSum}) - actual_sum (${actualSum}) = ${missing}</code><br>缺失的數字為: <b style="color:var(--green); font-size:1.1rem;">${missing}</b>`,
+        expectedSum, actualSum, missing, currIdx: null, nums, isDone: true
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const nums = state.nums || [];
+      const n = nums.length;
+      let html = "";
+
+      // Render Array Grid
+      html += `
+        <div class="bit-row-container">
+          <div class="bit-row-label">
+            <span>Input Array nums (n = ${n})</span>
+            <span>Index 0 ～ ${n-1}</span>
+          </div>
+          <div class="num-grid">
+      `;
+
+      for (let i = 0; i < n; i++) {
+        let cls = "num-cell";
+        if (state.currIdx === i) cls += " num-active";
+
+        html += `
+          <div class="${cls}">
+            <span class="num-idx">idx: ${i}</span>
+            <span class="num-val">${nums[i]}</span>
+          </div>
+        `;
+      }
+      html += `</div></div>`;
+
+      // Render Expected Numbers Range [0, n] Reference
+      html += `
+        <div class="bit-row-container">
+          <div class="bit-row-label">
+            <span>Expected Full Range [0, ${n}]</span>
+            <span>完整對照範圍</span>
+          </div>
+          <div class="num-grid">
+      `;
+
+      for (let v = 0; v <= n; v++) {
+        const isMissing = state.isDone && (currentAlgo === 0 ? state.res === v : state.missing === v);
+        let cls = "num-cell";
+        if (isMissing) cls += " num-match";
+
+        html += `
+          <div class="${cls}">
+            <span class="num-idx">val</span>
+            <span class="num-val">${v}</span>
+          </div>
+        `;
+      }
+      html += `</div></div>`;
+
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟進度:</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          ${currentAlgo === 0 ? `<div><b>• 當前 res (XOR Sum):</b> <span style="color:var(--cyan); font-weight:bold;">${state.res !== undefined ? state.res : '-'}</span></div>` : ''}
+          ${currentAlgo === 1 ? `<div><b>• 理論和:</b> <span style="color:var(--cyan); font-weight:bold;">${state.expectedSum !== undefined ? state.expectedSum : '-'}</span> | <b>實際和:</b> <span style="color:var(--orange); font-weight:bold;">${state.actualSum !== undefined ? state.actualSum : '-'}</span></div>` : ''}
+        </div>
+      `;
+
+      // Controls Path Display
+      if (currentAlgo === 0) {
+        document.getElementById('accum-label').innerText = "Current XOR Accumulator: ";
+        document.getElementById('accum-val').innerText = state.res !== undefined ? state.res : "-";
+      } else {
+        document.getElementById('accum-label').innerText = "Actual Sum / Expected: ";
+        document.getElementById('accum-val').innerText = `${state.actualSum || 0} / ${state.expectedSum || '-'}`;
+      }
+
+      document.getElementById('n-val').innerText = state.nums ? state.nums.length : "-";
+      
+      const resVal = currentAlgo === 0 ? state.res : (state.missing !== undefined ? state.missing : (state.expectedSum - state.actualSum));
+      document.getElementById('result-text').innerText = state.isDone ? `Missing Number: ${resVal}` : "In Progress...";
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

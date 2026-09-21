@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 5. Longest Palindromic Substring - 全方位教學模板</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --blue: #4fc1ff; --purple: #c586c0;
+            --orange: #ce9178; --green: #6a9955; --red: #f85149;
+            --highlight: rgba(56, 139, 253, 0.15); --comment: #6a9955;
+            --yellow: #dcdcaa;
+        }
+        body { background: #010409; color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        .widget-card { width: 1450px; height: 960px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; }
+        
+        .header { padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #0d1117; }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        input { background: #010409; color: #3fb950; border: 1px solid var(--border); padding: 8px; border-radius: 6px; width: 180px; outline: none; font-family: monospace; font-size: 16px; }
+        button { background: #21262d; color: var(--text); border: 1px solid var(--border); padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        button:hover { border-color: var(--blue); background: var(--highlight); }
+
+        .content-grid { display: grid; grid-template-columns: 380px 1fr; flex: 1; overflow: hidden; }
+        .sidebar { padding: 20px; border-right: 1px solid var(--border); overflow-y: auto; background: rgba(0,0,0,0.2); }
+        .section-box { margin-bottom: 12px; padding: 12px; background: #0d1117; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; line-height: 1.6; }
+        .example-block { background: #010409; border-left: 4px solid var(--blue); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; margin: 8px 0; }
+
+        .workspace { display: grid; grid-template-rows: 1fr 400px; overflow: hidden; }
+        .tabs { background: #010409; display: flex; border-bottom: 1px solid var(--border); }
+        .tab { padding: 12px 18px; font-size: 12px; color: #8b949e; border-right: 1px solid var(--border); cursor: pointer; font-family: 'Fira Code', monospace; }
+        .tab.active { background: var(--panel); color: #e6edf3; border-top: 2px solid #d29922; }
+        
+        .editor { padding: 20px; font-family: 'Consolas', monospace; font-size: 14px; line-height: 1.6; overflow-y: auto; flex: 1; background: #0d1117;}
+        .line { display: block; padding-left: 50px; position: relative; opacity: 0.4; white-space: pre; }
+        .line.active { opacity: 1; background: var(--highlight); box-shadow: inset 4px 0 0 var(--blue); }
+        .line::before { content: attr(data-ln); position: absolute; left: 15px; color: #484f58; width: 30px; text-align: right; }
+        
+        .kw { color: var(--purple); } .fn { color: var(--yellow); } .num { color: #b5cea8; } .comment { color: var(--green); } .str { color: var(--orange); } .var { color: #9cdcfe; }
+
+        .viz-section { border-top: 1px solid var(--border); background: #0d1117; padding: 20px; display: grid; grid-template-columns: 1fr 450px; gap: 20px; }
+        .string-display { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 30px; }
+        .char-box { width: 45px; height: 60px; border: 1px solid var(--border); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 22px; font-weight: bold; background: #161b22; position: relative; }
+        .char-box.active-range { border-color: var(--blue); }
+        .char-box.is-palin { background: rgba(63, 185, 80, 0.15); border-color: #3fb950; color: #3fb950; }
+        .ptr { position: absolute; font-size: 10px; font-weight: bold; padding: 1px 4px; border-radius: 3px; z-index: 10; }
+        .ptr-l { top: -22px; background: var(--blue); color: #000; }
+        .ptr-r { bottom: -22px; background: var(--orange); color: #000; }
+
+        .terminal { font-family: 'Fira Code', monospace; font-size: 13px; background: #010409; padding: 15px; border-radius: 10px; border: 1px solid var(--border); overflow-y: auto; }
+        .log-sub { margin-top: 6px; padding: 10px; border-radius: 6px; background: #161b22; border-left: 4px solid var(--blue); }
+        .res-tag { color: #3fb950; font-weight: bold; background: rgba(63, 185, 80, 0.1); padding: 2px 6px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="widget-card">
+    <div class="header">
+        <div style="font-weight: bold; color: #e6edf3; font-size: 18px;">Longest Palindrome <span style="color:var(--blue)">Lab v9.2</span></div>
+        <div class="controls">
+            <input type="text" id="sInput" value="babad" onchange="init()">
+            <button onclick="init()">Reset</button>
+            <button onclick="prevStep()">Prev</button>
+            <button onclick="nextStep()" style="color: #3fb950; border-color: #3fb950;">Next (F10)</button>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="sidebar">
+            <h3>LeetCode 5</h3>
+            <div class="section-box">找到字串 s 中最長的回文子字串。</div>
+            
+            <h4>範例 Examples</h4>
+            <div class="example-block">Input: "babad" -> "bab"<br>Input: "cbbd" -> "bb"</div>
+
+            <h4>核心策略</h4>
+            <div id="algoInfo" class="section-box"></div>
+
+            <h4>時空複雜度分析</h4>
+            <div class="section-box">
+                <div id="compTime" style="color: var(--purple); font-weight: bold;"></div>
+                <div id="compSpace" style="color: var(--blue); font-weight: bold; margin-top: 5px;"></div>
+            </div>
+            
+            <h4>動態變數追蹤</h4>
+            <div id="varTracker" class="section-box" style="font-family: monospace; font-size: 12px; background: #010409;"></div>
+        </div>
+
+        <div class="workspace">
+            <div class="editor-container">
+                <div class="tabs" id="tabBar"></div>
+                <div id="codeEditor" class="editor"></div>
+            </div>
+
+            <div class="viz-section">
+                <div class="viz-main">
+                    <div id="phaseTag" style="color:var(--blue); font-size:12px; font-weight:bold; text-align:center; margin-bottom:10px;"></div>
+                    <div id="stringDisplay" class="string-display"></div>
+                </div>
+                <div class="terminal" id="terminal">
+                    <div style="color: #8b949e; font-weight: bold; margin-bottom: 8px; font-size: 11px;">EXECUTION LOG</div>
+                    <div id="logContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let curStep = 0, s = "", steps = [], curAlgo = 'helper';
+
+const repo = {
+    brute: {
+        name: "1. Brute Force", time: "O(n³)", space: "O(1)", desc: "枚舉所有區間並檢查。檢測迴圈為 O(n)，總計 O(n³)。",
+        code: [
+            `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+            `    <span class="kw">def</span> <span class="fn">longestPalindrome</span>(<span class="var">self</span>, s: <span class="kw">str</span>) -> <span class="kw">str</span>:`,
+            `        res, resLen = <span class="str">""</span>, <span class="num">0</span>`,
+            `        <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(s)):`,
+            `            <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(i, <span class="fn">len</span>(s)):`,
+            `                l, r = i, j`,
+            `                <span class="kw">while</span> l < r <span class="kw">and</span> s[l] == s[r]:`,
+            `                    l += <span class="num">1</span>; r -= <span class="num">1</span>`,
+            `                <span class="kw">if</span> l >= r <span class="kw">and</span> resLen < (j - i + <span class="num">1</span>):`,
+            `                    res = s[i : j + <span class="num">1</span>]; resLen = j - i + <span class="num">1</span>`,
+            `        <span class="kw">return</span> res`
+        ],
+        gen: (str) => {
+            let steps = [], res = "", resLen = 0;
+            for(let i=0; i<str.length; i++){
+                for(let j=i; j<str.length; j++){
+                    steps.push({l:5, msg: `枚舉 [${i}:${j}]`, range:[i,j], ptr:[i,j], isPalin:false, result: res});
+                    let l=i, r=j, ok=true;
+                    while(l<r) {
+                        if(str[l]===str[r]) { l++; r--; } 
+                        else { ok=false; break; }
+                    }
+                    if(ok && (j-i+1) > resLen) {
+                        res = str.substring(i, j+1); resLen = res.length;
+                        steps.push({l:9, msg: `更新 Result`, range:[i,j], ptr:[l,r], isPalin:true, result: res});
+                    }
+                }
+            }
+            return steps;
+        }
+    },
+    helper: {
+        name: "2. Expand Helper", time: "O(n²)", space: "O(1)", desc: "從中心向外擴散。n 個中心，每個中心擴散 O(n)，總計 O(n²)。",
+        code: [
+            `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+            `    <span class="kw">def</span> <span class="fn">longestPalindrome</span>(<span class="var">self</span>, s: <span class="kw">str</span>) -> <span class="kw">str</span>:`,
+            `        <span class="kw">def</span> <span class="fn">expand</span>(l, r):`,
+            `            <span class="kw">while</span> l >= <span class="num">0</span> <span class="kw">and</span> r < <span class="fn">len</span>(s) <span class="kw">and</span> s[l] == s[r]:`,
+            `                l -= <span class="num">1</span>; r += <span class="num">1</span>`,
+            `            <span class="kw">return</span> s[l+<span class="num">1</span>:r]`,
+            `        result = <span class="str">""</span>`,
+            `        <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(s)):`,
+            `            sub1 = <span class="fn">expand</span>(i, i)`,
+            `            <span class="kw">if</span> <span class="fn">len</span>(sub1) > <span class="fn">len</span>(result): result = sub1`,
+            `            sub2 = <span class="fn">expand</span>(i, i+<span class="num">1</span>)`,
+            `            <span class="kw">if</span> <span class="fn">len</span>(sub2) > <span class="fn">len</span>(result): result = sub2`,
+            `        <span class="kw">return</span> result`
+        ],
+        gen: (str) => {
+            let steps = [], res = "";
+            for(let i=0; i<str.length; i++){
+                [i, i, i, i+1].forEach((startL, startR, idx) => {
+                    let l=startL, r=startR;
+                    if(r >= str.length) return;
+                    steps.push({l:idx===0?9:11, msg: `中心點擴散`, range:[l,r], ptr:[l,r], isPalin:true, result: res});
+                    while(l>=0 && r<str.length && str[l]===str[r]){
+                        let sub = str.substring(l,r+1);
+                        if(sub.length > res.length) res = sub;
+                        steps.push({l:4, msg: `匹配成功`, range:[l,r], ptr:[l,r], isPalin:true, result: res, found: sub});
+                        l--; r++;
+                    }
+                });
+            }
+            return steps;
+        }
+    },
+    twoPtr: {
+        name: "3. Two Pointers", time: "O(n²)", space: "O(1)", desc: "與 Helper 同理，但透過 index 記錄來優化字串切片產生的額外空間。",
+        code: [
+            `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+            `    <span class="kw">def</span> <span class="fn">longestPalindrome</span>(<span class="var">self</span>, s: <span class="kw">str</span>) -> <span class="kw">str</span>:`,
+            `        resIdx, resLen = <span class="num">0</span>, <span class="num">0</span>`,
+            `        <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(s)):`,
+            `            l, r = i, i <span class="comment"># odd</span>`,
+            `            <span class="kw">while</span> l >= <span class="num">0</span> <span class="kw">and</span> r < <span class="fn">len</span>(s) <span class="kw">and</span> s[l] == s[r]:`,
+            `                <span class="kw">if</span> (r - l + <span class="num">1</span>) > resLen:`,
+            `                    resIdx, resLen = l, r - l + <span class="num">1</span>`,
+            `                l -= <span class="num">1</span>; r += <span class="num">1</span>`,
+            `            l, r = i, i + <span class="num">1</span> <span class="comment"># even</span>`,
+            `            <span class="kw">while</span> l >= <span class="num">0</span> <span class="kw">and</span> r < <span class="fn">len</span>(s) <span class="kw">and</span> s[l] == s[r]:`,
+            `                <span class="kw">if</span> (r - l + <span class="num">1</span>) > resLen:`,
+            `                    resIdx, resLen = l, r - l + <span class="num">1</span>`,
+            `                l -= <span class="num">1</span>; r += <span class="num">1</span>`,
+            `        <span class="kw">return</span> s[resIdx : resIdx + resLen]`
+        ],
+        gen: (str) => {
+            let steps = [], resIdx=0, resLen=0;
+            for(let i=0; i<str.length; i++){
+                [i, i, i, i+1].forEach((startL, startR) => {
+                    let l=startL, r=startR;
+                    if(r >= str.length) return;
+                    while(l>=0 && r<str.length && str[l]===str[r]){
+                        if((r-l+1) > resLen) { resIdx=l; resLen=r-l+1; }
+                        steps.push({l:l===r?6:11, msg: `雙指標擴散`, range:[l,r], ptr:[l,r], isPalin:true, result: str.substring(resIdx, resIdx+resLen), found: str.substring(l,r+1)});
+                        l--; r++;
+                    }
+                });
+            }
+            return steps;
+        }
+    }
+};
+
+function init() {
+    s = document.getElementById('sInput').value || "babad";
+    const tabBar = document.getElementById('tabBar');
+    tabBar.innerHTML = Object.keys(repo).map(k => `<div class="tab ${k===curAlgo?'active':''}" onclick="changeAlgo('${k}')">${repo[k].name}</div>`).join('');
+    document.getElementById('codeEditor').innerHTML = repo[curAlgo].code.map((l, i) => `<span class="line" data-ln="${i+1}">${l}</span>`).join('');
+    document.getElementById('algoInfo').innerText = repo[curAlgo].desc;
+    document.getElementById('compTime').innerText = `時間複雜度: ${repo[curAlgo].time}`;
+    document.getElementById('compSpace').innerText = `空間複雜度: ${repo[curAlgo].space}`;
+    steps = repo[curAlgo].gen(s);
+    curStep = 0; update();
+}
+
+function update() {
+    const step = steps[curStep];
+    const lines = document.querySelectorAll('.line');
+    lines.forEach((l, i) => i === step.l-1 ? l.classList.add('active') : l.classList.remove('active'));
+    
+    document.getElementById('logContent').innerHTML = `
+        <div style="color:#e6edf3">> ${step.msg}</div>
+        <div class="log-sub">
+            子串: <span style="color:var(--orange)">"${step.found || '-'}"</span> | 
+            全局最佳: <span class="res-tag">"${step.result}"</span>
+        </div>
+    `;
+
+    document.getElementById('varTracker').innerHTML = `
+        <span style="color:var(--blue)">result</span> = <span style="color:var(--orange)">"${step.result}"</span><br>
+        <span style="color:var(--blue)">maxLen</span> = <span style="color:var(--num)">${step.result.length}</span>
+    `;
+
+    document.getElementById('stringDisplay').innerHTML = s.split('').map((char, i) => {
+        let inRange = i >= step.range[0] && i <= step.range[1];
+        let isL = i === step.ptr[0], isR = i === step.ptr[1];
+        return `<div class="char-box ${inRange?'active-range':''} ${inRange&&step.isPalin?'is-palin':''}">
+            ${char}${isL?'<div class="ptr ptr-l">L</div>':''}${isR?'<div class="ptr ptr-r">R</div>':''}
+        </div>`;
+    }).join('');
+    document.getElementById('phaseTag').innerText = `STEP ${curStep + 1} / ${steps.length}`;
+}
+
+function changeAlgo(a) { curAlgo = a; init(); }
+function nextStep() { if(curStep < steps.length - 1) { curStep++; update(); } }
+function prevStep() { if(curStep > 0) { curStep--; update(); } }
+
+init();
+</script>
+</body>
+</html>

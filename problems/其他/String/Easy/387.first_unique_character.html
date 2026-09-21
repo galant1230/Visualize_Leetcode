@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>LeetCode 387 - First Unique Character in a String 視覺化教學 (更新版)</title>
+  <style>
+    body { font-family: sans-serif; background: #f5f7fa; padding: 2rem; }
+    h1 { text-align: center; color: #007acc; }
+    .section {
+      max-width: 900px;
+      margin: 1rem auto;
+      background: white;
+      padding: 1.5rem 2rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    pre {
+      background: #272822;
+      color: #f8f8f2;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: monospace;
+    }
+    .code-line { padding: 2px 0; }
+    .active-code { background: #444; color: white; }
+    .tips {
+      background: #fef7dc;
+      padding: 1rem;
+      border-left: 6px solid #f1c40f;
+      border-radius: 6px;
+      margin-top: 1rem;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.75rem; text-align: center; }
+    .btn-group { text-align: center; margin-top: 1rem; }
+    button {
+      background: #007acc;
+      color: white;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 0.5rem;
+    }
+    .freq-box {
+      display: flex;
+      justify-content: center;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      margin-top: 1rem;
+      font-family: monospace;
+    }
+    .freq-item {
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      border: 1px solid #ccc;
+      margin: 2px;
+      border-radius: 4px;
+      text-align: center;
+      background: #ecf0f1;
+    }
+  </style>
+</head>
+<body>
+
+<h1>LeetCode 387 - First Unique Character in a String 視覺化教學 (更新版)</h1>
+
+<div class="section">
+  <h2>📖 題目描述</h2>
+  <p>
+    給定一個字串 <code>s</code>，找出第一個不重複的字符，並返回其索引。如果沒有不重複的字符，則返回 -1。
+  </p>
+  <p>
+    範例：s = "loveleetcode" → 輸出 2 （'v' 為第一個不重複的字符）
+  </p>
+</div>
+
+<div class="section">
+  <h2>🧠 解題思路</h2>
+  <ol>
+    <li>遍歷字串，利用字典統計每個字符出現的次數。</li>
+    <li>再次遍歷字串，找到第一個計數為 1 的字符，返回其索引；若無則返回 -1。</li>
+  </ol>
+  <p>
+    此方法時間複雜度為 O(n)，空間複雜度為 O(1)（因為字母種類固定為 26）。
+  </p>
+</div>
+
+<div class="section">
+  <h2>🔢 互動模擬</h2>
+  <div class="btn-group">
+    <label>輸入字串 s：<input type="text" id="inputStr" value="loveleetcode"></label>
+    <button onclick="startSimulation()">開始模擬</button>
+    <button onclick="nextStep()">下一步</button>
+  </div>
+  <p id="simOutput" style="text-align:center; font-weight:bold;">模擬狀態</p>
+  <h3 style="text-align:center;">字母頻率陣列 (a-z)：</h3>
+  <div class="freq-box" id="freqBox"></div>
+</div>
+
+<div class="section">
+  <h2>💻 程式碼展示 (Python 解法)</h2>
+  <pre id="codeBox">
+class Solution:
+    def firstUniqChar(self, s: str) -> int:
+        my_dict = {}
+        for char in s:
+            if char in my_dict:
+                my_dict[char] += 1
+            else:
+                my_dict[char] = 1
+        
+        for index, char in enumerate(s):
+            if my_dict[char] == 1:
+                return index
+        
+        return -1
+  </pre>
+  <div class="tips">
+    💡 小技巧：先統計頻率，再找第一個只出現一次的字符。由於英文字母數量固定，空間複雜度視為 O(1)。
+  </div>
+</div>
+
+<div class="section">
+  <h2>⏱️ 時間與空間複雜度</h2>
+  <table>
+    <tr>
+      <th>方法</th>
+      <th>時間複雜度</th>
+      <th>空間複雜度</th>
+    </tr>
+    <tr>
+      <td>字典統計 + 遍歷</td>
+      <td>O(n)</td>
+      <td>O(1) (最多 26 字母)</td>
+    </tr>
+  </table>
+</div>
+
+<script>
+// 全域變數
+let sStr = "";
+let myDict = {};
+let simPhase = 0; // 0: 統計頻率, 1: 檢查第一個不重複字符
+let simIndex = 0;
+const simOutput = document.getElementById("simOutput");
+const freqBox = document.getElementById("freqBox");
+
+// 更新頻率顯示
+function updateFreqDisplay() {
+  freqBox.innerHTML = "";
+  for (let i = 0; i < 26; i++) {
+    const div = document.createElement("div");
+    div.className = "freq-item";
+    // 對應字母 a~z
+    div.innerText = String.fromCharCode(97 + i) + ":" + (myDict[String.fromCharCode(97 + i)] || 0);
+    freqBox.appendChild(div);
+  }
+}
+
+// 開始模擬：初始化字串與字典
+function startSimulation() {
+  sStr = document.getElementById("inputStr").value;
+  myDict = {};
+  simPhase = 0;
+  simIndex = 0;
+  // 統計階段初始化: 遍歷字串前先初始化所有字母為 0（可省略，但顯示更完整）
+  for (let i = 0; i < 26; i++) {
+    myDict[String.fromCharCode(97 + i)] = 0;
+  }
+  updateFreqDisplay();
+  simOutput.innerText = `開始模擬：統計字串 "${sStr}" 中的字符頻率`;
+  highlightCode(null);
+}
+
+// 下一步模擬：依據階段執行
+function nextStep() {
+  if (simPhase === 0) {
+    // 統計頻率階段
+    if (simIndex < sStr.length) {
+      let ch = sStr[simIndex].toLowerCase();
+      myDict[ch] = (myDict[ch] || 0) + 1;
+      simOutput.innerText = `統計階段：處理 s[${simIndex}] = "${sStr[simIndex]}"，更新頻率`;
+      simIndex++;
+      updateFreqDisplay();
+      highlightCode("count");
+    } else {
+      simPhase = 1;
+      simIndex = 0;
+      simOutput.innerText = "統計完成，開始檢查第一個不重複的字符";
+      highlightCode("check");
+    }
+  } else if (simPhase === 1) {
+    // 檢查階段：遍歷字串找第一個頻率為 1 的字符
+    if (simIndex < sStr.length) {
+      let ch = sStr[simIndex].toLowerCase();
+      if (myDict[ch] === 1) {
+        simOutput.innerText = `找到第一個不重複字符：s[${simIndex}] = "${sStr[simIndex]}"`;
+        highlightCode("found");
+      } else {
+        simOutput.innerText = `s[${simIndex}] = "${sStr[simIndex]}" 重複出現，繼續尋找`;
+        simIndex++;
+        highlightCode("check");
+      }
+    } else {
+      simOutput.innerText = "未找到不重複字符，回傳 -1";
+      highlightCode("return");
+    }
+  }
+}
+
+function highlightCode(context) {
+  const codeBox = document.getElementById("codeBox");
+  const lines = codeBox.innerText.split("\n");
+  let newHTML = "";
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    let id = "";
+    if (context === "count" && line.includes("if char in my_dict:")) {
+      id = 'id="hl"';
+    } else if (context === "check" && line.includes("for index, char in enumerate(s):")) {
+      id = 'id="hl"';
+    } else if (context === "found" && line.includes("if my_dict[char] == 1:")) {
+      id = 'id="hl"';
+    } else if (context === "return" && line.includes("return -1")) {
+      id = 'id="hl"';
+    }
+    newHTML += `<div class="code-line" ${id}>${line}</div>`;
+  }
+  codeBox.innerHTML = newHTML;
+}
+</script>
+
+</body>
+</html>

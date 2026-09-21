@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>49. Group Anagrams - Python Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-medium: #ffc01e;
+      --lc-blue: #007aff;
+      --lc-easy: #00b8a3;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(255, 192, 30, 0.15);
+      color: var(--lc-medium);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 15px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 4px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+
+    .example-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 12px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .example-title { color: var(--lc-text-dim); font-weight: bold; margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-medium); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      min-height: 260px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .array-container { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .node {
+      padding: 8px 14px;
+      background: #333;
+      border: 2px solid var(--lc-border);
+      color: white;
+      border-radius: 6px;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 0.95rem;
+      transition: all 0.3s;
+    }
+    .node.active-i { border-color: var(--lc-orange); background: rgba(255, 161, 22, 0.2); }
+    .node.processed { opacity: 0.4; border-style: dashed; }
+
+    .hash-table-view {
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .hash-title { color: var(--lc-text-dim); margin-bottom: 8px; font-weight: bold; }
+    .hash-grid { display: flex; flex-direction: column; gap: 8px; }
+    .hash-item {
+      background: #2a2a2a;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .hash-key { color: var(--lc-orange); font-weight: bold; }
+    .hash-val { color: var(--lc-easy); display: flex; gap: 6px; }
+    .val-badge {
+      background: var(--lc-blue);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+    }
+
+    .control-panel { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
+    .btn { background: #3e3e3e; color: var(--lc-text); border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-easy); color: #fff; }
+    .btn-primary:hover { background: #009684; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card { background: #1e1e1e; border: 1px solid var(--lc-border); padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .str { color: #f1fa8c; }
+    .cm { color: #6272a4; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">49. Group Anagrams</span>
+    <span class="lc-badge">Medium</span>
+    <span class="lc-tag">Python 3</span>
+    <span class="lc-tag">Hash Table</span>
+    <span class="lc-tag">String</span>
+    <span class="lc-tag">Sorting</span>
+  </div>
+
+  <div class="config-tabs">
+    <div class="tab-group">
+      <button class="tab-btn active" id="algo-sort-key" onclick="setAlgo('sort-key')">Sol 1: 排序 Key (Standard)</button>
+      <button class="tab-btn" id="algo-count-key" onclick="setAlgo('count-key')">Sol 2: 字母頻率 Key [26]</button>
+      <button class="tab-btn" id="algo-counter" onclick="setAlgo('counter')">Sol 3: Counter Key (Tuple)</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述 (Problem)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個字串陣列 <code>strs</code>，請將 <strong>字母異位詞 (Anagrams)</strong> 分組在一起。可以按任意順序返回結果列表。
+          </div>
+
+          <div class="example-box">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> strs = ["eat","tea","tan","ate","nat","bat"]</div>
+            <div><strong>Output:</strong> [["bat"],["nat","tan"],["ate","eat","tea"]]</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val" id="tc-val">O(N * K log K)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val" id="sc-val">O(N * K)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span>💻 Python 3 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (Visualizer)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title" id="approach-title">💡 解題思路</div>
+            <div id="approach-desc">---</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">點擊 Step 開始視覺化模擬...</div>
+          </div>
+
+          <div class="stage">
+            <div style="font-size:0.8rem; color:var(--lc-text-dim); font-weight:bold; margin-bottom:4px;">strs 陣列狀態：</div>
+            <div class="array-container" id="nodes-strs"></div>
+          </div>
+
+          <div class="hash-table-view" id="hash-view">
+            <div class="hash-title" id="hash-title">defaultdict(list) 雜湊分組表</div>
+            <div class="hash-grid" id="hash-grid">
+              <span style="color: var(--lc-text-dim);">{ }</span>
+            </div>
+          </div>
+
+          <div class="control-panel" style="margin-top: 16px;">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleStrs = ["eat", "tea", "tan", "ate", "nat", "bat"];
+    let currentAlgo = 'sort-key'; 
+    let currentStep = 0;
+    let history = [];
+
+    const pyCodes = {
+      'sort-key': [
+        `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+        `    <span class="kw">def</span> <span class="fn">groupAnagrams</span>(<span class="kw">self</span>, strs: List[str]) -&gt; List[List[str]]:`,
+        `        res = defaultdict(list)`,
+        `        <span class="kw">for</span> s <span class="kw">in</span> strs:`,
+        `            sorted_s = <span class="str">""</span>.join(sorted(s))`,
+        `            res[sorted_s].append(s)`,
+        `        <span class="kw">return</span> list(res.values())`
+      ],
+      'count-key': [
+        `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+        `    <span class="kw">def</span> <span class="fn">groupAnagrams</span>(<span class="kw">self</span>, strs: List[str]) -&gt; List[List[str]]:`,
+        `        res = defaultdict(list)`,
+        `        <span class="kw">for</span> s <span class="kw">in</span> strs:`,
+        `            count = [0] * 26`,
+        `            <span class="kw">for</span> c <span class="kw">in</span> s:`,
+        `                count[ord(c) - ord(<span class="str">'a'</span>)] += 1`,
+        `            res[tuple(count)].append(s)`,
+        `        <span class="kw">return</span> list(res.values())`
+      ],
+      'counter': [
+        `<span class="kw">from</span> collections <span class="kw">import</span> Counter, defaultdict`,
+        `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+        `    <span class="kw">def</span> <span class="fn">groupAnagrams</span>(<span class="kw">self</span>, strs: List[str]) -&gt; List[List[str]]:`,
+        `        res = defaultdict(list)`,
+        `        <span class="kw">for</span> s <span class="kw">in</span> strs:`,
+        `            key = tuple(sorted(Counter(s).items()))`,
+        `            res[key].append(s)`,
+        `        <span class="kw">return</span> list(res.values())`
+      ]
+    };
+
+    function setAlgo(a) { currentAlgo = a; resetSim(); }
+
+    function getCountKey(s) {
+      let cnt = new Array(26).fill(0);
+      for (let c of s) cnt[c.charCodeAt(0) - 97]++;
+      return "(" + cnt.slice(0, 5).join(", ") + ", ...)";
+    }
+
+    function buildHistory() {
+      history = [];
+      let resMap = {};
+
+      history.push({
+        line: 2, title: "初始化字典 (res)", desc: "建立 res = defaultdict(list) 用於收集字母異位詞分組...",
+        idx: -1, resMap: {}
+      });
+
+      sampleStrs.forEach((word, idx) => {
+        let key = "";
+        if (currentAlgo === 'sort-key') {
+          key = word.split('').sort().join('');
+        } else if (currentAlgo === 'count-key') {
+          key = getCountKey(word);
+        } else if (currentAlgo === 'counter') {
+          key = "Counter(" + word + ")";
+        }
+
+        history.push({
+          line: 4, title: `處理單字: "${word}"`,
+          desc: `計算 "${word}" 的特徵 Key 得到: ${key}`,
+          idx: idx, resMap: JSON.parse(JSON.stringify(resMap))
+        });
+
+        if (!resMap[key]) resMap[key] = [];
+        resMap[key].push(word);
+
+        history.push({
+          line: 5, title: `存入分組: "${word}"`,
+          desc: `執行 res['${key}'].append('${word}')`,
+          idx: idx, resMap: JSON.parse(JSON.stringify(resMap))
+        });
+      });
+
+      history.push({
+        line: 6, title: "完成分組", desc: "回傳 list(res.values())。",
+        idx: -1, resMap: JSON.parse(JSON.stringify(resMap))
+      });
+    }
+
+    function resetSim() {
+      buildHistory();
+      currentStep = 0;
+      updateUIElements();
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateLineHighlight(state.line);
+      document.getElementById('step-title').innerText = state.title;
+      document.getElementById('step-desc').innerText = state.desc;
+      document.getElementById('stepHint').innerText = state.title.toUpperCase();
+
+      renderStage(state);
+      renderHashGrid(state);
+    }
+
+    function updateUIElements() {
+      ['sort-key', 'count-key', 'counter'].forEach(a => {
+        document.getElementById(`algo-${a}`).className = 'tab-btn ' + (currentAlgo === a ? 'active' : '');
+      });
+
+      const tc = document.getElementById('tc-val');
+      const sc = document.getElementById('sc-val');
+      const title = document.getElementById('approach-title');
+      const desc = document.getElementById('approach-desc');
+
+      if (currentAlgo === 'sort-key') {
+        tc.innerText = 'O(N * K log K)'; sc.innerText = 'O(N * K)';
+        title.innerText = '💡 思路 1：字串排序 Key ("".join(sorted(s)))';
+        desc.innerText = '所有字母異位詞排序後的字串必完全相同（例如 "eat" 與 "tea" 排序後均為 "aet"），直接將排序後字串作為雜湊鍵。';
+      } else if (currentAlgo === 'count-key') {
+        tc.innerText = 'O(N * K)'; sc.innerText = 'O(N * K)';
+        title.innerText = '💡 思路 2：26 位字母計數陣列 (tuple(count))';
+        desc.innerText = '統計單字中 26 個英文字母的出現頻率陣列 [0..25]，轉為不可變的 tuple 作為 Key，省略排序的時間花費。';
+      } else if (currentAlgo === 'counter') {
+        tc.innerText = 'O(N * K)'; sc.innerText = 'O(N * K)';
+        title.innerText = '💡 思路 3：Counter 結構化鍵 (tuple(Counter.items()))';
+        desc.innerText = '使用 Python collections.Counter 計算字元頻率，並將 Counter 項目排序轉為 tuple 進行雜湊比對。';
+      }
+    }
+
+    function renderCode() {
+      const codeList = pyCodes[currentAlgo];
+      document.getElementById('code-box').innerHTML = codeList
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateLineHighlight(line) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if (document.getElementById('l' + line)) {
+        document.getElementById('l' + line).classList.add('active-line');
+      }
+    }
+
+    function renderStage(state) {
+      const container = document.getElementById('nodes-strs');
+      container.innerHTML = '';
+
+      sampleStrs.forEach((word, idx) => {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.innerText = `"${word}"`;
+
+        if (state.idx === idx) {
+          node.classList.add('active-i');
+        } else if (state.idx > idx || (state.idx === -1 && currentStep === history.length - 1)) {
+          node.classList.add('processed');
+        }
+
+        container.appendChild(node);
+      });
+    }
+
+    function renderHashGrid(state) {
+      const grid = document.getElementById('hash-grid');
+      const entries = Object.entries(state.resMap || {});
+
+      if (entries.length === 0) {
+        grid.innerHTML = `<span style="color: var(--lc-text-dim);">{ }</span>`;
+        return;
+      }
+
+      grid.innerHTML = entries.map(([k, list]) => `
+        <div class="hash-item">
+          <div class="hash-key">Key: "${k}"</div>
+          <div class="hash-val">
+            ${list.map(v => `<span class="val-badge">${v}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

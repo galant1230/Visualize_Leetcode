@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>LeetCode 7 - Reverse Integer 視覺化教學</title>
+  <style>
+    body { font-family: sans-serif; background: #f5f7fa; padding: 2rem; }
+    h1 { text-align: center; color: #007acc; }
+    .section {
+      max-width: 900px; 
+      margin: 1rem auto; 
+      background: white; 
+      padding: 1.5rem 2rem; 
+      border-radius: 10px; 
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    pre {
+      background: #272822; 
+      color: #f8f8f2; 
+      padding: 1rem; 
+      border-radius: 6px; 
+      overflow-x: auto;
+      font-family: monospace;
+    }
+    .code-line { padding: 2px 0; }
+    .active-code { background: #444; color: white; }
+    .tips {
+      background: #fef7dc; 
+      padding: 1rem; 
+      border-left: 6px solid #f1c40f; 
+      border-radius: 6px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.75rem; text-align: center; }
+    .var-box { 
+      font-family: monospace; 
+      background: #ecf0f1; 
+      padding: 0.5rem; 
+      margin: 0.5rem 0; 
+      border-radius: 6px;
+    }
+    button {
+      background: #007acc;
+      color: white;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<h1>LeetCode 7 - Reverse Integer 視覺化教學</h1>
+
+<div class="section">
+  <h2>📌 題目描述</h2>
+  <p>
+    給定一個有符號的 32 位整數 <code>x</code>，請你返回其數字反轉後的結果。如果反轉後的數值超出 32 位整數範圍（[-2³¹, 2³¹ - 1]），則返回 0。<br>
+    ※ 注意：環境不允許存儲 64 位整數，必須在 O(log n) 時間內完成反轉。
+  </p>
+  <p>
+    <strong>範例：</strong>
+  </p>
+  <ul>
+    <li>Input: x = 123 → Output: 321</li>
+    <li>Input: x = -123 → Output: -321</li>
+    <li>Input: x = 120 → Output: 21</li>
+    <li>Input: x = 0 → Output: 0</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>🧠 解題思路</h2>
+  <p>
+    透過逐位反轉數字來完成：
+  </p>
+  <ol>
+    <li>取出 x 的最後一位：<code>digit = x % 10</code></li>
+    <li>更新反轉結果：<code>rev = rev * 10 + digit</code></li>
+    <li>移除 x 的最後一位：<code>x //= 10</code></li>
+    <li>處理負數：先記錄正負號，再以絕對值反轉，最後還原</li>
+  </ol>
+  <p>
+    此方法迴圈次數與 x 的位數成正比，即 O(log n)；只使用常數額外變數，因此空間複雜度為 O(1)。
+  </p>
+</div>
+
+<div class="section">
+  <h2>🔢 位元模擬與逐步演示</h2>
+  <div style="text-align:center;">
+    <label>輸入整數 x：<input type="number" id="inputX" value="123" /></label>
+    <button onclick="start()">開始模擬</button>
+    <button onclick="step()">下一步</button>
+  </div>
+  <div class="var-box" id="varBox">
+    <p><strong>初始狀態：</strong></p>
+    <p id="state">x = (輸入值), rev = 0, sign = (正負號)</p>
+  </div>
+  <p id="output" style="text-align:center; font-weight:bold;"></p>
+</div>
+
+<div class="section">
+  <h2>💻 Python 程式碼展示</h2>
+  <p>以下以 Python 解法為例，每行程式碼會隨模擬步驟進行高亮：</p>
+  <pre id="codeBox">
+class Solution:
+    def reverse(self, x: int) -> int:
+        INT_MAX = 2**31 - 1
+        INT_MIN = -2**31
+        if x >= INT_MAX or x <= INT_MIN:
+            return 0
+
+        rev = 0
+        sign = -1 if x < 0 else 1
+        x = abs(x)
+        
+        while x != 0:
+            digit = x % 10
+            x //= 10
+            rev = rev * 10 + digit
+        
+        return sign * rev
+  </pre>
+  <div class="tips">
+    💡 小技巧：使用 while 迴圈逐位處理，並在最後還原正負號；注意處理邊界情況。
+  </div>
+</div>
+
+<div class="section">
+  <h2>⏱ 時間與空間複雜度</h2>
+  <table>
+    <tr><th>分析項目</th><th>說明</th><th>Big-O</th></tr>
+    <tr><td>時間複雜度</td><td>迴圈執行次數為數字位數，約為 O(log |x|)</td><td>O(log n)</td></tr>
+    <tr><td>空間複雜度</td><td>只使用常數變數</td><td>O(1)</td></tr>
+  </table>
+</div>
+
+<script>
+let x, rev, sign, stepCount;
+let stateText = document.getElementById("state");
+let outputText = document.getElementById("output");
+
+function start() {
+  x = parseInt(document.getElementById("inputX").value);
+  rev = 0;
+  sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  stepCount = 0;
+  updateState();
+  outputText.innerText = "點擊『下一步』開始反轉過程！";
+  highlightCode(null);
+}
+
+function step() {
+  // 如果 x 為 0，模擬結束
+  if (x === 0) {
+    outputText.innerText = "✅ 模擬完成！反轉結果： " + (sign * rev);
+    highlightCode("return");
+    return;
+  }
+  // 模擬一個 while 迴圈迭代：取出最後一位 digit，更新 rev，更新 x
+  let digit = x % 10;
+  x = Math.floor(x / 10);
+  rev = rev * 10 + digit;
+  stepCount++;
+  updateState();
+  outputText.innerText = `第 ${stepCount} 步完成：取出 digit = ${digit}，更新 rev。`;
+  // 根據 stepCount 高亮不同程式碼段
+  if (stepCount === 1) {
+    highlightCode("while");
+  } else {
+    highlightCode("rev");
+  }
+}
+
+function updateState() {
+  stateText.innerText = `x = ${x}, rev = ${rev}, sign = ${sign}`;
+}
+
+function highlightCode(context) {
+  // 模擬簡單的程式碼行高亮
+  const codeBox = document.getElementById("codeBox");
+  const lines = codeBox.innerText.split("\n");
+  let newHTML = "";
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    let id = "";
+    // 簡單根據關鍵字來設定高亮：
+    if (context === "while" && line.includes("while x != 0:")) {
+      id = 'id="hl"';
+    } else if (context === "rev" && line.includes("rev = rev * 10 + digit")) {
+      id = 'id="hl"';
+    } else if (context === "return" && line.includes("return sign * rev")) {
+      id = 'id="hl"';
+    }
+    newHTML += `<div class="code-line" ${id}>${line}</div>`;
+  }
+  codeBox.innerHTML = newHTML;
+}
+</script>
+
+</body>
+</html>
