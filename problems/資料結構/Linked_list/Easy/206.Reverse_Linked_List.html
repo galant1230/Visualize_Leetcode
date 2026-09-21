@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>206. Reverse Linked List - Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-easy: #00b8a3;
+      --lc-blue: #007aff;
+      --lc-green: #2cbb5d;
+      --lc-red: #ff2d55;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(0, 184, 163, 0.15);
+      color: var(--lc-easy);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 20px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 6px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+    
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+      color: var(--lc-text);
+      margin-bottom: 8px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 2px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-easy); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 480px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      height: 200px;
+      position: relative;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+
+    .node {
+      width: 48px;
+      height: 48px;
+      background: var(--lc-blue);
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 1.05rem;
+      position: absolute;
+      top: 80px;
+      transition: background 0.3s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      z-index: 2;
+    }
+    .node.null-node {
+      background: #383838;
+      border: 2px dashed #666;
+      color: #aaa;
+      font-size: 0.8rem;
+    }
+
+    .ptr-container {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .ptr-label {
+      font-size: 0.65rem;
+      padding: 1px 6px;
+      border-radius: 3px;
+      color: white;
+      white-space: nowrap;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .p-curr { background: var(--lc-orange); }
+    .p-prev { background: var(--lc-green); }
+    .p-next { background: var(--lc-red); }
+
+    .arrow {
+      position: absolute;
+      height: 3px;
+      top: 102px;
+      background: var(--lc-border);
+      transition: all 0.3s;
+      transform-origin: left center;
+      z-index: 1;
+    }
+    .arrow::after {
+      content: '';
+      position: absolute;
+      right: -2px;
+      top: -4px;
+      border: 5px solid transparent;
+      border-left-color: var(--lc-border);
+      transition: border-color 0.3s;
+    }
+    .arrow.reversed { background: var(--lc-green); }
+    .arrow.reversed::after { border-left-color: var(--lc-green); }
+
+    .control-panel {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 7px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-easy); color: #fff; }
+    .btn-primary:hover { background: #009684; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">206. Reverse Linked List</span>
+    <span class="lc-badge">Easy</span>
+    <span class="lc-tag">Linked List</span>
+    <span class="lc-tag">Recursion</span>
+  </div>
+
+  <div class="config-tabs">
+    <div class="tab-group">
+      <button class="tab-btn active" id="lang-py" onclick="setLang('py')">Python3</button>
+      <button class="tab-btn" id="lang-c" onclick="setLang('c')">C 語言</button>
+    </div>
+    <div class="tab-group">
+      <button class="tab-btn active" id="mode-iter" onclick="setMode('iter')">疊代 (Iteration)</button>
+      <button class="tab-btn" id="mode-recur" onclick="setMode('recur')">遞迴 (Recursion)</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個單向鏈結串列的頭節點 <code>head</code>，請將該串列進行反轉，並回傳反轉後的頭節點。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> head = [1,2,3,4,5]</div>
+            <div><strong>Output:</strong> [5,4,3,2,1]</div>
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 2:</div>
+            <div><strong>Input:</strong> head = [1,2]</div>
+            <div><strong>Output:</strong> [2,1]</div>
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 3:</div>
+            <div><strong>Input:</strong> head = []</div>
+            <div><strong>Output:</strong> []</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val">O(n)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span id="space-comp" class="complexity-val">O(1)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span id="codeTitle">🐍 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (State & Stage)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div id="approachTitle" class="approach-title">💡 解題思路 (Approach)</div>
+            <div id="approachDesc">說明文字載入中...</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">準備開始反轉...</div>
+          </div>
+
+          <div class="stage" id="main-stage">
+            <div id="elements-container"></div>
+          </div>
+
+          <div class="control-panel">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const data = [1, 2, 3, 4, 5];
+    let lang = 'py', mode = 'iter', currentStep = 0;
+    
+    // 預先計算並儲存每一步的狀態快照 (History State Engine)
+    let history = [];
+
+    const approachText = {
+      iter: "<strong>單行指標演進 (Single Line Visualization):</strong><br>所有節點排列於同一水平線。維護 <code>prev</code> 與 <code>curr</code> 指針。每次先以 <code>temp</code> 記錄下個點，隨後僅將當前 <code>curr</code> 節點的指標轉向指回 <code>prev</code>，最後平滑地推進 <code>prev</code> 與 <code>curr</code>。",
+      recur: "<strong>遞迴回溯重新連結 (Recursion Backtracking):</strong><br>一路遞迴到最後一個節點（Base Case），並將其作為新頭點 <code>newHead</code> 向上回傳。在回溯過程中使用 <code>head.next.next = head</code> 讓下一節點反向指向自己，最後斷開原本連結 <code>head.next = None</code>。"
+    };
+
+    const codes = {
+      py: {
+        iter: [
+          `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">reverseList</span>(<span class="self">self</span>, head: Optional[ListNode]) -&gt; Optional[ListNode]:`,
+          `        prev, curr = <span class="kw">None</span>, head`,
+          `        <span class="kw">while</span> curr:`,
+          `            temp = curr.next`,
+          `            curr.next = prev`,
+          `            prev = curr`,
+          `            curr = temp`,
+          `        <span class="kw">return</span> prev`
+        ],
+        recur: [
+          `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">reverseList</span>(<span class="self">self</span>, head: Optional[ListNode]) -&gt; Optional[ListNode]:`,
+          `        <span class="kw">if not</span> head <span class="kw">or not</span> head.next:`,
+          `            <span class="kw">return</span> head`,
+          `        newHead = <span class="self">self</span>.<span class="fn">reverseList</span>(head.next)`,
+          `        head.next.next = head`,
+          `        head.next = <span class="kw">None</span>`,
+          `        <span class="kw">return</span> newHead`
+        ]
+      },
+      c: {
+        iter: [
+          `<span class="kw">struct</span> ListNode* <span class="fn">reverseList</span>(<span class="kw">struct</span> ListNode* head) {`,
+          `    <span class="kw">struct</span> ListNode *prev = <span class="kw">NULL</span>, *curr = head;`,
+          `    <span class="kw">while</span> (curr) {`,
+          `        <span class="kw">struct</span> ListNode* temp = curr-&gt;next;`,
+          `        curr-&gt;next = prev;`,
+          `        prev = curr;`,
+          `        curr = temp;`,
+          `    }`,
+          `    <span class="kw">return</span> prev;`,
+          `}`
+        ],
+        recur: [
+          `<span class="kw">struct</span> ListNode* <span class="fn">reverseList</span>(<span class="kw">struct</span> ListNode* head) {`,
+          `    <span class="kw">if</span> (!head || !head-&gt;next) <span class="kw">return</span> head;`,
+          `    <span class="kw">struct</span> ListNode* newHead = <span class="fn">reverseList</span>(head-&gt;next);`,
+          `    head-&gt;next-&gt;next = head;`,
+          `    head-&gt;next = <span class="kw">NULL</span>;`,
+          `    <span class="kw">return</span> newHead;`,
+          `}`
+        ]
+      }
+    };
+
+    function setLang(l) { lang = l; resetSim(); }
+    function setMode(m) { mode = m; resetSim(); }
+
+    // 建構全流程狀態歷程，實現完美的 Prev / Next 自由雙向切換
+    function buildHistory() {
+      history = [];
+      if (mode === 'iter') {
+        let currIdx = 0, prevIdx = -1, tempIdx = -1;
+        let isReversed = [false, false, false, false, false];
+
+        // Step 0: 初始化
+        history.push({
+          line: 2,
+          title: "初始化",
+          desc: "prev = None, curr = head (指向第一個節點 1)",
+          currIdx, prevIdx, tempIdx,
+          isReversed: [...isReversed]
+        });
+
+        while (currIdx < data.length) {
+          // 階段 1: temp = curr.next
+          tempIdx = currIdx + 1;
+          history.push({
+            line: 4,
+            title: "暫存 (temp = curr.next)",
+            desc: `用 temp 標記下一個節點 ${tempIdx < data.length ? data[tempIdx] : "NULL"}。當前節點 ${data[currIdx]} 指向右邊的指標依然完好！`,
+            currIdx, prevIdx, tempIdx,
+            isReversed: [...isReversed]
+          });
+
+          // 階段 2: curr.next = prev
+          isReversed[currIdx] = true;
+          history.push({
+            line: 5,
+            title: "反轉指標 (curr.next = prev)",
+            desc: `將節點 ${data[currIdx]} 的指標轉向，指回左邊的 prev (${prevIdx >= 0 ? data[prevIdx] : "NULL"})。`,
+            currIdx, prevIdx, tempIdx,
+            isReversed: [...isReversed]
+          });
+
+          // 階段 3: prev = curr
+          prevIdx = currIdx;
+          history.push({
+            line: 6,
+            title: "推進 Prev (prev = curr)",
+            desc: `將指標 prev 右移推進至當前已處理好的節點 ${data[prevIdx]}。`,
+            currIdx, prevIdx, tempIdx,
+            isReversed: [...isReversed]
+          });
+
+          // 階段 4: curr = temp
+          currIdx = tempIdx;
+          tempIdx = -1;
+          history.push({
+            line: 7,
+            title: "推進 Curr (curr = temp)",
+            desc: `將指標 curr 移動至暫存的 temp 節點 (${currIdx < data.length ? data[currIdx] : "NULL"})，準備處理下一輪。`,
+            currIdx, prevIdx, tempIdx,
+            isReversed: [...isReversed]
+          });
+        }
+
+        // 結束
+        history.push({
+          line: 8,
+          title: "結束",
+          desc: `迴圈條件 (curr != None) 不成立，成功回傳反轉後的頭點 prev (${data[prevIdx]})。`,
+          currIdx, prevIdx, tempIdx,
+          isReversed: [...isReversed]
+        });
+
+      } else {
+        // 遞迴模式歷史紀錄
+        let recurIdx = 0, isBacktracking = false;
+        let isReversed = [false, false, false, false, false];
+
+        history.push({
+          line: 2, title: "初始化", desc: "開始遞迴反轉...", recurIdx, isBacktracking, isReversed: [...isReversed]
+        });
+
+        for (let i = 0; i < data.length - 1; i++) {
+          history.push({
+            line: 4, title: "遞迴深入", desc: `呼叫 reverseList(head.next) [head=${data[i]}]...`, recurIdx: i + 1, isBacktracking: false, isReversed: [...isReversed]
+          });
+        }
+
+        history.push({
+          line: 3, title: "Base Case", desc: `到達末端節點 ${data[data.length-1]}，觸發遞迴回溯條件。`, recurIdx: data.length - 1, isBacktracking: true, isReversed: [...isReversed]
+        });
+
+        for (let i = data.length - 2; i >= 0; i--) {
+          isReversed[i] = true;
+          history.push({
+            line: 5, title: "回溯反轉", desc: `執行 head.next.next = head 讓節點 ${data[i+1]} 指回 ${data[i]}。`, recurIdx: i, isBacktracking: true, isReversed: [...isReversed]
+          });
+        }
+
+        history.push({
+          line: 7, title: "結束", desc: "遞迴結束，串列全數完成反轉！", recurIdx: 0, isBacktracking: true, isReversed: [...isReversed]
+        });
+      }
+    }
+
+    function resetSim() {
+      buildHistory();
+      currentStep = 0;
+      updateTabs();
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+      
+      // 更新按鈕狀態
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      // 更新 Code 與 Description
+      updateUI(state.line, state.title, state.desc);
+      
+      // 繪製 Stage
+      renderStage(state);
+    }
+
+    function updateTabs() {
+      document.getElementById('lang-py').className = 'tab-btn ' + (lang === 'py' ? 'active' : '');
+      document.getElementById('lang-c').className = 'tab-btn ' + (lang === 'c' ? 'active' : '');
+      document.getElementById('mode-iter').className = 'tab-btn ' + (mode === 'iter' ? 'active' : '');
+      document.getElementById('mode-recur').className = 'tab-btn ' + (mode === 'recur' ? 'active' : '');
+      document.getElementById('space-comp').innerText = mode === 'iter' ? 'O(1)' : 'O(n) [Call Stack]';
+      document.getElementById('approachDesc').innerHTML = approachText[mode];
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codes[lang][mode]
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateUI(line, title, desc) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if(document.getElementById('l'+line)) document.getElementById('l'+line).classList.add('active-line');
+      document.getElementById('step-title').innerText = title;
+      document.getElementById('step-desc').innerText = desc;
+      document.getElementById('stepHint').innerText = title.toUpperCase();
+    }
+
+    function renderStage(state) {
+      const container = document.getElementById('elements-container');
+      container.innerHTML = '';
+
+      const nodeX = (idx) => 40 + (idx * 85);
+
+      // 1. 左側 NULL (idx = 0)
+      const leftNull = document.createElement('div');
+      leftNull.className = 'node null-node';
+      leftNull.innerText = 'NULL';
+      leftNull.style.left = nodeX(0) + 'px';
+      
+      let leftNullPtrs = '';
+      if (mode === 'iter' && state.prevIdx === -1) leftNullPtrs += '<div class="ptr-label p-prev">prev</div>';
+      if (leftNullPtrs) leftNull.innerHTML += `<div class="ptr-container">${leftNullPtrs}</div>`;
+      container.appendChild(leftNull);
+
+      // 2. 數據節點 1 ~ 5 (idx = 1 ~ 5)
+      data.forEach((val, i) => {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.innerText = val;
+        node.style.left = nodeX(i + 1) + 'px';
+
+        let ptrs = '';
+        if (mode === 'iter') {
+          if (i <= state.prevIdx) node.style.background = 'var(--lc-green)';
+          if (i === state.currIdx) ptrs += '<div class="ptr-label p-curr">curr</div>';
+          if (i === state.prevIdx) ptrs += '<div class="ptr-label p-prev">prev</div>';
+          if (i === state.tempIdx) ptrs += '<div class="ptr-label p-next">temp</div>';
+        } else {
+          if (i === state.recurIdx) {
+            node.style.background = 'var(--lc-orange)';
+            ptrs += '<div class="ptr-label p-curr">head</div>';
+          } else if (state.isBacktracking && i >= state.recurIdx) {
+            node.style.background = 'var(--lc-green)';
+          }
+        }
+
+        if (ptrs) node.innerHTML += `<div class="ptr-container">${ptrs}</div>`;
+        container.appendChild(node);
+
+        // 3. 箭頭繪製
+        const arrow = document.createElement('div');
+        arrow.className = 'arrow';
+        
+        if (state.isReversed[i]) {
+          arrow.classList.add('reversed');
+          arrow.style.width = '37px';
+          arrow.style.left = nodeX(i + 1) + 'px';
+          arrow.style.transform = 'rotate(180deg)';
+        } else {
+          arrow.style.width = '37px';
+          arrow.style.left = (nodeX(i + 1) + 48) + 'px';
+        }
+        container.appendChild(arrow);
+      });
+
+      // 4. 右側 NULL (idx = 6)
+      const rightNull = document.createElement('div');
+      rightNull.className = 'node null-node';
+      rightNull.innerText = 'NULL';
+      rightNull.style.left = nodeX(data.length + 1) + 'px';
+
+      let rightNullPtrs = '';
+      if (mode === 'iter') {
+        if (state.currIdx === data.length) rightNullPtrs += '<div class="ptr-label p-curr">curr</div>';
+        if (state.tempIdx === data.length) rightNullPtrs += '<div class="ptr-label p-next">temp</div>';
+      }
+      if (rightNullPtrs) rightNull.innerHTML += `<div class="ptr-container">${rightNullPtrs}</div>`;
+      container.appendChild(rightNull);
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

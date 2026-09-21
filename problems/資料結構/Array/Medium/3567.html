@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>3567. 專業邏輯追蹤</title>
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --primary: #58a6ff; --text: #c9d1d9;
+      --ide-bg: #010409; --ide-kw: #ff7b72; --ide-fn: #d2a8ff; --ide-vr: #79c0ff; --ide-nm: #79c0ff; --ide-cm: #8b949e;
+      --border: #30363d; --hl: #ffa657; --success: #238636;
+    }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; overflow-x: hidden; }
+    .layout { max-width: 1450px; margin: auto; display: flex; gap: 20px; height: 90vh; }
+    
+    /* 左側：實驗與資訊區 (50%) */
+    .panel-left { flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; padding-right: 10px; }
+    .card { background: var(--card); padding: 20px; border-radius: 10px; border: 1px solid var(--border); }
+    .grid-flex { display: flex; gap: 40px; justify-content: center; margin: 15px 0; }
+    .grid { display: grid; gap: 5px; background: #010409; padding: 10px; border-radius: 6px; }
+    .cell { width: 45px; height: 45px; background: #0d1117; border: 1px solid #21262d; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; }
+    .in-win { border-color: var(--primary); background: rgba(88, 166, 255, 0.15); }
+    .tl-mark { border: 2px solid var(--hl) !important; box-shadow: 0 0 10px var(--hl); }
+
+    /* 處理細節 */
+    .proc-zone { background: #010409; border: 1px solid var(--border); padding: 15px; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 8px; min-height: 50px; margin-top: 5px; }
+    .pill { padding: 4px 10px; border-radius: 4px; background: #21262d; border: 1px solid var(--border); font-family: monospace; }
+    .pill.dup { opacity: 0.3; text-decoration: line-through; }
+    .pill.unique { border-color: var(--success); }
+    .pill.best { border-color: var(--hl); color: var(--hl); font-weight: bold; transform: scale(1.1); }
+
+    /* 右側：固定代碼區 (50%) */
+    .panel-right { flex: 1; background: var(--ide-bg); border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; position: sticky; top: 0; }
+    .ide-header { background: #161b22; padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .ide-title { font-size: 13px; color: #8b949e; font-family: monospace; }
+    
+    #code-display { 
+      padding: 20px 0; font-family: 'Fira Code', 'Consolas', monospace; 
+      font-size: 14px; 
+      line-height: 1.2; /* 控制 0.2 的視覺間距 */
+      white-space: pre; color: #e6edf3; overflow-y: auto; flex-grow: 1;
+    }
+    .code-line { display: block; padding: 0 25px; border-left: 4px solid transparent; transition: background 0.2s; }
+    .code-line.active { background: rgba(35, 134, 54, 0.15); border-left-color: var(--success); color: #fff; }
+    
+    /* 語法高亮 */
+    .kw { color: var(--ide-kw); } .fn { color: var(--ide-fn); } .vr { color: var(--ide-vr); } .nm { color: var(--ide-nm); } .cm { color: var(--ide-cm); }
+
+    .btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 14px; }
+    .btn-next { background: var(--success); color: white; }
+    .ex-tab { background: #30363d; color: white; border: 1px solid var(--border); padding: 6px 14px; border-radius: 6px; cursor: pointer; margin-right: 8px; }
+    .ex-tab.active { background: var(--primary); }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div class="panel-left">
+    <div class="card">
+      <h2 style="margin:0 0 10px 0; color:var(--primary);">3567. 滑動子矩陣中的最小絕對差</h2>
+      <p style="font-size:14px; margin-bottom:15px; color:var(--ide-cm);">題目要求找出每個 k x k 窗口內，不同數值排序後的最小相鄰差值。</p>
+      <div>
+        <button class="ex-tab active" onclick="loadEx(1)">範例 1 (k=2)</button>
+        <button class="ex-tab" onclick="loadEx(2)">範例 2 (k=1)</button>
+        <button class="ex-tab" onclick="loadEx(3)">範例 3 (k=2)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="grid-flex">
+        <div style="text-align:center;">
+          <div style="font-size:11px; margin-bottom:8px; color:var(--ide-cm);">INPUT GRID</div>
+          <div class="grid" id="grid-in"></div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:11px; margin-bottom:8px; color:var(--ide-cm);">ANS MATRIX</div>
+          <div class="grid" id="grid-ans"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4 style="margin:0 0 12px 0; color:var(--hl);">解題思路追蹤</h4>
+      <div style="font-size:13px; color:var(--ide-cm);">1. Set 去重過程 (自動過濾重複值)：</div>
+      <div class="proc-zone" id="set-box"></div>
+      
+      <div style="font-size:13px; color:var(--ide-cm); margin-top:20px;">2. 排序與找最小差 (sorted_nums)：</div>
+      <div class="proc-zone" id="sort-box"></div>
+      
+      <div id="log" style="margin-top:15px; font-weight:bold; color:var(--success); font-family:monospace;"></div>
+    </div>
+
+    <div class="card" style="background: rgba(88, 166, 255, 0.05);">
+        <h4 style="margin:0 0 10px 0;">複雜度分析</h4>
+        <div style="font-size:13px; color:var(--text);">
+            • <b>時間：</b>O(m * n * k^2 log k) — 遍歷窗口、去重並排序。<br>
+            • <b>空間：</b>O(m * n) — 用於存放最終結果矩陣。
+        </div>
+    </div>
+  </div>
+
+  <div class="panel-right">
+    <div class="ide-header">
+      <div class="ide-title">solution.py</div>
+      <div>
+        <button class="btn btn-next" onclick="step()">執行下一步 (Step)</button>
+        <button class="btn" style="background:#30363d; color:white; margin-left:8px;" onclick="reset()">重置</button>
+      </div>
+    </div>
+    <div id="code-display"></div>
+  </div>
+</div>
+
+<script>
+const examples = {
+  1: { grid: [[1, 8], [3, -2]], k: 2 },
+  2: { grid: [[3, -1]], k: 1 },
+  3: { grid: [[1, -2, 3], [2, 3, 5]], k: 2 }
+};
+
+const pyLines = [
+  'class Solution:',
+  '    def minAbsDifference(self, grid: list[list[int]], k: int) -> list[list[int]]:',
+  '        m, n = len(grid), len(grid[0])',
+  '        res_m, res_n = m - k + 1, n - k + 1',
+  '        ans = [[0] * res_n for _ in range(res_m)]',
+  '        ',
+  '        for i in range(res_m):',
+  '            for j in range(res_n):',
+  '                # 提取當前 k x k 窗口內的所有不同元素',
+  '                distinct_elements = set()',
+  '                for r in range(i, i + k):',
+  '                    for c in range(j, j + k):',
+  '                        distinct_elements.add(grid[r][c])',
+  '                ',
+  '                if len(distinct_elements) < 2:',
+  '                    ans[i][j] = 0',
+  '                else:',
+  '                    # 排序後計算相鄰差值',
+  '                    sorted_nums = sorted(list(distinct_elements))',
+  '                    min_diff = float("inf")',
+  '                    for idx in range(1, len(sorted_nums)):',
+  '                        min_diff = min(min_diff, sorted_nums[idx] - sorted_nums[idx-1])',
+  '                    ans[i][j] = min_diff',
+  '                    ',
+  '        return ans'
+];
+
+let curEx = 1, state = { i: 0, j: 0, phase: 'move', ans: [], finished: false };
+
+function loadEx(n) { curEx = n; reset(); document.querySelectorAll('.ex-tab').forEach((t, i) => t.classList.toggle('active', i+1 === n)); }
+
+function reset() {
+    const { grid, k } = examples[curEx];
+    const rm = grid.length - k + 1, rn = grid[0].length - k + 1;
+    state = { i: 0, j: 0, phase: 'move', ans: Array.from({length: rm}, () => Array(rn).fill('?')), finished: false };
+    document.getElementById('set-box').innerHTML = '';
+    document.getElementById('sort-box').innerHTML = '';
+    document.getElementById('log').innerText = '';
+    render();
+}
+
+function render() {
+    const { grid, k } = examples[curEx];
+    const inG = document.getElementById('grid-in');
+    inG.style.gridTemplateColumns = `repeat(${grid[0].length}, 45px)`;
+    inG.innerHTML = grid.flatMap((row, r) => row.map((v, c) => {
+        let cls = 'cell' + (r >= state.i && r < state.i+k && c >= state.j && c < state.j+k ? ' in-win' : '');
+        if (r === state.i && c === state.j) cls += ' tl-mark';
+        return `<div class="${cls}">${v}</div>`;
+    })).join('');
+
+    const anG = document.getElementById('grid-ans');
+    anG.style.gridTemplateColumns = `repeat(${state.ans[0].length}, 45px)`;
+    anG.innerHTML = state.ans.flatMap(row => row.map(v => `<div class="cell" style="color:var(--success)">${v}</div>`)).join('');
+
+    const active = state.phase === 'move' ? [6, 7] : [9, 10, 11, 12, 14, 15, 18, 19, 20, 21];
+    document.getElementById('code-display').innerHTML = pyLines.map((text, idx) => {
+        const cls = active.includes(idx) ? 'code-line active' : 'code-line';
+        const indent = text.match(/^\s*/)[0].length * 10;
+        const colored = text.trim()
+            .replace(/\b(class|def|for|in|if|else|return|range|set|sorted|list|min|len)\b/g, '<span class="kw">$1</span>')
+            .replace(/#.*/, '<span class="cm">$&</span>')
+            .replace(/\b(self|grid|k|ans|distinct_elements|sorted_nums|min_diff)\b/g, '<span class="vr">$1</span>');
+        return `<span class="${cls}" style="padding-left: calc(25px + ${indent}px)">${colored || ' '}</span>`;
+    }).join('');
+}
+
+function step() {
+    if (state.finished) return;
+    const { grid, k } = examples[curEx];
+    if (state.phase === 'move') {
+        state.phase = 'calc';
+        let raw = [];
+        for(let r=state.i; r<state.i+k; r++) for(let c=state.j; c<state.j+k; c++) raw.push(grid[r][c]);
+        const seen = new Set();
+        document.getElementById('set-box').innerHTML = raw.map(n => {
+            const isDup = seen.has(n); seen.add(n);
+            return `<div class="pill ${isDup ? 'dup' : 'unique'}">${n}</div>`;
+        }).join('');
+        let distinct = [...new Set(raw)].sort((a, b) => a - b);
+        document.getElementById('sort-box').innerHTML = distinct.map(n => `<div class="pill">${n}</div>`).join('');
+        let minD = 0;
+        if (distinct.length >= 2) {
+            minD = Infinity;
+            let pair = [0, 1];
+            for(let x=1; x<distinct.length; x++) {
+                if (distinct[x]-distinct[x-1] < minD) {
+                    minD = distinct[x]-distinct[x-1];
+                    pair = [x-1, x];
+                }
+            }
+            document.querySelectorAll('#sort-box .pill')[pair[0]].classList.add('best');
+            document.querySelectorAll('#sort-box .pill')[pair[1]].classList.add('best');
+            document.getElementById('log').innerText = `找到最小差值: ${minD}`;
+        } else {
+            document.getElementById('log').innerText = "唯一值不足 2 個，差值為 0";
+        }
+        state.ans[state.i][state.j] = minD;
+    } else {
+        state.phase = 'move';
+        state.j++;
+        if (state.j > grid[0].length - k) { state.j = 0; state.i++; }
+        if (state.i > grid.length - k) {
+            state.finished = true;
+            document.getElementById('log').innerText = "所有窗口處理完成！";
+        }
+    }
+    render();
+}
+reset();
+</script>
+</body>
+</html>

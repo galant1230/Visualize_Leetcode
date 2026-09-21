@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>130. Surrounded Regions - # Mark Style</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;700&display=swap');
+        :root { --vs-bg: #1E1E1E; --vs-sidebar: #252526; --vs-border: #3C3C3C; }
+        body { background-color: var(--vs-bg); color: #D4D4D4; font-family: 'Inter', sans-serif; margin: 0; height: 100vh; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        .kw { color: #C586C0; } .fn { color: #DCDCAA; } .st { color: #CE9178; } .cn { color: #569CD6; } .co { color: #6A9955; }
+        .active-line { background-color: #37373D; border-left: 3px solid #007ACC; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #454545; border-radius: 10px; }
+        .cell-anim { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .safe-mark { animation: pulse-gold 0.8s ease-out; }
+        @keyframes pulse-gold { 0% { background-color: rgba(234, 179, 8, 0.5); transform: scale(1.1); } 100% { background-color: rgba(234, 179, 8, 0.2); transform: scale(1); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const GRID_INIT = [
+            ["X", "X", "X", "X"],
+            ["X", "O", "O", "X"],
+            ["X", "X", "O", "X"],
+            ["X", "O", "X", "X"]
+        ];
+
+        const CODE_SNIPPET = [
+            { t: "class Solution:", i: 0 },
+            { t: "    def solve(self, board: List[List[str]]) -> None:", i: 1 },
+            { t: "        if not board or not board[0]: return", i: 2 },
+            { t: "        rows, cols = len(board), len(board[0])", i: 2 },
+            { t: "        def dfs(r, c):", i: 2 },
+            { t: "            if r < 0 or r >= rows or c < 0 or c >= cols or board[r][c] != 'O':", i: 3 },
+            { t: "                return", i: 4 },
+            { t: "            board[r][c] = '#'", i: 3 },
+            { t: "            dfs(r + 1, c); dfs(r - 1, c)", i: 3 },
+            { t: "            dfs(r, c + 1); dfs(r, c - 1)", i: 3 },
+            { t: "        # 1. 邊界搜尋標記安全區 #", i: 2 },
+            { t: "        for r in range(rows):", i: 2 },
+            { t: "            dfs(r, 0); dfs(r, cols - 1)", i: 3 },
+            { t: "        for c in range(cols):", i: 2 },
+            { t: "            dfs(0, c); dfs(rows - 1, c)", i: 3 },
+            { t: "        # 2. 全圖替換", i: 2 },
+            { t: "        for r in range(rows):", i: 2 },
+            { t: "            for c in range(cols):", i: 3 },
+            { t: "                if board[r][c] == 'O': board[r][c] = 'X'", i: 4 },
+            { t: "                elif board[r][c] == '#': board[r][c] = 'O'", i: 4 }
+        ];
+
+        const highlight = (text) => {
+            return text.replace(/\b(class|def|if|elif|not|return|for|in|range|self)\b/g, '<span class="kw">$1</span>')
+                       .replace(/\b(solve|dfs|len)\b/g, '<span class="fn">$1</span>')
+                       .replace(/'[^']*'|#.*$/g, (m) => m.startsWith('#') ? `<span class="co">${m}</span>` : `<span class="st">${m}</span>`)
+                       .replace(/\b(board|rows|cols|r|c)\b/g, '<span class="cn">$1</span>');
+        };
+
+        const App = () => {
+            const [cur, setCur] = useState(0);
+            const [playing, setPlaying] = useState(false);
+            const [steps, setSteps] = useState([]);
+            const timer = useRef(null);
+
+            const generateSteps = (gridInput) => {
+                const history = [];
+                const board = gridInput.map(row => [...row]);
+                const R = board.length, C = board[0].length;
+                let stack = [];
+
+                const log = (line, r, c, msg) => {
+                    history.push({ line, r, c, msg, stack: [...stack], board: board.map(row => [...row]) });
+                };
+
+                const dfs = (r, c) => {
+                    if (r < 0 || r >= R || c < 0 || c >= C || board[r][c] !== 'O') return;
+                    board[r][c] = '#';
+                    stack.push([r, c]);
+                    log(7, r, c, `邊界連通！標記為安全區 '#' (${r},${c})`);
+                    dfs(r + 1, c); dfs(r - 1, c); dfs(r, c + 1); dfs(r, c - 1);
+                    stack.pop();
+                };
+
+                log(3, null, null, "開始執行：準備掃描四個邊界");
+                for (let r = 0; r < R; r++) { dfs(r, 0); dfs(r, C - 1); }
+                for (let c = 0; c < C; c++) { dfs(0, c); dfs(R - 1, c); }
+
+                log(15, null, null, "邊界標記完成，開始全盤掃描替換");
+                for (let r = 0; r < R; r++) {
+                    for (let c = 0; c < C; c++) {
+                        if (board[r][c] === 'O') {
+                            board[r][c] = 'X';
+                            log(18, r, c, `發現被包圍的 O，翻轉為 X`);
+                        } else if (board[r][c] === '#') {
+                            board[r][c] = 'O';
+                            log(19, r, c, `將安全區 '#' 還原回 'O'`);
+                        }
+                    }
+                }
+                log(1, null, null, "所有區域處理完畢");
+                return history;
+            };
+
+            useEffect(() => { setSteps(generateSteps(GRID_INIT)); setCur(0); }, []);
+            useEffect(() => {
+                if (playing) { timer.current = setInterval(() => { setCur(v => v < steps.length-1 ? v+1 : (setPlaying(false), v)); }, 400); }
+                else clearInterval(timer.current); return () => clearInterval(timer.current);
+            }, [playing, steps]);
+
+            const s = steps[cur] || { board: GRID_INIT, line: 0, r: null, c: null, stack: [], msg: "" };
+
+            return (
+                <div className="flex h-screen w-screen overflow-hidden text-sm">
+                    {/* LEFT PANEL */}
+                    <div className="w-1/4 bg-[#252526] border-r border-[#3C3C3C] flex flex-col p-6 overflow-y-auto custom-scroll">
+                        <h2 className="text-xl font-bold text-white mb-6 font-mono">130. Surrounded Regions</h2>
+                        <div className="space-y-6">
+                            <section>
+                                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">核心思路</h3>
+                                <p className="text-[12px] text-gray-400 leading-relaxed bg-black/20 p-3 rounded border border-white/5 font-mono">
+                                    這是一個「逆向排除法」：<br/>
+                                    1. 標記逃生路徑 (#)<br/>
+                                    2. 清理死胡同 (O -> X)<br/>
+                                    3. 標記還原 (# -> O)
+                                </p>
+                            </section>
+                            <section>
+                                <h3 className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest mb-2">字符狀態說明</h3>
+                                <div className="space-y-2 text-[11px]">
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-gray-700 rounded-sm"></div> <span className="text-gray-400">X: 障礙物/邊界</span></div>
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500/20 border border-blue-500/50 rounded-sm"></div> <span className="text-blue-400 font-bold">O: 待處理區域</span></div>
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-yellow-500/20 border border-yellow-500/50 rounded-sm"></div> <span className="text-yellow-500 font-bold">#: 安全區 (與邊界連通)</span></div>
+                                </div>
+                            </section>
+                            <div className="mt-auto p-4 bg-yellow-900/10 rounded border border-yellow-500/20">
+                                <p className="text-[11px] text-gray-400 italic">"First, save those who can reach the edge. Then, conquer the rest."</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* MIDDLE PANEL */}
+                    <div className="flex-1 flex flex-col p-6 bg-[#1E1E1E] gap-4">
+                        <div className="flex-1 bg-[#252526] rounded-md border border-[#3C3C3C] flex flex-col shadow-2xl relative overflow-hidden">
+                            <div className="p-4 border-b border-white/5 bg-black/10 flex justify-between items-center font-mono">
+                                <span className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest">In-place Board Modification</span>
+                                <span className="text-gray-400 text-xs italic">{s.msg}</span>
+                            </div>
+                            <div className="flex-1 flex items-center justify-center bg-[#1A1A1A]">
+                                <div className="grid gap-3 p-8 bg-[#252526] rounded-xl border border-white/5 shadow-inner" style={{ gridTemplateColumns: `repeat(4, 70px)` }}>
+                                    {s.board.map((row, r) => row.map((cell, c) => {
+                                        const isTarget = s.r === r && s.c === c;
+                                        let bg = 'bg-[#1E1E1E]';
+                                        let color = 'text-gray-600';
+                                        let border = 'border-white/5';
+                                        
+                                        if (cell === 'X') { color = 'text-gray-700'; }
+                                        else if (cell === 'O') { bg = 'bg-blue-500/10'; color = 'text-blue-400 font-bold'; border = 'border-blue-500/30'; }
+                                        else if (cell === '#') { bg = 'bg-yellow-500/10'; color = 'text-yellow-500 font-bold safe-mark'; border = 'border-yellow-500/40'; }
+
+                                        if (isTarget) border = 'border-orange-500 ring-2 ring-orange-500/50 z-20 scale-110 shadow-2xl';
+
+                                        return (
+                                            <div key={`${r}-${c}`} className={`h-[70px] w-[70px] rounded-lg border transition-all duration-300 flex items-center justify-center relative ${bg} ${border}`}>
+                                                <span className={`${color} text-xl font-mono`}>{cell}</span>
+                                                <span className="text-[9px] text-gray-700 absolute bottom-1 right-1 font-mono">({r},{c})</span>
+                                                {isTarget && <div className="absolute inset-0 border-2 border-orange-500 rounded-lg animate-pulse"></div>}
+                                            </div>
+                                        );
+                                    }))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Controls */}
+                        <div className="h-20 bg-[#252526] rounded-md border border-[#3C3C3C] flex items-center px-10 gap-8 shadow-xl">
+                            <div className="flex gap-4">
+                                <button onClick={() => { setPlaying(false); setCur(0); }} className="text-gray-500 hover:text-white text-xl">↺</button>
+                                <button onClick={() => setCur(Math.max(0, cur-1))} className="text-gray-500 hover:text-white text-xl">⏮</button>
+                                <button onClick={() => setPlaying(!playing)} className={`px-10 py-2 rounded-full font-bold transition-all ${playing?'bg-red-500':'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]'}`}>
+                                    {playing?'PAUSE':'RUN STEP'}
+                                </button>
+                                <button onClick={() => setCur(Math.min(steps.length-1, cur+1))} className="text-gray-500 hover:text-white text-xl">⏭</button>
+                            </div>
+                            <div className="flex-1">
+                                <div className="h-1 w-full bg-black rounded-full overflow-hidden border border-white/5">
+                                    <div className="h-full bg-blue-500 transition-all duration-300" style={{width:`${((cur+1)/steps.length)*100}%`}}></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RIGHT PANEL */}
+                    <div className="w-[30%] bg-[#1E1E1E] border-l border-[#3C3C3C] flex flex-col">
+                        <div className="h-10 bg-[#252526] border-b border-[#3C3C3C] flex items-center px-4 font-mono text-[10px] text-gray-500 uppercase tracking-widest">
+                            Source: Solution.py
+                        </div>
+                        <div className="flex-1 overflow-y-auto custom-scroll p-4">
+                            {CODE_SNIPPET.map((line, i) => (
+                                <div key={i} className={`flex min-h-[1.4rem] items-center ${s.line === i ? 'active-line' : ''}`}>
+                                    <span className="w-8 text-right pr-4 text-gray-800 text-[10px] font-mono select-none">{i+1}</span>
+                                    <pre className="text-[11.5px] code-font" style={{ marginLeft: `${line.i * 1.5}rem` }} dangerouslySetInnerHTML={{ __html: highlight(line.t) }} />
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Watcher */}
+                        <div className="h-[35%] bg-[#252526] border-t border-[#3C3C3C] p-6 flex flex-col">
+                            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Recursion Stack (DFS)</h3>
+                            <div className="flex flex-wrap gap-2 overflow-y-auto custom-scroll mb-4 max-h-24">
+                                {s.stack.length === 0 ? (
+                                    <span className="text-gray-700 text-xs italic font-mono">Stack is currently empty</span>
+                                ) : (
+                                    s.stack.map((item, idx) => (
+                                        <div key={idx} className="px-2 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-500 font-mono text-[10px] animate-pop">
+                                            ({item[0]},{item[1]})
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                            <div className="mt-auto space-y-2 font-mono text-[12px] pt-4 border-t border-white/5">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500 italic">curr_pos:</span>
+                                    <span className="text-orange-400 font-bold">{s.r !== null ? `(${s.r}, ${s.c})` : 'N/A'}</span>
+                                </div>
+                                <div className="p-3 bg-black/30 rounded border border-white/5 text-[10px] text-gray-400 leading-tight">
+                                    <span className="text-blue-500 font-bold mr-2 uppercase tracking-tighter">Event:</span>{s.msg}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>3070. 2D Prefix Sum 實戰實驗室</title>
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --primary: #58a6ff; --text: #c9d1d9;
+      --ide-bg: #0d1117; --ide-kw: #ff7b72; --ide-fn: #d2a8ff; --ide-vr: #79c0ff; --ide-nm: #79c0ff; --ide-cm: #8b949e;
+      --border: #30363d; --hl: #ffa657; --success: #238636;
+    }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+    .main-grid { max-width: 1400px; margin: auto; display: grid; grid-template-columns: 1fr 600px; gap: 24px; }
+    
+    .header { grid-column: span 2; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 10px; }
+    .ex-tabs { display: flex; gap: 10px; margin-top: 15px; }
+    .ex-btn { background: #21262d; border: 1px solid var(--border); color: #8b949e; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+    .ex-btn.active { background: #238636; color: white; border: none; }
+
+    .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+    .grid-wrapper { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    .grid { display: grid; gap: 4px; background: #010409; padding: 8px; border-radius: 6px; }
+    .cell { width: 50px; height: 50px; background: #0d1117; border: 1px solid #21262d; display: flex; justify-content: center; align-items: center; font-weight: bold; position: relative; }
+    .cell-coord { position: absolute; top: 2px; left: 2px; font-size: 8px; color: #484f58; }
+    
+    .cell.scanning { border: 2px solid var(--primary); background: rgba(88, 166, 255, 0.1); }
+    .cell.valid { color: var(--success); border-color: var(--success); }
+    .cell.invalid { color: #f85149; border-color: #f85149; opacity: 0.6; }
+
+    .code-win { background: var(--ide-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border); font-family: 'Cascadia Code', monospace; font-size: 13px; line-height: 1.6; white-space: pre; height: 480px; overflow: auto; color: #e6edf3; }
+    .line-hl { background: #1c2128; border-left: 3px solid var(--success); display: block; margin-left: -20px; padding-left: 17px; }
+    .kw { color: var(--ide-kw); } .fn { color: var(--ide-fn); } .vr { color: var(--ide-vr); } .nm { color: var(--ide-nm); } .cm { color: var(--ide-cm); }
+
+    .btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; background: var(--success); color: white; margin-right: 10px; }
+  </style>
+</head>
+<body>
+
+<div class="main-grid">
+  <div class="header">
+    <h2 style="margin:0; color:var(--primary);">3070. Count Submatrices (Example 實測)</h2>
+    <div class="ex-tabs">
+      <button class="ex-btn active" id="ex1" onclick="loadExample(1)">Example 1 (K=18)</button>
+      <button class="ex-btn" id="ex2" onclick="loadExample(2)">Example 2 (K=20)</button>
+    </div>
+  </div>
+
+  <div class="left-col">
+    <div class="card grid-wrapper">
+      <div>
+        <div style="font-size:12px; color:var(--ide-cm); margin-bottom:5px;">INPUT GRID</div>
+        <div class="grid" id="grid-input"></div>
+      </div>
+      <div style="width: 100%; border-top: 1px solid var(--border);"></div>
+      <div>
+        <div style="font-size:12px; color:var(--ide-cm); margin-bottom:5px;">PRESUM MATRIX (Dynamic)</div>
+        <div class="grid" id="grid-presum"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+        <h4 style="margin:0 0 10px 0; color:var(--hl);">為什麼要扣除 preSum[i][j]？</h4>
+        <div style="font-size: 13px; line-height: 1.6;">
+            想像你要拼出一塊大拼圖：<br>
+            1. 拿來<b>左邊</b>已經拼好的長方形 (preSum[i+1][j])。<br>
+            2. 拿來<b>上面</b>已經拼好的長方形 (preSum[i][j+1])。<br>
+            3. 你會發現<b>左上角那一塊</b> (preSum[i][j]) 被包含在「左邊」也包含在「上面」，它被重複算了 2 次！<br>
+            4. 所以公式必須：<span style="color:var(--primary)">左 + 上 - 1次重疊 + 目前格子</span>。
+        </div>
+        
+    </div>
+  </div>
+
+  <div class="right-col">
+    <div style="margin-bottom:15px;">
+        <button class="btn" id="step-btn" onclick="step()">Next Step</button>
+        <button class="btn" style="background:#21262d;" onclick="reset()">Reset</button>
+    </div>
+    <div class="code-win" id="code"></div>
+    <div class="card" style="margin-top:15px;">
+        <strong>Total Count:</strong> <span id="res-count" style="font-size:1.8rem; color:var(--success)">0</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const examples = {
+  1: { grid: [[7, 6, 3], [6, 6, 1]], k: 18 },
+  2: { grid: [[7, 2, 9], [1, 5, 0], [2, 6, 6]], k: 20 }
+};
+
+let curEx = 1;
+let state = { i: 0, j: 0, count: 0, preSum: [], finished: false };
+
+const pyCode = `<span class="kw">class</span> <span class="fn">Solution</span>:
+    <span class="kw">def</span> <span class="fn">countSubmatrices</span>(<span class="vr">self</span>, <span class="vr">grid</span>, <span class="vr">k</span>):
+        <span class="vr">m</span>, <span class="vr">n</span> = <span class="fn">len</span>(<span class="vr">grid</span>), <span class="fn">len</span>(<span class="vr">grid</span>[<span class="nm">0</span>])
+        <span class="vr">preSum</span> = [[<span class="nm">0</span>] * (<span class="vr">n</span> + <span class="nm">1</span>) <span class="kw">for</span> <span class="vr">_</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="vr">m</span> + <span class="nm">1</span>)]
+        <span class="vr">count</span> = <span class="nm">0</span>
+        
+        <span class="kw">for</span> <span class="vr">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="vr">m</span>):
+            <span class="kw">for</span> <span class="vr">j</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="vr">n</span>):
+                <span class="cm"># 公式：上 + 左 - 重疊(左上) + 自己</span>
+                <span class="vr">cur</span> = <span class="vr">preSum</span>[<span class="vr">i</span>][<span class="vr">j</span>+<span class="nm">1</span>] + <span class="vr">preSum</span>[<span class="vr">i</span>+<span class="nm">1</span>][<span class="vr">j</span>] - <span class="vr">preSum</span>[<span class="vr">i</span>][<span class="vr">j</span>] + <span class="vr">grid</span>[<span class="vr">i</span>][<span class="vr">j</span>]
+                <span class="vr">preSum</span>[<span class="vr">i</span>+<span class="nm">1</span>][<span class="vr">j</span>+<span class="nm">1</span>] = <span class="vr">cur</span>
+                
+                <span class="kw">if</span> <span class="vr">cur</span> <= <span class="vr">k</span>:
+                    <span class="vr">count</span> += <span class="nm">1</span>
+                <span class="kw">else</span>:
+                    <span class="kw">break</span> 
+        <span class="kw">return</span> <span class="vr">count</span>`;
+
+function loadExample(n) {
+    curEx = n;
+    document.querySelectorAll('.ex-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('ex'+n).classList.add('active');
+    reset();
+}
+
+function reset() {
+    const { grid } = examples[curEx];
+    state = { 
+        i: 0, j: 0, count: 0, 
+        preSum: Array.from({length: grid.length+1}, () => Array(grid[0].length+1).fill(0)), 
+        finished: false 
+    };
+    render();
+}
+
+function render() {
+    const { grid, k } = examples[curEx];
+    const M = grid.length, N = grid[0].length;
+    
+    const inputG = document.getElementById('grid-input');
+    inputG.style.gridTemplateColumns = `repeat(${N}, 50px)`;
+    inputG.innerHTML = '';
+    
+    for(let r=0; r<M; r++) {
+        for(let c=0; c<N; c++) {
+            let cls = 'cell';
+            if(r === state.i && c === state.j && !state.finished) cls += ' scanning';
+            inputG.innerHTML += `<div class="${cls}"><span class="cell-coord">${r},${c}</span>${grid[r][c]}</div>`;
+        }
+    }
+
+    const preG = document.getElementById('grid-presum');
+    preG.style.gridTemplateColumns = `repeat(${N+1}, 50px)`;
+    preG.innerHTML = '';
+    for(let r=0; r<=M; r++) {
+        for(let c=0; c<=N; c++) {
+            let cls = 'cell';
+            let val = state.preSum[r][c];
+            if(val > 0) {
+                cls += (val <= k) ? ' valid' : ' invalid';
+            }
+            preG.innerHTML += `<div class="${cls}"><span class="cell-coord">${r},${c}</span>${val}</div>`;
+        }
+    }
+    document.getElementById('res-count').innerText = state.count;
+    document.getElementById('code').innerHTML = pyCode.split('\n').map((l, idx) => `<span id="L-${idx}">${l}</span>`).join('\n');
+}
+
+function step() {
+    if (state.finished) return;
+    const { grid, k } = examples[curEx];
+    const M = grid.length, N = grid[0].length;
+
+    const { i, j } = state;
+    const curSum = state.preSum[i][j+1] + state.preSum[i+1][j] - state.preSum[i][j] + grid[i][j];
+    state.preSum[i+1][j+1] = curSum;
+
+    if (curSum <= k) {
+        state.count++;
+        state.j++;
+    } else {
+        state.j = N; // Break line
+    }
+
+    if (state.j >= N) {
+        state.j = 0;
+        state.i++;
+    }
+    if (state.i >= M) state.finished = true;
+    render();
+}
+
+loadExample(1);
+</script>
+</body>
+</html>

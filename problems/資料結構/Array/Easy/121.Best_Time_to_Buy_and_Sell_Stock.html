@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>121. Best Time to Buy and Sell Stock - LeetCode Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-easy: #00b8a3;
+      --lc-blue: #007aff;
+      --lc-red: #ff3b30;
+      --lc-green: #2cbb5d;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1350px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(0, 184, 163, 0.15);
+      color: var(--lc-easy);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .dashboard {
+      max-width: 1350px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1000px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+
+    .problem-desc { font-size: 0.9rem; color: #ccc; margin-bottom: 12px; }
+    
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.85rem;
+      color: var(--lc-text);
+      margin-bottom: 10px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+
+    .complexity-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-green); }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      min-height: 270px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+    .num { color: #bd93f9; }
+    .cm { color: #6272a4; font-style: italic; }
+    .op { color: #ff79c6; }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .status-card .label { font-size: 0.72rem; color: var(--lc-text-dim); display: block; }
+    .status-card .value { font-size: 1rem; font-family: monospace; font-weight: bold; color: var(--lc-orange); }
+
+    .chart-area {
+      height: 220px;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 12px;
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+    }
+    .bar {
+      width: 32px;
+      background: #3e3e3e;
+      position: relative;
+      transition: all 0.2s ease;
+      border-radius: 2px 2px 0 0;
+    }
+    .bar.buy-bar { background: var(--lc-red) !important; box-shadow: 0 0 8px rgba(255, 59, 48, 0.5); }
+    .bar.sell-bar { background: var(--lc-green) !important; box-shadow: 0 0 8px rgba(44, 187, 93, 0.5); }
+    
+    .bar::after {
+      content: attr(data-p);
+      position: absolute;
+      top: -22px;
+      width: 100%;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--lc-text-dim);
+      font-weight: bold;
+    }
+    .bar.buy-bar::after { color: var(--lc-red); }
+    .bar.sell-bar::after { color: var(--lc-green); }
+
+    .pointer-tag {
+      position: absolute;
+      top: -45px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      font-weight: bold;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: #fff;
+    }
+    .tag-l { background: var(--lc-red); }
+    .tag-r { background: var(--lc-green); }
+
+    .control-panel {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    select, input[type="text"] {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      color: var(--lc-text);
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    input[type="text"] { flex: 1; min-width: 120px; }
+    select:focus, input[type="text"]:focus { border-color: var(--lc-orange); outline: none; }
+    
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-green); color: #fff; }
+    .btn-primary:hover { background: #28a745; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .result-banner {
+      background: rgba(44, 187, 93, 0.1);
+      border: 1px solid var(--lc-green);
+      color: var(--lc-green);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">121. Best Time to Buy and Sell Stock</span>
+    <span class="lc-badge">Easy</span>
+    <span class="lc-tag">Array</span>
+    <span class="lc-tag">Dynamic Programming</span>
+    <span class="lc-tag">Two Pointers</span>
+  </div>
+
+  <div class="dashboard">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Description & Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個陣列 <code>prices</code>，第 <code>i</code> 個元素代表股票在第 <code>i</code> 天的價格。
+            你只能選擇某一天買入，並在未來的另一天賣出。請計算並傳回你能獲得的最大利潤。如果無法獲利，回傳 <code>0</code>。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> prices = [7,1,5,3,6,4]</div>
+            <div><strong>Output:</strong> 5</div>
+            <div><strong>Explanation:</strong> 在第 2 天 (價格 = 1) 買入，第 5 天 (價格 = 6) 賣出，利潤 = 6-1 = 5。</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span id="timeComp" class="complexity-val">O(N)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span id="spaceComp" class="complexity-val">O(1)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span>🐍 Python3 程式碼單步追蹤</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="codeBox"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與動態面板 (State Monitor)</div>
+        <div class="card-body">
+          <div class="status-grid">
+            <div class="status-card">
+              <span class="label" id="lbl-buy">buy (Price)</span>
+              <span id="stat-buyP" class="value" style="color: var(--lc-red);">-</span>
+            </div>
+            <div class="status-card">
+              <span class="label" id="lbl-sell">sell (Price)</span>
+              <span id="stat-sellP" class="value" style="color: var(--lc-green);">-</span>
+            </div>
+            <div class="status-card">
+              <span class="label">Current Profit</span>
+              <span id="stat-profit" class="value">0</span>
+            </div>
+            <div class="status-card" style="grid-column: span 3;">
+              <span class="label">Max Profit (profit / max_p)</span>
+              <span id="stat-max" class="value" style="color: var(--lc-green); font-size: 1.2rem;">0</span>
+            </div>
+          </div>
+
+          <div class="chart-area" id="chart"></div>
+
+          <div class="control-panel">
+            <select id="algoSelect" onchange="initSim()">
+              <option value="greedy" selected>Sol 1: 貪婪法 Greedy O(N)</option>
+              <option value="twoPointer">Sol 2: 雙指標 Two Pointers O(N)</option>
+              <option value="brute">Sol 3: 暴力法 Brute Force O(N²)</option>
+            </select>
+            <input type="text" id="pricesInput" value="7,1,5,3,6,4">
+            <button class="btn" onclick="initSim()">Reset</button>
+            <button id="prevBtn" class="btn" onclick="prevStep()" disabled>← Prev</button>
+            <button id="nextBtn" class="btn btn-primary" onclick="nextStep()">Step →</button>
+          </div>
+
+          <div id="finalBox" class="result-banner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = {
+      greedy: {
+        time: "O(N)", space: "O(1)",
+        lines: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>(<span class="kw">object</span>):' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">maxProfit</span>(<span class="self">self</span>, prices):' },
+          { id: "l3", text: '        profit <span class="op">=</span> <span class="num">0</span>' },
+          { id: "l4", text: '        buy <span class="op">=</span> prices[<span class="num">0</span>]' },
+          { id: "l5", text: '        <span class="kw">for</span> sell <span class="kw">in</span> prices[<span class="num">1</span>:]:' },
+          { id: "l6", text: '            <span class="kw">if</span> sell <span class="op">&gt;</span> buy:' },
+          { id: "l7", text: '                profit <span class="op">=</span> <span class="kw">max</span>(profit, sell <span class="op">-</span> buy)' },
+          { id: "l8", text: '            <span class="kw">else</span>:' },
+          { id: "l9", text: '                buy <span class="op">=</span> sell' },
+          { id: "l10", text: '        <span class="kw">return</span> profit' }
+        ]
+      },
+      twoPointer: {
+        time: "O(N)", space: "O(1)",
+        lines: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>:' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">maxProfit</span>(<span class="self">self</span>, prices: list[<span class="kw">int</span>]) -> <span class="kw">int</span>:' },
+          { id: "l3", text: '        l, r <span class="op">=</span> <span class="num">0</span>, <span class="num">1</span>' },
+          { id: "l4", text: '        max_p <span class="op">=</span> <span class="num">0</span>' },
+          { id: "l5", text: '        <span class="kw">while</span> r <span class="op">&lt;</span> <span class="kw">len</span>(prices):' },
+          { id: "l6", text: '            <span class="kw">if</span> prices[l] <span class="op">&lt;</span> prices[r]:' },
+          { id: "l7", text: '                profit <span class="op">=</span> prices[r] <span class="op">-</span> prices[l]' },
+          { id: "l8", text: '                max_p <span class="op">=</span> <span class="kw">max</span>(max_p, profit)' },
+          { id: "l9", text: '            <span class="kw">else</span>:' },
+          { id: "l10", text: '                l <span class="op">=</span> r' },
+          { id: "l11", text: '            r <span class="op">+=</span> <span class="num">1</span>' },
+          { id: "l12", text: '        <span class="kw">return</span> max_p' }
+        ]
+      },
+      brute: {
+        time: "O(N²)", space: "O(1)",
+        lines: [
+          { id: "l1", text: '<span class="kw">class</span> <span class="fn">Solution</span>:' },
+          { id: "l2", text: '    <span class="kw">def</span> <span class="fn">maxProfit</span>(<span class="self">self</span>, prices: list[<span class="kw">int</span>]) -> <span class="kw">int</span>:' },
+          { id: "l3", text: '        max_p <span class="op">=</span> <span class="num">0</span>' },
+          { id: "l4", text: '        <span class="kw">for</span> i <span class="kw">in</span> <span class="kw">range</span>(<span class="kw">len</span>(prices)):' },
+          { id: "l5", text: '            <span class="kw">for</span> j <span class="kw">in</span> <span class="kw">range</span>(i <span class="op">+</span> <span class="num">1</span>, <span class="kw">len</span>(prices)):' },
+          { id: "l6", text: '                profit <span class="op">=</span> prices[j] <span class="op">-</span> prices[i]' },
+          { id: "l7", text: '                max_p <span class="op">=</span> <span class="kw">max</span>(max_p, profit)' },
+          { id: "l8", text: '        <span class="kw">return</span> max_p' }
+        ]
+      }
+    };
+
+    let prices = [];
+    let steps = [];
+    let currentStepIdx = 0;
+    let selectedAlgo = "greedy";
+
+    function generateSteps() {
+      steps = [];
+      if (selectedAlgo === "greedy") generateGreedySteps();
+      else if (selectedAlgo === "twoPointer") generateTwoPointerSteps();
+      else if (selectedAlgo === "brute") generateBruteSteps();
+    }
+
+    // 1. 貪婪法微步
+    function generateGreedySteps() {
+      let profit = 0;
+      let buyIdx = 0;
+      let buy = prices[0];
+
+      steps.push({ lineId: "l3", buyIdx: null, sellIdx: null, buyVal: "-", sellVal: "-", currProfit: 0, maxProfit: 0, hintText: "初始化 profit = 0" });
+      steps.push({ lineId: "l4", buyIdx: 0, sellIdx: null, buyVal: buy, sellVal: "-", currProfit: 0, maxProfit: 0, hintText: `設定預設買入價格 buy = prices[0] (${buy})` });
+
+      for (let sellIdx = 1; sellIdx < prices.length; sellIdx++) {
+        let sell = prices[sellIdx];
+        steps.push({ lineId: "l5", buyIdx, sellIdx, buyVal: buy, sellVal: sell, currProfit: 0, maxProfit: profit, hintText: `走訪到 sell = prices[${sellIdx}] (${sell})` });
+
+        let isGreater = sell > buy;
+        steps.push({ lineId: "l6", buyIdx, sellIdx, buyVal: buy, sellVal: sell, currProfit: isGreater ? (sell - buy) : 0, maxProfit: profit, hintText: `檢查 if sell (${sell}) > buy (${buy}) ➔ ${isGreater ? "True (可獲利)" : "False (價格低於或等於 buy)"}` });
+
+        if (isGreater) {
+          let diff = sell - buy;
+          profit = Math.max(profit, diff);
+          steps.push({ lineId: "l7", buyIdx, sellIdx, buyVal: buy, sellVal: sell, currProfit: diff, maxProfit: profit, hintText: `更新最大利潤 profit = max(${profit}, ${sell} - ${buy}) ➔ ${profit}` });
+        } else {
+          steps.push({ lineId: "l8", buyIdx, sellIdx, buyVal: buy, sellVal: sell, currProfit: 0, maxProfit: profit, hintText: `進入 else 分支` });
+          buyIdx = sellIdx;
+          buy = sell;
+          steps.push({ lineId: "l9", buyIdx, sellIdx, buyVal: buy, sellVal: sell, currProfit: 0, maxProfit: profit, hintText: `發現更低價格，更新買入點 buy = ${sell}` });
+        }
+      }
+      steps.push({ lineId: "l10", buyIdx, sellIdx: null, buyVal: buy, sellVal: "-", currProfit: 0, maxProfit: profit, isFinished: true, hintText: `迴圈結束，回傳 profit = ${profit}` });
+    }
+
+    // 2. 雙指標法微步
+    function generateTwoPointerSteps() {
+      let l = 0, r = 1, max_p = 0;
+
+      steps.push({ lineId: "l3", buyIdx: 0, sellIdx: 1, buyVal: prices[0], sellVal: prices[1], currProfit: 0, maxProfit: 0, hintText: "初始化雙指標: l = 0 (買點), r = 1 (賣點)" });
+      steps.push({ lineId: "l4", buyIdx: 0, sellIdx: 1, buyVal: prices[0], sellVal: prices[1], currProfit: 0, maxProfit: 0, hintText: "初始化 max_p = 0" });
+
+      while (r < prices.length) {
+        steps.push({ lineId: "l5", buyIdx: l, sellIdx: r, buyVal: prices[l], sellVal: prices[r], currProfit: 0, maxProfit: max_p, hintText: `檢查迴圈條件 while r (${r}) < len (${prices.length})` });
+
+        let isProfitable = prices[l] < prices[r];
+        steps.push({ lineId: "l6", buyIdx: l, sellIdx: r, buyVal: prices[l], sellVal: prices[r], currProfit: isProfitable ? (prices[r] - prices[l]) : 0, maxProfit: max_p, hintText: `比較 prices[l] (${prices[l]}) < prices[r] (${prices[r]}) ➔ ${isProfitable ? "True" : "False"}` });
+
+        if (isProfitable) {
+          let profit = prices[r] - prices[l];
+          steps.push({ lineId: "l7", buyIdx: l, sellIdx: r, buyVal: prices[l], sellVal: prices[r], currProfit: profit, maxProfit: max_p, hintText: `計算當前獲利 profit = ${prices[r]} - ${prices[l]} = ${profit}` });
+          max_p = Math.max(max_p, profit);
+          steps.push({ lineId: "l8", buyIdx: l, sellIdx: r, buyVal: prices[l], sellVal: prices[r], currProfit: profit, maxProfit: max_p, hintText: `更新最大獲利 max_p = ${max_p}` });
+        } else {
+          steps.push({ lineId: "l9", buyIdx: l, sellIdx: r, buyVal: prices[l], sellVal: prices[r], currProfit: 0, maxProfit: max_p, hintText: `進入 else 分支 (遇到破底或平價)` });
+          l = r;
+          steps.push({ lineId: "l10", buyIdx: l, sellIdx: r, buyVal: prices[l], sellVal: prices[r], currProfit: 0, maxProfit: max_p, hintText: `將左指標移動到目前低點 l = r (${l})` });
+        }
+
+        r++;
+        if (r < prices.length) {
+          steps.push({ lineId: "l11", buyIdx: l, sellIdx: r, buyVal: prices[l], sellVal: prices[r], currProfit: 0, maxProfit: max_p, hintText: `右指標右移 r += 1 (${r})` });
+        } else {
+          steps.push({ lineId: "l11", buyIdx: l, sellIdx: null, buyVal: prices[l], sellVal: "-", currProfit: 0, maxProfit: max_p, hintText: `右指標右移 r += 1 (${r})，超出陣列邊界` });
+        }
+      }
+
+      steps.push({ lineId: "l12", buyIdx: l, sellIdx: null, buyVal: prices[l], sellVal: "-", currProfit: 0, maxProfit: max_p, isFinished: true, hintText: `演算法結束，回傳 max_p = ${max_p}` });
+    }
+
+    // 3. 暴力法微步
+    function generateBruteSteps() {
+      let max_p = 0;
+      steps.push({ lineId: "l3", buyIdx: null, sellIdx: null, buyVal: "-", sellVal: "-", currProfit: 0, maxProfit: 0, hintText: "初始化 max_p = 0" });
+
+      for (let i = 0; i < prices.length; i++) {
+        steps.push({ lineId: "l4", buyIdx: i, sellIdx: null, buyVal: prices[i], sellVal: "-", currProfit: 0, maxProfit: max_p, hintText: `外層迴圈 i = ${i} (買入天)` });
+
+        for (let j = i + 1; j < prices.length; j++) {
+          steps.push({ lineId: "l5", buyIdx: i, sellIdx: j, buyVal: prices[i], sellVal: prices[j], currProfit: 0, maxProfit: max_p, hintText: `內層迴圈 j = ${j} (賣出天)` });
+          
+          let profit = prices[j] - prices[i];
+          steps.push({ lineId: "l6", buyIdx: i, sellIdx: j, buyVal: prices[i], sellVal: prices[j], currProfit: profit, maxProfit: max_p, hintText: `計算利潤 profit = prices[${j}] (${prices[j]}) - prices[${i}] (${prices[i]}) = ${profit}` });
+
+          if (profit > max_p) max_p = profit;
+          steps.push({ lineId: "l7", buyIdx: i, sellIdx: j, buyVal: prices[i], sellVal: prices[j], currProfit: profit, maxProfit: max_p, hintText: `更新 max_p = max(${max_p}, ${profit}) ➔ ${max_p}` });
+        }
+      }
+
+      steps.push({ lineId: "l8", buyIdx: null, sellIdx: null, buyVal: "-", sellVal: "-", currProfit: 0, maxProfit: max_p, isFinished: true, hintText: `所有對比結束，回傳 max_p = ${max_p}` });
+    }
+
+    function initSim() {
+      selectedAlgo = document.getElementById("algoSelect").value;
+      const rawInput = document.getElementById("pricesInput").value;
+      prices = rawInput.split(",").map(Number).filter(n => !isNaN(n));
+
+      if (prices.length === 0) return;
+
+      document.getElementById("timeComp").innerText = codeTemplates[selectedAlgo].time;
+      document.getElementById("spaceComp").innerText = codeTemplates[selectedAlgo].space;
+
+      // 調整狀態標籤名稱
+      if (selectedAlgo === "greedy") {
+        document.getElementById("lbl-buy").innerText = "buy (Price)";
+        document.getElementById("lbl-sell").innerText = "sell (Price)";
+      } else if (selectedAlgo === "twoPointer") {
+        document.getElementById("lbl-buy").innerText = "l Pointer (Buy)";
+        document.getElementById("lbl-sell").innerText = "r Pointer (Sell)";
+      } else {
+        document.getElementById("lbl-buy").innerText = "i Index (Buy)";
+        document.getElementById("lbl-sell").innerText = "j Index (Sell)";
+      }
+
+      const codeBox = document.getElementById("codeBox");
+      codeBox.innerHTML = codeTemplates[selectedAlgo].lines
+        .map(line => `<div class="code-line" id="${line.id}">${line.text}</div>`)
+        .join("");
+
+      generateSteps();
+      currentStepIdx = 0;
+      renderCurrentStep();
+    }
+
+    function renderCurrentStep() {
+      const state = steps[currentStepIdx];
+
+      document.getElementById("stat-buyP").innerText = state.buyVal;
+      document.getElementById("stat-sellP").innerText = state.sellVal;
+      document.getElementById("stat-profit").innerText = state.currProfit;
+      document.getElementById("stat-max").innerText = state.maxProfit;
+      document.getElementById("stepHint").innerText = state.hintText;
+
+      document.querySelectorAll(".code-line").forEach(el => el.classList.remove("active-line"));
+      const targetLine = document.getElementById(state.lineId);
+      if (targetLine) targetLine.classList.add("active-line");
+
+      renderChart(state.buyIdx, state.sellIdx, state.isFinished);
+
+      document.getElementById("prevBtn").disabled = (currentStepIdx === 0);
+      
+      const fb = document.getElementById("finalBox");
+      if (state.isFinished) {
+        fb.innerHTML = `Accepted | Max Profit: ${state.maxProfit}`;
+        fb.style.display = "block";
+        document.getElementById("nextBtn").disabled = true;
+      } else {
+        fb.style.display = "none";
+        document.getElementById("nextBtn").disabled = false;
+      }
+    }
+
+    function renderChart(buyIdx, sellIdx, isFinished) {
+      const chart = document.getElementById("chart");
+      chart.innerHTML = "";
+      const maxVal = Math.max(...prices, 1);
+
+      prices.forEach((p, idx) => {
+        const bar = document.createElement("div");
+        bar.className = "bar";
+
+        if (!isFinished) {
+          let buyTag = selectedAlgo === "greedy" ? "buy" : (selectedAlgo === "twoPointer" ? "L" : "i");
+          let sellTag = selectedAlgo === "greedy" ? "sell" : (selectedAlgo === "twoPointer" ? "R" : "j");
+
+          if (idx === buyIdx) {
+            bar.classList.add("buy-bar");
+            bar.innerHTML += `<div class="pointer-tag tag-l">${buyTag}</div>`;
+          }
+          if (idx === sellIdx) {
+            bar.classList.add("sell-bar");
+            bar.innerHTML += `<div class="pointer-tag tag-r">${sellTag}</div>`;
+          }
+        }
+
+        bar.style.height = (p / maxVal * 160) + "px";
+        bar.setAttribute("data-p", p);
+        chart.appendChild(bar);
+      });
+    }
+
+    function nextStep() {
+      if (currentStepIdx < steps.length - 1) {
+        currentStepIdx++;
+        renderCurrentStep();
+      }
+    }
+
+    function prevStep() {
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        renderCurrentStep();
+      }
+    }
+
+    window.onload = initSim;
+  </script>
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 2. 兩數相加 (Add Two Numbers) 視覺化調試器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; font-family: 'Microsoft JhengHei', 'Segoe UI', monospace; height: 100vh; overflow: hidden; }
+        .panel { background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; }
+        .code-box { font-family: 'Fira Code', monospace; font-size: 13px; line-height: 1.6; white-space: pre; }
+        .active-line { background-color: #173351 !important; border-left: 4px solid #1f6feb !important; }
+        
+        .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .tp { color: #79c0ff; } .cm { color: #8b949e; }
+        
+        .node {
+            width: 42px; height: 42px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            background: #0d1117; border: 2px solid #30363d; font-weight: bold; color: #79c0ff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .node-active { border-color: #58a6ff; background: #1f6feb; color: white; transform: translateY(-5px); box-shadow: 0 10px 20px rgba(31, 111, 235, 0.3); }
+        .dummy-node { border-style: dashed; color: #8b949e; background: transparent; }
+        
+        .math-bubble {
+            background: #21262d; border: 1px solid #30363d; padding: 10px 30px; border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        #log-display::-webkit-scrollbar { width: 4px; }
+        #log-display::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 flex flex-col gap-4">
+
+    <header class="flex items-center justify-between px-6 py-3 panel shrink-0">
+        <div class="flex items-center gap-6">
+            <h1 class="text-xl font-black text-white tracking-tighter">兩數相加 視覺化工具</h1>
+            <div class="flex bg-black/40 rounded-lg p-1 border border-zinc-800 gap-1 text-xs">
+                <button onclick="setLang('c')" id="lang-c" class="px-3 py-1 rounded transition-all">C 語言</button>
+                <button onclick="setLang('py')" id="lang-py" class="px-3 py-1 rounded transition-all">Python</button>
+                <div class="w-[1px] bg-zinc-800 mx-1"></div>
+                <button onclick="setMethod('iter')" id="meth-iter" class="px-3 py-1 rounded transition-all">迭代 (Iteration)</button>
+                <button onclick="setMethod('rec')" id="meth-rec" class="px-3 py-1 rounded transition-all">遞迴 (Recursion)</button>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="setCase(0)" id="tc-0" class="px-3 py-1 text-[11px] rounded border border-zinc-700">測資 1</button>
+            <button onclick="setCase(1)" id="tc-1" class="px-3 py-1 text-[11px] rounded border border-zinc-700">測資 2</button>
+            <button onclick="setCase(2)" id="tc-2" class="px-3 py-1 text-[11px] rounded border border-zinc-700">測資 3 (進位大魔王)</button>
+            <button onclick="reset()" class="ml-4 px-4 py-1 text-[11px] bg-red-900/30 text-red-400 border border-red-900/50 rounded font-bold hover:bg-red-800/40">重置</button>
+        </div>
+    </header>
+
+    <div class="flex-1 flex gap-4 overflow-hidden">
+        
+        <aside class="w-1/3 flex flex-col gap-4 overflow-y-auto">
+            <section class="panel p-5">
+                <h2 class="text-blue-400 text-xs font-bold uppercase mb-2">題目敘述 (Problem)</h2>
+                <p class="text-xs text-zinc-300 leading-relaxed">
+                    給定兩個<b>非空</b>的鏈表，代表兩個非負整數。數字以<b>逆序</b>存儲，每個節點包含一個數字。將這兩個數字相加，並以鏈表形式回傳結果。
+                </p>
+                <div id="case-detail" class="mt-3 p-2 bg-black/40 rounded text-[11px] text-yellow-500 font-mono border border-zinc-800"></div>
+            </section>
+
+            <section class="panel p-5 bg-blue-500/5 border-blue-500/20">
+                <h2 class="text-blue-400 text-xs font-bold uppercase mb-2">複雜度分析 (Complexity)</h2>
+                <div class="text-[11px] space-y-1">
+                    <p><span class="text-zinc-500">時間複雜度：</span> <span class="text-white">O(max(m, n))</span> - m 與 n 為鏈表長度，需遍歷較長者一次。</p>
+                    <p><span class="text-zinc-500">空間複雜度：</span> <span class="text-white">O(max(m, n))</span> - 新鏈表長度最多為較長者加一。</p>
+                </div>
+            </section>
+            
+            <section class="panel p-4 flex-1 overflow-y-auto">
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-blue-400 text-xs font-bold mb-2">1. 迭代演算法 (Iteration)</h3>
+                        <ul class="text-[11px] space-y-2 text-zinc-400">
+                            <li><b class="text-zinc-200">建立：</b>一個 <code>dummy</code> 節點（哨兵）、指標 <code>cur</code> 指向它、整數 <code>carry = 0</code>。</li>
+                            <li><b class="text-zinc-200">迴圈：</b>當 <code>l1</code>, <code>l2</code> 或 <code>carry</code> 存在時持續進行。</li>
+                            <li><b class="text-zinc-200">計算：</b>讀取當前數值（不存在則補 0），<code>sum = v1 + v2 + carry</code>。</li>
+                            <li><b class="text-zinc-200">更新：</b>進位 <code>carry = sum // 10</code>，當前位 <code>digit = sum % 10</code>。</li>
+                            <li><b class="text-zinc-200">移動：</b>建立新節點接在 <code>cur</code> 後，將 <code>l1</code>, <code>l2</code>, <code>cur</code> 向前移動。</li>
+                            <li><b class="text-zinc-200">回傳：</b><code>dummy.next</code> 即為結果鏈表首部。</li>
+                        </ul>
+                    </div>
+
+                    <div class="pt-4 border-t border-zinc-800">
+                        <h3 class="text-purple-400 text-xs font-bold mb-2">2. 遞迴演算法 (Recursion)</h3>
+                        <ul class="text-[11px] space-y-2 text-zinc-400">
+                            <li><b class="text-zinc-200">定義函數：</b><code>add(l1, l2, carry)</code>。</li>
+                            <li><b class="text-zinc-200">終止條件：</b>若 <code>l1</code>, <code>l2</code> 皆空且 <code>carry</code> 為 0，回傳 None。</li>
+                            <li><b class="text-zinc-200">提取數值：</b>獲取 <code>v1</code>, <code>v2</code>，計算總和 <code>total = v1 + v2 + carry</code>。</li>
+                            <li><b class="text-zinc-200">計算當前：</b>透過 <code>divmod</code> 取得新的進位與當前位。</li>
+                            <li><b class="text-zinc-200">遞迴：</b>以 <code>l1.next</code>, <code>l2.next</code> 及更新後的 <code>carry</code> 呼叫下一層。</li>
+                            <li><b class="text-zinc-200">回傳：</b>建立目前位節點，其 <code>next</code> 指向遞迴產生的後續鏈表。</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <main class="flex-1 panel p-8 flex flex-col items-center justify-between">
+            <div class="w-full space-y-12">
+                <div>
+                    <div class="text-[10px] text-zinc-500 font-bold mb-3 uppercase tracking-widest">鏈表 1 (L1 指標)</div>
+                    <div id="viz-l1" class="flex items-center gap-3"></div>
+                </div>
+                <div>
+                    <div class="text-[10px] text-zinc-500 font-bold mb-3 uppercase tracking-widest">鏈表 2 (L2 指標)</div>
+                    <div id="viz-l2" class="flex items-center gap-3"></div>
+                </div>
+            </div>
+
+            <div class="math-bubble flex items-center gap-8 font-mono">
+                <div class="text-center"><div class="text-[9px] text-zinc-500 mb-1">V1</div><div id="val-v1" class="text-xl font-bold">0</div></div>
+                <div class="text-zinc-600 text-lg">+</div>
+                <div class="text-center"><div class="text-[9px] text-zinc-500 mb-1">V2</div><div id="val-v2" class="text-xl font-bold">0</div></div>
+                <div class="text-zinc-600 text-lg">+</div>
+                <div class="text-center"><div class="text-[9px] text-red-500 mb-1">進位 (Carry)</div><div id="val-c" class="text-xl font-bold text-red-400">0</div></div>
+                <div class="text-blue-500 text-lg">=</div>
+                <div class="text-center bg-blue-500/10 px-6 py-2 rounded-2xl border border-blue-500/30">
+                    <div class="text-[9px] text-blue-400 mb-1 uppercase">該位總和 (Sum)</div>
+                    <div id="val-s" class="text-3xl font-black text-blue-400">0</div>
+                </div>
+            </div>
+
+            <div class="w-full">
+                <div class="text-[10px] text-blue-500 font-bold mb-3 uppercase tracking-widest">結果鏈表 (生成的節點)</div>
+                <div id="viz-res" class="flex items-center gap-3"></div>
+            </div>
+
+            <div class="w-full flex justify-between items-center pt-6 border-t border-zinc-800">
+                <div class="flex gap-3">
+                    <button onclick="step(-1)" class="px-6 py-2 bg-zinc-800 rounded text-xs hover:bg-zinc-700 transition-colors uppercase">上一步</button>
+                    <button onclick="step(1)" class="px-12 py-2 bg-blue-600 text-white rounded font-bold text-xs hover:bg-blue-500 shadow-lg uppercase">下一個步驟</button>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] text-zinc-500 font-bold uppercase">執行進度</div>
+                    <div class="text-xl font-mono font-bold text-white"><span id="cur-step">0</span><span class="text-zinc-600"> / </span><span id="tot-step">0</span></div>
+                </div>
+            </div>
+        </main>
+
+        <aside class="w-1/3 flex flex-col gap-4">
+            <div class="flex-[2] panel overflow-hidden flex flex-col">
+                <div class="bg-[#1c2128] px-4 py-2 text-[10px] font-bold border-b border-zinc-800 flex justify-between">
+                    <span id="code-label">程式碼展示</span>
+                    <span class="text-blue-400">4-空格縮排</span>
+                </div>
+                <div id="code-display" class="p-5 code-box overflow-auto flex-1"></div>
+            </div>
+            
+            <div class="h-48 panel flex flex-col">
+                <div class="bg-[#1c2128] px-4 py-2 text-[10px] font-bold border-b border-zinc-800">執行日誌 (EXECUTION LOG)</div>
+                <div id="log-display" class="flex-1 overflow-y-auto p-4 text-[11px] font-mono text-zinc-400 space-y-1 bg-black/20"></div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const CASES = [
+            { l1: [2,4,3], l2: [5,6,4], label: "Input: l1=[2,4,3], l2=[5,6,4] | Output: [7,0,8]" },
+            { l1: [0], l2: [0], label: "Input: l1=[0], l2=[0] | Output: [0]" },
+            { l1: [9,9,9,9,9,9,9], l2: [9,9,9,9], label: "Input: l1=[9x7], l2=[9x4] | Output: [8,9,9,9,0,0,0,1]" }
+        ];
+
+        let lang = 'c', method = 'iter', caseIdx = 0, stepIdx = 0, timeline = [];
+
+        const CODES = {
+            'c-iter': [
+                "<span class='kw'>struct</span> ListNode* <span class='fn'>addTwoNumbers</span>(<span class='kw'>struct</span> ListNode* l1, <span class='kw'>struct</span> ListNode* l2) {",
+                "    <span class='kw'>struct</span> ListNode* dummy = <span class='fn'>malloc</span>(<span class='kw'>sizeof</span>(<span class='kw'>struct</span> ListNode));",
+                "    <span class='kw'>struct</span> ListNode* curr = dummy;",
+                "    <span class='tp'>int</span> carry = 0;",
+                "    <span class='kw'>while</span> (l1 != NULL || l2 != NULL || carry != 0) {",
+                "        <span class='tp'>int</span> sum = carry;",
+                "        <span class='kw'>if</span> (l1) {",
+                "            sum += l1->val;",
+                "            l1 = l1->next;",
+                "        }",
+                "        <span class='kw'>if</span> (l2) {",
+                "            sum += l2->val;",
+                "            l2 = l2->next;",
+                "        }",
+                "        carry = sum / 10;",
+                "        curr->next = <span class='fn'>createNode</span>(sum % 10);",
+                "        curr = curr->next;",
+                "    }",
+                "    <span class='kw'>return</span> dummy->next;",
+                "}"
+            ],
+            'c-rec': [
+                "<span class='kw'>struct</span> ListNode* <span class='fn'>addTwoNumbers</span>(<span class='kw'>struct</span> ListNode* l1, <span class='kw'>struct</span> ListNode* l2) {",
+                "    <span class='kw'>return</span> <span class='fn'>helper</span>(l1, l2, 0);",
+                "}",
+                "<span class='kw'>struct</span> ListNode* <span class='fn'>helper</span>(<span class='kw'>struct</span> ListNode* l1, <span class='kw'>struct</span> ListNode* l2, <span class='tp'>int</span> carry) {",
+                "    <span class='kw'>if</span> (!l1 && !l2 && !carry) <span class='kw'>return</span> NULL;",
+                "    <span class='tp'>int</span> sum = carry + (l1 ? l1->val : 0) + (l2 ? l2->val : 0);",
+                "    <span class='kw'>struct</span> ListNode* res = <span class='fn'>createNode</span>(sum % 10);",
+                "    res->next = <span class='fn'>helper</span>(l1 ? l1->next : NULL, l2 ? l2->next : NULL, sum / 10);",
+                "    <span class='kw'>return</span> res;",
+                "}"
+            ],
+            'py-iter': [
+                "<span class='kw'>def</span> <span class='fn'>addTwoNumbers</span>(self, l1: ListNode, l2: ListNode) -> ListNode:",
+                "    dummy = ListNode(0)",
+                "    curr = dummy",
+                "    carry = 0",
+                "    <span class='kw'>while</span> l1 <span class='kw'>or</span> l2 <span class='kw'>or</span> carry:",
+                "        v1 = l1.val <span class='kw'>if</span> l1 <span class='kw'>else</span> 0",
+                "        v2 = l2.val <span class='kw'>if</span> l2 <span class='kw'>else</span> 0",
+                "        total = v1 + v2 + carry",
+                "        carry = total // 10",
+                "        curr.next = ListNode(total % 10)",
+                "        curr = curr.next",
+                "        l1 = l1.next <span class='kw'>if</span> l1 <span class='kw'>else</span> <span class='kw'>None</span>",
+                "        l2 = l2.next <span class='kw'>if</span> l2 <span class='kw'>else</span> <span class='kw'>None</span>",
+                "    <span class='kw'>return</span> dummy.next"
+            ],
+            'py-rec': [
+                "<span class='kw'>def</span> <span class='fn'>addTwoNumbers</span>(self, l1, l2, carry=0):",
+                "    <span class='kw'>if</span> <span class='kw'>not</span> l1 <span class='kw'>and</span> <span class='kw'>not</span> l2 <span class='kw'>and</span> <span class='kw'>not</span> carry:",
+                "        <span class='kw'>return</span> <span class='kw'>None</span>",
+                "    v1 = l1.val <span class='kw'>if</span> l1 <span class='kw'>else</span> 0",
+                "    v2 = l2.val <span class='kw'>if</span> l2 <span class='kw'>else</span> 0",
+                "    total = v1 + v2 + carry",
+                "    res = ListNode(total % 10)",
+                "    res.next = self.<span class='fn'>addTwoNumbers</span>(",
+                "        l1.next <span class='kw'>if</span> l1 <span class='kw'>else</span> <span class='kw'>None</span>,",
+                "        l2.next <span class='kw'>if</span> l2 <span class='kw'>else</span> <span class='kw'>None</span>,",
+                "        total // 10",
+                "    )",
+                "    <span class='kw'>return</span> res"
+            ]
+        };
+
+        function buildTimeline() {
+            timeline = [];
+            const { l1, l2 } = CASES[caseIdx];
+            let c = 0, i = 0;
+            const max = Math.max(l1.length, l2.length);
+
+            if(method === 'iter') {
+                timeline.push({ line: 2, msg: "初始化：建立 Dummy 節點與 carry=0", v1:0, v2:0, s:0, c:0 });
+                while(i < max || c > 0) {
+                    let v1 = l1[i] || 0; let v2 = l2[i] || 0;
+                    let s = v1 + v2 + c;
+                    timeline.push({ line: 6, msg: `索引 ${i}：讀取數值並計算總和...`, v1, v2, s, c, active: i });
+                    c = Math.floor(s/10);
+                    timeline.push({ line: 15, msg: `建立新節點(${s%10})，進位更新為 ${c}`, v1, v2, s, c, active: i });
+                    i++;
+                }
+            } else {
+                timeline.push({ line: 2, msg: "開始遞迴呼叫 (起始進位 0)", v1:0, v2:0, s:0, c:0 });
+                while(i < max || c > 0) {
+                    let v1 = l1[i] || 0; let v2 = l2[i] || 0;
+                    let s = v1 + v2 + c;
+                    timeline.push({ line: 6, msg: `遞迴層次 ${i}：提取數值並加總`, v1, v2, s, c, active: i });
+                    c = Math.floor(s/10);
+                    timeline.push({ line: 7, msg: `建立節點(${s%10})，繼續遞迴處理下一位`, v1, v2, s, c, active: i });
+                    i++;
+                }
+            }
+        }
+
+        function setLang(l) { lang = l; reset(); }
+        function setMethod(m) { method = m; reset(); }
+        function setCase(i) { caseIdx = i; reset(); }
+
+        function update() {
+            const step = timeline[stepIdx];
+            document.querySelectorAll('#code-display div').forEach(d => d.classList.remove('active-line'));
+            document.getElementById(`ln-${step.line}`)?.classList.add('active-line');
+            
+            document.getElementById('val-v1').innerText = step.v1;
+            document.getElementById('val-v2').innerText = step.v2;
+            document.getElementById('val-c').innerText = step.c;
+            document.getElementById('val-s').innerText = step.s;
+            document.getElementById('cur-step').innerText = stepIdx + 1;
+            document.getElementById('tot-step').innerText = timeline.length;
+            document.getElementById('case-detail').innerText = CASES[caseIdx].label;
+
+            const log = document.getElementById('log-display');
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="text-blue-500">➜</span> ${step.msg}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+
+            renderNodes(step);
+        }
+
+        function renderNodes(step) {
+            const { l1, l2 } = CASES[caseIdx];
+            const active = step.active !== undefined ? step.active : -1;
+            const draw = (id, data, current, isRes=false) => {
+                let html = isRes ? '<div class="node dummy-node">D</div><div class="text-zinc-700">→</div>' : '';
+                html += data.map((v, i) => `<div class="node ${current === i ? 'node-active' : ''} ${isRes && i > current ? 'opacity-0' : ''}">${v}</div>`)
+                           .join('<div class="text-zinc-700">→</div>');
+                document.getElementById(id).innerHTML = html;
+            };
+            draw('viz-l1', l1, active);
+            draw('viz-l2', l2, active);
+            let res = [], c = 0;
+            for(let i=0; i<Math.max(l1.length, l2.length) || c>0; i++) {
+                let s = (l1[i]||0) + (l2[i]||0) + c; res.push(s%10); c = Math.floor(s/10);
+            }
+            draw('viz-res', res, active, true);
+        }
+
+        function step(dir) {
+            stepIdx = Math.max(0, Math.min(timeline.length - 1, stepIdx + dir));
+            if(dir === -1) document.getElementById('log-display').innerHTML = '';
+            update();
+        }
+
+        function reset() {
+            stepIdx = 0; document.getElementById('log-display').innerHTML = '';
+            buildTimeline(); renderCode(); update();
+        }
+
+        function renderCode() {
+            const key = `${lang}-${method}`;
+            document.getElementById('code-display').innerHTML = CODES[key].map((l, i) => `<div id="ln-${i+1}">${l}</div>`).join('');
+            document.getElementById('code-label').innerText = `${lang.toUpperCase()} 實作 / ${method === 'iter' ? '迭代' : '遞迴'}`;
+            
+            document.getElementById('lang-c').className = `px-3 py-1 rounded ${lang==='c'?'bg-blue-600 text-white font-bold':'text-zinc-500 hover:text-zinc-300'}`;
+            document.getElementById('lang-py').className = `px-3 py-1 rounded ${lang==='py'?'bg-blue-600 text-white font-bold':'text-zinc-500 hover:text-zinc-300'}`;
+            document.getElementById('meth-iter').className = `px-3 py-1 rounded ${method==='iter'?'bg-blue-600 text-white font-bold':'text-zinc-500 hover:text-zinc-300'}`;
+            document.getElementById('meth-rec').className = `px-3 py-1 rounded ${method==='rec'?'bg-blue-600 text-white font-bold':'text-zinc-500 hover:text-zinc-300'}`;
+            [0,1,2].forEach(i => document.getElementById(`tc-${i}`).className = `px-3 py-1 rounded border transition-all ${caseIdx===i?'border-blue-500 bg-blue-500/20 text-blue-400 font-bold':'border-zinc-800 text-zinc-500 hover:border-zinc-600'}`);
+        }
+
+        reset();
+    </script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<title>Copy List with Random Pointer 視覺化</title>
+<style>
+  body { font-family: sans-serif; padding: 2rem; background: #f0f2f5; }
+  h1, h2, h3 { text-align: center; }
+  .description, .complexity { max-width: 800px; margin: 1rem auto; background: #fff; padding: 1rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .list { display: flex; justify-content: center; flex-wrap: wrap; margin: 1rem 0; }
+  .node { position: relative; margin: 8px; padding: 10px 16px; background: #3498db; color: white; font-weight: bold; border-radius: 10px; min-width: 40px; text-align: center; }
+  .node::after { content: ""; position: absolute; top: 50%; left: 100%; width: 30px; height: 2px; background: #555; transform: translateY(-50%); }
+  .node:last-child::after { display: none; }
+  .random-label { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 2px 6px; border-radius: 6px; font-size: 12px; }
+  .button-box { text-align: center; margin: 1rem; }
+  button { background: #007acc; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem; }
+  #status { margin-top: 1rem; text-align: center; font-weight: bold; }
+  #codeBox { background: #272822; color: #f8f8f2; padding: 1rem; border-radius: 6px; max-width: 800px; margin: 2rem auto; font-family: monospace; overflow-x: auto; }
+  .code-line { padding: 2px 0; }
+  .active-code { background: #444; color: #fff; }
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Copy List with Random Pointer 視覺化</h1>
+
+<div class="description">
+  <h3>題目敘述</h3>
+  <p>給定一個長度為 n 的鏈結串列，每個節點有 next 和 random 指標，請深拷貝這個串列。</p>
+</div>
+
+<div class="button-box">
+  <button onclick="startSimulation()">開始模擬</button>
+  <button onclick="stepSimulation()">下一步</button>
+</div>
+
+<h2>原串列 (oldNodes)</h2>
+<div id="oldList" class="list"></div>
+
+<h2>新串列 (newNodes)</h2>
+<div id="newList" class="list"></div>
+
+<h2>對應的 C 程式碼</h2>
+<div id="codeBox">
+    <div class="code-line" id="c1">#define MAX_NODES 1000</div>
+    <div class="code-line" id="c2">typedef struct Node Node;</div>
+    <div class="code-line" id="c3">Node* createNode(int val) {...}</div>
+    <div class="code-line" id="c4">Node* copyRandomList(Node* head) {</div>
+    <div class="code-line" id="c5">&nbsp;&nbsp;if (!head) return NULL;</div>
+    <div class="code-line" id="c6">&nbsp;&nbsp;Node* oldNodes[MAX_NODES], *newNodes[MAX_NODES];</div>
+    <div class="code-line" id="c7">&nbsp;&nbsp;int idx = 0;</div>
+    <div class="code-line" id="c8">&nbsp;&nbsp;Node* curr = head;</div>
+    <div class="code-line" id="c9">&nbsp;&nbsp;Node* dummy = createNode(0);</div>
+    <div class="code-line" id="c10">&nbsp;&nbsp;Node* copyCurr = dummy;</div>
+    <div class="code-line" id="c11">&nbsp;&nbsp;while (curr) {</div>
+    <div class="code-line" id="c12">&nbsp;&nbsp;&nbsp;&nbsp;Node* copy = createNode(curr->val);</div>
+    <div class="code-line" id="c13">&nbsp;&nbsp;&nbsp;&nbsp;copyCurr->next = copy;</div>
+    <div class="code-line" id="c14">&nbsp;&nbsp;&nbsp;&nbsp;copyCurr = copy;</div>
+    <div class="code-line" id="c15">&nbsp;&nbsp;&nbsp;&nbsp;oldNodes[idx] = curr;</div>
+    <div class="code-line" id="c16">&nbsp;&nbsp;&nbsp;&nbsp;newNodes[idx] = copy;</div>
+    <div class="code-line" id="c17">&nbsp;&nbsp;&nbsp;&nbsp;idx++;</div>
+    <div class="code-line" id="c18">&nbsp;&nbsp;&nbsp;&nbsp;curr = curr->next;</div>
+    <div class="code-line" id="c19">&nbsp;&nbsp;}</div>
+    <div class="code-line" id="c20">&nbsp;&nbsp;curr = head; copyCurr = dummy->next;</div>
+    <div class="code-line" id="c21">&nbsp;&nbsp;for (int i = 0; i &lt; idx; i++) {</div>
+    <div class="code-line" id="c22">&nbsp;&nbsp;&nbsp;&nbsp;if (curr->random != NULL) {</div>
+    <div class="code-line" id="c23">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for (int j = 0; j &lt; idx; j++) {</div>
+    <div class="code-line" id="c24">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (oldNodes[j] == curr->random) {</div>
+    <div class="code-line" id="c25">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;copyCurr->random = newNodes[j];</div>
+    <div class="code-line" id="c26">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;</div>
+    <div class="code-line" id="c27">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+    <div class="code-line" id="c28">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+    <div class="code-line" id="c29">&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+    <div class="code-line" id="c30">&nbsp;&nbsp;&nbsp;&nbsp;curr = curr->next; copyCurr = copyCurr->next;</div>
+    <div class="code-line" id="c31">&nbsp;&nbsp;}</div>
+    <div class="code-line" id="c32">&nbsp;&nbsp;Node* newHead = dummy->next;</div>
+    <div class="code-line" id="c33">&nbsp;&nbsp;free(dummy);</div>
+    <div class="code-line" id="c34">&nbsp;&nbsp;return newHead;</div>
+    <div class="code-line" id="c35">}</div>
+  </div>
+  
+
+<div id="status"></div>
+
+<script>
+    let oldNodes = [];
+    let newNodes = [];
+    let idx = 0;
+    let phase = 0; // 0: 建立節點, 1: 設定 random, 2: 完成
+    let codeStep = 1;
+    
+    const input = [
+      { val: 7, random: null },
+      { val: 13, random: 0 },
+      { val: 11, random: 4 },
+      { val: 10, random: 2 },
+      { val: 1, random: 0 },
+    ];
+    
+    function startSimulation() {
+      oldNodes = input.map(node => ({ val: node.val, random: node.random }));
+      newNodes = Array(oldNodes.length).fill(null);
+      idx = 0;
+      phase = 0;
+      codeStep = 1;
+      highlightCode("c1");
+      updateStatus("初始化完成，請按下一步。");
+      renderNodes();
+    }
+    
+    function stepSimulation() {
+      highlightCode("c" + codeStep);
+    
+      if (phase === 0) { // 建立節點階段
+        if (idx < oldNodes.length) {
+          newNodes[idx] = { val: oldNodes[idx].val, next: null, random: null };
+          updateStatus(`建立新節點 val=${oldNodes[idx].val}`);
+          idx++;
+          codeStep++;
+          renderNodes();
+        } else {
+          phase = 1;
+          idx = 0;
+          codeStep = 20; // 跳到 for 迴圈設定 random
+          updateStatus("節點建立完成，開始設定 random。");
+        }
+      } else if (phase === 1) { // 設定 random
+        if (idx < oldNodes.length) {
+          if (oldNodes[idx].random !== null) {
+            newNodes[idx].random = oldNodes[idx].random;
+            updateStatus(`設定 newNodes[${idx}].random 指向 newNodes[${oldNodes[idx].random}]`);
+          } else {
+            updateStatus(`newNodes[${idx}].random 設為 null`);
+          }
+          idx++;
+          codeStep++;
+          renderNodes();
+        } else {
+          phase = 2;
+          codeStep = 31;
+          updateStatus("random 指標設定完成，模擬完成！");
+        }
+      }
+    }
+    
+    function highlightCode(id) {
+      document.querySelectorAll(".code-line").forEach(line => line.classList.remove("active-code"));
+      const el = document.getElementById(id);
+      if (el) el.classList.add("active-code");
+    }
+    
+    function updateStatus(msg) {
+      document.getElementById("status").innerText = msg;
+    }
+    
+    function renderNodes() {
+      const oldArea = document.getElementById("oldList");
+      const newArea = document.getElementById("newList");
+      oldArea.innerHTML = "";
+      newArea.innerHTML = "";
+    
+      oldNodes.forEach((node, idx) => {
+        const el = document.createElement("div");
+        el.className = "node";
+        el.innerText = node.val;
+        if (node.random !== null) {
+          const label = document.createElement("div");
+          label.className = "random-label";
+          label.innerText = `rand→${node.random}`;
+          el.appendChild(label);
+        }
+        oldArea.appendChild(el);
+      });
+    
+      newNodes.forEach((node, idx) => {
+        if (node) {
+          const el = document.createElement("div");
+          el.className = "node";
+          el.innerText = node.val;
+          if (node.random !== null) {
+            const label = document.createElement("div");
+            label.className = "random-label";
+            label.innerText = `rand→${node.random}`;
+            el.appendChild(label);
+          }
+          newArea.appendChild(el);
+        }
+      });
+    }
+    </script>
+    
+  
+
+</body>
+</html>

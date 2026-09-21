@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>100. Same Tree - Visualizer</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --red: #ff2d55;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(80, 250, 123, 0.15); color: var(--green); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .tag { background: #383838; color: var(--text-dim); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
+
+    .approach-tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 6px; flex-wrap: wrap; background: #222; padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
+    .app-tab-btn { background: transparent; border: none; color: var(--text-dim); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: 0.2s; }
+    .app-tab-btn:hover { background: #333; color: #fff; }
+    .app-tab-btn.active { background: var(--orange); color: #000; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+    
+    .problem-desc { font-size: 0.82rem; color: #ccc; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+    
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .approach-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.8rem; color: #ddd; }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.75rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .comment { color: var(--green); font-style: italic; } .cls { color: #50fa7b; }
+
+    /* 固定 Stage Box 以及內部元素的高度 */
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; height: 390px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; overflow: hidden; }
+    
+    /* 雙樹 Layout 容器 */
+    .dual-tree-container { display: flex; width: 100%; height: 200px; gap: 10px; }
+    .tree-pane { flex: 1; background: #141414; border: 1px solid var(--border); border-radius: 4px; position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+    .tree-pane-title { font-size: 0.75rem; font-weight: bold; font-family: monospace; color: var(--orange); }
+    
+    svg.tree-svg { width: 100%; height: 175px; }
+    .tree-node-circle { fill: #333; stroke: var(--border); stroke-width: 2px; transition: all 0.3s; }
+    .tree-node-circle.active { fill: rgba(255, 161, 22, 0.3); stroke: var(--orange); stroke-width: 3px; }
+    .tree-node-circle.mismatch { fill: rgba(255, 45, 85, 0.3); stroke: var(--red); stroke-width: 3px; }
+    .tree-node-circle.visited { fill: rgba(80, 250, 123, 0.2); stroke: var(--green); }
+    .tree-text { fill: #fff; font-family: monospace; font-weight: bold; font-size: 13px; text-anchor: middle; dominant-baseline: middle; }
+    .tree-edge { stroke: #555; stroke-width: 2px; transition: all 0.3s; }
+    .tree-edge.active { stroke: var(--orange); stroke-width: 3px; }
+
+    /* Stack / Queue 視覺化樣式 */
+    .stack-container { background: #141414; border: 1px solid var(--border); padding: 8px 10px; border-radius: 6px; height: 150px; display: flex; flex-direction: column; }
+    .stack-title { font-size: 0.75rem; color: var(--orange); font-weight: bold; font-family: monospace; margin-bottom: 6px; display: flex; justify-content: space-between; flex-shrink: 0; }
+    .stack-list { display: flex; flex-direction: column-reverse; gap: 4px; overflow-y: auto; flex-grow: 1; padding-right: 2px; }
+    .stack-frame { background: #222; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .stack-frame.active { border-left-color: var(--orange); background: rgba(255, 161, 22, 0.15); }
+    .stack-frame.top { border-left-color: var(--green); }
+
+    .ds-display { background: #141414; border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.8rem; color: var(--purple); height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; word-break: break-all; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.8rem; font-family: monospace; height: 65px; display: flex; flex-direction: column; justify-content: center; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">100. Same Tree</span>
+    <span class="badge">Easy</span>
+    <span class="tag">Tree</span>
+    <span class="tag">Depth-First Search</span>
+    <span class="tag">Breadth-First Search</span>
+    <span class="tag">Binary Tree</span>
+  </div>
+
+  <div class="approach-tabs" id="app-tabs">
+    <button class="app-tab-btn active" onclick="switchApproach(0)">1. DFS Recursive (Standard)</button>
+    <button class="app-tab-btn" onclick="switchApproach(1)">2. BFS Iterative (Dual Queue)</button>
+    <button class="app-tab-btn" onclick="switchApproach(2)">3. DFS Iterative (Dual Stack)</button>
+    <button class="app-tab-btn" onclick="switchApproach(3)">4. Tree Serialization (Preorder)</button>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: Identical Trees [1,2,3]</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: Structure Mismatch [1,2] vs [1,null,2]</button>
+    <button class="tab-btn" onclick="setPreset(2)">Ex 3: Value Mismatch [1,2,1] vs [1,1,2]</button>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定兩棵二元樹的根節點 <code>p</code> 和 <code>q</code>，請寫一個函數檢查這兩棵樹是否<b>完全相同</b>（即結構完全一樣，且對應位置節點的值相同）。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">-</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">
+          <span>🐍 Python 完整程式碼</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">💡 解題思路說明</div>
+        <div class="approach-box" id="approach-desc"></div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 完整執行步驟視覺化 (Step Visualizer)</div>
+        
+        <div class="stage" id="stage-box"></div>
+
+        <div class="info">
+          <div class="info-row">
+            <span style="color: var(--text-dim);">當前階段 (Phase):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const approaches = [
+      {
+        name: "1. DFS Recursive (Standard)",
+        time: "O(min(N, M))", space: "O(min(H1, H2))",
+        desc: "<b>標準遞迴 (Recursive DFS)：</b>同時對兩棵樹進行前序走訪。若皆為 <code>None</code> 則返回 <code>True</code>；若只有一個為 <code>None</code> 或數值不相等則返回 <code>False</code>；最後遞迴比對左右子樹。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isSameTree</span>(<span class="self">self</span>, p: Optional[TreeNode], q: Optional[TreeNode]) -&gt; bool:`,
+          `        <span class="kw">if not</span> p <span class="kw">and not</span> q:`,
+          `            <span class="kw">return True</span>`,
+          `        <span class="kw">if not</span> p <span class="kw">or not</span> q <span class="kw">or</span> p.val != q.val:`,
+          `            <span class="kw">return False</span>`,
+          `        `,
+          `        <span class="kw">return</span> <span class="self">self</span>.isSameTree(p.left, q.left) <span class="kw">and</span> <span class="self">self</span>.isSameTree(p.right, q.right)`
+        ]
+      },
+      {
+        name: "2. BFS Iterative (Dual Queue)",
+        time: "O(min(N, M))", space: "O(min(W1, W2))",
+        desc: "<b>佇列廣度優先走訪 (BFS Iterative)：</b>使用雙佇列 (deque) 同時儲存 <code>p</code> 與 <code>q</code> 的對應節點。逐一 Pop 比對，並同步把左右子節點 append 進佇列中。",
+        code: [
+          `<span class="kw">from</span> collections <span class="kw">import</span> deque`,
+          ``,
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isSameTree</span>(<span class="self">self</span>, p: Optional[TreeNode], q: Optional[TreeNode]) -&gt; bool:`,
+          `        queue = deque([(p, q)])`,
+          `        <span class="kw">while</span> queue:`,
+          `            node1, node2 = queue.popleft()`,
+          `            <span class="kw">if not</span> node1 <span class="kw">and not</span> node2: <span class="kw">continue</span>`,
+          `            <span class="kw">if not</span> node1 <span class="kw">or not</span> node2 <span class="kw">or</span> node1.val != node2.val:`,
+          `                <span class="kw">return False</span>`,
+          `            queue.append((node1.left, node2.left))`,
+          `            queue.append((node1.right, node2.right))`,
+          `        <span class="kw">return True</span>`
+        ]
+      },
+      {
+        name: "3. DFS Iterative (Dual Stack)",
+        time: "O(min(N, M))", space: "O(min(H1, H2))",
+        desc: "<b>堆疊深度優先走訪 (DFS Iterative)：</b>使用 Stack 儲存二元組 <code>(node1, node2)</code> 模擬系統遞迴 call stack，以迭代方式進行深度優先比對。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isSameTree</span>(<span class="self">self</span>, p: Optional[TreeNode], q: Optional[TreeNode]) -&gt; bool:`,
+          `        stack = [(p, q)]`,
+          `        <span class="kw">while</span> stack:`,
+          `            n1, n2 = stack.pop()`,
+          `            <span class="kw">if not</span> n1 <span class="kw">and not</span> n2: <span class="kw">continue</span>`,
+          `            <span class="kw">if not</span> n1 <span class="kw">or not</span> n2 <span class="kw">or</span> n1.val != n2.val:`,
+          `                <span class="kw">return False</span>`,
+          `            stack.append((n1.right, n2.right))`,
+          `            stack.append((n1.left, n2.left))`,
+          `        <span class="kw">return True</span>`
+        ]
+      },
+      {
+        name: "4. Tree Serialization (Preorder)",
+        time: "O(N + M)", space: "O(N + M)",
+        desc: "<b>前序序列化比對 (Preorder Serialization)：</b>將兩棵二元樹分別序列化為包含空節點標記 (如 <code>#</code>) 的前序走訪字串，最後直接比較兩字串是否相等。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isSameTree</span>(<span class="self">self</span>, p: Optional[TreeNode], q: Optional[TreeNode]) -&gt; bool:`,
+          `        <span class="kw">def</span> <span class="fn">serialize</span>(node):`,
+          `            <span class="kw">if not</span> node: <span class="kw">return</span> <span class="str">"#,"</span>`,
+          `            <span class="kw">return</span> str(node.val) + <span class="str">","</span> + serialize(node.left) + serialize(node.right)`,
+          `        `,
+          `        <span class="kw">return</span> serialize(p) == serialize(q)`
+        ]
+      }
+    ];
+
+    const presets = [
+      { p: [1, 2, 3], q: [1, 2, 3], output: true, name: "Example 1 (Identical)" },
+      { p: [1, 2], q: [1, null, 2], output: false, name: "Example 2 (Structure Mismatch)" },
+      { p: [1, 2, 1], q: [1, 1, 2], output: false, name: "Example 3 (Value Mismatch)" }
+    ];
+
+    let currentApproach = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function switchApproach(idx) {
+      currentApproach = idx;
+      document.querySelectorAll('.app-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderApproachDetails();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderApproachDetails() {
+      const app = approaches[currentApproach];
+      document.getElementById('time-comp').innerText = app.time;
+      document.getElementById('space-comp').innerText = app.space;
+      document.getElementById('approach-desc').innerHTML = app.desc;
+      document.getElementById('code-box').innerHTML = app.code.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>p = [${p.p.map(v => v === null ? 'null' : v).join(', ')}]</div>
+        <div>q = [${p.q.map(v => v === null ? 'null' : v).join(', ')}]</div>
+        <div>Output: <b>${p.output}</b></div>
+      `;
+    }
+
+    function createTree(arr) {
+      if (!arr || arr.length === 0) return null;
+      let nodes = arr.map(v => v !== null ? { val: v, left: null, right: null, id: Math.random().toString(36).substr(2, 5) } : null);
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i]) {
+          let leftIdx = 2 * i + 1;
+          let rightIdx = 2 * i + 2;
+          if (leftIdx < nodes.length) nodes[i].left = nodes[leftIdx];
+          if (rightIdx < nodes.length) nodes[i].right = nodes[rightIdx];
+        }
+      }
+      return nodes[0];
+    }
+
+    function renderSingleTreeSVG(root, activeId = null, mismatchId = null, visitedIds = []) {
+      if (!root) {
+        return `<div style="color:var(--text-dim); font-family:monospace; margin:auto; font-size:0.8rem;">Tree is empty (None)</div>`;
+      }
+
+      let posMap = {};
+      function calcPos(node, depth = 0, leftBound = 0, rightBound = 100) {
+        if (!node) return;
+        let x = (leftBound + rightBound) / 2;
+        let y = depth * 45 + 30;
+        posMap[node.id] = { x, y, val: node.val, left: node.left, right: node.right };
+        calcPos(node.left, depth + 1, leftBound, x);
+        calcPos(node.right, depth + 1, x, rightBound);
+      }
+      calcPos(root);
+
+      let edgesHTML = '';
+      let nodesHTML = '';
+
+      Object.keys(posMap).forEach(id => {
+        let p = posMap[id];
+        let isAct = (id === activeId);
+        let isMis = (id === mismatchId);
+        let isVis = visitedIds.includes(id);
+
+        if (p.left && posMap[p.left.id]) {
+          let lp = posMap[p.left.id];
+          let edgeClass = isAct ? 'tree-edge active' : 'tree-edge';
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${lp.x}%" y2="${lp.y}" class="${edgeClass}" />`;
+        }
+        if (p.right && posMap[p.right.id]) {
+          let rp = posMap[p.right.id];
+          let edgeClass = isAct ? 'tree-edge active' : 'tree-edge';
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${rp.x}%" y2="${rp.y}" class="${edgeClass}" />`;
+        }
+
+        let circleClass = 'tree-node-circle';
+        if (isVis) circleClass += ' visited';
+        if (isMis) circleClass += ' mismatch';
+        if (isAct) circleClass += ' active';
+
+        nodesHTML += `
+          <g>
+            <circle cx="${p.x}%" cy="${p.y}" r="14" class="${circleClass}" />
+            <text x="${p.x}%" y="${p.y}" class="tree-text">${p.val}</text>
+          </g>
+        `;
+      });
+
+      return `
+        <svg class="tree-svg">
+          ${edgesHTML}
+          ${nodesHTML}
+        </svg>
+      `;
+    }
+
+    function renderDualTree(pRoot, qRoot, pActive = null, qActive = null, pMis = null, qMis = null, pVis = [], qVis = []) {
+      return `
+        <div class="dual-tree-container">
+          <div class="tree-pane">
+            <span class="tree-pane-title">Tree P</span>
+            ${renderSingleTreeSVG(pRoot, pActive, pMis, pVis)}
+          </div>
+          <div class="tree-pane">
+            <span class="tree-pane-title">Tree Q</span>
+            ${renderSingleTreeSVG(qRoot, qActive, qMis, qVis)}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCallStack(stack) {
+      let html = `<div class="stack-container">`;
+      html += `<div class="stack-title"><span>CALL STACK / STATUS</span><span>Depth: ${stack.length}</span></div>`;
+      html += `<div class="stack-list" id="stack-list-body">`;
+      
+      if (stack.length === 0) {
+        html += `<div style="font-size:0.75rem; color:#666; font-family:monospace; text-align:center; margin:auto 0;">(Stack is empty)</div>`;
+      } else {
+        stack.forEach((frame, idx) => {
+          let isTop = (idx === stack.length - 1);
+          let frameClass = 'stack-frame' + (isTop ? ' active top' : '');
+          html += `
+            <div class="${frameClass}">
+              <span>isSameTree(p=${frame.pVal}, q=${frame.qVal})</span>
+              <span style="color:${isTop ? 'var(--orange)' : 'var(--text-dim)'}">${frame.status}</span>
+            </div>
+          `;
+        });
+      }
+
+      html += `</div></div>`;
+      return html;
+    }
+
+    function buildSteps() {
+      history = [];
+      const presetData = presets[currentPreset];
+      let pRoot = createTree(presetData.p);
+      let qRoot = createTree(presetData.q);
+
+      // ----------------------------------------------------
+      // Approach 0: DFS Recursive (Standard)
+      // ----------------------------------------------------
+      if (currentApproach === 0) {
+        let callStack = [];
+        let pVisited = [], qVisited = [];
+
+        function dfs(pNode, qNode) {
+          let pValStr = pNode ? pNode.val : 'None';
+          let qValStr = qNode ? qNode.val : 'None';
+
+          if (!pNode && !qNode) {
+            callStack.push({ pVal: 'None', qVal: 'None', status: 'Match (Both None)' });
+            history.push({
+              line: 2, phase: "比對兩空節點 [None vs None]",
+              desc: "雙方皆為 None，結構完全符合，返回 True。",
+              html: renderDualTree(pRoot, qRoot, null, null, null, null, pVisited, qVisited) + renderCallStack(callStack)
+            });
+            callStack.pop();
+            return true;
+          }
+
+          if (!pNode || !qNode || pNode.val !== qNode.val) {
+            let pAct = pNode ? pNode.id : null;
+            let qAct = qNode ? qNode.id : null;
+            callStack.push({ pVal: pValStr, qVal: qValStr, status: 'Mismatch!' });
+            
+            history.push({
+              line: 4, phase: "比對失敗 (Mismatch)",
+              desc: `節點不匹配：p=${pValStr}, q=${qValStr}。返回 False。`,
+              html: renderDualTree(pRoot, qRoot, null, null, pAct, qAct, pVisited, qVisited) + renderCallStack(callStack)
+            });
+            callStack.pop();
+            return false;
+          }
+
+          pVisited.push(pNode.id);
+          qVisited.push(qNode.id);
+          callStack.push({ pVal: pNode.val, qVal: qNode.val, status: 'Matching Left...' });
+
+          history.push({
+            line: 4, phase: `比對節點 [${pNode.val} vs ${qNode.val}]`,
+            desc: `數值皆為 ${pNode.val}，相同！接下來比對左子樹。`,
+            html: renderDualTree(pRoot, qRoot, pNode.id, qNode.id, null, null, pVisited, qVisited) + renderCallStack(callStack)
+          });
+
+          let leftMatch = dfs(pNode.left, qNode.left);
+          if (!leftMatch) {
+            callStack.pop();
+            return false;
+          }
+
+          callStack[callStack.length - 1].status = 'Matching Right...';
+          history.push({
+            line: 7, phase: "左子樹比對成功，轉向右子樹",
+            desc: `節點 [${pNode.val}] 左子樹完美符合，開始比對右子樹。`,
+            html: renderDualTree(pRoot, qRoot, pNode.id, qNode.id, null, null, pVisited, qVisited) + renderCallStack(callStack)
+          });
+
+          let rightMatch = dfs(pNode.right, qNode.right);
+          callStack.pop();
+
+          return leftMatch && rightMatch;
+        }
+
+        let isSame = dfs(pRoot, qRoot);
+
+        history.push({
+          line: 7, phase: "比對結束",
+          desc: isSame ? "兩棵二元樹完全相同 (Return True)！" : "兩棵二元樹不同 (Return False)。",
+          html: renderDualTree(pRoot, qRoot, null, null, null, null, pVisited, qVisited) + 
+                `<div class="ds-display"><span style="font-size:1.1rem; color:${isSame?'var(--green)':'var(--red)'}">Final Result: ${isSame}</span></div>`
+        });
+      }
+
+      // ----------------------------------------------------
+      // Approach 1: BFS Iterative (Dual Queue)
+      // ----------------------------------------------------
+      else if (currentApproach === 1) {
+        let queue = [{ p: pRoot, q: qRoot }];
+        let pVisited = [], qVisited = [];
+        let isSame = true;
+
+        history.push({
+          line: 4, phase: "初始化 BFS Queue",
+          desc: "將 (p_root, q_root) 加入佇列中。",
+          html: renderDualTree(pRoot, qRoot, pRoot ? pRoot.id : null, qRoot ? qRoot.id : null) + 
+                `<div class="ds-display"><span>Queue Length = ${queue.length}</span></div>`
+        });
+
+        while (queue.length > 0) {
+          let { p: pNode, q: qNode } = queue.shift();
+          let pValStr = pNode ? pNode.val : 'None';
+          let qValStr = qNode ? qNode.val : 'None';
+
+          if (!pNode && !qNode) {
+            history.push({
+              line: 7, phase: "Pop (None, None)",
+              desc: "彈出兩空節點，跳過繼續比對下一個。",
+              html: renderDualTree(pRoot, qRoot, null, null, null, null, pVisited, qVisited) + 
+                    `<div class="ds-display"><span>Both None -> Continue</span><span>Queue Size = ${queue.length}</span></div>`
+            });
+            continue;
+          }
+
+          if (!pNode || !qNode || pNode.val !== qNode.val) {
+            isSame = false;
+            let pAct = pNode ? pNode.id : null;
+            let qAct = qNode ? qNode.id : null;
+            history.push({
+              line: 8, phase: "不符合 (Mismatch)",
+              desc: `彈出 (p=${pValStr}, q=${qValStr})，結構或數值不符！返回 False。`,
+              html: renderDualTree(pRoot, qRoot, null, null, pAct, qAct, pVisited, qVisited) + 
+                    `<div class="ds-display"><span style="color:var(--red);">Mismatch Detected! Return False</span></div>`
+            });
+            break;
+          }
+
+          pVisited.push(pNode.id);
+          qVisited.push(qNode.id);
+
+          history.push({
+            line: 9, phase: `Pop 比對成功 [${pNode.val} vs ${qNode.val}]`,
+            desc: `兩節點值皆為 ${pNode.val}，符合！將左、右子節點對分別加入 Queue。`,
+            html: renderDualTree(pRoot, qRoot, pNode.id, qNode.id, null, null, pVisited, qVisited) + 
+                  `<div class="ds-display"><span>Matched: ${pNode.val} == ${qNode.val}</span></div>`
+          });
+
+          queue.push({ p: pNode.left, q: qNode.left });
+          queue.push({ p: pNode.right, q: qNode.right });
+        }
+
+        if (isSame) {
+          history.push({
+            line: 12, phase: "BFS 佇列清空",
+            desc: "所有節點比對完成，兩樹完全相同，返回 True！",
+            html: renderDualTree(pRoot, qRoot, null, null, null, null, pVisited, qVisited) + 
+                  `<div class="ds-display"><span style="font-size:1.1rem; color:var(--green)">Final Result: True</span></div>`
+          });
+        }
+      }
+
+      // ----------------------------------------------------
+      // Approach 2: DFS Iterative (Dual Stack)
+      // ----------------------------------------------------
+      else if (currentApproach === 2) {
+        let stack = [{ p: pRoot, q: qRoot }];
+        let pVisited = [], qVisited = [];
+        let isSame = true;
+
+        history.push({
+          line: 2, phase: "初始化 DFS Stack",
+          desc: "將 (p_root, q_root) 壓入 Stack 中。",
+          html: renderDualTree(pRoot, qRoot, pRoot ? pRoot.id : null, qRoot ? qRoot.id : null) + 
+                `<div class="ds-display"><span>Stack Size = ${stack.length}</span></div>`
+        });
+
+        while (stack.length > 0) {
+          let { p: pNode, q: qNode } = stack.pop();
+          let pValStr = pNode ? pNode.val : 'None';
+          let qValStr = qNode ? qNode.val : 'None';
+
+          if (!pNode && !qNode) {
+            history.push({
+              line: 5, phase: "Pop (None, None)",
+              desc: "兩節點均為 None，繼續處理 Stack 中其他節點。",
+              html: renderDualTree(pRoot, qRoot, null, null, null, null, pVisited, qVisited) + 
+                    `<div class="ds-display"><span>Both None -> Continue</span></div>`
+            });
+            continue;
+          }
+
+          if (!pNode || !qNode || pNode.val !== qNode.val) {
+            isSame = false;
+            let pAct = pNode ? pNode.id : null;
+            let qAct = qNode ? qNode.id : null;
+            history.push({
+              line: 6, phase: "不不符合 (Mismatch)",
+              desc: `彈出 (p=${pValStr}, q=${qValStr})，結構或數值不合！返回 False。`,
+              html: renderDualTree(pRoot, qRoot, null, null, pAct, qAct, pVisited, qVisited) + 
+                    `<div class="ds-display"><span style="color:var(--red);">Mismatch Detected! Return False</span></div>`
+            });
+            break;
+          }
+
+          pVisited.push(pNode.id);
+          qVisited.push(qNode.id);
+
+          history.push({
+            line: 7, phase: `Pop 比對成功 [${pNode.val} vs ${qNode.val}]`,
+            desc: `兩節點值皆為 ${pNode.val}，符合！依次將右子節點對與左子節點對壓入 Stack。`,
+            html: renderDualTree(pRoot, qRoot, pNode.id, qNode.id, null, null, pVisited, qVisited) + 
+                  `<div class="ds-display"><span>Matched: ${pNode.val} == ${qNode.val}</span></div>`
+          });
+
+          stack.push({ p: pNode.right, q: qNode.right });
+          stack.push({ p: pNode.left, q: qNode.left });
+        }
+
+        if (isSame) {
+          history.push({
+            line: 10, phase: "DFS 迭代結束",
+            desc: "Stack 已清空，比對完全無誤，返回 True！",
+            html: renderDualTree(pRoot, qRoot, null, null, null, null, pVisited, qVisited) + 
+                  `<div class="ds-display"><span style="font-size:1.1rem; color:var(--green)">Final Result: True</span></div>`
+          });
+        }
+      }
+
+      // ----------------------------------------------------
+      // Approach 3: Tree Serialization (Preorder)
+      // ----------------------------------------------------
+      else if (currentApproach === 3) {
+        let strP = "", strQ = "";
+
+        function serializeP(node) {
+          if (!node) return "#,";
+          return node.val + "," + serializeP(node.left) + serializeP(node.right);
+        }
+
+        function serializeQ(node) {
+          if (!node) return "#,";
+          return node.val + "," + serializeQ(node.left) + serializeQ(node.right);
+        }
+
+        strP = serializeP(pRoot);
+        strQ = serializeQ(qRoot);
+
+        history.push({
+          line: 3, phase: "序列化 Tree P",
+          desc: "在前序走訪過程中遇到 None 替換為 '#'，進行字串化。",
+          html: renderDualTree(pRoot, qRoot) + 
+                `<div class="ds-display"><span>str(P) = "${strP}"</span><span>str(Q) = (calculating...)</span></div>`
+        });
+
+        history.push({
+          line: 4, phase: "序列化 Tree Q",
+          desc: "對 Tree Q 進行前序走訪並進行相同的字串化。",
+          html: renderDualTree(pRoot, qRoot) + 
+                `<div class="ds-display"><span>str(P) = "${strP}"</span><span>str(Q) = "${strQ}"</span></div>`
+        });
+
+        let isSame = (strP === strQ);
+        history.push({
+          line: 6, phase: "字串比對",
+          desc: isSame ? "兩樹的序列化字串完全相同！返回 True。" : "序列化字串不相等！返回 False。",
+          html: renderDualTree(pRoot, qRoot) + 
+                `<div class="ds-display"><span>"${strP}" ${isSame ? '==' : '!='} "${strQ}"</span><span style="font-size:1.1rem; color:${isSame?'var(--green)':'var(--red)'}">Final Result: ${isSame}</span></div>`
+        });
+      }
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stageBox = document.getElementById('stage-box');
+      stageBox.innerHTML = state.html || `<div style="font-size:0.85rem; font-family:monospace; color:#fff;">${state.desc}</div>`;
+
+      const stackList = document.getElementById('stack-list-body');
+      if (stackList) {
+        stackList.scrollTop = stackList.scrollHeight;
+      }
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderApproachDetails();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

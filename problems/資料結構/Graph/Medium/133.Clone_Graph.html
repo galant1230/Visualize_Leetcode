@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>133. Clone Graph - Step-by-Step Visualization</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --green: #50fa7b;
+      --cyan: #8be9fd;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+
+    /* 版面布局：雙欄等寬/自動調整 */
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 620px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.45; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    /* 四圖概念對比區塊 */
+    .concepts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; background: #141414; padding: 10px; border-radius: 6px; border: 1px solid var(--border); }
+    .concept-card { background: #1a1a1a; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; }
+    .concept-card.correct { border-color: var(--cyan); background: rgba(139, 233, 253, 0.05); }
+    .concept-card.wrong { border-color: var(--hard); background: rgba(255, 45, 85, 0.05); }
+    .concept-tag { font-size: 0.72rem; font-weight: bold; padding: 2px 6px; border-radius: 3px; position: absolute; top: 6px; right: 6px; }
+    .concept-tag.ok { background: rgba(80, 250, 123, 0.2); color: var(--green); }
+    .concept-tag.err { background: rgba(255, 45, 85, 0.2); color: var(--hard); }
+    .concept-desc { font-size: 0.72rem; color: #aaa; margin-top: 6px; line-height: 1.3; }
+
+    /* SVG 繪圖樣式 */
+    .graph-svg { width: 140px; height: 110px; margin-top: 8px; }
+    .node-orig { fill: #fde047; stroke: #854d0e; stroke-width: 2; }
+    .node-clone { fill: #38bdf8; stroke: #0284c7; stroke-width: 2; }
+    .node-wrong { fill: #f472b6; stroke: #be185d; stroke-width: 2; }
+    .node-text { font-size: 11px; font-family: monospace; font-weight: bold; fill: #000; text-anchor: middle; dominant-baseline: middle; }
+    .edge-line { stroke: #666; stroke-width: 2; }
+
+    /* 動態視覺化 SVG 圖形區 */
+    .visual-comparison-container { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; background: #080808; border: 1px solid var(--border); border-radius: 6px; padding: 16px; min-height: 240px; }
+    .graph-view-box { display: flex; flex-direction: column; align-items: center; background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 10px 16px; }
+    .graph-view-title { font-size: 0.78rem; font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+
+    /* 節點狀態樣式 */
+    .node-circle { transition: all 0.3s; cursor: pointer; }
+    .node-circle.active { stroke: var(--orange); stroke-width: 3.5px; filter: drop-shadow(0 0 6px var(--orange)); }
+    .node-circle.visited { fill: #50fa7b; stroke: #059669; }
+    .node-circle.unvisited { fill: #333333; stroke: #555555; }
+    .node-circle.cloned { fill: #38bdf8; stroke: #0284c7; }
+    .edge-line-dynamic { stroke: #444; stroke-width: 2; transition: all 0.3s; }
+    .edge-line-dynamic.cloned { stroke: var(--cyan); stroke-width: 3; filter: drop-shadow(0 0 3px var(--cyan)); }
+    .edge-line-dynamic.active { stroke: var(--orange); stroke-width: 3; }
+
+    /* Python 程式碼區塊 */
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.85rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 3px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    /* Call Stack 區塊 */
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; min-height: 110px; max-height: 160px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 6px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 6px 10px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* Hash Map 展示 */
+    .map-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.8rem; }
+    .map-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .map-item { background: #262626; border: 1px solid var(--purple); padding: 4px 8px; border-radius: 4px; color: var(--cyan); }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 68px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">133. Clone Graph</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: 4 Nodes Square</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: 3 Nodes Triangle</button>
+    <button class="tab-btn" onclick="setPreset(2)">Ex 3: 2 Nodes Line</button>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄：題目敘述、Python Code、Call Stack -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      
+      <!-- 1. 題目敘述與例子 -->
+      <div class="card">
+        <div class="card-title">📝 題目敘述 (Problem Statement)</div>
+        <div class="problem-desc">
+          給定一個無向連通圖中某個節點的引用，請返回該圖的 <b>深拷貝 (Deep Copy)</b>。<br>
+          圖中的每個節點包含一個整數值 <code>val</code> 及一個包含其鄰居的列表 <code>neighbors</code> (<code>List[Node]</code>)。
+        </div>
+
+        <div class="example-box">
+          <div class="example-title" id="ex-title">Example 1:</div>
+          <div id="ex-desc"><b>Input:</b> adjList = [[2,4],[1,3],[2,4],[1,3]]<br><b>Output:</b> [[2,4],[1,3],[2,4],[1,3]]</div>
+        </div>
+
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color:var(--text-dim)">Time Complexity:</span>
+            <span class="complexity-val">O(V + E)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color:var(--text-dim)">Space Complexity:</span>
+            <span class="complexity-val">O(V)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Python Code -->
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼解法 (DFS + Hash Map)</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <!-- 3. Call Stack -->
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (DFS 遞迴歷程)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄：解題思維 + 深拷貝對比概念圖 + 🕸️ 動態圖形視覺化 + 映射控制區 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="idea-box">
+          <div class="idea-title">💡 解題思維 (DFS + Visited HashMap)</div>
+          <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+            <li><b>HashMap 紀錄映射</b>：使用 <code>visited = {}</code> 建立舊節點到新複製節點的對映 (<code>old_node -> new_node</code>)。</li>
+            <li><b>避免無窮迴圈</b>：遍歷到舊節點時，若已在 <code>visited</code> 中，直接傳回對應的新節點（防止環形圖死鎖）。</li>
+            <li><b>遞迴複製鄰居</b>：建立新節點後，遍歷其舊鄰居，將 <code>dfs(neighbor)</code> 的傳回值加入新節點的 <code>neighbors</code>。</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- 四圖概念對比區塊 (已移至右欄) -->
+      <div class="card">
+        <div class="card-title">🖼️ 深拷貝對比概念圖 (Clone Concepts Comparison)</div>
+        <div class="concepts-grid">
+          
+          <div class="concept-card">
+            <span class="concept-tag" style="background:#333; color:#aaa;">ORIGINAL</span>
+            <svg class="graph-svg" viewBox="0 0 100 80">
+              <line x1="20" y1="20" x2="80" y2="20" class="edge-line"/>
+              <line x1="80" y1="20" x2="80" y2="60" class="edge-line"/>
+              <line x1="80" y1="60" x2="20" y2="60" class="edge-line"/>
+              <line x1="20" y1="60" x2="20" y2="20" class="edge-line"/>
+              <circle cx="20" cy="20" r="10" class="node-orig"/><text x="20" y="20" class="node-text">1</text>
+              <circle cx="80" cy="20" r="10" class="node-orig"/><text x="80" y="20" class="node-text">2</text>
+              <circle cx="80" cy="60" r="10" class="node-orig"/><text x="80" y="60" class="node-text">3</text>
+              <circle cx="20" cy="60" r="10" class="node-orig"/><text x="20" y="60" class="node-text">4</text>
+            </svg>
+            <div class="concept-desc"><b>Original Graph</b><br>題目給定的原始圖結構。</div>
+          </div>
+
+          <div class="concept-card wrong">
+            <span class="concept-tag err">❌ SHALLOW</span>
+            <svg class="graph-svg" viewBox="0 0 100 80">
+              <line x1="20" y1="20" x2="80" y2="20" class="edge-line"/>
+              <line x1="80" y1="20" x2="80" y2="60" class="edge-line"/>
+              <line x1="80" y1="60" x2="20" y2="60" class="edge-line"/>
+              <line x1="20" y1="60" x2="20" y2="20" class="edge-line"/>
+              <circle cx="20" cy="20" r="10" class="node-orig"/><text x="20" y="20" class="node-text">1</text>
+              <circle cx="80" cy="20" r="10" class="node-orig"/><text x="80" y="20" class="node-text">2</text>
+              <circle cx="80" cy="60" r="10" class="node-orig"/><text x="80" y="60" class="node-text">3</text>
+              <circle cx="20" cy="60" r="10" class="node-orig"/><text x="20" y="60" class="node-text">4</text>
+            </svg>
+            <div class="concept-desc"><b>Return Same Graph</b><br>不能直接返回原圖節點 (舊指標)。</div>
+          </div>
+
+          <div class="concept-card correct">
+            <span class="concept-tag ok">✅ DEEP COPY</span>
+            <svg class="graph-svg" viewBox="0 0 100 80">
+              <line x1="20" y1="20" x2="80" y2="20" class="edge-line" stroke="#0284c7"/>
+              <line x1="80" y1="20" x2="80" y2="60" class="edge-line" stroke="#0284c7"/>
+              <line x1="80" y1="60" x2="20" y2="60" class="edge-line" stroke="#0284c7"/>
+              <line x1="20" y1="60" x2="20" y2="20" class="edge-line" stroke="#0284c7"/>
+              <circle cx="20" cy="20" r="10" class="node-clone"/><text x="20" y="20" class="node-text">1</text>
+              <circle cx="80" cy="20" r="10" class="node-clone"/><text x="80" y="20" class="node-text">2</text>
+              <circle cx="80" cy="60" r="10" class="node-clone"/><text x="80" y="60" class="node-text">3</text>
+              <circle cx="20" cy="60" r="10" class="node-clone"/><text x="20" y="60" class="node-text">4</text>
+            </svg>
+            <div class="concept-desc"><b>Correct Clone</b><br>全新節點 + 保持完全相同的連接。</div>
+          </div>
+
+          <div class="concept-card wrong">
+            <span class="concept-tag err">❌ WRONG EDGES</span>
+            <svg class="graph-svg" viewBox="0 0 100 80">
+              <line x1="20" y1="20" x2="80" y2="60" class="edge-line"/>
+              <line x1="80" y1="20" x2="20" y2="60" class="edge-line"/>
+              <circle cx="20" cy="20" r="10" class="node-wrong"/><text x="20" y="20" class="node-text">1</text>
+              <circle cx="80" cy="20" r="10" class="node-wrong"/><text x="80" y="20" class="node-text">3</text>
+              <circle cx="80" cy="60" r="10" class="node-wrong"/><text x="80" y="60" class="node-text">2</text>
+              <circle cx="20" cy="60" r="10" class="node-wrong"/><text x="20" y="60" class="node-text">4</text>
+            </svg>
+            <div class="concept-desc"><b>Messed Up Graph</b><br>雖建立新節點，但鄰居邊的連結錯誤。</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 動態 SVG 視覺化複製過程區塊 (Original Graph vs Cloned Graph) -->
+      <div class="card">
+        <div class="card-title">
+          <span>🕸️ 動態圖形節點狀態與 Visited Mapping</span>
+          <span style="font-size:0.75rem; color:var(--text-dim);">🟡 當前探索 | 🟢 已造訪 | 🔵 新複製圖</span>
+        </div>
+
+        <div class="visual-comparison-container">
+          <!-- 1. Original Graph Dynamic View -->
+          <div class="graph-view-box">
+            <div class="graph-view-title" style="color: var(--medium);">
+              <span>🟡 原始圖 (Original Graph Traversal)</span>
+            </div>
+            <svg id="svg-orig" width="180" height="150" viewBox="0 0 180 150"></svg>
+          </div>
+
+          <div style="font-size: 1.5rem; color: var(--text-dim); font-weight: bold;">➔</div>
+
+          <!-- 2. Cloned Graph Dynamic View -->
+          <div class="graph-view-box" style="border-color: var(--cyan); background: rgba(139, 233, 253, 0.03);">
+            <div class="graph-view-title" style="color: var(--cyan);">
+              <span>🔵 建立中的深拷貝圖 (Cloning Progress)</span>
+            </div>
+            <svg id="svg-clone" width="180" height="150" viewBox="0 0 180 150"></svg>
+          </div>
+        </div>
+
+        <!-- Visited Mapping -->
+        <div class="map-box">
+          <div style="color: var(--text-dim); font-size: 0.75rem; font-weight: bold;">Visited Map (Old Node -> New Cloned Node):</div>
+          <div class="map-grid" id="map-container"></div>
+        </div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Target Node: </span>
+              <span id="pos-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Cloned Nodes Count: </span>
+              <span id="count-display" style="font-weight: bold; font-size: 1.1rem; color: var(--green);">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">步驟說明 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeLines = [
+      `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">cloneGraph</span>(<span class="self">self</span>, node: <span class="cm">'Node'</span>) -> <span class="cm">'Node'</span>:`,
+      `        <span class="kw">if not</span> node: <span class="kw">return None</span>`,
+      `        visited = {}`,
+      `        <span class="kw">def</span> <span class="fn">dfs</span>(curr):`,
+      `            <span class="kw">if</span> curr <span class="kw">in</span> visited:`,
+      `                <span class="kw">return</span> visited[curr]      <span class="cm"># 已複製過，直接傳回</span>`,
+      `            copy = Node(curr.val)`,
+      `            visited[curr] = copy         <span class="cm"># 紀錄舊 -> 新對映</span>`,
+      `            <span class="kw">for</span> neighbor <span class="kw">in</span> curr.neighbors:`,
+      `                copy.neighbors.append(dfs(neighbor))`,
+      `            <span class="kw">return</span> copy`,
+      `        <span class="kw">return</span> dfs(node)`
+    ];
+
+    const presets = [
+      {
+        title: "Example 1 (4 Nodes Square)",
+        adjList: [[2,4],[1,3],[2,4],[1,3]],
+        explanation: "Node 1 connected to 2,4; Node 2 to 1,3; Node 3 to 2,4; Node 4 to 1,3.",
+        coords: { 1: {x: 40, y: 35}, 2: {x: 140, y: 35}, 3: {x: 140, y: 115}, 4: {x: 40, y: 115} }
+      },
+      {
+        title: "Example 2 (3 Nodes Triangle)",
+        adjList: [[2,3],[1,3],[1,2]],
+        explanation: "Node 1 connected to 2,3; Node 2 to 1,3; Node 3 to 1,2.",
+        coords: { 1: {x: 90, y: 30}, 2: {x: 145, y: 115}, 3: {x: 35, y: 115} }
+      },
+      {
+        title: "Example 3 (2 Nodes Line)",
+        adjList: [[2],[1]],
+        explanation: "Node 1 connected to 2; Node 2 connected to 1.",
+        coords: { 1: {x: 45, y: 75}, 2: {x: 135, y: 75} }
+      }
+    ];
+
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-title').innerText = `Example ${currentPreset + 1}:`;
+      document.getElementById('ex-desc').innerHTML = `<b>Input:</b> adjList = ${JSON.stringify(p.adjList)}<br><b>Explanation:</b> ${p.explanation}`;
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codeLines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const p = presets[currentPreset];
+      const adj = p.adjList;
+      const numNodes = adj.length;
+
+      let visitedMap = {}; 
+      let clonedEdges = {}; 
+      let currentStack = [];
+
+      for (let i = 1; i <= numNodes; i++) clonedEdges[i] = [];
+
+      function pushFrame(val) { currentStack.push({ fnName: "dfs", args: `curr=${val}` }); }
+      function popFrame() { currentStack.pop(); }
+
+      history.push({
+        line: 3, phase: "【初始化】",
+        desc: `建立空的哈希表 visited = {}，準備從 Node 1 開始 DFS 複製`,
+        stack: [], curr: null, map: {}, edges: JSON.parse(JSON.stringify(clonedEdges)), activeEdge: null
+      });
+
+      function dfs(val) {
+        pushFrame(val);
+
+        history.push({
+          line: 5, phase: "⏬ 【Call DFS】進入遞迴",
+          desc: `呼叫 dfs(curr=Node ${val})，準備檢查是否已被複製`,
+          stack: JSON.parse(JSON.stringify(currentStack)), curr: val,
+          map: JSON.parse(JSON.stringify(visitedMap)), edges: JSON.parse(JSON.stringify(clonedEdges)), activeEdge: null
+        });
+
+        if (visitedMap[val]) {
+          history.push({
+            line: 6, phase: "⚡ 【Visited Cache】命中快取",
+            desc: `Node ${val} 已經存在於 visited 中，直接返回已建立的 Copy Node ${val}`,
+            stack: JSON.parse(JSON.stringify(currentStack)), curr: val,
+            map: JSON.parse(JSON.stringify(visitedMap)), edges: JSON.parse(JSON.stringify(clonedEdges)), activeEdge: null
+          });
+          popFrame();
+          return visitedMap[val];
+        }
+
+        visitedMap[val] = val;
+        history.push({
+          line: 8, phase: "✨ 【Create Node】建立新節點",
+          desc: `建立 Copy Node ${val} 並加入 visited map [Node ${val} -> Copy ${val}]`,
+          stack: JSON.parse(JSON.stringify(currentStack)), curr: val,
+          map: JSON.parse(JSON.stringify(visitedMap)), edges: JSON.parse(JSON.stringify(clonedEdges)), activeEdge: null
+        });
+
+        const neighbors = adj[val - 1];
+        for (let i = 0; i < neighbors.length; i++) {
+          let nxt = neighbors[i];
+
+          history.push({
+            line: 9, phase: `🧭 【Explore Neighbor】探測鄰居`,
+            desc: `Node ${val} 準備探索第 ${i + 1} 個鄰居 Node ${nxt}`,
+            stack: JSON.parse(JSON.stringify(currentStack)), curr: val,
+            map: JSON.parse(JSON.stringify(visitedMap)), edges: JSON.parse(JSON.stringify(clonedEdges)), activeEdge: [val, nxt]
+          });
+
+          let clonedNeighbor = dfs(nxt);
+          clonedEdges[val].push(clonedNeighbor);
+
+          history.push({
+            line: 10, phase: `🔗 【Add Edge】連結新鄰居`,
+            desc: `將 Copy Node ${clonedNeighbor} 加進 Copy Node ${val} 的 neighbors 列表中`,
+            stack: JSON.parse(JSON.stringify(currentStack)), curr: val,
+            map: JSON.parse(JSON.stringify(visitedMap)), edges: JSON.parse(JSON.stringify(clonedEdges)), activeEdge: [val, nxt]
+          });
+        }
+
+        history.push({
+          line: 11, phase: "↩️ 【Return Node】複製完畢",
+          desc: `Node ${val} 的所有鄰居均連結完畢，傳回 Copy Node ${val}`,
+          stack: JSON.parse(JSON.stringify(currentStack)), curr: val,
+          map: JSON.parse(JSON.stringify(visitedMap)), edges: JSON.parse(JSON.stringify(clonedEdges)), activeEdge: null
+        });
+
+        popFrame();
+        return val;
+      }
+
+      dfs(1);
+
+      history.push({
+        line: 12, phase: "🎉 【Clone Complete】完成圖形深拷貝",
+        desc: `整張圖形（包含所有點與邊）完全深拷貝成功！`,
+        stack: [], curr: null,
+        map: JSON.parse(JSON.stringify(visitedMap)), edges: JSON.parse(JSON.stringify(clonedEdges)), activeEdge: null
+      });
+    }
+
+    function renderSVG(currVal, mapState, edgesState, activeEdge) {
+      const p = presets[currentPreset];
+      const coords = p.coords;
+      const adj = p.adjList;
+      const numNodes = adj.length;
+
+      // 1. Render Original Graph
+      const svgOrig = document.getElementById('svg-orig');
+      let origHtml = '';
+
+      let edgesAdded = new Set();
+      for (let u = 1; u <= numNodes; u++) {
+        adj[u - 1].forEach(v => {
+          let edgeKey = u < v ? `${u}-${v}` : `${v}-${u}`;
+          if (!edgesAdded.has(edgeKey)) {
+            edgesAdded.add(edgeKey);
+            let isActive = activeEdge && ((activeEdge[0] === u && activeEdge[1] === v) || (activeEdge[0] === v && activeEdge[1] === u));
+            origHtml += `<line x1="${coords[u].x}" y1="${coords[u].y}" x2="${coords[v].x}" y2="${coords[v].y}" class="edge-line-dynamic ${isActive ? 'active' : ''}"/>`;
+          }
+        });
+      }
+
+      for (let u = 1; u <= numNodes; u++) {
+        let isCurr = (u === currVal);
+        let isVisited = mapState[u] !== undefined;
+        let fillClass = isCurr ? 'active' : (isVisited ? 'visited' : 'unvisited');
+
+        origHtml += `
+          <circle cx="${coords[u].x}" cy="${coords[u].y}" r="14" class="node-circle ${fillClass}"/>
+          <text x="${coords[u].x}" y="${coords[u].y}" class="node-text" fill="${isVisited || isCurr ? '#000' : '#fff'}">${u}</text>
+        `;
+      }
+      svgOrig.innerHTML = origHtml;
+
+      // 2. Render Cloned Graph
+      const svgClone = document.getElementById('svg-clone');
+      let cloneHtml = '';
+
+      let cloneEdgesAdded = new Set();
+      for (let u in edgesState) {
+        let uNum = parseInt(u);
+        edgesState[u].forEach(vNum => {
+          let edgeKey = `${uNum}->${vNum}`;
+          if (!cloneEdgesAdded.has(edgeKey)) {
+            cloneEdgesAdded.add(edgeKey);
+            cloneHtml += `<line x1="${coords[uNum].x}" y1="${coords[uNum].y}" x2="${coords[vNum].x}" y2="${coords[vNum].y}" class="edge-line-dynamic cloned"/>`;
+          }
+        });
+      }
+
+      for (let u = 1; u <= numNodes; u++) {
+        let isCloned = mapState[u] !== undefined;
+        let fillClass = isCloned ? 'cloned' : 'unvisited';
+
+        cloneHtml += `
+          <circle cx="${coords[u].x}" cy="${coords[u].y}" r="14" class="node-circle ${fillClass}" opacity="${isCloned ? '1' : '0.2'}"/>
+          <text x="${coords[u].x}" y="${coords[u].y}" class="node-text" fill="${isCloned ? '#000' : '#777'}" opacity="${isCloned ? '1' : '0.4'}">${isCloned ? u : '?'}</text>
+        `;
+      }
+      svgClone.innerHTML = cloneHtml;
+
+      // Render Map Grid
+      const mapContainer = document.getElementById('map-container');
+      mapContainer.innerHTML = '';
+      const keys = Object.keys(mapState);
+      if (keys.length === 0) {
+        mapContainer.innerHTML = `<span style="color:var(--text-dim);">Empty Map {}</span>`;
+      } else {
+        keys.forEach(k => {
+          let item = document.createElement('div');
+          item.className = 'map-item';
+          item.innerText = `Node ${k} ➔ Copy ${mapState[k]}`;
+          mapContainer.appendChild(item);
+        });
+      }
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = stackData.length === 0 
+        ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Stack Empty</div>`
+        : stackData.map(f => `
+            <div class="stack-frame">
+              <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.75rem;">(${f.args})</span></div>
+            </div>
+          `).join('');
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      document.getElementById('pos-display').innerText = state.curr ? `Node ${state.curr}` : "None";
+      document.getElementById('count-display').innerText = state.map ? Object.keys(state.map).length : "0";
+
+      if (state.map && state.edges) {
+        renderSVG(state.curr, state.map, state.edges, state.activeEdge);
+      }
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

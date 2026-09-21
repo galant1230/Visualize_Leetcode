@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VS Code Debugger - Matrix Rotation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #1E1E1E; color: #D4D4D4; font-family: 'JetBrains Mono', monospace; height: 100vh; overflow: hidden; }
+        .vs-sidebar { background-color: #252526; }
+        .vs-panel { background-color: #2D2D2D; border: 1px solid #404040; }
+        .active-line { background-color: rgba(255, 235, 59, 0.15); border-left: 3px solid #FFD700; }
+        .code-keyword { color: #C586C0; }
+        .code-func { color: #DCDCAA; }
+        .code-comment { color: #6A9955; }
+        .code-number { color: #B5CEA8; }
+        .cell-highlight { background-color: #264F78 !important; border-color: #4FC1FF !important; box-shadow: 0 0 8px #007ACC; transform: scale(1.05); }
+        .var-label { color: #569CD6; }
+        .var-value { color: #CE9178; }
+        .btn-vs { background-color: #333333; transition: all 0.2s; }
+        .btn-vs:hover { background-color: #454545; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #454545; }
+    </style>
+</head>
+<body class="flex flex-col">
+
+<div class="h-8 vs-sidebar flex items-center px-4 text-xs text-gray-500 border-b border-black justify-between">
+    <span>solution.py - LeetCode 1914 Debugger</span>
+    <span class="text-blue-400">● 執行環境: Python 3.10 (Taipei Server)</span>
+</div>
+
+<main class="flex-1 flex p-4 gap-4 overflow-hidden">
+    <!-- Left: Problem info -->
+    <section class="w-1/4 flex flex-col gap-4">
+        <div class="vs-panel p-4 rounded-md flex-1 overflow-y-auto">
+            <h2 class="text-[#4FC1FF] font-bold mb-2">1914. 循環輪轉矩陣</h2>
+            <div class="text-[11px] text-gray-400 leading-relaxed mb-4 space-y-2">
+                <p>將 $m \times n$ 矩陣分層處理。每一層皆為獨立循環環。</p>
+                <p class="text-orange-300 font-bold">核心公式：k % len(res)</p>
+            </div>
+            <div class="space-y-3">
+                <h3 class="text-[10px] font-bold text-gray-500 uppercase">範例測資</h3>
+                <div class="grid grid-cols-1 gap-2">
+                    <button onclick="initDebugger(4, 4, 2)" class="text-left p-2 rounded bg-[#007ACC] text-white text-xs hover:opacity-90">範例 1: 4x4, K=2</button>
+                    <button onclick="initDebugger(4, 2, 1)" class="text-left p-2 rounded vs-sidebar border border-gray-600 text-xs hover:border-gray-400">範例 2: 4x2, K=1</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Center: Visualization Area -->
+    <section class="w-[45%] flex flex-col gap-4">
+        <div class="vs-panel flex-1 rounded-md p-6 flex flex-col items-center justify-center relative">
+            <div id="grid-viz" class="grid gap-2"></div>
+            <div id="status-tag" class="absolute bottom-4 right-4 text-[10px] bg-black/40 px-3 py-1 rounded text-gray-400 italic font-mono">Status: Ready</div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="vs-panel h-20 rounded-md flex items-center justify-between px-8">
+            <div class="flex gap-4 items-center">
+                <button onclick="resetDebugger()" class="btn-vs text-xs px-3 py-1.5 rounded border border-gray-600 text-gray-300">🔄 Reset</button>
+                <div class="w-px h-8 bg-gray-700 mx-2"></div>
+                <button onclick="step(-1)" class="text-gray-400 hover:text-white text-sm">上一步</button>
+                <button id="playBtn" onclick="toggleAuto()" class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl shadow-lg hover:bg-blue-500">▶</button>
+                <button onclick="step(1)" class="text-gray-400 hover:text-white text-sm">下一步</button>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] text-gray-500 uppercase mb-1">Execution Steps</div>
+                <div class="text-xs font-mono text-blue-400" id="step-count">0 / 0</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Right: Code & Watcher -->
+    <section class="w-[30%] flex flex-col gap-4 overflow-hidden">
+        <div class="vs-panel flex-[1.5] rounded-md overflow-hidden flex flex-col">
+            <div class="bg-black/20 px-4 py-1.5 text-[10px] text-gray-400 border-b border-gray-700 font-sans flex justify-between">
+                <span>CODE EDITOR</span>
+                <span class="text-yellow-500">class Solution</span>
+            </div>
+            <pre id="code-display" class="p-4 text-[11px] font-mono leading-5 overflow-y-auto flex-1"></pre>
+        </div>
+
+        <div class="vs-panel flex-1 rounded-md overflow-hidden flex flex-col">
+            <div class="bg-black/20 px-4 py-1.5 text-[10px] text-gray-400 border-b border-gray-700 font-sans">WATCHER (動態變數監控)</div>
+            <div id="watcher-list" class="p-4 text-[11px] font-mono space-y-1 overflow-y-auto"></div>
+        </div>
+    </section>
+</main>
+
+<script>
+    const codeLines = [
+        `class Solution:`,
+        `    def rotateGrid(self, grid, k):`,
+        `        m, n = len(grid), len(grid[0])`,
+        `        num_layers = min(m, n) // 2`,
+        `        for layer in range(num_layers):`,
+        `            res = []`,
+        `            # 1. 提取層元素 (逆時針)`,
+        `            for j in range(layer, n - 1 - layer):`,
+        `                res.append(grid[layer][j])`,
+        `            for i in range(layer, m - 1 - layer):`,
+        `                res.append(grid[i][n - 1 - layer])`,
+        `            for j in range(n - 1 - layer, layer, -1):`,
+        `                res.append(grid[m - 1 - layer][j])`,
+        `            for i in range(m - 1 - layer, layer, -1):`,
+        `                res.append(grid[i][layer])`,
+        `            actual_k = k % len(res)`,
+        `            rotated = res[actual_k:] + res[:actual_k]`,
+        `            idx = 0`,
+        `            # 2. 填回層元素`,
+        `            for j in range(layer, n - 1 - layer):`,
+        `                grid[layer][j] = rotated[idx]; idx += 1`,
+        `            for i in range(layer, m - 1 - layer):`,
+        `                grid[i][n - 1 - layer] = rotated[idx]; idx += 1`,
+        `            for j in range(n - 1 - layer, layer, -1):`,
+        `                grid[m - 1 - layer][j] = rotated[idx]; idx += 1`,
+        `            for i in range(m - 1 - layer, layer, -1):`,
+        `                grid[i][layer] = rotated[idx]; idx += 1`,
+        `        return grid`
+    ];
+
+    let state = { m: 0, n: 0, k: 0, initialGrid: [], steps: [], current: 0, auto: false, timer: null };
+
+    function initDebugger(rows, cols, rot) {
+        if (state.timer) toggleAuto();
+        state.m = rows; state.n = cols; state.k = rot;
+        state.initialGrid = Array.from({length: rows}, (_, i) => 
+            Array.from({length: cols}, (_, j) => (i * cols + j + 1))
+        );
+        compileSteps();
+        state.current = 0;
+        render();
+    }
+
+    function resetDebugger() {
+        if (state.timer) toggleAuto();
+        state.current = 0;
+        render();
+    }
+
+    function compileSteps() {
+        let history = [];
+        let curGrid = JSON.parse(JSON.stringify(state.initialGrid));
+        let m = state.m, n = state.n, k = state.k;
+        let num_layers = Math.floor(Math.min(m, n) / 2);
+
+        history.push({ line: 2, vars: { m, n, k }, grid: JSON.parse(JSON.stringify(curGrid)) });
+        history.push({ line: 3, vars: { m, n, num_layers }, grid: JSON.parse(JSON.stringify(curGrid)) });
+
+        for (let l = 0; l < num_layers; l++) {
+            let res = [];
+            let vars = { m, n, k, num_layers, layer: l };
+            history.push({ line: 4, vars: {...vars}, grid: JSON.parse(JSON.stringify(curGrid)) });
+            history.push({ line: 5, vars: {...vars, res: []}, grid: JSON.parse(JSON.stringify(curGrid)) });
+
+            // 提取邏輯
+            for (let j = l; j < n - 1 - l; j++) {
+                res.push(curGrid[l][j]);
+                history.push({ line: 8, vars: {...vars, res: [...res], i: l, j}, grid: JSON.parse(JSON.stringify(curGrid)), highlight: [l, j] });
+            }
+            for (let i = l; i < m - 1 - l; i++) {
+                res.push(curGrid[i][n - 1 - l]);
+                history.push({ line: 10, vars: {...vars, res: [...res], i, j: n-1-l}, grid: JSON.parse(JSON.stringify(curGrid)), highlight: [i, n-1-l] });
+            }
+            for (let j = n - 1 - l; j > l; j--) {
+                res.push(curGrid[m - 1 - l][j]);
+                history.push({ line: 12, vars: {...vars, res: [...res], i: m-1-l, j}, grid: JSON.parse(JSON.stringify(curGrid)), highlight: [m-1-l, j] });
+            }
+            for (let i = m - 1 - l; i > l; i--) {
+                res.push(curGrid[i][l]);
+                history.push({ line: 14, vars: {...vars, res: [...res], i, j: l}, grid: JSON.parse(JSON.stringify(curGrid)), highlight: [i, l] });
+            }
+
+            let actual_k = k % res.length;
+            history.push({ line: 15, vars: {...vars, res: [...res], actual_k}, grid: JSON.parse(JSON.stringify(curGrid)) });
+            let rotated = [...res.slice(actual_k), ...res.slice(0, actual_k)];
+            history.push({ line: 16, vars: {...vars, res, actual_k, rotated: [...rotated]}, grid: JSON.parse(JSON.stringify(curGrid)) });
+            history.push({ line: 17, vars: {...vars, res, actual_k, rotated, idx: 0}, grid: JSON.parse(JSON.stringify(curGrid)) });
+
+            // 填回邏輯
+            const coords = [];
+            for (let j = l; j < n - 1 - l; j++) coords.push({r: l, c: j, ln: 20});
+            for (let i = l; i < m - 1 - l; i++) coords.push({r: i, c: n-1-l, ln: 22});
+            for (let j = n - 1 - l; j > l; j--) coords.push({r: m-1-l, c: j, ln: 24});
+            for (let i = m - 1 - l; i > l; i--) coords.push({r: i, c: l, ln: 26});
+
+            coords.forEach((coord, counter) => {
+                curGrid[coord.r][coord.c] = rotated[counter];
+                history.push({ 
+                    line: coord.ln, 
+                    vars: {...vars, res, actual_k, rotated, idx: counter + 1, i: coord.r, j: coord.c}, 
+                    grid: JSON.parse(JSON.stringify(curGrid)), 
+                    highlight: [coord.r, coord.c] 
+                });
+            });
+        }
+        history.push({ line: 28, vars: { status: "COMPLETED" }, grid: JSON.parse(JSON.stringify(curGrid)) });
+        state.steps = history;
+    }
+
+    function render() {
+        const step = state.steps[state.current];
+        
+        // Code Block
+        document.getElementById('code-display').innerHTML = codeLines.map((l, i) => 
+            `<div class="${step.line === i ? 'active-line' : ''} px-4"><span class="mr-4 opacity-30 w-6 inline-block">${i}</span>${formatCode(l)}</div>`
+        ).join('');
+
+        // Grid Viz
+        const gridBox = document.getElementById('grid-viz');
+        gridBox.style.gridTemplateColumns = `repeat(${state.n}, 1fr)`;
+        gridBox.innerHTML = step.grid.map((row, r) => 
+            row.map((val, c) => {
+                const isH = step.highlight && step.highlight[0] === r && step.highlight[1] === c;
+                return `<div class="w-12 h-12 flex items-center justify-center vs-panel text-xs font-bold rounded transition-all duration-150 border border-transparent ${isH ? 'cell-highlight' : ''}">${val}</div>`;
+            }).join('')
+        ).join('');
+
+        // Watcher
+        const watchBox = document.getElementById('watcher-list');
+        watchBox.innerHTML = Object.entries(step.vars).map(([k, v]) => `
+            <div class="flex justify-between border-b border-gray-800 py-1">
+                <span class="var-label">${k}:</span>
+                <span class="var-value text-right truncate ml-2" style="max-width: 150px;">${Array.isArray(v) ? '[' + v.join(', ') + ']' : v}</span>
+            </div>
+        `).join('');
+
+        document.getElementById('step-count').innerText = `${state.current + 1} / ${state.steps.length}`;
+        document.getElementById('status-tag').innerText = `Line ${step.line} | Layer: ${step.vars.layer ?? '-'}`;
+    }
+
+    function formatCode(line) {
+        return line
+            .replace(/\b(class|def|for|in|return|if)\b/g, '<span class="code-keyword">$1</span>')
+            .replace(/\b(rotateGrid|range|len|append|min)\b/g, '<span class="code-func">$1</span>')
+            .replace(/#.*$/g, '<span class="code-comment">$&</span>')
+            .replace(/\b\d+\b/g, '<span class="code-number">$&</span>');
+    }
+
+    function step(dir) {
+        state.current = Math.max(0, Math.min(state.steps.length - 1, state.current + dir));
+        render();
+    }
+
+    function toggleAuto() {
+        state.auto = !state.auto;
+        const btn = document.getElementById('playBtn');
+        btn.innerText = state.auto ? '||' : '▶';
+        if (state.auto) {
+            state.timer = setInterval(() => {
+                if (state.current < state.steps.length - 1) {
+                    step(1);
+                } else {
+                    toggleAuto();
+                }
+            }, 100);
+        } else {
+            clearInterval(state.timer);
+            state.timer = null;
+        }
+    }
+
+    initDebugger(4, 4, 2);
+</script>
+</body>
+</html>

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>347. Top K Frequent Elements - Python Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-medium: #ffc01e;
+      --lc-blue: #007aff;
+      --lc-easy: #00b8a3;
+      --lc-red: #ff2d55;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(255, 192, 30, 0.15);
+      color: var(--lc-medium);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 15px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 4px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+
+    .example-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 12px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .example-title { color: var(--lc-text-dim); font-weight: bold; margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-medium); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      min-height: 300px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .array-container { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .node {
+      padding: 6px 12px;
+      background: #333;
+      border: 2px solid var(--lc-border);
+      color: white;
+      border-radius: 6px;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 0.95rem;
+      transition: all 0.3s;
+    }
+    .node.active-i { border-color: var(--lc-orange); background: rgba(255, 161, 22, 0.2); }
+    .node.processed { opacity: 0.4; border-style: dashed; }
+
+    .data-view {
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .data-title { color: var(--lc-text-dim); margin-bottom: 8px; font-weight: bold; }
+    .data-grid { display: flex; flex-direction: column; gap: 8px; }
+    .data-item {
+      background: #2a2a2a;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .data-key { color: var(--lc-orange); font-weight: bold; }
+    .data-val { color: var(--lc-easy); font-weight: bold; }
+
+    .bucket-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 8px;
+      background: #222;
+      border-radius: 4px;
+      border: 1px solid #333;
+    }
+    .bucket-label { color: var(--lc-medium); font-weight: bold; width: 80px; }
+    .bucket-items { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .val-badge {
+      background: var(--lc-blue);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+    }
+
+    .control-panel { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
+    .btn { background: #3e3e3e; color: var(--lc-text); border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-easy); color: #fff; }
+    .btn-primary:hover { background: #009684; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card { background: #1e1e1e; border: 1px solid var(--lc-border); padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .str { color: #f1fa8c; }
+    .num { color: #bd93f9; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">347. Top K Frequent Elements</span>
+    <span class="lc-badge">Medium</span>
+    <span class="lc-tag">Python 3</span>
+    <span class="lc-tag">Hash Table</span>
+    <span class="lc-tag">Bucket Sort</span>
+    <span class="lc-tag">Heap (Priority Queue)</span>
+  </div>
+
+  <div class="config-tabs">
+    <div class="tab-group">
+      <button class="tab-btn active" id="algo-bucket" onclick="setAlgo('bucket')">Sol 1: 桶排序 Bucket Sort (最優 O(N))</button>
+      <button class="tab-btn" id="algo-heap" onclick="setAlgo('heap')">Sol 2: 最小堆 Min-Heap (O(N log K))</button>
+      <button class="tab-btn" id="algo-sort" onclick="setAlgo('sort')">Sol 3: 字典排序 Sort (O(N log N))</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述 (Problem)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個整數陣列 <code>nums</code> 和一個整數 <code>k</code>，請回傳其中出現頻率前 <code>k</code> 高的元素。您可以按任意順序返回答案。
+          </div>
+
+          <div class="example-box">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> nums = [1,1,1,2,2,3], k = 2</div>
+            <div><strong>Output:</strong> [1,2]</div>
+          </div>
+
+          <div class="example-box">
+            <div class="example-title">Example 2:</div>
+            <div><strong>Input:</strong> nums = [1], k = 1</div>
+            <div><strong>Output:</strong> [1]</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val" id="tc-val">O(N)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val" id="sc-val">O(N)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span>💻 Python 3 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (Visualizer)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title" id="approach-title">💡 解題思路</div>
+            <div id="approach-desc">---</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">點擊 Step 開始視覺化模擬...</div>
+          </div>
+
+          <div class="stage">
+            <div style="font-size:0.8rem; color:var(--lc-text-dim); font-weight:bold; margin-bottom:4px;">nums 陣列 (k = 2)：</div>
+            <div class="array-container" id="nodes-nums"></div>
+          </div>
+
+          <div class="data-view" id="dict-view">
+            <div class="data-title">Counter / Hash Map (頻率統計)</div>
+            <div class="data-grid" id="dict-grid">
+              <span style="color: var(--lc-text-dim);">{ }</span>
+            </div>
+          </div>
+
+          <div class="data-view" id="extra-view" style="margin-top: 10px;">
+            <div class="data-title" id="extra-title">結構狀態</div>
+            <div class="data-grid" id="extra-grid">
+              <span style="color: var(--lc-text-dim);">-</span>
+            </div>
+          </div>
+
+          <div class="control-panel" style="margin-top: 16px;">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleNums = [1, 1, 1, 2, 2, 3];
+    const sampleK = 2;
+    let currentAlgo = 'bucket'; 
+    let currentStep = 0;
+    let history = [];
+
+    const pyCodes = {
+      'bucket': [
+        `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+        `    <span class="kw">def</span> <span class="fn">topKFrequent</span>(<span class="kw">self</span>, nums: List[<span class="kw">int</span>], k: <span class="kw">int</span>) -&gt; List[<span class="kw">int</span>]:`,
+        `        count = Counter(nums)`,
+        `        buckets = [[] <span class="kw">for</span> _ <span class="kw">in</span> range(len(nums) + <span class="num">1</span>)]`,
+        `        <span class="kw">for</span> num, freq <span class="kw">in</span> count.items():`,
+        `            buckets[freq].append(num)`,
+        `        res = []`,
+        `        <span class="kw">for</span> i <span class="kw">in</span> range(len(buckets) - <span class="num">1</span>, <span class="num">0</span>, -<span class="num">1</span>):`,
+        `            <span class="kw">for</span> n <span class="kw">in</span> buckets[i]:`,
+        `                res.append(n)`,
+        `                <span class="kw">if</span> len(res) == k:`,
+        `                    <span class="kw">return</span> res`
+      ],
+      'heap': [
+        `<span class="kw">import</span> heapq`,
+        `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+        `    <span class="kw">def</span> <span class="fn">topKFrequent</span>(<span class="kw">self</span>, nums: List[<span class="kw">int</span>], k: <span class="kw">int</span>) -&gt; List[<span class="kw">int</span>]:`,
+        `        count = Counter(nums)`,
+        `        heap = []`,
+        `        <span class="kw">for</span> num, freq <span class="kw">in</span> count.items():`,
+        `            heapq.heappush(heap, (freq, num))`,
+        `            <span class="kw">if</span> len(heap) &gt; k:`,
+        `                heapq.heappop(heap)`,
+        `        <span class="kw">return</span> [num <span class="kw">for</span> freq, num <span class="kw">in</span> heap]`
+      ],
+      'sort': [
+        `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+        `    <span class="kw">def</span> <span class="fn">topKFrequent</span>(<span class="kw">self</span>, nums: List[<span class="kw">int</span>], k: <span class="kw">int</span>) -&gt; List[<span class="kw">int</span>]:`,
+        `        count = Counter(nums)`,
+        `        sorted_items = sorted(count.keys(), key=<span class="kw">lambda</span> x: count[x], reverse=<span class="kw">True</span>)`,
+        `        <span class="kw">return</span> sorted_items[:k]`
+      ]
+    };
+
+    function setAlgo(a) { currentAlgo = a; resetSim(); }
+
+    function buildHistory() {
+      history = [];
+      let countMap = {};
+
+      history.push({
+        line: 2, title: "1. 計算元素頻率 (Counter)", desc: "統計 nums 陣列中每個數字出現的次數...",
+        idx: -1, countMap: {}, extraData: null
+      });
+
+      sampleNums.forEach((n, idx) => {
+        countMap[n] = (countMap[n] || 0) + 1;
+        history.push({
+          line: 2, title: `統計數字: ${n}`,
+          desc: `累加數字 ${n} 的出現次數 -> ${countMap[n]} 次`,
+          idx: idx, countMap: JSON.parse(JSON.stringify(countMap)), extraData: null
+        });
+      });
+
+      if (currentAlgo === 'bucket') {
+        let buckets = Array.from({length: sampleNums.length + 1}, () => []);
+        history.push({
+          line: 3, title: "2. 初始化桶子 (Buckets)",
+          desc: `建立長度為 len(nums) + 1 (${sampleNums.length + 1}) 的空桶陣列，索引代表「出現次數」。`,
+          idx: -1, countMap: JSON.parse(JSON.stringify(countMap)), extraData: JSON.parse(JSON.stringify(buckets))
+        });
+
+        Object.entries(countMap).forEach(([num, freq]) => {
+          buckets[freq].push(parseInt(num));
+          history.push({
+            line: 5, title: `填入桶子: 數字 ${num}`,
+            desc: `數字 ${num} 出現了 ${freq} 次，放入 buckets[${freq}] 中`,
+            idx: -1, countMap: JSON.parse(JSON.stringify(countMap)), extraData: JSON.parse(JSON.stringify(buckets))
+          });
+        });
+
+        let res = [];
+        for (let i = buckets.length - 1; i > 0; i--) {
+          if (buckets[i].length > 0) {
+            for (let n of buckets[i]) {
+              res.push(n);
+              history.push({
+                line: 9, title: `收集解答: [${res.join(', ')}]`,
+                desc: `從高頻桶子 buckets[${i}] 倒序取出數字 ${n}，目前已收集 ${res.length}/${sampleK} 個。`,
+                idx: -1, countMap: JSON.parse(JSON.stringify(countMap)),
+                extraData: JSON.parse(JSON.stringify(buckets)), res: [...res]
+              });
+              if (res.length === sampleK) break;
+            }
+          }
+          if (res.length === sampleK) break;
+        }
+
+        history.push({
+          line: 11, title: "3. 完成並回傳", desc: `湊齊 k=${sampleK} 個高頻元素，結果為 [${res.join(', ')}]`,
+          idx: -1, countMap: JSON.parse(JSON.stringify(countMap)),
+          extraData: JSON.parse(JSON.stringify(buckets)), res: [...res]
+        });
+
+      } else if (currentAlgo === 'heap') {
+        let heap = [];
+        history.push({
+          line: 4, title: "2. 初始化 Min-Heap",
+          desc: "維護大小為 k 的最小堆 (Min-Heap)。",
+          idx: -1, countMap: JSON.parse(JSON.stringify(countMap)), extraData: []
+        });
+
+        Object.entries(countMap).forEach(([num, freq]) => {
+          heap.push({ freq, num: parseInt(num) });
+          heap.sort((a, b) => a.freq - b.freq);
+
+          history.push({
+            line: 6, title: `Push 到 Heap: (${freq}, ${num})`,
+            desc: `將 (次數:${freq}, 數字:${num}) push 進 Min-Heap`,
+            idx: -1, countMap: JSON.parse(JSON.stringify(countMap)), extraData: JSON.parse(JSON.stringify(heap))
+          });
+
+          if (heap.length > sampleK) {
+            let popped = heap.shift();
+            history.push({
+              line: 8, title: `Pop 掉最低頻: (${popped.freq}, ${popped.num})`,
+              desc: `Heap 大小超過 k=${sampleK}，彈出頻率最低的元素 (${popped.num})`,
+              idx: -1, countMap: JSON.parse(JSON.stringify(countMap)), extraData: JSON.parse(JSON.stringify(heap))
+            });
+          }
+        });
+
+        let ans = heap.map(h => h.num);
+        history.push({
+          line: 9, title: "3. 取出 Heap 中的解答", desc: `最終留在 Heap 中的就是前 k 高頻元素: [${ans.join(', ')}]`,
+          idx: -1, countMap: JSON.parse(JSON.stringify(countMap)), extraData: JSON.parse(JSON.stringify(heap))
+        });
+
+      } else if (currentAlgo === 'sort') {
+        let sortedKeys = Object.keys(countMap).map(Number).sort((a, b) => countMap[b] - countMap[a]);
+        history.push({
+          line: 3, title: "2. 依據頻率進行排序",
+          desc: `根據次數從大到小排序 Key 得到: [${sortedKeys.join(', ')}]`,
+          idx: -1, countMap: JSON.parse(JSON.stringify(countMap)), extraData: sortedKeys
+        });
+
+        let ans = sortedKeys.slice(0, sampleK);
+        history.push({
+          line: 4, title: "3. 切片取出前 k 個", desc: `回傳 sorted_items[:${sampleK}] -> [${ans.join(', ')}]`,
+          idx: -1, countMap: JSON.parse(JSON.stringify(countMap)), extraData: ans
+        });
+      }
+    }
+
+    function resetSim() {
+      buildHistory();
+      currentStep = 0;
+      updateUIElements();
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateLineHighlight(state.line);
+      document.getElementById('step-title').innerText = state.title;
+      document.getElementById('step-desc').innerText = state.desc;
+      document.getElementById('stepHint').innerText = state.title.toUpperCase();
+
+      renderStage(state);
+      renderDictGrid(state);
+      renderExtraView(state);
+    }
+
+    function updateUIElements() {
+      ['bucket', 'heap', 'sort'].forEach(a => {
+        document.getElementById(`algo-${a}`).className = 'tab-btn ' + (currentAlgo === a ? 'active' : '');
+      });
+
+      const tc = document.getElementById('tc-val');
+      const sc = document.getElementById('sc-val');
+      const title = document.getElementById('approach-title');
+      const desc = document.getElementById('approach-desc');
+
+      if (currentAlgo === 'bucket') {
+        tc.innerText = 'O(N)'; sc.innerText = 'O(N)';
+        title.innerText = '💡 思路 1：桶排序 Bucket Sort (最優解)';
+        desc.innerText = '建立長度 N+1 的桶子，index 表示「出現次數」，value 存出現該次數的數字。最後倒序收集前 K 個元素。時間可達最優 O(N)。';
+      } else if (currentAlgo === 'heap') {
+        tc.innerText = 'O(N log K)'; sc.innerText = 'O(N)';
+        title.innerText = '💡 思路 2：最小堆 Min-Heap';
+        desc.innerText = '使用大小固定為 K 的 Min-Heap。維護頻率最低者在堆頂，當堆超過 K 個時彈出最小值，最後留在堆內的就是答案。';
+      } else if (currentAlgo === 'sort') {
+        tc.innerText = 'O(N log N)'; sc.innerText = 'O(N)';
+        title.innerText = '💡 思路 3：直接排序 Hash Map Keys';
+        desc.innerText = '將 Counter 的 Unique 鍵根據其對應頻率進行全排序，再直接切片取出前 K 個。語法最簡短。';
+      }
+    }
+
+    function renderCode() {
+      const codeList = pyCodes[currentAlgo];
+      document.getElementById('code-box').innerHTML = codeList
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateLineHighlight(line) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if (document.getElementById('l' + line)) {
+        document.getElementById('l' + line).classList.add('active-line');
+      }
+    }
+
+    function renderStage(state) {
+      const container = document.getElementById('nodes-nums');
+      container.innerHTML = '';
+
+      sampleNums.forEach((n, idx) => {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.innerText = n;
+
+        if (state.idx === idx) {
+          node.classList.add('active-i');
+        } else if (state.idx > idx || state.idx === -1) {
+          node.classList.add('processed');
+        }
+
+        container.appendChild(node);
+      });
+    }
+
+    function renderDictGrid(state) {
+      const grid = document.getElementById('dict-grid');
+      const entries = Object.entries(state.countMap || {});
+
+      if (entries.length === 0) {
+        grid.innerHTML = `<span style="color: var(--lc-text-dim);">{ }</span>`;
+        return;
+      }
+
+      grid.innerHTML = entries.map(([num, freq]) => `
+        <div class="data-item">
+          <div class="data-key">數字 ${num}</div>
+          <div class="data-val">次數: ${freq}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderExtraView(state) {
+      const title = document.getElementById('extra-title');
+      const grid = document.getElementById('extra-grid');
+
+      if (currentAlgo === 'bucket') {
+        title.innerText = "Buckets 桶子狀態 (索引 = 次數)";
+        if (!state.extraData) {
+          grid.innerHTML = `<span style="color: var(--lc-text-dim);">- 未初始化 -</span>`;
+          return;
+        }
+        grid.innerHTML = state.extraData.map((b, i) => {
+          if (i === 0) return '';
+          return `
+            <div class="bucket-row">
+              <span class="bucket-label">次數 ${i}:</span>
+              <div class="bucket-items">
+                ${b.length === 0 ? '<span style="color:#555;">[空]</span>' : b.map(num => `<span class="val-badge">${num}</span>`).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } else if (currentAlgo === 'heap') {
+        title.innerText = "Min-Heap 堆積狀態 (維持容量 <= k)";
+        if (!state.extraData || state.extraData.length === 0) {
+          grid.innerHTML = `<span style="color: var(--lc-text-dim);">[ ]</span>`;
+          return;
+        }
+        grid.innerHTML = `
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            ${state.extraData.map(h => `<div class="data-item"><span class="data-key">(${h.freq}, ${h.num})</span></div>`).join('')}
+          </div>
+        `;
+
+      } else if (currentAlgo === 'sort') {
+        title.innerText = "排序後的 Keys 列表";
+        if (!state.extraData) {
+          grid.innerHTML = `<span style="color: var(--lc-text-dim);">-</span>`;
+          return;
+        }
+        grid.innerHTML = `
+          <div style="display:flex; gap:6px;">
+            ${state.extraData.map(num => `<span class="val-badge">${num}</span>`).join('')}
+          </div>
+        `;
+      }
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

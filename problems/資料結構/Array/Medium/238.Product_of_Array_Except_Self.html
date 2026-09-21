@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>238. Product of Array Except Self - Python Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-medium: #ffc01e;
+      --lc-blue: #007aff;
+      --lc-easy: #00b8a3;
+      --lc-red: #ff2d55;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(255, 192, 30, 0.15);
+      color: var(--lc-medium);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 15px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 4px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+
+    .example-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 12px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .example-title { color: var(--lc-text-dim); font-weight: bold; margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-medium); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      min-height: 300px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .array-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .row-label {
+      width: 100px;
+      font-size: 0.82rem;
+      font-weight: bold;
+      color: var(--lc-text-dim);
+    }
+
+    .array-container { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+
+    .node {
+      padding: 8px 14px;
+      background: #333;
+      border: 2px solid var(--lc-border);
+      color: white;
+      border-radius: 6px;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 0.95rem;
+      transition: all 0.3s;
+      min-width: 45px;
+      text-align: center;
+    }
+    .node.active-i { border-color: var(--lc-orange); background: rgba(255, 161, 22, 0.2); transform: scale(1.05); }
+    .node.active-j { border-color: var(--lc-blue); background: rgba(0, 122, 255, 0.2); }
+    .node.updated { border-color: var(--lc-easy); background: rgba(0, 184, 163, 0.2); }
+
+    .data-view {
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .data-title { color: var(--lc-text-dim); margin-bottom: 8px; font-weight: bold; }
+    .data-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+    .data-card {
+      background: #2a2a2a;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 110px;
+    }
+    .data-key { color: var(--lc-text-dim); font-size: 0.75rem; }
+    .data-val { color: var(--lc-orange); font-weight: bold; font-size: 1rem; }
+
+    .control-panel { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
+    .btn { background: #3e3e3e; color: var(--lc-text); border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-easy); color: #fff; }
+    .btn-primary:hover { background: #009684; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card { background: #1e1e1e; border: 1px solid var(--lc-border); padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .str { color: #f1fa8c; }
+    .num { color: #bd93f9; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">238. Product of Array Except Self</span>
+    <span class="lc-badge">Medium</span>
+    <span class="lc-tag">Python 3</span>
+    <span class="lc-tag">Array</span>
+    <span class="lc-tag">Prefix Sum / Product</span>
+  </div>
+
+  <div class="config-tabs">
+    <div class="tab-group">
+      <button class="tab-btn active" id="algo-prefix" onclick="setAlgo('prefix')">Sol 1: 前後綴乘積 Prefix & Suffix (最優 O(1) 空間)</button>
+      <button class="tab-btn" id="algo-division" onclick="setAlgo('division')">Sol 2: 除法技巧 Division (處理 0)</button>
+      <button class="tab-btn" id="algo-brute" onclick="setAlgo('brute')">Sol 3: 雙重迴圈 Brute Force (O(N²))</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述 (Problem)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個整數陣列 <code>nums</code>，回傳一個新陣列 <code>res</code>，其中 <code>res[i]</code> 等於 <code>nums</code> 中除了 <code>nums[i]</code> 之外所有元素的乘積。
+            <br><strong>進階要求：</strong> 請寫出時間複雜度為 <code>O(N)</code> 且<strong>不使用除法</strong>的演算法。
+          </div>
+
+          <div class="example-box">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> nums = [1, 2, 3, 4]</div>
+            <div><strong>Output:</strong> [24, 12, 8, 6]</div>
+          </div>
+
+          <div class="example-box">
+            <div class="example-title">Example 2:</div>
+            <div><strong>Input:</strong> nums = [-1, 1, 0, -3, 3]</div>
+            <div><strong>Output:</strong> [0, 0, 9, 0, 0]</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val" id="tc-val">O(N)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val" id="sc-val">O(1)*</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span>💻 Python 3 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (Visualizer)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title" id="approach-title">💡 解題思路</div>
+            <div id="approach-desc">---</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">點擊 Step 開始視覺化模擬...</div>
+          </div>
+
+          <div class="stage">
+            <div class="array-row">
+              <div class="row-label">nums:</div>
+              <div class="array-container" id="nodes-nums"></div>
+            </div>
+            <div class="array-row">
+              <div class="row-label">res (output):</div>
+              <div class="array-container" id="nodes-res"></div>
+            </div>
+          </div>
+
+          <div class="data-view">
+            <div class="data-title">變數狀態追蹤 (Variables)</div>
+            <div class="data-grid" id="var-grid">
+              <div class="data-card">
+                <span class="data-key">Index (i)</span>
+                <span class="data-val" id="var-i">-</span>
+              </div>
+              <div class="data-card">
+                <span class="data-key" id="var-extra-key">Prefix / Suffix</span>
+                <span class="data-val" id="var-extra-val">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-panel" style="margin-top: 16px;">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleNums = [1, 2, 3, 4];
+    let currentAlgo = 'prefix'; 
+    let currentStep = 0;
+    let history = [];
+
+    const pyCodes = {
+      'prefix': [
+        `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+        `    <span class="kw">def</span> <span class="fn">productExceptSelf</span>(<span class="kw">self</span>, nums: List[<span class="kw">int</span>]) -&gt; List[<span class="kw">int</span>]:`,
+        `        n = len(nums)`,
+        `        res = [<span class="num">1</span>] * n`,
+        `        prefix = <span class="num">1</span>`,
+        `        <span class="kw">for</span> i <span class="kw">in</span> range(n):`,
+        `            res[i] = prefix`,
+        `            prefix *= nums[i]`,
+        `        suffix = <span class="num">1</span>`,
+        `        <span class="kw">for</span> i <span class="kw">in</span> range(n - <span class="num">1</span>, -<span class="num">1</span>, -<span class="num">1</span>):`,
+        `            res[i] *= suffix`,
+        `            suffix *= nums[i]`,
+        `        <span class="kw">return</span> res`
+      ],
+      'division': [
+        `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+        `    <span class="kw">def</span> <span class="fn">productExceptSelf</span>(<span class="kw">self</span>, nums: List[<span class="kw">int</span>]) -&gt; List[<span class="kw">int</span>]:`,
+        `        total_product = <span class="num">1</span>`,
+        `        zero_count = <span class="num">0</span>`,
+        `        <span class="kw">for</span> x <span class="kw">in</span> nums:`,
+        `            <span class="kw">if</span> x != <span class="num">0</span>: total_product *= x`,
+        `            <span class="kw">else</span>: zero_count += <span class="num">1</span>`,
+        `        res = [<span class="num">0</span>] * len(nums)`,
+        `        <span class="kw">for</span> i, x <span class="kw">in</span> enumerate(nums):`,
+        `            <span class="kw">if</span> zero_count &gt; <span class="num">1</span>: res[i] = <span class="num">0</span>`,
+        `            <span class="kw">elif</span> zero_count == <span class="num">1</span>: res[i] = total_product <span class="kw">if</span> x == <span class="num">0</span> <span class="kw">else</span> <span class="num">0</span>`,
+        `            <span class="kw">else</span>: res[i] = total_product // x`,
+        `        <span class="kw">return</span> res`
+      ],
+      'brute': [
+        `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+        `    <span class="kw">def</span> <span class="fn">productExceptSelf</span>(<span class="kw">self</span>, nums: List[<span class="kw">int</span>]) -&gt; List[<span class="kw">int</span>]:`,
+        `        n = len(nums)`,
+        `        res = [<span class="num">1</span>] * n`,
+        `        <span class="kw">for</span> i <span class="kw">in</span> range(n):`,
+        `            prod = <span class="num">1</span>`,
+        `            <span class="kw">for</span> j <span class="kw">in</span> range(n):`,
+        `                <span class="kw">if</span> i != j:`,
+        `                    prod *= nums[j]`,
+        `            res[i] = prod`,
+        `        <span class="kw">return</span> res`
+      ]
+    };
+
+    function setAlgo(a) { currentAlgo = a; resetSim(); }
+
+    function buildHistory() {
+      history = [];
+      const n = sampleNums.length;
+
+      if (currentAlgo === 'prefix') {
+        let res = Array(n).fill(1);
+        let prefix = 1;
+
+        history.push({
+          line: 3, title: "1. 初始化陣列", desc: "建立 res 陣列並填滿 1。",
+          i: -1, j: -1, res: [...res], extraKey: "Prefix", extraVal: prefix
+        });
+
+        // Prefix Pass
+        for (let i = 0; i < n; i++) {
+          res[i] = prefix;
+          history.push({
+            line: 6, title: `Prefix 階段：寫入 res[${i}]`,
+            desc: `res[${i}] 填入目前的左側累積乘積 (Prefix) = ${prefix}`,
+            i: i, j: -1, res: [...res], extraKey: "Prefix", extraVal: prefix
+          });
+          prefix *= sampleNums[i];
+          history.push({
+            line: 7, title: `Prefix 階段：更新 Prefix`,
+            desc: `Prefix 乘以 nums[${i}] (${sampleNums[i]})，更新為 ${prefix}`,
+            i: i, j: -1, res: [...res], extraKey: "Next Prefix", extraVal: prefix
+          });
+        }
+
+        // Suffix Pass
+        let suffix = 1;
+        history.push({
+          line: 8, title: "2. 初始化 Suffix", desc: "開始從右向左做 Suffix Pass，初始化 suffix = 1。",
+          i: -1, j: -1, res: [...res], extraKey: "Suffix", extraVal: suffix
+        });
+
+        for (let i = n - 1; i >= 0; i--) {
+          res[i] *= suffix;
+          history.push({
+            line: 10, title: `Suffix 階段：乘上 res[${i}]`,
+            desc: `res[${i}] 乘上右側累積乘積 (Suffix ${suffix}) -> 新 res[${i}] = ${res[i]}`,
+            i: i, j: -1, res: [...res], extraKey: "Suffix", extraVal: suffix
+          });
+          suffix *= sampleNums[i];
+          history.push({
+            line: 11, title: `Suffix 階段：更新 Suffix`,
+            desc: `Suffix 乘以 nums[${i}] (${sampleNums[i]})，更新為 ${suffix}`,
+            i: i, j: -1, res: [...res], extraKey: "Next Suffix", extraVal: suffix
+          });
+        }
+
+        history.push({
+          line: 12, title: "3. 完成計算", desc: `前後綴乘積計算完成！結果為 [${res.join(', ')}]`,
+          i: -1, j: -1, res: [...res], extraKey: "Final", extraVal: "DONE"
+        });
+
+      } else if (currentAlgo === 'division') {
+        let totalProd = 1;
+        let zeroCount = 0;
+        let res = Array(n).fill(0);
+
+        sampleNums.forEach(x => {
+          if (x !== 0) totalProd *= x;
+          else zeroCount++;
+        });
+
+        history.push({
+          line: 4, title: "1. 統計非零乘積與零的個數",
+          desc: `非零總乘積 Total Product = ${totalProd}, 零的數量 = ${zeroCount}`,
+          i: -1, j: -1, res: [...res], extraKey: "Non-Zero Prod", extraVal: totalProd
+        });
+
+        for (let i = 0; i < n; i++) {
+          const x = sampleNums[i];
+          if (zeroCount > 1) res[i] = 0;
+          else if (zeroCount === 1) res[i] = (x === 0 ? totalProd : 0);
+          else res[i] = totalProd / x;
+
+          history.push({
+            line: 11, title: `除法計算：res[${i}]`,
+            desc: `計算 res[${i}] = ${totalProd} / nums[${i}] (${x}) = ${res[i]}`,
+            i: i, j: -1, res: [...res], extraKey: "Zero Count", extraVal: zeroCount
+          });
+        }
+
+        history.push({
+          line: 12, title: "2. 完成計算", desc: `除法處理完成！結果為 [${res.join(', ')}]`,
+          i: -1, j: -1, res: [...res], extraKey: "Final", extraVal: "DONE"
+        });
+
+      } else if (currentAlgo === 'brute') {
+        let res = Array(n).fill(1);
+
+        for (let i = 0; i < n; i++) {
+          let prod = 1;
+          history.push({
+            line: 5, title: `Outer Loop: i = ${i}`,
+            desc: `準備計算除了 nums[${i}] (${sampleNums[i]}) 以外的乘積...`,
+            i: i, j: -1, res: [...res], extraKey: "Current Prod", extraVal: prod
+          });
+
+          for (let j = 0; j < n; j++) {
+            if (i !== j) {
+              prod *= sampleNums[j];
+              history.push({
+                line: 8, title: `Inner Loop: j = ${j}`,
+                desc: `乘以 nums[${j}] (${sampleNums[j]}) -> 目前乘積 prod = ${prod}`,
+                i: i, j: j, res: [...res], extraKey: "Current Prod", extraVal: prod
+              });
+            }
+          }
+          res[i] = prod;
+          history.push({
+            line: 9, title: `寫入結果: res[${i}] = ${prod}`,
+            desc: `完成索引 ${i} 的乘積計算，更新 res[${i}] = ${prod}`,
+            i: i, j: -1, res: [...res], extraKey: "Updated res[i]", extraVal: prod
+          });
+        }
+
+        history.push({
+          line: 10, title: "完成計算", desc: `雙重迴圈計算完成！結果為 [${res.join(', ')}]`,
+          i: -1, j: -1, res: [...res], extraKey: "Final", extraVal: "DONE"
+        });
+      }
+    }
+
+    function resetSim() {
+      buildHistory();
+      currentStep = 0;
+      updateUIElements();
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateLineHighlight(state.line);
+      document.getElementById('step-title').innerText = state.title;
+      document.getElementById('step-desc').innerText = state.desc;
+      document.getElementById('stepHint').innerText = state.title.toUpperCase();
+
+      document.getElementById('var-i').innerText = state.i !== -1 ? state.i : '-';
+      document.getElementById('var-extra-key').innerText = state.extraKey;
+      document.getElementById('var-extra-val').innerText = state.extraVal;
+
+      renderArrays(state);
+    }
+
+    function updateUIElements() {
+      ['prefix', 'division', 'brute'].forEach(a => {
+        document.getElementById(`algo-${a}`).className = 'tab-btn ' + (currentAlgo === a ? 'active' : '');
+      });
+
+      const tc = document.getElementById('tc-val');
+      const sc = document.getElementById('sc-val');
+      const title = document.getElementById('approach-title');
+      const desc = document.getElementById('approach-desc');
+
+      if (currentAlgo === 'prefix') {
+        tc.innerText = 'O(N)'; sc.innerText = 'O(1)*';
+        title.innerText = '💡 思路 1：前後綴乘積 Prefix & Suffix (最優解)';
+        desc.innerText = '一個數的「自身以外乘積」=「左邊所有數的乘積 (Prefix)」×「右邊所有數的乘積 (Suffix)」。先做一次左向右的 Prefix Pass 存入 res，再做一次右向左的 Suffix Pass 直接乘上，完全不需要額外陣列。';
+      } else if (currentAlgo === 'division') {
+        tc.innerText = 'O(N)'; sc.innerText = 'O(1)*';
+        title.innerText = '💡 思路 2：除法技巧 Division';
+        desc.innerText = '算完所有元素的總乘積，再對每個位置除以 nums[i]。需要額外處理陣列中含有 0 的邊界情況。注意：題目要求「不能使用除法」，此方法供比較。';
+      } else if (currentAlgo === 'brute') {
+        tc.innerText = 'O(N²)'; sc.innerText = 'O(1)*';
+        title.innerText = '💡 思路 3：雙重迴圈 Brute Force';
+        desc.innerText = '針對每一個元素 i，使用內層迴圈把所有 j != i 的元素乘起來。時間複雜度 O(N²)，當 N 較大時會逾時 (TLE)。';
+      }
+    }
+
+    function renderCode() {
+      const codeList = pyCodes[currentAlgo];
+      document.getElementById('code-box').innerHTML = codeList
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateLineHighlight(line) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if (document.getElementById('l' + line)) {
+        document.getElementById('l' + line).classList.add('active-line');
+      }
+    }
+
+    function renderArrays(state) {
+      const numsContainer = document.getElementById('nodes-nums');
+      const resContainer = document.getElementById('nodes-res');
+
+      numsContainer.innerHTML = '';
+      resContainer.innerHTML = '';
+
+      sampleNums.forEach((n, idx) => {
+        const nodeNums = document.createElement('div');
+        nodeNums.className = 'node';
+        nodeNums.innerText = n;
+
+        if (state.i === idx) nodeNums.classList.add('active-i');
+        if (state.j === idx) nodeNums.classList.add('active-j');
+
+        numsContainer.appendChild(nodeNums);
+      });
+
+      state.res.forEach((r, idx) => {
+        const nodeRes = document.createElement('div');
+        nodeRes.className = 'node';
+        nodeRes.innerText = r;
+
+        if (state.i === idx) nodeRes.classList.add('updated');
+
+        resContainer.appendChild(nodeRes);
+      });
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

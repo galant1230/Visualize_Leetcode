@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>128. Longest Consecutive Sequence - Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-medium: #ffc01e;
+      --lc-blue: #007aff;
+      --lc-green: #2cbb5d;
+      --lc-red: #ff2d55;
+      --lc-purple: #a855f7;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(255, 192, 30, 0.15);
+      color: var(--lc-medium);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 20px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 6px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+      color: var(--lc-text);
+      margin-bottom: 8px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 2px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-green); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 480px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      height: 200px;
+      position: relative;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+
+    .array-container {
+      display: flex;
+      gap: 12px;
+      position: absolute;
+      left: 20px;
+      top: 60px;
+    }
+
+    .node {
+      width: 52px;
+      height: 52px;
+      background: #333;
+      border: 2px solid var(--lc-border);
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 1rem;
+      position: relative;
+      transition: all 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    .node.active-start {
+      border-color: var(--lc-orange);
+      background: rgba(255, 161, 22, 0.25);
+    }
+    .node.active-streak {
+      border-color: var(--lc-blue);
+      background: rgba(0, 122, 255, 0.25);
+    }
+    .node.in-longest {
+      background: var(--lc-green);
+      border-color: var(--lc-green);
+      color: white;
+    }
+    .node.skip {
+      opacity: 0.4;
+      border-style: dashed;
+    }
+
+    .ptr-container {
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .ptr-label {
+      font-size: 0.65rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: white;
+      white-space: nowrap;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .p-start { background: var(--lc-orange); }
+    .p-curr { background: var(--lc-blue); }
+
+    .idx-label {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      color: var(--lc-text-dim);
+      font-family: monospace;
+    }
+
+    .metric-panel {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .metric-card {
+      flex: 1;
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    .metric-label { color: var(--lc-text-dim); font-size: 0.75rem; display: block; }
+    .metric-value { font-size: 1.1rem; font-weight: bold; color: var(--lc-orange); margin-top: 2px; }
+
+    .set-view {
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+    .set-title { color: var(--lc-text-dim); margin-bottom: 6px; font-weight: bold; }
+    .set-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .set-item {
+      background: #2a2a2a;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      color: var(--lc-text);
+      transition: all 0.2s;
+    }
+    .set-item.highlight-start { border-color: var(--lc-orange); color: var(--lc-orange); font-weight: bold; }
+    .set-item.highlight-seq { border-color: var(--lc-blue); background: rgba(0, 122, 255, 0.2); }
+
+    .control-panel {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 7px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-green); color: #fff; }
+    .btn-primary:hover { background: #239a4b; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">128. Longest Consecutive Sequence</span>
+    <span class="lc-badge">Medium</span>
+    <span class="lc-tag">Array</span>
+    <span class="lc-tag">Hash Table</span>
+    <span class="lc-tag">Union Find</span>
+  </div>
+
+  <div class="config-tabs">
+    <div class="tab-group">
+      <button class="tab-btn active" id="algo-hash" onclick="setAlgo('hash')">Hash Set 法 O(n)</button>
+      <button class="tab-btn" id="algo-sort" onclick="setAlgo('sort')">排序法 O(n log n)</button>
+    </div>
+    <div class="tab-group">
+      <button class="tab-btn active" id="lang-py" onclick="setLang('py')">Python3</button>
+      <button class="tab-btn" id="lang-c" onclick="setLang('c')">C++</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個未排序的整數陣列 <code>nums</code>，請找出最長連續數字序列的長度。演算法的時間複雜度必須為 <code>O(n)</code>。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> nums = [100, 4, 200, 1, 3, 2]</div>
+            <div><strong>Output:</strong> 4</div>
+            <div style="color: var(--lc-text-dim); font-size: 0.78rem; margin-top: 2px;">最長連續序列為 [1, 2, 3, 4]，長度為 4。</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val" id="tc-val">O(n)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val" id="sc-val">O(n)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span id="codeTitle">🐍 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (State & Visualizer)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title" id="approach-title">💡 解題思路</div>
+            <div id="approach-desc">將所有數字存入 Hash Set。只對「序列開頭數字」（即 num - 1 不在 Set 中者）發起連續累加檢查，避免重複搜尋。</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">準備開始模擬...</div>
+          </div>
+
+          <div class="stage" id="main-stage">
+            <div class="array-container" id="array-nodes"></div>
+          </div>
+
+          <div class="metric-panel">
+            <div class="metric-card">
+              <span class="metric-label">當前連續長度 (curr_streak)</span>
+              <span class="metric-value" id="curr-streak-val">0</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">歷史最長長度 (longest)</span>
+              <span class="metric-value" id="longest-val" style="color: var(--lc-green);">0</span>
+            </div>
+          </div>
+
+          <div class="set-view" id="set-view">
+            <div class="set-title">Hash Set (num_set)</div>
+            <div class="set-grid" id="set-grid">
+              <span style="color: var(--lc-text-dim);">{ }</span>
+            </div>
+          </div>
+
+          <div class="control-panel" style="margin-top: 16px;">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleNums = [100, 4, 200, 1, 3, 2];
+    let currentAlgo = 'hash'; // 'hash' | 'sort'
+    let lang = 'py';
+    let currentStep = 0;
+    let history = [];
+
+    const codes = {
+      hash: {
+        py: [
+          `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">longestConsecutive</span>(<span class="self">self</span>, nums: List[int]) -&gt; int:`,
+          `        num_set = set(nums)`,
+          `        longest = 0`,
+          `        <span class="kw">for</span> num <span class="kw">in</span> num_set:`,
+          `            <span class="kw">if</span> num - 1 <span class="kw">not in</span> num_set:`,
+          `                curr_num = num`,
+          `                curr_streak = 1`,
+          `                <span class="kw">while</span> curr_num + 1 <span class="kw">in</span> num_set:`,
+          `                    curr_num += 1`,
+          `                    curr_streak += 1`,
+          `                longest = max(longest, curr_streak)`,
+          `        <span class="kw">return</span> longest`
+        ],
+        c: [
+          `<span class="kw">class</span> <span class="fn">Solution</span> {`,
+          `<span class="kw">public</span>:`,
+          `    int <span class="fn">longestConsecutive</span>(vector&lt;int&gt;& nums) {`,
+          `        unordered_set&lt;int&gt; num_set(nums.begin(), nums.end());`,
+          `        int longest = 0;`,
+          `        <span class="kw">for</span> (int num : num_set) {`,
+          `            <span class="kw">if</span> (!num_set.count(num - 1)) {`,
+          `                int curr_num = num;`,
+          `                int curr_streak = 1;`,
+          `                <span class="kw">while</span> (num_set.count(curr_num + 1)) {`,
+          `                    curr_num++;`,
+          `                    curr_streak++;`,
+          `                }`,
+          `                longest = max(longest, curr_streak);`,
+          `            }`,
+          `        }`,
+          `        <span class="kw">return</span> longest;`,
+          `    }`,
+          `};`
+        ]
+      },
+      sort: {
+        py: [
+          `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">longestConsecutive</span>(<span class="self">self</span>, nums: List[int]) -&gt; int:`,
+          `        <span class="kw">if not</span> nums: <span class="kw">return</span> 0`,
+          `        nums.sort()`,
+          `        longest = 1`,
+          `        curr_streak = 1`,
+          `        <span class="kw">for</span> i <span class="kw">in</span> range(1, len(nums)):`,
+          `            <span class="kw">if</span> nums[i] != nums[i - 1]:`,
+          `                <span class="kw">if</span> nums[i] == nums[i - 1] + 1:`,
+          `                    curr_streak += 1`,
+          `                <span class="kw">else</span>:`,
+          `                    longest = max(longest, curr_streak)`,
+          `                    curr_streak = 1`,
+          `        <span class="kw">return</span> max(longest, curr_streak)`
+        ],
+        c: [
+          `<span class="kw">class</span> <span class="fn">Solution</span> {`,
+          `<span class="kw">public</span>:`,
+          `    int <span class="fn">longestConsecutive</span>(vector&lt;int&gt;& nums) {`,
+          `        <span class="kw">if</span> (nums.empty()) <span class="kw">return</span> 0;`,
+          `        sort(nums.begin(), nums.end());`,
+          `        int longest = 1, curr_streak = 1;`,
+          `        <span class="kw">for</span> (size_t i = 1; i &lt; nums.size(); ++i) {`,
+          `            <span class="kw">if</span> (nums[i] != nums[i - 1]) {`,
+          `                <span class="kw">if</span> (nums[i] == nums[i - 1] + 1) curr_streak++;`,
+          `                <span class="kw">else</span> { longest = max(longest, curr_streak); curr_streak = 1; }`,
+          `            }`,
+          `        }`,
+          `        <span class="kw">return</span> max(longest, curr_streak);`,
+          `    }`,
+          `};`
+        ]
+      }
+    };
+
+    function setAlgo(a) { currentAlgo = a; resetSim(); }
+    function setLang(l) { lang = l; resetSim(); }
+
+    function buildHistoryHash() {
+      history = [];
+      const numSet = Array.from(new Set(sampleNums)); // [100, 4, 200, 1, 3, 2]
+      let longest = 0;
+
+      // 0: 初始化
+      history.push({
+        line: lang === 'py' ? 2 : 3,
+        title: "建立 Hash Set",
+        desc: "將陣列 [100, 4, 200, 1, 3, 2] 轉為 Hash Set 以便提供 O(1) 的查找速度。",
+        currNum: null, currStart: null, currStreak: 0, longest: 0, setList: [...numSet], activeSeq: [], skip: false
+      });
+
+      for (let num of numSet) {
+        let hasPrev = numSet.includes(num - 1);
+
+        history.push({
+          line: lang === 'py' ? 5 : 6,
+          title: `檢查數字 ${num}`,
+          desc: `檢查 (${num} - 1 = ${num - 1}) 是否在 Set 中？ ${hasPrev ? '是在表中，說明它不是序列起點，跳過！' : '不在表中，說明它是潛在序列起點！'}`,
+          currNum: num, currStart: num, currStreak: 0, longest: longest, setList: [...numSet], activeSeq: [num], skip: hasPrev
+        });
+
+        if (!hasPrev) {
+          let currNum = num;
+          let currStreak = 1;
+          let seq = [currNum];
+
+          history.push({
+            line: lang === 'py' ? 7 : 8,
+            title: `從起點 ${num} 開始擴展`,
+            desc: `初始化當前序列長度 curr_streak = 1。`,
+            currNum: currNum, currStart: num, currStreak: currStreak, longest: longest, setList: [...numSet], activeSeq: [...seq], skip: false
+          });
+
+          while (numSet.includes(currNum + 1)) {
+            currNum++;
+            currStreak++;
+            seq.push(currNum);
+
+            history.push({
+              line: lang === 'py' ? 9 : 10,
+              title: `找到連續數字 ${currNum}`,
+              desc: `Set 中存在 ${currNum}！延伸序列，目前連續長度累加至 ${currStreak}。`,
+              currNum: currNum, currStart: num, currStreak: currStreak, longest: longest, setList: [...numSet], activeSeq: [...seq], skip: false
+            });
+          }
+
+          longest = Math.max(longest, currStreak);
+          history.push({
+            line: lang === 'py' ? 11 : 12,
+            title: `更新最長紀錄 (longest)`,
+            desc: `起點 ${num} 形成的連續序列延伸結束，更新最長長度至 max(${longest}, ${currStreak}) = ${longest}。`,
+            currNum: currNum, currStart: num, currStreak: currStreak, longest: longest, setList: [...numSet], activeSeq: [...seq], skip: false
+          });
+        }
+      }
+
+      history.push({
+        line: lang === 'py' ? 12 : 14,
+        title: "遍歷完成",
+        desc: `所有數字皆已檢查完成。最長連續序列長度為 ${longest}。`,
+        currNum: null, currStart: null, currStreak: 0, longest: longest, setList: [...numSet], activeSeq: [1,2,3,4], isFinal: true
+      });
+    }
+
+    function buildHistorySort() {
+      history = [];
+      let sorted = [...sampleNums].sort((a, b) => a - b); // [1, 2, 3, 4, 100, 200]
+      let longest = 1;
+      let currStreak = 1;
+
+      history.push({
+        line: lang === 'py' ? 3 : 4,
+        title: "陣列進行排序",
+        desc: `原始陣列排序後為：[${sorted.join(', ')}]。`,
+        arr: [...sorted], i: -1, currStreak: 1, longest: 1, activeSeq: [sorted[0]]
+      });
+
+      for (let i = 1; i < sorted.length; i++) {
+        let prev = sorted[i - 1];
+        let curr = sorted[i];
+
+        if (curr === prev + 1) {
+          currStreak++;
+          history.push({
+            line: lang === 'py' ? 8 : 9,
+            title: `數字連續: ${prev} -> ${curr}`,
+            desc: `${curr} 比 ${prev} 大 1，當前連續長度累加至 ${currStreak}。`,
+            arr: [...sorted], i: i, currStreak: currStreak, longest: longest, activeSeq: sorted.slice(i - currStreak + 1, i + 1)
+          });
+        } else if (curr !== prev) {
+          longest = Math.max(longest, currStreak);
+          currStreak = 1;
+          history.push({
+            line: lang === 'py' ? 11 : 10,
+            title: `序列中斷，重置長度`,
+            desc: `${curr} 與 ${prev} 不連續。更新歷史最長長度為 ${longest}，並重置當前長度為 1。`,
+            arr: [...sorted], i: i, currStreak: currStreak, longest: longest, activeSeq: [curr]
+          });
+        }
+      }
+
+      longest = Math.max(longest, currStreak);
+      history.push({
+        line: lang === 'py' ? 12 : 13,
+        title: "排序搜尋完成",
+        desc: `最終最長連續序列長度為 ${longest}。`,
+        arr: [...sorted], i: sorted.length - 1, currStreak: currStreak, longest: longest, activeSeq: [1, 2, 3, 4], isFinal: true
+      });
+    }
+
+    function resetSim() {
+      if (currentAlgo === 'hash') buildHistoryHash();
+      else buildHistorySort();
+
+      currentStep = 0;
+      updateUIElements();
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateLineHighlight(state.line);
+      document.getElementById('step-title').innerText = state.title;
+      document.getElementById('step-desc').innerText = state.desc;
+      document.getElementById('stepHint').innerText = state.title.toUpperCase();
+
+      document.getElementById('curr-streak-val').innerText = state.currStreak !== undefined ? state.currStreak : 0;
+      document.getElementById('longest-val').innerText = state.longest !== undefined ? state.longest : 0;
+
+      renderStage(state);
+      renderSetGrid(state);
+    }
+
+    function updateUIElements() {
+      document.getElementById('algo-hash').className = 'tab-btn ' + (currentAlgo === 'hash' ? 'active' : '');
+      document.getElementById('algo-sort').className = 'tab-btn ' + (currentAlgo === 'sort' ? 'active' : '');
+      document.getElementById('lang-py').className = 'tab-btn ' + (lang === 'py' ? 'active' : '');
+      document.getElementById('lang-c').className = 'tab-btn ' + (lang === 'c' ? 'active' : '');
+
+      if (currentAlgo === 'hash') {
+        document.getElementById('tc-val').innerText = 'O(n)';
+        document.getElementById('sc-val').innerText = 'O(n)';
+        document.getElementById('approach-title').innerText = '💡 解題思路 (Hash Set 法)';
+        document.getElementById('approach-desc').innerText = '將數字存入 Hash Set。遍歷每個數字時，只有當 (num - 1) 不存在時才發起連續搜尋，確保每個連續區間的元素只被遍歷 2 次，達成 O(n) 時間複雜度。';
+        document.getElementById('set-view').style.display = 'block';
+      } else {
+        document.getElementById('tc-val').innerText = 'O(n log n)';
+        document.getElementById('sc-val').innerText = 'O(1) 或 O(n)';
+        document.getElementById('approach-title').innerText = '💡 解題思路 (排序法)';
+        document.getElementById('approach-desc').innerText = '先對陣列進行排序，再走訪一次排序後的陣列，比較相鄰數字是否連續。雖然簡單直接，但排序的時間複雜度為 O(n log n)。';
+        document.getElementById('set-view').style.display = 'none';
+      }
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codes[currentAlgo][lang]
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateLineHighlight(line) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if (document.getElementById('l' + line)) {
+        document.getElementById('l' + line).classList.add('active-line');
+      }
+    }
+
+    function renderStage(state) {
+      const container = document.getElementById('array-nodes');
+      container.innerHTML = '';
+
+      const displayArr = currentAlgo === 'hash' ? sampleNums : state.arr;
+
+      displayArr.forEach((val, idx) => {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.innerText = val;
+
+        let ptrs = '';
+
+        if (currentAlgo === 'hash') {
+          if (state.currStart === val) {
+            node.classList.add('active-start');
+            ptrs += `<div class="ptr-label p-start">start</div>`;
+          }
+          if (state.currNum === val && state.currNum !== state.currStart) {
+            node.classList.add('active-streak');
+            ptrs += `<div class="ptr-label p-curr">curr</div>`;
+          }
+          if (state.skip && state.currStart === val) {
+            node.classList.add('skip');
+          }
+        } else {
+          if (state.i === idx) {
+            node.classList.add('active-streak');
+            ptrs += `<div class="ptr-label p-curr">i</div>`;
+          }
+        }
+
+        if (state.isFinal && [1, 2, 3, 4].includes(val)) {
+          node.className = 'node in-longest';
+        } else if (state.activeSeq && state.activeSeq.includes(val) && !state.skip) {
+          node.classList.add('active-streak');
+        }
+
+        if (ptrs) {
+          node.innerHTML += `<div class="ptr-container">${ptrs}</div>`;
+        }
+
+        node.innerHTML += `<div class="idx-label">[${idx}]</div>`;
+        container.appendChild(node);
+      });
+    }
+
+    function renderSetGrid(state) {
+      if (currentAlgo !== 'hash') return;
+      const grid = document.getElementById('set-grid');
+
+      if (!state.setList) {
+        grid.innerHTML = `<span style="color: var(--lc-text-dim);">{ }</span>`;
+        return;
+      }
+
+      grid.innerHTML = state.setList.map(val => {
+        let cls = 'set-item';
+        if (val === state.currStart && !state.skip) cls += ' highlight-start';
+        else if (state.activeSeq && state.activeSeq.includes(val)) cls += ' highlight-seq';
+
+        return `<div class="${cls}">${val}</div>`;
+      }).join('');
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

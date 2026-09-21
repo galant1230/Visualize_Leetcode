@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>102. Binary Tree Level Order Traversal & BFS Variations - Visualizer</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --red: #ff2d55;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .tag { background: #383838; color: var(--text-dim); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
+
+    .approach-tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 6px; flex-wrap: wrap; background: #222; padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
+    .app-tab-btn { background: transparent; border: none; color: var(--text-dim); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: 0.2s; }
+    .app-tab-btn:hover { background: #333; color: #fff; }
+    .app-tab-btn.active { background: var(--orange); color: #000; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+    
+    .problem-desc { font-size: 0.82rem; color: #ccc; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+    
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .approach-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.8rem; color: #ddd; }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.75rem; overflow-x: auto; max-height: 270px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .str { color: #f1fa8c; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.75rem; min-height: 120px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.2s ease-out; }
+    .stack-frame.returning { border-color: var(--green); border-left-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+    .stack-frame-title { color: #fff; font-weight: bold; }
+    .stack-frame-args { color: var(--text-dim); font-size: 0.7rem; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; height: 390px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; overflow: hidden; }
+    
+    .tree-container { display: flex; width: 100%; height: 210px; gap: 10px; }
+    .tree-pane { flex: 1; background: #141414; border: 1px solid var(--border); border-radius: 4px; position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+    .tree-pane-title { font-size: 0.75rem; font-weight: bold; font-family: monospace; color: var(--orange); }
+    
+    svg.tree-svg { width: 100%; height: 185px; }
+    .tree-node-circle { fill: #333; stroke: var(--border); stroke-width: 2px; transition: all 0.2s; }
+    .tree-node-circle.active { fill: rgba(255, 161, 22, 0.35); stroke: var(--orange); stroke-width: 3px; }
+    .tree-node-circle.visited { fill: rgba(0, 122, 255, 0.3); stroke: var(--blue); stroke-width: 2px; }
+    .tree-node-circle.queued { fill: rgba(255, 192, 30, 0.2); stroke: var(--medium); stroke-width: 2px; stroke-dasharray: 3 3; }
+    .tree-text { fill: #fff; font-family: monospace; font-weight: bold; font-size: 13px; text-anchor: middle; dominant-baseline: middle; }
+    .tree-edge { stroke: #555; stroke-width: 2px; transition: all 0.2s; }
+
+    .ds-display { background: #141414; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 0.78rem; height: 140px; display: flex; flex-direction: column; justify-content: space-around; align-items: flex-start; gap: 4px; }
+    .queue-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .queue-item { background: #2d2d2d; border: 1px solid var(--medium); padding: 2px 8px; border-radius: 4px; color: var(--medium); font-weight: bold; }
+    .res-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .res-group { background: rgba(80, 250, 123, 0.15); border: 1px solid var(--green); padding: 2px 8px; border-radius: 4px; color: var(--green); font-weight: bold; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.8rem; font-family: monospace; height: 65px; display: flex; flex-direction: column; justify-content: center; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">102. Binary Tree Level Order Traversal</span>
+    <span class="badge">Medium</span>
+    <span class="tag">Tree</span>
+    <span class="tag">Breadth-First Search</span>
+    <span class="tag">Queue</span>
+  </div>
+
+  <div class="approach-tabs" id="app-tabs">
+    <button class="app-tab-btn active" onclick="switchApproach(0)">1. BFS Deque Queue</button>
+    <button class="app-tab-btn" onclick="switchApproach(1)">2. DFS Recursion Level Index</button>
+    <button class="app-tab-btn" onclick="switchApproach(2)">3. BFS List Comprehension</button>
+    <button class="app-tab-btn" onclick="switchApproach(3)">4. BFS Vector Index Pointer</button>
+    <button class="app-tab-btn" onclick="switchApproach(4)">5. 筆記寫法一 (基礎單層 BFS)</button>
+    <button class="app-tab-btn" onclick="switchApproach(5)">6. 筆記寫法二 (記錄 depth 經典)</button>
+    <button class="app-tab-btn" onclick="switchApproach(6)">7. 筆記寫法三 (State 類別自定義)</button>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: Standard 3-Level BST</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: Single Node Tree</button>
+    <button class="tab-btn" onclick="setPreset(2)">Ex 3: Empty Tree (None)</button>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個二元樹的根節點 <code>root</code>，傳回其節點值的<b>層序走訪 (Level Order Traversal)</b>。（即逐層由左至右收集節點數值）。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">-</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼 (逐行追蹤)</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (系統呼叫堆疊)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display">
+          <div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">💡 解題思路說明</div>
+        <div class="approach-box" id="approach-desc"></div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 完整執行步驟與 Queue 狀態 (Step Visualizer)</div>
+        
+        <div class="stage" id="stage-box"></div>
+
+        <div class="info">
+          <div class="info-row">
+            <span style="color: var(--text-dim);">當前階段 (Phase):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const approaches = [
+      {
+        name: "1. BFS with Deque Queue",
+        time: "O(N)", space: "O(W)",
+        desc: "<b>廣度優先搜尋 (BFS)：</b>使用 <code>collections.deque</code> 佇列。每一輪外層迴圈記錄當前層的長度 <code>level_size</code>，精確將該層的節點全數彈出並加入左右子節點。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">levelOrder</span>(<span class="self">self</span>, root):`,
+          `        <span class="kw">if not</span> root: <span class="kw">return</span> []`,
+          `        res = []`,
+          `        queue = collections.deque([root])`,
+          `        <span class="kw">while</span> queue:`,
+          `            level = []`,
+          `            <span class="kw">for</span> _ <span class="kw">in</span> range(len(queue)):`,
+          `                node = queue.popleft()`,
+          `                level.append(node.val)`,
+          `                <span class="kw">if</span> node.left: queue.append(node.left)`,
+          `                <span class="kw">if</span> node.right: queue.append(node.right)`,
+          `            res.append(level)`,
+          `        <span class="kw">return</span> res`
+        ]
+      },
+      {
+        name: "2. DFS Recursion with Level Index",
+        time: "O(N)", space: "O(H)",
+        desc: "<b>深度優先搜尋 (DFS) 搭配層級索引：</b>遞迴時額外傳遞 <code>depth</code> 參數，若 <code>depth == len(res)</code> 則開立新 Array，直接填入對應層數的串列中。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">levelOrder</span>(<span class="self">self</span>, root):`,
+          `        res = []`,
+          `        <span class="kw">def</span> <span class="fn">dfs</span>(node, depth):`,
+          `            <span class="kw">if not</span> node: <span class="kw">return</span>`,
+          `            <span class="kw">if</span> depth == len(res): res.append([])`,
+          `            res[depth].append(node.val)`,
+          `            dfs(node.left, depth + 1)`,
+          `            dfs(node.right, depth + 1)`,
+          `        dfs(root, 0)`,
+          `        <span class="kw">return</span> res`
+        ]
+      },
+      {
+        name: "3. BFS List Comprehension",
+        time: "O(N)", space: "O(W)",
+        desc: "<b>精簡版 Python BFS：</b>每次迭代以列表推導式一次性生成當前層所有節點的值，並同時替換 Queue 為下一層節點串列。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">levelOrder</span>(<span class="self">self</span>, root):`,
+          `        <span class="kw">if not</span> root: <span class="kw">return</span> []`,
+          `        res, level = [], [root]`,
+          `        <span class="kw">while</span> level:`,
+          `            res.append([node.val <span class="kw">for</span> node <span class="kw">in</span> level])`,
+          `            level = [child <span class="kw">for</span> node <span class="kw">in</span> level <span class="kw">for</span> child <span class="kw">in</span> (node.left, node.right) <span class="kw">if</span> child]`,
+          `        <span class="kw">return</span> res`
+        ]
+      },
+      {
+        name: "4. BFS Vector Index (Tail-call / Index Pointer)",
+        time: "O(N)", space: "O(N)",
+        desc: "<b>指標模擬佇列 (Index Pointer BFS)：</b>使用單一陣列 <code>nodes</code> 儲存所有節點，維護指標 <code>i</code> 模擬 Pop 操作。避免 Queue 出列的記憶態開銷，具極高記憶體連續性 (Cache-Friendly)。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">levelOrder</span>(<span class="self">self</span>, root: Optional[TreeNode]) -> List[List[int]]:`,
+          `        <span class="kw">if not</span> root: <span class="kw">return</span> []`,
+          `        nodes = [root]`,
+          `        ans = []`,
+          `        i = <span class="str">0</span>`,
+          `        <span class="kw">while</span> i < len(nodes):`,
+          `            level_len = len(nodes) - i`,
+          `            current_level = []`,
+          `            <span class="kw">for</span> _ <span class="kw">in</span> range(level_len):`,
+          `                curr = nodes[i]`,
+          `                i += <span class="str">1</span>  <span class="cm"># 移動指標替代 Pop</span>`,
+          `                current_level.append(curr.val)`,
+          `                <span class="kw">if</span> curr.left: nodes.append(curr.left)`,
+          `                <span class="kw">if</span> curr.right: nodes.append(curr.right)`,
+          `            ans.append(current_level)`,
+          `        <span class="kw">return</span> ans`
+        ]
+      },
+      {
+        name: "5. 筆記寫法一 (基礎單層 BFS)",
+        time: "O(N)", space: "O(W)",
+        desc: "<b>最簡單的基礎寫法：</b>每次彈出隊頭元素並列印，隨後將左右子節點入隊。<b>優點：</b>邏輯最單純；<b>缺點：</b>無法得知目前節點位於第幾層。",
+        code: [
+          `<span class="kw">from</span> collections <span class="kw">import</span> deque`,
+          ``,
+          `<span class="kw">def</span> <span class="fn">levelOrderTraverse</span>(root):`,
+          `    <span class="kw">if</span> root <span class="kw">is None</span>:`,
+          `        <span class="kw">return</span>`,
+          `    q = deque()`,
+          `    q.append(root)`,
+          `    <span class="kw">while</span> q:`,
+          `        cur = q.popleft()`,
+          `        <span class="cm"># 訪問 cur 節點</span>`,
+          `        print(cur.val)`,
+          `        <span class="cm"># 把 cur 的左右子節點加入佇列</span>`,
+          `        <span class="kw">if</span> cur.left <span class="kw">is not None</span>:`,
+          `            q.append(cur.left)`,
+          `        <span class="kw">if</span> cur.right <span class="kw">is not None</span>:`,
+          `            q.append(cur.right)`
+        ]
+      },
+      {
+        name: "6. 筆記寫法二 (記錄 depth 經典)",
+        time: "O(N)", space: "O(W)",
+        desc: "<b>最常用的經典寫法：</b>利用外層 <code>depth</code> 變數加上內層 <code>for _ in range(sz)</code> 控制分層，能精確掌握每個節點的深度與層數。",
+        code: [
+          `<span class="kw">from</span> collections <span class="kw">import</span> deque`,
+          ``,
+          `<span class="kw">def</span> <span class="fn">levelOrderTraverse</span>(root):`,
+          `    <span class="kw">if</span> root <span class="kw">is None</span>:`,
+          `        <span class="kw">return</span>`,
+          `    q = deque()`,
+          `    q.append(root)`,
+          `    <span class="cm"># 紀錄當前走訪到的層數（根節點視為第 1 層）</span>`,
+          `    depth = <span class="str">1</span>`,
+          `    <span class="kw">while</span> q:`,
+          `        sz = len(q)`,
+          `        <span class="kw">for</span> i <span class="kw">in</span> range(sz):`,
+          `            cur = q.popleft()`,
+          `            <span class="cm"># 訪問 cur 節點，同時知道它所在的層數</span>`,
+          `            print(<span class="str">f"depth = {depth}, val = {cur.val}"</span>)`,
+          `            <span class="cm"># 把 cur 的左右子節點加入佇列</span>`,
+          `            <span class="kw">if</span> cur.left <span class="kw">is not None</span>:`,
+          `                q.append(cur.left)`,
+          `            <span class="kw">if</span> cur.right <span class="kw">is not None</span>:`,
+          `                q.append(cur.right)`,
+          `        depth += <span class="str">1</span>`
+        ]
+      },
+      {
+        name: "7. 筆記寫法三 (State 類別自定義)",
+        time: "O(N)", space: "O(W)",
+        desc: "<b>靈活的 State 封裝寫法：</b>自訂 <code>State</code> 類別包裹節點與其權重/深度資訊。適合樹枝權重不同或圖結構（如 Dijkstra 演算法）的 BFS 通用框架。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">State</span>:`,
+          `    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="self">self</span>, node, depth):`,
+          `        <span class="self">self</span>.node = node`,
+          `        <span class="self">self</span>.depth = depth`,
+          ``,
+          `<span class="kw">def</span> <span class="fn">levelOrderTraverse</span>(root):`,
+          `    <span class="kw">if</span> root <span class="kw">is None</span>:`,
+          `        <span class="kw">return</span>`,
+          `    q = deque()`,
+          `    <span class="cm"># 根節點的路徑權重和是 1</span>`,
+          `    q.append(State(root, <span class="str">1</span>))`,
+          `    <span class="kw">while</span> q:`,
+          `        cur = q.popleft()`,
+          `        <span class="cm"># 訪問 cur 節點，同時知道它的路徑權重和</span>`,
+          `        print(<span class="str">f"depth = {cur.depth}, val = {cur.node.val}"</span>)`,
+          `        <span class="cm"># 把 cur 的左右子節點加入佇列</span>`,
+          `        <span class="kw">if</span> cur.node.left <span class="kw">is not None</span>:`,
+          `            q.append(State(cur.node.left, cur.depth + <span class="str">1</span>))`,
+          `        <span class="kw">if</span> cur.node.right <span class="kw">is not None</span>:`,
+          `            q.append(State(cur.node.right, cur.depth + <span class="str">1</span>))`
+        ]
+      }
+    ];
+
+    const presets = [
+      { root: [3, 9, 20, null, null, 15, 7], expected: "[[3],[9,20],[15,7]]", name: "Ex 1: 3-Level BST [3, 9, 20, null, null, 15, 7]" },
+      { root: [1], expected: "[[1]]", name: "Ex 2: Single Node Tree [1]" },
+      { root: [], expected: "[]", name: "Ex 3: Empty Tree []" }
+    ];
+
+    let currentApproach = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function switchApproach(idx) {
+      currentApproach = idx;
+      document.querySelectorAll('.app-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderApproachDetails();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderApproachDetails() {
+      const app = approaches[currentApproach];
+      document.getElementById('time-comp').innerText = app.time;
+      document.getElementById('space-comp').innerText = app.space;
+      document.getElementById('approach-desc').innerHTML = app.desc;
+      document.getElementById('code-box').innerHTML = app.code.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>Root Array = [${p.root.map(v => v === null ? 'null' : v).join(', ')}]</div>
+        <div>Expected Level Order: <b>${p.expected}</b></div>
+      `;
+    }
+
+    function createTree(arr) {
+      if (!arr || arr.length === 0) return null;
+      let nodes = arr.map(v => v !== null ? { val: v, left: null, right: null, id: 'node_' + v } : null);
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i]) {
+          let leftIdx = 2 * i + 1;
+          let rightIdx = 2 * i + 2;
+          if (leftIdx < nodes.length) nodes[i].left = nodes[leftIdx];
+          if (rightIdx < nodes.length) nodes[i].right = nodes[rightIdx];
+        }
+      }
+      return nodes[0];
+    }
+
+    function renderSingleTreeSVG(root, activeVal = null, queueVals = [], visitedVals = []) {
+      if (!root) return `<div style="color:var(--text-dim); font-family:monospace; margin:auto; font-size:0.8rem;">Tree is empty (None)</div>`;
+      let posMap = {};
+      function calcPos(node, depth = 0, leftBound = 0, rightBound = 100) {
+        if (!node) return;
+        let x = (leftBound + rightBound) / 2;
+        let y = depth * 42 + 25;
+        posMap[node.val] = { x, y, val: node.val, left: node.left, right: node.right };
+        calcPos(node.left, depth + 1, leftBound, x);
+        calcPos(node.right, depth + 1, x, rightBound);
+      }
+      calcPos(root);
+
+      let edgesHTML = '', nodesHTML = '';
+      Object.keys(posMap).forEach(vStr => {
+        let val = parseInt(vStr);
+        let p = posMap[val];
+        if (p.left && posMap[p.left.val]) edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${posMap[p.left.val].x}%" y2="${posMap[p.left.val].y}" class="tree-edge" />`;
+        if (p.right && posMap[p.right.val]) edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${posMap[p.right.val].x}%" y2="${posMap[p.right.val].y}" class="tree-edge" />`;
+
+        let circleClass = 'tree-node-circle';
+        if (visitedVals.includes(val)) circleClass += ' visited';
+        if (queueVals.includes(val)) circleClass += ' queued';
+        if (val === activeVal) circleClass += ' active';
+
+        nodesHTML += `<g><circle cx="${p.x}%" cy="${p.y}" r="13" class="${circleClass}" /><text x="${p.x}%" y="${p.y}" class="tree-text">${p.val}</text></g>`;
+      });
+      return `<svg class="tree-svg">${edgesHTML}${nodesHTML}</svg>`;
+    }
+
+    function renderTreeStage(rRoot, activeVal, queueVals, visitedVals, queueDisplayStr, resDisplay) {
+      let resHTML = Array.isArray(resDisplay) 
+        ? `[ ${resDisplay.map(l => Array.isArray(l) ? '[' + l.join(', ') + ']' : l).join(', ')} ]` 
+        : resDisplay;
+
+      return `
+        <div class="tree-container">
+          <div class="tree-pane">
+            <span class="tree-pane-title">Binary Tree Traversal</span>
+            ${renderSingleTreeSVG(rRoot, activeVal, queueVals, visitedVals)}
+          </div>
+        </div>
+        <div class="ds-display">
+          <div class="queue-bar">
+            <span style="color:var(--text-dim); font-weight:bold;">Queue / Vector:</span>
+            ${queueDisplayStr}
+          </div>
+          <div class="res-bar">
+            <span style="color:var(--text-dim); font-weight:bold;">Visited / Output:</span>
+            <span class="res-group">${resHTML}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStackHTML(stackFrames) {
+      if (!stackFrames || stackFrames.length === 0) {
+        return `<div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>`;
+      }
+      return stackFrames.map(f => `
+        <div class="stack-frame ${f.returning ? 'returning' : ''}">
+          <div>
+            <span class="stack-frame-title">${f.fnName}</span>
+            <span class="stack-frame-args">(${f.args})</span>
+          </div>
+          <div style="font-size:0.75rem; font-weight:bold; color:${f.returning ? 'var(--green)' : 'var(--orange)'};">
+            ${f.returning ? `➔ ${f.retVal}` : 'Active'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const presetData = presets[currentPreset];
+      let rRoot = createTree(presetData.root);
+      let currentStack = [];
+
+      function pushFrame(fnName, args) {
+        currentStack.push({ fnName, args, returning: false, retVal: null });
+      }
+      function popFrame(retVal) {
+        if (currentStack.length > 0) {
+          let top = currentStack[currentStack.length - 1];
+          top.returning = true;
+          top.retVal = retVal;
+        }
+      }
+      function finalizePop() {
+        currentStack.pop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 0: BFS with Deque Queue
+      // ----------------------------------------------------
+      if (currentApproach === 0) {
+        pushFrame("levelOrder", `root:${rRoot ? rRoot.val : 'None'}`);
+
+        history.push({
+          line: 1, phase: "Line 1: 進入 levelOrder",
+          desc: `呼叫 levelOrder(root=${rRoot ? 'Node(' + rRoot.val + ')' : 'None'})`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+        });
+
+        if (!rRoot) {
+          history.push({
+            line: 2, phase: "Line 2: 檢查 if not root",
+            desc: "root 為空 (None)，傳回空列表 []",
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+          });
+          popFrame("[]");
+          finalizePop();
+          return;
+        } else {
+          history.push({
+            line: 2, phase: "Line 2: 檢查 if not root",
+            desc: "root 存在，繼續執行",
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+          });
+        }
+
+        let res = [];
+        history.push({
+          line: 3, phase: "Line 3: 初始化結果串列 res",
+          desc: "宣告 res = [] 用於儲存各層結果",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, res)
+        });
+
+        let queue = [rRoot];
+        let visited = [];
+        history.push({
+          line: 4, phase: "Line 4: 初始化 Queue",
+          desc: `將 root 節點 [${rRoot.val}] 推入雙端佇列 queue`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [rRoot.val], visited, queue.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+        });
+
+        while (queue.length > 0) {
+          history.push({
+            line: 5, phase: "Line 5: while queue 檢查",
+            desc: `queue 非空 (${queue.length} 個節點)，繼續處理下一層`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, queue.map(n => n.val), visited, queue.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+          });
+
+          let level = [];
+          history.push({
+            line: 6, phase: "Line 6: 重設當前層串列 level",
+            desc: "宣告 level = [] 準備收集當前層節點數值",
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, queue.map(n => n.val), visited, queue.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+          });
+
+          let levelSize = queue.length;
+          history.push({
+            line: 7, phase: "Line 7: 鎖定當前層節點數量",
+            desc: `記錄當前層 level_size = len(queue) = ${levelSize}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, queue.map(n => n.val), visited, queue.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+          });
+
+          for (let i = 0; i < levelSize; i++) {
+            let currNode = queue.shift();
+            visited.push(currNode.val);
+            history.push({
+              line: 8, phase: "Line 8: 彈出 Queue 首項 (popleft)",
+              desc: `從 Queue 左側彈出節點 [${currNode.val}]`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, currNode.val, queue.map(n => n.val), visited, queue.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+            });
+
+            level.push(currNode.val);
+            history.push({
+              line: 9, phase: "Line 9: 紀錄節點數值",
+              desc: `將節點值 ${currNode.val} 加入當前層 level 串列 ➔ level = [${level.join(', ')}]`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, currNode.val, queue.map(n => n.val), visited, queue.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+            });
+
+            history.push({
+              line: 10, phase: "Line 10: 檢查左子節點",
+              desc: `檢查 node.left: ${currNode.left ? '存在 Node(' + currNode.left.val + ')' : 'None'}`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, currNode.val, queue.map(n => n.val), visited, queue.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+            });
+            if (currNode.left) {
+              queue.push(currNode.left);
+              history.push({
+                line: 10, phase: "Line 10: 左子節點入 Queue",
+                desc: `將左子節點 [${currNode.left.val}] 推入 Queue 尾端`,
+                stack: JSON.parse(JSON.stringify(currentStack)),
+                html: renderTreeStage(rRoot, currNode.val, queue.map(n => n.val), visited, queue.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+              });
+            }
+
+            history.push({
+              line: 11, phase: "Line 11: 檢查右子節點",
+              desc: `檢查 node.right: ${currNode.right ? '存在 Node(' + currNode.right.val + ')' : 'None'}`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, currNode.val, queue.map(n => n.val), visited, queue.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+            });
+            if (currNode.right) {
+              queue.push(currNode.right);
+              history.push({
+                line: 11, phase: "Line 11: 右子節點入 Queue",
+                desc: `將右子節點 [${currNode.right.val}] 推入 Queue 尾端`,
+                stack: JSON.parse(JSON.stringify(currentStack)),
+                html: renderTreeStage(rRoot, currNode.val, queue.map(n => n.val), visited, queue.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+              });
+            }
+          }
+
+          res.push([...level]);
+          history.push({
+            line: 12, phase: "Line 12: 完成該層收集",
+            desc: `將整層結果 [${level.join(', ')}] 加入總結果 res 中`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, queue.map(n => n.val), visited, queue.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+          });
+        }
+
+        popFrame(JSON.stringify(res));
+        history.push({
+          line: 13, phase: "Line 13: return res",
+          desc: "Queue 已空，層序走訪完畢，傳回最終結果！",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], visited, `<span style="color:var(--green);">Done</span>`, res)
+        });
+        finalizePop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 1: DFS Recursion with Level Index
+      // ----------------------------------------------------
+      else if (currentApproach === 1) {
+        let res = [];
+        pushFrame("levelOrder", `root:${rRoot ? rRoot.val : 'None'}`);
+
+        history.push({
+          line: 1, phase: "Line 1: 進入 levelOrder",
+          desc: "呼叫 levelOrder 函式",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, res)
+        });
+
+        history.push({
+          line: 2, phase: "Line 2: 初始化 res",
+          desc: "宣告 res = []",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, res)
+        });
+
+        function dfs(node, depth) {
+          pushFrame("dfs", `node:${node ? node.val : 'None'}, depth:${depth}`);
+
+          history.push({
+            line: 3, phase: `Line 3: 進入 dfs(node=${node ? node.val : 'None'}, depth=${depth})`,
+            desc: `遞迴呼叫 dfs，當前深度 depth = ${depth}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node ? node.val : null, [], [], `depth = ${depth}`, res)
+          });
+
+          if (!node) {
+            history.push({
+              line: 4, phase: "Line 4: Base Case (not node)",
+              desc: "節點為 None，結束此分支遞迴",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, null, [], [], `depth = ${depth}`, res)
+            });
+            popFrame("None");
+            finalizePop();
+            return;
+          }
+
+          let needsNewLevel = (depth === res.length);
+          history.push({
+            line: 5, phase: "Line 5: 檢查層級 Array 擴充",
+            desc: `檢查 depth(${depth}) == len(res)(${res.length}) ➔ ${needsNewLevel}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, [], [], `depth = ${depth}`, res)
+          });
+          if (needsNewLevel) {
+            res.push([]);
+          }
+
+          res[depth].push(node.val);
+          history.push({
+            line: 6, phase: "Line 6: 將數值寫入對應層級",
+            desc: `將 Node(${node.val}) 寫入 res[${depth}]`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, [], [], `depth = ${depth}`, res)
+          });
+
+          history.push({
+            line: 7, phase: "Line 7: 往左子樹 DFS",
+            desc: `呼叫 dfs(node.left [${node.left ? node.left.val : 'None'}], depth=${depth + 1})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, [], [], `Recursing Left`, res)
+          });
+          dfs(node.left, depth + 1);
+
+          history.push({
+            line: 8, phase: "Line 8: 往右子樹 DFS",
+            desc: `呼叫 dfs(node.right [${node.right ? node.right.val : 'None'}], depth=${depth + 1})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, [], [], `Recursing Right`, res)
+          });
+          dfs(node.right, depth + 1);
+
+          popFrame("Done");
+          finalizePop();
+        }
+
+        history.push({
+          line: 9, phase: "Line 9: 啟動主 DFS 走訪",
+          desc: "開始執行 dfs(root, 0)",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, rRoot ? rRoot.val : null, [], [], `Start DFS`, res)
+        });
+        if (rRoot) dfs(rRoot, 0);
+
+        popFrame(JSON.stringify(res));
+        history.push({
+          line: 10, phase: "Line 10: return res",
+          desc: "DFS 走訪完畢，傳回 res！",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--green);">Done</span>`, res)
+        });
+        finalizePop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 2: BFS List Comprehension
+      // ----------------------------------------------------
+      else if (currentApproach === 2) {
+        pushFrame("levelOrder", `root:${rRoot ? rRoot.val : 'None'}`);
+
+        history.push({
+          line: 1, phase: "Line 1: 進入 levelOrder",
+          desc: "呼叫 levelOrder 函式",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+        });
+
+        if (!rRoot) {
+          popFrame("[]");
+          history.push({
+            line: 2, phase: "Line 2: 檢查 if not root",
+            desc: "root 為空，傳回 []",
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+          });
+          finalizePop();
+          return;
+        }
+
+        let res = [];
+        let levelNodes = [rRoot];
+        history.push({
+          line: 3, phase: "Line 3: 初始化 res 與 level 串列",
+          desc: "宣告 res = [], level = [root]",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, levelNodes.map(n => n.val), [], levelNodes.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+        });
+
+        while (levelNodes.length > 0) {
+          history.push({
+            line: 4, phase: "Line 4: while level 檢查",
+            desc: `level 存在 ${levelNodes.length} 個節點`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, levelNodes.map(n => n.val), [], levelNodes.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+          });
+
+          let currentVals = levelNodes.map(n => n.val);
+          res.push(currentVals);
+          history.push({
+            line: 5, phase: "Line 5: 列表推導式提取整層數值",
+            desc: `一次性提取當前層數值: [${currentVals.join(', ')}] 並 append 入 res`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, levelNodes.map(n => n.val), [], levelNodes.map(n => `<span class="queue-item">${n.val}</span>`).join(''), res)
+          });
+
+          let nextLevelNodes = [];
+          for (let node of levelNodes) {
+            if (node.left) nextLevelNodes.push(node.left);
+            if (node.right) nextLevelNodes.push(node.right);
+          }
+          levelNodes = nextLevelNodes;
+          history.push({
+            line: 6, phase: "Line 6: 列表推導式推導下一層節點",
+            desc: `替換 level 為下一層子節點 ➔ [${levelNodes.map(n => n.val).join(', ')}]`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, levelNodes.map(n => n.val), [], levelNodes.length ? levelNodes.map(n => `<span class="queue-item">${n.val}</span>`).join('') : '<span style="color:var(--text-dim);">Empty</span>', res)
+          });
+        }
+
+        popFrame(JSON.stringify(res));
+        history.push({
+          line: 7, phase: "Line 7: return res",
+          desc: "level 為空，傳回最終結果！",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--green);">Done</span>`, res)
+        });
+        finalizePop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 3: BFS Vector Index
+      // ----------------------------------------------------
+      else if (currentApproach === 3) {
+        pushFrame("levelOrder", `root:${rRoot ? rRoot.val : 'None'}`);
+
+        history.push({
+          line: 1, phase: "Line 1-2: 進入 levelOrder",
+          desc: `呼叫 levelOrder(root=${rRoot ? 'Node(' + rRoot.val + ')' : 'None'})`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+        });
+
+        if (!rRoot) {
+          history.push({
+            line: 2, phase: "Line 3: 檢查 if not root",
+            desc: "root 為空 (None)，傳回 []",
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+          });
+          popFrame("[]");
+          finalizePop();
+          return;
+        }
+
+        let nodes = [rRoot];
+        let visited = [];
+        history.push({
+          line: 3, phase: "Line 4: 初始化 nodes 向量陣列",
+          desc: `建立 nodes 陣列，推入 root [${rRoot.val}]`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [rRoot.val], visited, nodes.map((n, idx) => `<span class="queue-item" style="border-color:${idx===0?'var(--orange)':'var(--medium)'}">${n.val}</span>`).join(''), [])
+        });
+
+        let ans = [];
+        history.push({
+          line: 4, phase: "Line 5: 初始化結果串列 ans",
+          desc: "宣告 ans = []",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [rRoot.val], visited, nodes.map((n, idx) => `<span class="queue-item" style="border-color:${idx===0?'var(--orange)':'var(--medium)'}">${n.val}</span>`).join(''), ans)
+        });
+
+        let i = 0;
+        history.push({
+          line: 5, phase: "Line 6: 初始化指標 i = 0",
+          desc: "設定指標 i = 0 模擬 Queue 的頭端",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [rRoot.val], visited, nodes.map((n, idx) => `<span class="queue-item" style="border-color:${idx===i?'var(--orange)':'var(--medium)'}">${n.val}</span>`).join('') + ` <span style="color:var(--orange); font-size:0.7rem;">(i=${i})</span>`, ans)
+        });
+
+        while (i < nodes.length) {
+          history.push({
+            line: 6, phase: "Line 7: while i < len(nodes) 檢查",
+            desc: `檢查 i(${i}) < len(nodes)(${nodes.length}) ➔ 繼續處理當前層`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, nodes.slice(i).map(n => n.val), visited, nodes.map((n, idx) => `<span class="queue-item" style="${idx===i?'border-color:var(--orange); background:rgba(255,161,22,0.2)':''}">${n.val}</span>`).join('') + ` <span style="color:var(--orange); font-size:0.7rem;">(i=${i})</span>`, ans)
+          });
+
+          let levelLen = nodes.length - i;
+          history.push({
+            line: 7, phase: "Line 8: 計算當前層長度",
+            desc: `level_len = len(nodes) - i ➔ ${nodes.length} - ${i} = ${levelLen}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, nodes.slice(i).map(n => n.val), visited, nodes.map((n, idx) => `<span class="queue-item">${n.val}</span>`).join(''), ans)
+          });
+
+          let currentLevel = [];
+          history.push({
+            line: 8, phase: "Line 9: 初始化 current_level",
+            desc: "宣告 current_level = [] 收集當前層節點值",
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, nodes.slice(i).map(n => n.val), visited, nodes.map((n, idx) => `<span class="queue-item">${n.val}</span>`).join(''), ans)
+          });
+
+          for (let k = 0; k < levelLen; k++) {
+            let currNode = nodes[i];
+            visited.push(currNode.val);
+            history.push({
+              line: 10, phase: "Line 11: 取得指標節點 curr = nodes[i]",
+              desc: `讀取 nodes[${i}] ➔ 節點 Node(${currNode.val})`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, currNode.val, nodes.slice(i).map(n => n.val), visited, nodes.map((n, idx) => `<span class="queue-item" style="${idx===i?'border-color:var(--orange); background:rgba(255,161,22,0.3);':''}">${n.val}</span>`).join('') + ` <span style="color:var(--orange); font-size:0.7rem;">(i=${i})</span>`, ans)
+            });
+
+            i++;
+            history.push({
+              line: 11, phase: "Line 12: 移動指標 i += 1",
+              desc: `將指標往前推進 i ➔ ${i} (模擬 Pop 操作)`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, currNode.val, nodes.slice(i).map(n => n.val), visited, nodes.map((n, idx) => `<span class="queue-item" style="${idx===i?'border-color:var(--orange);':''}">${n.val}</span>`).join('') + ` <span style="color:var(--orange); font-size:0.7rem;">(i=${i})</span>`, ans)
+            });
+
+            currentLevel.push(currNode.val);
+            history.push({
+              line: 12, phase: "Line 13: 收集節點數值",
+              desc: `將 ${currNode.val} 加入 current_level ➔ [${currentLevel.join(', ')}]`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, currNode.val, nodes.slice(i).map(n => n.val), visited, nodes.map((n, idx) => `<span class="queue-item">${n.val}</span>`).join(''), ans)
+            });
+
+            history.push({
+              line: 13, phase: "Line 14: 檢查左子節點",
+              desc: `檢查 curr.left: ${currNode.left ? '存在 Node(' + currNode.left.val + ')' : 'None'}`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, currNode.val, nodes.slice(i).map(n => n.val), visited, nodes.map((n, idx) => `<span class="queue-item">${n.val}</span>`).join(''), ans)
+            });
+            if (currNode.left) {
+              nodes.push(currNode.left);
+              history.push({
+                line: 13, phase: "Line 14: 推入左子節點",
+                desc: `將左子節點 [${currNode.left.val}] 追加至 nodes 陣列尾端`,
+                stack: JSON.parse(JSON.stringify(currentStack)),
+                html: renderTreeStage(rRoot, currNode.val, nodes.slice(i).map(n => n.val), visited, nodes.map((n, idx) => `<span class="queue-item">${n.val}</span>`).join(''), ans)
+              });
+            }
+
+            history.push({
+              line: 14, phase: "Line 15: 檢查右子節點",
+              desc: `檢查 curr.right: ${currNode.right ? '存在 Node(' + currNode.right.val + ')' : 'None'}`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, currNode.val, nodes.slice(i).map(n => n.val), visited, nodes.map((n, idx) => `<span class="queue-item">${n.val}</span>`).join(''), ans)
+            });
+            if (currNode.right) {
+              nodes.push(currNode.right);
+              history.push({
+                line: 14, phase: "Line 15: 推入右子節點",
+                desc: `將右子節點 [${currNode.right.val}] 追加至 nodes 陣列尾端`,
+                stack: JSON.parse(JSON.stringify(currentStack)),
+                html: renderTreeStage(rRoot, currNode.val, nodes.slice(i).map(n => n.val), visited, nodes.map((n, idx) => `<span class="queue-item">${n.val}</span>`).join(''), ans)
+              });
+            }
+          }
+
+          ans.push([...currentLevel]);
+          history.push({
+            line: 15, phase: "Line 16: 完成該層收集",
+            desc: `將 current_level [${currentLevel.join(', ')}] 加入 ans 中`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, nodes.slice(i).map(n => n.val), visited, nodes.map((n, idx) => `<span class="queue-item">${n.val}</span>`).join(''), ans)
+          });
+        }
+
+        popFrame(JSON.stringify(ans));
+        history.push({
+          line: 16, phase: "Line 17: return ans",
+          desc: "指標 i 已達陣列尾端，走訪結束傳回 ans！",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], visited, `<span style="color:var(--green);">Done</span>`, ans)
+        });
+        finalizePop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 4: 筆記寫法一 (基礎單層 BFS)
+      // ----------------------------------------------------
+      else if (currentApproach === 4) {
+        pushFrame("levelOrderTraverse", `root:${rRoot ? rRoot.val : 'None'}`);
+
+        history.push({
+          line: 2, phase: "Line 3: 進入 levelOrderTraverse",
+          desc: "開始執行筆記寫法一",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+        });
+
+        if (!rRoot) {
+          history.push({
+            line: 3, phase: "Line 4: 檢查 if root is None",
+            desc: "root 為 None，直接 return",
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+          });
+          popFrame("None");
+          finalizePop();
+          return;
+        }
+
+        let q = [rRoot];
+        let printed = [];
+        history.push({
+          line: 6, phase: "Line 6-7: 初始化佇列 q",
+          desc: `建立 q = deque() 並將 root [${rRoot.val}] append 進佇列`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [rRoot.val], [], q.map(n => `<span class="queue-item">${n.val}</span>`).join(''), printed)
+        });
+
+        while (q.length > 0) {
+          history.push({
+            line: 8, phase: "Line 8: while q 檢查",
+            desc: `q 中還有 ${q.length} 個節點`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, q.map(n => n.val), [], q.map(n => `<span class="queue-item">${n.val}</span>`).join(''), printed)
+          });
+
+          let cur = q.shift();
+          history.push({
+            line: 9, phase: "Line 9: 彈出隊頭 cur = q.popleft()",
+            desc: `彈出節點 cur = Node(${cur.val})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, cur.val, q.map(n => n.val), printed, q.map(n => `<span class="queue-item">${n.val}</span>`).join(''), printed)
+          });
+
+          printed.push(cur.val);
+          history.push({
+            line: 11, phase: "Line 11: 訪問並列印 cur.val",
+            desc: `print(cur.val) ➔ 列印出 ${cur.val}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, cur.val, q.map(n => n.val), printed, q.map(n => `<span class="queue-item">${n.val}</span>`).join(''), printed.join(', '))
+          });
+
+          if (cur.left) {
+            q.push(cur.left);
+            history.push({
+              line: 14, phase: "Line 13-14: 加入左子節點",
+              desc: `cur.left 存在，將 Node(${cur.left.val}) append 入 q`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, cur.val, q.map(n => n.val), printed, q.map(n => `<span class="queue-item">${n.val}</span>`).join(''), printed.join(', '))
+            });
+          }
+
+          if (cur.right) {
+            q.push(cur.right);
+            history.push({
+              line: 16, phase: "Line 15-16: 加入右子節點",
+              desc: `cur.right 存在，將 Node(${cur.right.val}) append 入 q`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, cur.val, q.map(n => n.val), printed, q.map(n => `<span class="queue-item">${n.val}</span>`).join(''), printed.join(', '))
+            });
+          }
+        }
+
+        popFrame("Done");
+        history.push({
+          line: 8, phase: "完成走訪",
+          desc: "q 已為空，筆記寫法一走訪完畢！",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], printed, `<span style="color:var(--green);">Done</span>`, printed.join(', '))
+        });
+        finalizePop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 5: 筆記寫法二 (記錄 depth 經典)
+      // ----------------------------------------------------
+      else if (currentApproach === 5) {
+        pushFrame("levelOrderTraverse", `root:${rRoot ? rRoot.val : 'None'}`);
+
+        history.push({
+          line: 2, phase: "Line 3: 進入 levelOrderTraverse",
+          desc: "開始執行筆記寫法二",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+        });
+
+        if (!rRoot) {
+          history.push({
+            line: 3, phase: "Line 4: 檢查 if root is None",
+            desc: "root 為 None，直接 return",
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+          });
+          popFrame("None");
+          finalizePop();
+          return;
+        }
+
+        let q = [rRoot];
+        let printed = [];
+        let depth = 1;
+
+        history.push({
+          line: 8, phase: "Line 9: 初始化 depth = 1",
+          desc: "設定 depth = 1 (根節點視為第 1 層)",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [rRoot.val], [], q.map(n => `<span class="queue-item">${n.val}</span>`).join(''), printed)
+        });
+
+        while (q.length > 0) {
+          let sz = q.length;
+          history.push({
+            line: 10, phase: "Line 11: 紀錄當前層大小 sz = len(q)",
+            desc: `鎖定當前層節點數 sz = ${sz} (當前 depth = ${depth})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, q.map(n => n.val), [], q.map(n => `<span class="queue-item">${n.val}</span>`).join(''), printed)
+          });
+
+          for (let i = 0; i < sz; i++) {
+            let cur = q.shift();
+            printed.push(`(D${depth}:${cur.val})`);
+            history.push({
+              line: 13, phase: "Line 13-15: 彈出並列印 (含 depth)",
+              desc: `彈出 cur = Node(${cur.val}) ➔ 列印: "depth = ${depth}, val = ${cur.val}"`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, cur.val, q.map(n => n.val), [], q.map(n => `<span class="queue-item">${n.val}</span>`).join(''), printed.join(', '))
+            });
+
+            if (cur.left) q.push(cur.left);
+            if (cur.right) q.push(cur.right);
+            history.push({
+              line: 18, phase: "Line 17-20: 子節點入佇列",
+              desc: `已將 Node(${cur.val}) 的子節點推入 q`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, cur.val, q.map(n => n.val), [], q.map(n => `<span class="queue-item">${n.val}</span>`).join(''), printed.join(', '))
+            });
+          }
+
+          depth++;
+          history.push({
+            line: 21, phase: "Line 21: 完成該層，depth += 1",
+            desc: `當前層處理完畢，深度遞增 ➔ depth = ${depth}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, q.map(n => n.val), [], q.map(n => `<span class="queue-item">${n.val}</span>`).join(''), printed.join(', '))
+          });
+        }
+
+        popFrame("Done");
+        history.push({
+          line: 10, phase: "完成走訪",
+          desc: "筆記寫法二執行完畢！",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--green);">Done</span>`, printed.join(', '))
+        });
+        finalizePop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 6: 筆記寫法三 (State 類別自定義)
+      // ----------------------------------------------------
+      else if (currentApproach === 6) {
+        pushFrame("levelOrderTraverse", `root:${rRoot ? rRoot.val : 'None'}`);
+
+        history.push({
+          line: 5, phase: "Line 6: 進入 levelOrderTraverse",
+          desc: "開始執行筆記寫法三 (使用 State 物件)",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+        });
+
+        if (!rRoot) {
+          history.push({
+            line: 6, phase: "Line 7: 檢查 if root is None",
+            desc: "root 為 None，直接 return",
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--text-dim);">Empty</span>`, [])
+          });
+          popFrame("None");
+          finalizePop();
+          return;
+        }
+
+        let q = [{ node: rRoot, depth: 1 }];
+        let printed = [];
+
+        history.push({
+          line: 10, phase: "Line 10: 初始化 q，推入 State(root, 1)",
+          desc: "將根節點包裝為 State(node=root, depth=1) 推入 q",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [rRoot.val], [], q.map(s => `<span class="queue-item">State(${s.node.val},d=${s.depth})</span>`).join(''), printed)
+        });
+
+        while (q.length > 0) {
+          history.push({
+            line: 11, phase: "Line 11: while q 檢查",
+            desc: `q 中還有 ${q.length} 個 State 物件`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, q.map(s => s.node.val), [], q.map(s => `<span class="queue-item">State(${s.node.val},d=${s.depth})</span>`).join(''), printed)
+          });
+
+          let cur = q.shift();
+          printed.push(`(D${cur.depth}:${cur.node.val})`);
+
+          history.push({
+            line: 12, phase: "Line 12-14: cur = q.popleft() 並列印",
+            desc: `取出 State(node=${cur.node.val}, depth=${cur.depth}) ➔ 列印: "depth = ${cur.depth}, val = ${cur.node.val}"`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, cur.node.val, q.map(s => s.node.val), [], q.map(s => `<span class="queue-item">State(${s.node.val},d=${s.depth})</span>`).join(''), printed.join(', '))
+          });
+
+          if (cur.node.left) {
+            q.push({ node: cur.node.left, depth: cur.depth + 1 });
+            history.push({
+              line: 17, phase: "Line 16-17: 推入 State(cur.node.left, depth + 1)",
+              desc: `將左子節點包裝為 State(node=${cur.node.left.val}, depth=${cur.depth + 1}) 加入 q`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, cur.node.val, q.map(s => s.node.val), [], q.map(s => `<span class="queue-item">State(${s.node.val},d=${s.depth})</span>`).join(''), printed.join(', '))
+            });
+          }
+
+          if (cur.node.right) {
+            q.push({ node: cur.node.right, depth: cur.depth + 1 });
+            history.push({
+              line: 19, phase: "Line 18-19: 推入 State(cur.node.right, depth + 1)",
+              desc: `將右子節點包裝為 State(node=${cur.node.right.val}, depth=${cur.depth + 1}) 加入 q`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, cur.node.val, q.map(s => s.node.val), [], q.map(s => `<span class="queue-item">State(${s.node.val},d=${s.depth})</span>`).join(''), printed.join(', '))
+            });
+          }
+        }
+
+        popFrame("Done");
+        history.push({
+          line: 11, phase: "完成走訪",
+          desc: "筆記寫法三執行完畢！",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], [], `<span style="color:var(--green);">Done</span>`, printed.join(', '))
+        });
+        finalizePop();
+      }
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = renderStackHTML(stackData);
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      const stageBox = document.getElementById('stage-box');
+      stageBox.innerHTML = state.html || `<div style="font-size:0.85rem; font-family:monospace; color:#fff;">${state.desc}</div>`;
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderApproachDetails();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

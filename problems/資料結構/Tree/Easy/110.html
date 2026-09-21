@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 110: Balanced Binary Tree - 繁體中文教學版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --vscode-bg: #1E1E1E;
+            --vscode-sidebar: #252526;
+            --vscode-highlight: #2C313C;
+            --vscode-border: #3E4451;
+            --vscode-text: #D4D4D4;
+            --syntax-keyword: #C678DD;
+            --syntax-func: #61AFEF;
+            --syntax-number: #D19A66;
+            --syntax-prop: #E06C75;
+            --syntax-comment: #5C6370;
+        }
+
+        body { background-color: var(--vscode-bg); color: var(--vscode-text); font-family: 'Inter', sans-serif; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.6; }
+        .log-font { font-size: 13px; line-height: 1.5; }
+        .vscode-active-line { background-color: var(--vscode-highlight); border-left: 4px solid #98C379; }
+        
+        .node-circle { transition: all 0.3s ease; stroke-width: 2; }
+        .node-active { stroke: #98C379; stroke-width: 4; filter: drop-shadow(0 0 10px rgba(152, 195, 121, 0.6)); }
+        .node-unbalanced { stroke: #E06C75; stroke-width: 4; fill: #4B2A2D; animation: shake 0.5s; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3E4451; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <div class="bg-[#323233] px-4 py-2 flex items-center justify-between border-b border-black text-sm">
+        <div class="flex items-center space-x-3">
+            <span class="text-green-500 font-bold">解題面板</span>
+            <span class="text-gray-400">|</span>
+            <span class="text-white font-medium">110. 平衡二元樹 (Balanced Binary Tree)</span>
+        </div>
+        <div class="flex space-x-4 text-[12px] text-gray-500 font-mono">
+            <span>語言: Python3</span>
+            <span>核心: 熔斷機制 (Short-circuiting)</span>
+        </div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <aside class="w-[30%] bg-[#252526] border-r border-black p-6 flex flex-col space-y-6 overflow-y-auto custom-scrollbar">
+            <section>
+                <h2 class="text-white font-bold text-xl mb-3">題目描述</h2>
+                <div class="text-[14px] text-gray-400 leading-relaxed space-y-4">
+                    <p>給定一個二元樹，判斷它是否為 高度平衡 的二元樹。</p>
+                    <p>在本題中，高度平衡二元樹的定義為：一個二元樹每個節點的 左右兩個子樹的高度差絕對值不超過 1。</p>
+                </div>
+            </section>
+
+            <section class="border-t border-[#3E4451] pt-5">
+                <h3 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">演算法複雜度</h3>
+                <div class="grid grid-cols-2 gap-3 text-center">
+                    <div class="bg-[#1E1E1E] p-3 rounded border border-[#3E4451]">
+                        <div class="text-[10px] text-gray-500 mb-1">時間複雜度</div>
+                        <div class="text-base font-mono text-green-400">O(N)</div>
+                    </div>
+                    <div class="bg-[#1E1E1E] p-3 rounded border border-[#3E4451]">
+                        <div class="text-[10px] text-gray-500 mb-1">空間複雜度</div>
+                        <div class="text-base font-mono text-green-400">O(H)</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="border-t border-[#3E4451] pt-5">
+                <h3 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-3">選擇測試案例</h3>
+                <div class="flex flex-col space-y-2">
+                    <button onclick="loadCase(0)" id="case-0" class="case-btn active text-left p-3 bg-[#37373D] border border-green-500 rounded text-sm transition">
+                        <span class="text-white block font-bold">範例 1：平衡狀態</span>
+                        <span class="text-gray-500 font-mono text-[11px]">root = [3,9,20,null,null,15,7]</span>
+                    </button>
+                    <button onclick="loadCase(1)" id="case-1" class="case-btn text-left p-3 bg-[#2D2D2D] border border-transparent rounded text-sm transition">
+                        <span class="text-gray-300 block font-bold">範例 2：不平衡狀態</span>
+                        <span class="text-gray-500 font-mono text-[11px]">root = [1,2,2,3,3,null,null,4,4]</span>
+                    </button>
+                </div>
+            </section>
+        </aside>
+
+        <main class="w-[40%] flex flex-col p-6 space-y-4 bg-[#1E1E1E]">
+            <div class="flex-1 bg-[#252526] rounded border border-[#3E4451] p-5 flex flex-col">
+                <div class="flex justify-between text-[11px] text-gray-500 mb-6 tracking-widest uppercase font-bold">
+                    <span>高度檢測視覺化</span>
+                    <span class="text-green-400">Bottom-up DFS</span>
+                </div>
+                <div class="flex-1 flex justify-center items-center">
+                    <svg id="svg-tree" class="w-full h-full"></svg>
+                </div>
+            </div>
+
+            <div class="h-28 bg-[#252526] border border-[#3E4451] rounded p-4 flex flex-col">
+                <div class="text-[11px] text-gray-500 uppercase mb-3 font-bold tracking-widest">目前檢查狀態 (高度 / -1代表失衡)</div>
+                <div id="ds-container" class="flex-1 flex items-center space-x-3 overflow-x-auto custom-scrollbar pb-2">
+                </div>
+            </div>
+
+            <div class="bg-[#252526] p-4 rounded border border-[#3E4451] flex items-center justify-between">
+                <div class="flex space-x-8">
+                    <button onclick="step(-1)" class="text-gray-400 hover:text-white transition"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6L18 6v12z"/></svg></button>
+                    <button onclick="togglePlay()" id="play-btn" class="text-gray-400 hover:text-white transition"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                    <button onclick="step(1)" class="text-gray-400 hover:text-white transition"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                </div>
+                <div class="text-sm font-mono text-gray-500">進度: <span id="cur-step" class="text-green-400">0</span> / <span id="total-step">0</span></div>
+            </div>
+        </main>
+
+        <aside class="w-[30%] bg-[#1E1E1E] border-l border-black flex flex-col">
+            <div class="h-[50%] overflow-y-auto custom-scrollbar p-3" id="code-area"></div>
+            
+            <div class="flex-1 border-t border-black bg-[#121212] p-5 flex flex-col overflow-hidden">
+                <h3 class="text-[11px] font-bold text-gray-500 uppercase mb-4 tracking-widest">執行詳情 (Detailed Log)</h3>
+                <div id="detail-logs" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 log-font"></div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const algorithm = {
+            code: [
+                "class Solution:",
+                "    def isBalanced(self, root) -> bool:",
+                "        def check(node):",
+                "            if not node: return 0",
+                "            left = check(node.left)",
+                "            if left == -1: return -1",
+                "            right = check(node.right)",
+                "            if right == -1: return -1",
+                "            # 核心判斷：左右差是否 > 1",
+                "            if abs(left - right) > 1:",
+                "                return -1",
+                "            return max(left, right) + 1",
+                "        return check(root) != -1"
+            ]
+        };
+
+        const cases = [
+            {
+                tree: [3,9,20,null,null,15,7],
+                steps: [
+                    { line: 3, node: 3, ds: ["check(3)"], log: "從根節點 [3] 開始遞迴檢測。" },
+                    { line: 4, node: 9, ds: ["check(3)", "check(9)"], log: "抵達葉子節點 [9]，左、右皆空。" },
+                    { line: 12, node: 9, ds: ["check(3)", "H=1"], log: "節點 [9] 平衡，向父節點回傳高度 1。" },
+                    { line: 4, node: 15, ds: ["check(3)", "check(20)", "check(15)"], log: "進入右子樹的子節點 [15]。" },
+                    { line: 12, node: 15, ds: ["check(3)", "check(20)", "H=1"], log: "節點 [15] 平衡，回傳高度 1。" },
+                    { line: 10, node: 20, ds: ["check(3)", "check(20)"], log: "檢查 [20]：左高(15)為 1，右高(7)為 1。差值 0 <= 1。" },
+                    { line: 12, node: 20, ds: ["check(3)", "H=2"], log: "節點 [20] 平衡，回傳高度 2。" },
+                    { line: 10, node: 3, ds: ["check(3)"], log: "根節點 [3]：左側高度 1，右側高度 2。差值 1 <= 1。" },
+                    { line: 13, node: 3, ds: [], log: "整棵樹平衡。結果：True。" }
+                ]
+            },
+            {
+                tree: [1,2,2,3,3,null,null,4,4],
+                steps: [
+                    { line: 3, node: 1, ds: ["check(1)"], log: "開始檢查不平衡範例。" },
+                    { line: 4, node: 4, ds: ["...","check(3)","check(4)"], log: "深入探測至最左側底部的節點 [4]。" },
+                    { line: 12, node: 4, ds: ["...","check(3)","H=1"], log: "節點 [4] 回傳高度 1。" },
+                    { line: 10, node: 3, ds: ["check(1)","check(2)","check(3)"], log: "檢查節點 [3]：左高(4)為 1，右高(4)為 1。" },
+                    { line: 12, node: 3, ds: ["check(1)","check(2)","H=2"], log: "節點 [3] 回傳高度 2 給父節點 [2]。" },
+                    { line: 10, node: 2, ds: ["check(1)","check(2)"], log: "關鍵！檢查節點 [2]：左高(3)為 2，右高為 0。" },
+                    { line: 11, node: 2, ds: ["check(1)","ERR:-1"], log: "!! 偵測到失衡 (2-0 > 1) !! 熔斷回傳 -1。" },
+                    { line: 6, node: 1, ds: ["ERR:-1"], log: "根節點接收到子樹傳回的 -1，停止其餘檢查。" },
+                    { line: 13, node: 1, ds: [], log: "最終判定為不平衡。結果：False。" }
+                ]
+            }
+        ];
+
+        let curStep = 0, curCase = 0, timer = null;
+
+        function renderCode() {
+            const area = document.getElementById('code-area');
+            area.innerHTML = algorithm.code.map((line, i) => {
+                let html = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/\b(if|return|not|def|class|self)\b/g, '<span style="color:var(--syntax-keyword)">$1</span>')
+                    .replace(/\b(check|abs|max|isBalanced)\b/g, '<span style="color:var(--syntax-func)">$1</span>')
+                    .replace(/\b(0|1)\b/g, '<span style="color:var(--syntax-number)">$1</span>')
+                    .replace(/(#.*)/g, '<span style="color:var(--syntax-comment)">$1</span>')
+                    .replace(/\b(node|left|right|root)\b/g, '<span style="color:var(--syntax-prop)">$1</span>');
+                return `<div id="line-${i}" class="px-4 py-0.5 code-font whitespace-pre transition-all border-l-4 border-transparent"><code>${html}</code></div>`;
+            }).join('');
+        }
+
+        function drawTree(data) {
+            const svg = document.getElementById('svg-tree');
+            svg.innerHTML = '';
+            const w = svg.clientWidth || 300;
+            const nodes = [];
+            
+            // 由於不平衡樹層級較多，座標需動態調整
+            if (data[0]) nodes.push({v: data[0], x: w/2, y: 30});
+            if (data[1]) nodes.push({v: data[1], x: w/3.5, y: 80, px: w/2, py: 30});
+            if (data[2]) nodes.push({v: data[2], x: w/1.4, y: 80, px: w/2, py: 30});
+            if (data[3]) nodes.push({v: data[3], x: w/6, y: 130, px: w/3.5, py: 80});
+            if (data[4]) nodes.push({v: data[4], x: w/2.5, y: 130, px: w/3.5, py: 80});
+            if (data[7]) nodes.push({v: data[7], x: w/10, y: 180, px: w/6, py: 130});
+            if (data[8]) nodes.push({v: data[8], x: w/4.5, y: 180, px: w/6, py: 130});
+            // 範例1的小樹節點
+            if (curCase === 0) {
+                if (data[5]) nodes.push({v: data[5], x: w/1.8, y: 130, px: w/1.4, py: 80});
+                if (data[6]) nodes.push({v: data[6], x: w/1.2, y: 130, px: w/1.4, py: 80});
+            }
+
+            nodes.forEach(n => {
+                if(n.px) svg.innerHTML += `<line x1="${n.px}" y1="${n.py}" x2="${n.x}" y2="${n.y}" stroke="#444" stroke-width="1.5" />`;
+            });
+            nodes.forEach(n => {
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.id = `node-v-${n.v}`;
+                g.innerHTML = `<circle cx="${n.x}" cy="${n.y}" r="15" fill="#2D2D2D" stroke="#3E4451" class="node-circle" />
+                               <text x="${n.x}" y="${n.y+5}" font-size="11" text-anchor="middle" fill="#D4D4D4" class="code-font font-bold">${n.v}</text>`;
+                svg.appendChild(g);
+            });
+        }
+
+        function updateUI() {
+            const stepData = cases[curCase].steps[curStep];
+            
+            document.querySelectorAll('.vscode-active-line').forEach(l => l.classList.remove('vscode-active-line'));
+            document.getElementById(`line-${stepData.line}`)?.classList.add('vscode-active-line');
+
+            document.querySelectorAll('.node-circle').forEach(c => c.classList.remove('node-active', 'node-unbalanced'));
+            const targetNode = document.getElementById(`node-v-${stepData.node}`);
+            if(targetNode) {
+                const circle = targetNode.querySelector('circle');
+                if (stepData.log.includes("!!")) circle.classList.add('node-unbalanced');
+                else circle.classList.add('node-active');
+            }
+
+            const dsC = document.getElementById('ds-container');
+            dsC.innerHTML = stepData.ds.map(s => {
+                const isErr = s.includes("ERR");
+                return `<div class="px-3 py-1.5 rounded text-[11px] font-mono border ${isErr ? 'bg-red-900/30 border-red-500 text-red-400' : 'bg-green-900/30 border-green-500 text-green-300'} animate-pulse">${s}</div>`;
+            }).join('');
+
+            const logBox = document.getElementById('detail-logs');
+            const entry = document.createElement('div');
+            entry.className = `pl-3 border-l-4 py-2 ${stepData.log.includes("!!") ? 'border-red-600 bg-red-500/5' : 'border-green-600 bg-green-500/5'} text-gray-200`;
+            entry.innerHTML = `<span class="${stepData.log.includes("!!") ? 'text-red-400' : 'text-green-400'} font-bold mr-2">步驟 ${curStep}:</span> ${stepData.log}`;
+            logBox.prepend(entry);
+
+            document.getElementById('cur-step').innerText = curStep;
+            document.getElementById('total-step').innerText = cases[curCase].steps.length - 1;
+        }
+
+        function loadCase(idx) {
+            curCase = idx;
+            document.querySelectorAll('.case-btn').forEach((b, i) => {
+                b.className = `case-btn text-left p-3 rounded transition ${i === idx ? 'bg-[#37373D] border border-green-500' : 'bg-[#2D2D2D] border border-transparent'}`;
+            });
+            drawTree(cases[idx].tree);
+            reset();
+        }
+
+        function step(dir) { pause(); curStep = Math.max(0, Math.min(cases[curCase].steps.length - 1, curStep + dir)); updateUI(); }
+        function togglePlay() {
+            if(timer) pause();
+            else {
+                document.getElementById('play-btn').innerHTML = `<svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+                timer = setInterval(() => {
+                    if(curStep < cases[curCase].steps.length - 1) { curStep++; updateUI(); } else pause();
+                }, 1300);
+            }
+        }
+        function pause() { clearInterval(timer); timer = null; document.getElementById('play-btn').innerHTML = `<svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`; }
+        function reset() { pause(); curStep = 0; document.getElementById('detail-logs').innerHTML = ''; updateUI(); }
+
+        window.onload = () => { renderCode(); loadCase(0); };
+    </script>
+</body>
+</html>

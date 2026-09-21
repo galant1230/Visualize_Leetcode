@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>242. Valid Anagram - Multi-Solution Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-easy: #00b8a3;
+      --lc-blue: #007aff;
+      --lc-green: #2cbb5d;
+      --lc-red: #ff2d55;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(0, 184, 163, 0.15);
+      color: var(--lc-easy);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 15px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 4px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+
+    .example-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 12px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .example-title { color: var(--lc-text-dim); font-weight: bold; margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-easy); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 500px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .str-row { display: flex; align-items: center; gap: 10px; }
+    .str-label { width: 30px; font-weight: bold; color: var(--lc-orange); font-family: monospace; }
+
+    .array-container { display: flex; gap: 8px; overflow-x: auto; }
+
+    .node {
+      width: 42px;
+      height: 42px;
+      background: #333;
+      border: 2px solid var(--lc-border);
+      color: white;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 1.1rem;
+      position: relative;
+      transition: all 0.3s;
+    }
+    .node.active-i { border-color: var(--lc-orange); background: rgba(255, 161, 22, 0.2); }
+    .node.sorted { border-color: var(--lc-easy); background: rgba(0, 184, 163, 0.15); }
+    
+    .ptr-container { position: absolute; top: -24px; left: 50%; transform: translateX(-50%); }
+    .ptr-label { font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; color: white; font-family: monospace; font-weight: bold; background: var(--lc-orange); }
+    .idx-label { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: var(--lc-text-dim); font-family: monospace; }
+
+    .hash-table-view {
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+    .hash-title { color: var(--lc-text-dim); margin-bottom: 6px; font-weight: bold; }
+    .hash-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .hash-item { background: #2a2a2a; padding: 4px 8px; border-radius: 4px; border: 1px solid #444; }
+    .hash-key { color: var(--lc-orange); font-weight: bold; }
+    .hash-val { color: var(--lc-easy); }
+
+    .control-panel { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
+    .btn { background: #3e3e3e; color: var(--lc-text); border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-easy); color: #fff; }
+    .btn-primary:hover { background: #009684; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card { background: #1e1e1e; border: 1px solid var(--lc-border); padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .type { color: #8be9fd; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">242. Valid Anagram</span>
+    <span class="lc-badge">Easy</span>
+    <span class="lc-tag">Hash Table</span>
+    <span class="lc-tag">String</span>
+    <span class="lc-tag">Sorting</span>
+  </div>
+
+  <div class="config-tabs">
+    <!-- 解法選項切換 -->
+    <div class="tab-group">
+      <button class="tab-btn active" id="algo-two-map" onclick="setAlgo('two-map')">Sol 1: 雙字典/陣列比對</button>
+      <button class="tab-btn" id="algo-single-array" onclick="setAlgo('single-array')">Sol 2: 單一陣列加減抵銷</button>
+      <button class="tab-btn" id="algo-sort" onclick="setAlgo('sort')">Sol 3: 排序比較</button>
+      <button class="tab-btn" id="algo-counter" onclick="setAlgo('counter')">Sol 4: Counter 內建計數</button>
+    </div>
+    <!-- 語言切換 -->
+    <div class="tab-group">
+      <button class="tab-btn active" id="lang-py" onclick="setLang('py')">Python3</button>
+      <button class="tab-btn" id="lang-c" onclick="setLang('c')">C</button>
+      <button class="tab-btn" id="lang-cpp" onclick="setLang('cpp')">C++</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述 (Problem)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定兩個字串 <code>s</code> 和 <code>t</code>，撰寫一個函數來判斷 <code>t</code> 是否為 <code>s</code> 的字母異位詞（每個字母出現的次數完全相同）。
+          </div>
+
+          <!-- Example 1 & Example 2 -->
+          <div class="example-box">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> s = "anagram", t = "nagaram"</div>
+            <div><strong>Output:</strong> true</div>
+          </div>
+
+          <div class="example-box">
+            <div class="example-title">Example 2:</div>
+            <div><strong>Input:</strong> s = "rat", t = "car"</div>
+            <div><strong>Output:</strong> false</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val" id="tc-val">O(n)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val" id="sc-val">O(k)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span id="codeTitle">💻 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (Visualizer)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title" id="approach-title">💡 解題思路</div>
+            <div id="approach-desc">---</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">點擊 Step 開始視覺化模擬 Example 1...</div>
+          </div>
+
+          <div class="stage">
+            <div class="str-row">
+              <div class="str-label">s:</div>
+              <div class="array-container" id="nodes-s"></div>
+            </div>
+            <div class="str-row">
+              <div class="str-label">t:</div>
+              <div class="array-container" id="nodes-t"></div>
+            </div>
+          </div>
+
+          <div class="hash-table-view" id="hash-view">
+            <div class="hash-title" id="hash-title">Frequency Table</div>
+            <div class="hash-grid" id="hash-grid">
+              <span style="color: var(--lc-text-dim);">{ }</span>
+            </div>
+          </div>
+
+          <div class="control-panel" style="margin-top: 16px;">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleS = "anagram";
+    const sampleT = "nagaram";
+    
+    let currentAlgo = 'two-map'; 
+    let lang = 'py';
+    let currentStep = 0;
+    let history = [];
+
+    // 完整程式碼庫
+    const codes = {
+      'two-map': {
+        py: [
+          `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isAnagram</span>(<span class="kw">self</span>, s: str, t: str) -&gt; bool:`,
+          `        <span class="kw">if</span>(len(s) != len(t)):`,
+          `            <span class="kw">return</span> <span class="kw">False</span>`,
+          `        count_s , count_t = {}, {}`,
+          `        <span class="kw">for</span> i <span class="kw">in</span> range(len(s)):`,
+          `            count_s[s[i]] = 1 + count_s.get(s[i], 0)`,
+          `            count_t[t[i]] = 1 + count_t.get(t[i], 0)`,
+          `        <span class="kw">return</span> count_s == count_t`
+        ],
+        c: [
+          `<span class="type">int</span> <span class="fn">isAnagram</span>(<span class="type">char</span>* s, <span class="type">char</span>* t) {`,
+          `    <span class="kw">if</span>(strlen(s) != strlen(t)) <span class="kw">return</span> 0;`,
+          `    <span class="type">int</span> count_s[26] = {0};`,
+          `    <span class="type">int</span> count_t[26] = {0};`,
+          `    <span class="kw">for</span>(<span class="type">int</span> i = 0; i &lt; strlen(s); i++){`,
+          `        count_s[s[i] - 'a'] += 1;`,
+          `        count_t[t[i] - 'a'] += 1;`,
+          `    }`,
+          `    <span class="kw">for</span>(<span class="type">int</span> i = 0; i &lt; 26; i++){`,
+          `        <span class="kw">if</span>(count_s[i] != count_t[i]) <span class="kw">return</span> 0;`,
+          `    }`,
+          `    <span class="kw">return</span> 1;`,
+          `}`
+        ],
+        cpp: [
+          `<span class="kw">class</span> <span class="fn">Solution</span> {`,
+          `<span class="kw">public</span>:`,
+          `    <span class="type">bool</span> <span class="fn">isAnagram</span>(string s, string t) {`,
+          `        <span class="kw">if</span> (s.length() != t.length()) <span class="kw">return</span> false;`,
+          `        unordered_map&lt;<span class="type">char</span>, <span class="type">int</span>&gt; count_s, count_t;`,
+          `        <span class="kw">for</span> (<span class="type">int</span> i = 0; i &lt; s.length(); i++) {`,
+          `            count_s[s[i]]++;`,
+          `            count_t[t[i]]++;`,
+          `        }`,
+          `        <span class="kw">return</span> count_s == count_t;`,
+          `    }`,
+          `};`
+        ]
+      },
+      'single-array': {
+        py: [
+          `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isAnagram</span>(<span class="kw">self</span>, s: str, t: str) -&gt; bool:`,
+          `        <span class="kw">if</span> len(s) != len(t): <span class="kw">return</span> False`,
+          `        count = [0] * 26`,
+          `        <span class="kw">for</span> i <span class="kw">in</span> range(len(s)):`,
+          `            count[ord(s[i]) - ord('a')] += 1`,
+          `            count[ord(t[i]) - ord('a')] -= 1`,
+          `        <span class="kw">return</span> all(c == 0 <span class="kw">for</span> c <span class="kw">in</span> count)`
+        ],
+        c: [
+          `<span class="type">int</span> <span class="fn">isAnagram</span>(<span class="type">char</span>* s, <span class="type">char</span>* t) {`,
+          `    <span class="kw">if</span> (strlen(s) != strlen(t)) <span class="kw">return</span> 0;`,
+          `    <span class="type">int</span> count[26] = {0};`,
+          `    <span class="kw">for</span> (<span class="type">int</span> i = 0; s[i] != '\\0'; i++) {`,
+          `        count[s[i] - 'a']++;`,
+          `        count[t[i] - 'a']--;`,
+          `    }`,
+          `    <span class="kw">for</span> (<span class="type">int</span> i = 0; i &lt; 26; i++) {`,
+          `        <span class="kw">if</span> (count[i] != 0) <span class="kw">return</span> 0;`,
+          `    }`,
+          `    <span class="kw">return</span> 1;`,
+          `}`
+        ],
+        cpp: [
+          `<span class="kw">class</span> <span class="fn">Solution</span> {`,
+          `<span class="kw">public</span>:`,
+          `    <span class="type">bool</span> <span class="fn">isAnagram</span>(string s, string t) {`,
+          `        <span class="kw">if</span> (s.length() != t.length()) <span class="kw">return</span> false;`,
+          `        <span class="type">int</span> counts[26] = {0};`,
+          `        <span class="kw">for</span> (<span class="type">int</span> i = 0; i &lt; s.length(); i++) {`,
+          `            counts[s[i] - 'a']++;`,
+          `            counts[t[i] - 'a']--;`,
+          `        }`,
+          `        <span class="kw">for</span> (<span class="type">int</span> count : counts) {`,
+          `            <span class="kw">if</span> (count != 0) <span class="kw">return</span> false;`,
+          `        }`,
+          `        <span class="kw">return</span> true;`,
+          `    }`,
+          `};`
+        ]
+      },
+      'sort': {
+        py: [
+          `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isAnagram</span>(<span class="kw">self</span>, s: str, t: str) -&gt; bool:`,
+          `        <span class="kw">return</span> sorted(s) == sorted(t)`
+        ],
+        c: [
+          `// C 語言實現排序比較`,
+          `<span class="type">int</span> <span class="fn">isAnagram</span>(<span class="type">char</span>* s, <span class="type">char</span>* t) {`,
+          `    <span class="kw">if</span> (strlen(s) != strlen(t)) <span class="kw">return</span> 0;`,
+          `    qsort(s, strlen(s), sizeof(char), cmp);`,
+          `    qsort(t, strlen(t), sizeof(char), cmp);`,
+          `    <span class="kw">return</span> strcmp(s, t) == 0;`,
+          `}`
+        ],
+        cpp: [
+          `<span class="kw">class</span> <span class="fn">Solution</span> {`,
+          `<span class="kw">public</span>:`,
+          `    <span class="type">bool</span> <span class="fn">isAnagram</span>(string s, string t) {`,
+          `        <span class="kw">if</span> (s.length() != t.length()) <span class="kw">return</span> false;`,
+          `        sort(s.begin(), s.end());`,
+          `        sort(t.begin(), t.end());`,
+          `        <span class="kw">return</span> s == t;`,
+          `    }`,
+          `};`
+        ]
+      },
+      'counter': {
+        py: [
+          `<span class="kw">from</span> collections <span class="kw">import</span> Counter`,
+          `<span class="kw">class</span> <span class="fn">Solution</span>(object):`,
+          `    <span class="kw">def</span> <span class="fn">isAnagram</span>(<span class="kw">self</span>, s, t):`,
+          `        <span class="kw">return</span> Counter(s) == Counter(t)`
+        ],
+        c: [
+          `// C 無內建 Counter，請切換至 Python3 查看`
+        ],
+        cpp: [
+          `// C++ 無原生 Counter 物件，可用 std::unordered_map 代替`
+        ]
+      }
+    };
+
+    function setAlgo(a) { currentAlgo = a; resetSim(); }
+    function setLang(l) { lang = l; resetSim(); }
+
+    function buildHistory() {
+      history = [];
+      let sArr = sampleS.split('');
+      let tArr = sampleT.split('');
+
+      if (currentAlgo === 'two-map') {
+        let countS = {}, countT = {};
+        history.push({
+          line: 2, title: "檢查長度", desc: "長度相等 (7 == 7)，準備建立統計地圖...",
+          sArr: [...sArr], tArr: [...tArr], i: -1, countS, countT
+        });
+        for (let i = 0; i < sArr.length; i++) {
+          countS[sArr[i]] = (countS[sArr[i]] || 0) + 1;
+          countT[tArr[i]] = (countT[tArr[i]] || 0) + 1;
+          history.push({
+            line: 5, title: `統計頻率 (i = ${i})`,
+            desc: `處理 s[${i}]('${sArr[i]}') 與 t[${i}]('${tArr[i]}') 的累加`,
+            sArr: [...sArr], tArr: [...tArr], i: i, countS: {...countS}, countT: {...countT}
+          });
+        }
+        history.push({
+          line: 8, title: "比對兩個 Map", desc: "兩字典結構與計數完全一致，回傳 True！",
+          sArr: [...sArr], tArr: [...tArr], i: -1, countS: {...countS}, countT: {...countT}
+        });
+      }
+      else if (currentAlgo === 'single-array') {
+        let counts = {};
+        history.push({
+          line: 2, title: "初始化長度與陣列", desc: "長度相等，建立 26 格頻率平衡陣列...",
+          sArr: [...sArr], tArr: [...tArr], i: -1, counts
+        });
+        for (let i = 0; i < sArr.length; i++) {
+          counts[sArr[i]] = (counts[sArr[i]] || 0) + 1;
+          counts[tArr[i]] = (counts[tArr[i]] || 0) - 1;
+          history.push({
+            line: 4, title: `加減抵銷 (i = ${i})`,
+            desc: `s[${i}]('${sArr[i]}') 計數 +1，t[${i}]('${tArr[i]}') 計數 -1`,
+            sArr: [...sArr], tArr: [...tArr], i: i, counts: {...counts}
+          });
+        }
+        history.push({
+          line: 7, title: "檢查歸零狀態", desc: "所有字元數值均為 0，完全抵銷，回傳 True！",
+          sArr: [...sArr], tArr: [...tArr], i: -1, counts: {...counts}
+        });
+      }
+      else if (currentAlgo === 'sort') {
+        history.push({
+          line: 1, title: "準備排序", desc: "準備將兩字串排序...",
+          sArr: [...sArr], tArr: [...tArr]
+        });
+        let sortedS = [...sArr].sort();
+        let sortedT = [...tArr].sort();
+        history.push({
+          line: 2, title: "排序完成", desc: "字串排序完成，比對結果完全一致 ('aaagmnr' == 'aaagmnr')，回傳 True！",
+          sArr: sortedS, tArr: sortedT, sorted: true
+        });
+      }
+      else if (currentAlgo === 'counter') {
+        history.push({
+          line: 3, title: "Counter 自動比對", desc: "Counter(s) 與 Counter(t) 自動完成統計與比較，回傳 True！",
+          sArr: [...sArr], tArr: [...tArr]
+        });
+      }
+    }
+
+    function resetSim() {
+      buildHistory();
+      currentStep = 0;
+      updateUIElements();
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateLineHighlight(state.line);
+      document.getElementById('step-title').innerText = state.title;
+      document.getElementById('step-desc').innerText = state.desc;
+      document.getElementById('stepHint').innerText = state.title.toUpperCase();
+
+      renderStage(state);
+      renderHashGrid(state);
+    }
+
+    function updateUIElements() {
+      ['two-map', 'single-array', 'sort', 'counter'].forEach(a => {
+        document.getElementById(`algo-${a}`).className = 'tab-btn ' + (currentAlgo === a ? 'active' : '');
+      });
+      ['py', 'c', 'cpp'].forEach(l => {
+        document.getElementById(`lang-${l}`).className = 'tab-btn ' + (lang === l ? 'active' : '');
+      });
+
+      const tc = document.getElementById('tc-val');
+      const sc = document.getElementById('sc-val');
+      const title = document.getElementById('approach-title');
+      const desc = document.getElementById('approach-desc');
+
+      if (currentAlgo === 'two-map') {
+        tc.innerText = 'O(n)'; sc.innerText = 'O(k)';
+        title.innerText = '💡 思路：雙字典 / 雙陣列頻率比對';
+        desc.innerText = '同步遍歷兩字串，分別記錄兩者的字母次數，最後檢查兩個 Hash Table / 陣列是否完全相等。';
+      } else if (currentAlgo === 'single-array') {
+        tc.innerText = 'O(n)'; sc.innerText = 'O(1)';
+        title.innerText = '💡 思路：單一陣列加減抵銷 (最佳解)';
+        desc.innerText = '使用長度為 26 的陣列，s 的字元 +1、t 的字元 -1。若為異位詞，最終陣列所有元素必為 0。';
+      } else if (currentAlgo === 'sort') {
+        tc.innerText = 'O(n log n)'; sc.innerText = 'O(1) ~ O(n)';
+        title.innerText = '💡 思路：排序後直接比較';
+        desc.innerText = '若為異位詞，排序後的字串必定完全相同。直接排序並比對是否相等。';
+      } else if (currentAlgo === 'counter') {
+        tc.innerText = 'O(n)'; sc.innerText = 'O(k)';
+        title.innerText = '💡 思路：collections.Counter (Python 專用)';
+        desc.innerText = '利用 Python 內建 Counter 直接比較頻率地圖。';
+      }
+    }
+
+    function renderCode() {
+      const codeList = codes[currentAlgo][lang] || ["// 該語言無此特定語法實作"];
+      document.getElementById('code-box').innerHTML = codeList
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateLineHighlight(line) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if (document.getElementById('l' + line)) {
+        document.getElementById('l' + line).classList.add('active-line');
+      }
+    }
+
+    function renderStage(state) {
+      const sContainer = document.getElementById('nodes-s');
+      const tContainer = document.getElementById('nodes-t');
+      sContainer.innerHTML = '';
+      tContainer.innerHTML = '';
+
+      const renderRow = (container, arr) => {
+        arr.forEach((char, idx) => {
+          const node = document.createElement('div');
+          node.className = 'node';
+          node.innerText = char;
+
+          if (state.i === idx) {
+            node.classList.add('active-i');
+            node.innerHTML += `<div class="ptr-container"><div class="ptr-label">i</div></div>`;
+          }
+          if (state.sorted) node.classList.add('sorted');
+
+          node.innerHTML += `<div class="idx-label">[${idx}]</div>`;
+          container.appendChild(node);
+        });
+      };
+
+      renderRow(sContainer, state.sArr);
+      renderRow(tContainer, state.tArr);
+    }
+
+    function renderHashGrid(state) {
+      const view = document.getElementById('hash-view');
+      const grid = document.getElementById('hash-grid');
+
+      if (currentAlgo === 'sort' || currentAlgo === 'counter') {
+        view.style.display = 'none';
+        return;
+      }
+
+      view.style.display = 'block';
+
+      if (currentAlgo === 'two-map') {
+        document.getElementById('hash-title').innerText = "count_s 與 count_t 對照表";
+        grid.innerHTML = `
+          <div style="width:100%; color:var(--lc-orange)">count_s: ${JSON.stringify(state.countS || {})}</div>
+          <div style="width:100%; color:var(--lc-easy); margin-top:4px;">count_t: ${JSON.stringify(state.countT || {})}</div>
+        `;
+      } else if (currentAlgo === 'single-array') {
+        document.getElementById('hash-title').innerText = "counts 抵銷陣列 (非 0 狀態)";
+        const entries = Object.entries(state.counts || {}).filter(([_, v]) => v !== 0);
+        if (entries.length === 0) {
+          grid.innerHTML = `<span style="color: var(--lc-easy);">所有頻率完美抵銷 (全為 0)</span>`;
+        } else {
+          grid.innerHTML = entries.map(([k, v]) => `
+            <div class="hash-item"><span class="hash-key">'${k}'</span>: <span class="hash-val">${v}</span></div>
+          `).join('');
+        }
+      }
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

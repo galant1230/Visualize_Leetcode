@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 1448: Good Nodes (BFS & DFS) - 專業教學版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --vscode-bg: #1E1E1E;
+            --vscode-sidebar: #252526;
+            --vscode-highlight: #2C313C;
+            --vscode-border: #3E4451;
+            --vscode-text: #D4D4D4;
+            --syntax-keyword: #C678DD;
+            --syntax-func: #61AFEF;
+            --syntax-number: #D19A66;
+            --syntax-prop: #E06C75;
+            --syntax-comment: #5C6370;
+            --good-node: #98C379;
+            --bad-node: #E06C75;
+        }
+
+        body { background-color: var(--vscode-bg); color: var(--vscode-text); font-family: 'Inter', sans-serif; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; font-size: 13px; line-height: 1.5; }
+        .log-font { font-size: 12px; line-height: 1.4; }
+        .vscode-active-line { background-color: var(--vscode-highlight); border-left: 4px solid #61AFEF; }
+        
+        /* 節點動畫 */
+        .node-circle { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); stroke-width: 2; }
+        .node-active { stroke: #61AFEF; stroke-width: 4; filter: drop-shadow(0 0 8px rgba(97, 175, 239, 0.8)); }
+        .node-good { stroke: var(--good-node); stroke-width: 5; fill: #2E3E2E; filter: drop-shadow(0 0 10px rgba(152, 195, 121, 0.6)); }
+        
+        /* 動態高亮 */
+        @keyframes cell-highlight {
+            0% { background-color: rgba(97, 175, 239, 0.5); border-color: #61AFEF; }
+            100% { background-color: rgba(37, 37, 3d, 0.3); border-color: #3E4451; }
+        }
+        .ds-cell-active { animation: cell-highlight 0.5s ease-out; border-width: 2px; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3E4451; border-radius: 10px; }
+        
+        .tab-active { border-bottom: 2px solid #61AFEF; color: white !important; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <div class="bg-[#323233] px-6 py-2.5 flex items-center justify-between border-b border-black shadow-lg select-none">
+        <div class="flex items-center space-x-4">
+            <div class="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">Medium</div>
+            <h1 class="text-white font-semibold text-sm tracking-wide">1448. Count Good Nodes in Binary Tree</h1>
+        </div>
+        <div class="flex items-center space-x-6">
+            <div class="flex bg-[#252526] rounded-md p-1 border border-[#3E4451]">
+                <button onclick="switchMode('BFS')" id="btn-BFS" class="px-4 py-1 text-[11px] rounded transition-all font-medium tab-active">BFS 模式</button>
+                <button onclick="switchMode('DFS')" id="btn-DFS" class="px-4 py-1 text-[11px] rounded transition-all font-medium text-gray-500">DFS 模式</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <aside class="w-[28%] bg-[#252526] border-r border-black flex flex-col overflow-hidden">
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+                <section>
+                    <h2 class="text-gray-400 text-[11px] font-bold uppercase tracking-[2px] mb-3">題目敘述</h2>
+                    <p class="text-sm text-gray-300 leading-relaxed">
+                        判定路徑上的 <span class="text-good-node font-bold">Good Nodes</span>。<br>定義：節點值 &ge; 從根到該點路徑上的所有節點值。
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-gray-400 text-[11px] font-bold uppercase tracking-[2px] mb-3">時空間複雜度</h2>
+                    <p class="text-sm text-gray-300 leading-relaxed">
+                        <span class="text-good-node font-bold"></span><br>TIME : O(N) | SPACE : O(N)
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-gray-400 text-[11px] font-bold uppercase tracking-[2px] mb-3">測試案例 / Test Cases</h2>
+                    <div class="space-y-2">
+                        <button onclick="loadCase(0)" id="case-0" class="case-btn w-full text-left p-3 rounded-lg bg-[#2D2D2D] hover:bg-[#37373D] border border-transparent">
+                            <div class="text-xs font-bold text-gray-200">範例 1: root = [3,1,4,3,null,1,5]</div>
+                            <div class="text-[10px] font-mono text-gray-500 italic">標準二元樹</div>
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+            <div class="p-6 bg-[#1e1e1e] border-t border-black">
+                <div class="text-[11px] text-gray-500 font-bold uppercase mb-2 tracking-widest text-center">Good Node Count</div>
+                <div id="res-display" class="text-4xl font-mono text-good-node bg-[#252526] p-3 rounded-md border border-[#3E4451] text-center">0</div>
+            </div>
+        </aside>
+
+        <main class="w-[42%] bg-[#1E1E1E] flex flex-col p-6 overflow-hidden space-y-4">
+            <div class="flex-1 bg-[#252526] rounded-xl border border-[#3E4451] relative flex flex-col shadow-inner overflow-hidden">
+                <div class="p-4 border-b border-[#3E4451] flex justify-between items-center bg-[#2D2D2D]/50 select-none">
+                    <span id="algo-type-indicator" class="text-[10px] font-bold text-blue-400 uppercase tracking-widest font-mono">BFS MODE (Queue-based)</span>
+                    <span class="text-[10px] text-gray-500">VISUALIZATION ARENA</span>
+                </div>
+                
+                <div class="flex-1 relative flex items-center justify-center p-8">
+                    <svg id="svg-tree" class="w-full h-full p-2"></svg>
+                </div>
+
+                <div class="p-4 bg-[#2D2D2D]/80 border-t border-[#3E4451] flex flex-col items-center space-y-3">
+                    <div class="flex items-center space-x-6">
+                        <button onclick="step(-1)" title="上一步" class="text-gray-400 hover:text-blue-400 transition-colors"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6L18 6v12z"/></svg></button>
+                        
+                        <button onclick="togglePlay()" id="play-btn" title="播放/暫停" class="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-full shadow-lg transition-all">
+                            <svg id="play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
+
+                        <button onclick="step(1)" title="下一步" class="text-gray-400 hover:text-blue-400 transition-colors"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                        <button onclick="reset()" title="重置" class="text-gray-400 hover:text-red-400 transition-colors"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+                    </div>
+                    <div class="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+                        Step: <span id="cur-step" class="text-blue-400">0</span> / <span id="total-step">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="h-32 bg-[#252526] border border-[#3E4451] rounded-xl p-5 flex flex-col shadow-lg">
+                <div id="ds-title" class="text-[11px] text-gray-500 uppercase font-bold tracking-widest mb-4">隊列狀態 (Queue: [node, maxval])</div>
+                <div id="ds-container" class="flex-1 flex items-center space-x-3 overflow-x-auto custom-scrollbar pb-2"></div>
+            </div>
+        </main>
+
+        <aside class="w-[30%] bg-[#1E1E1E] border-l border-black flex flex-col overflow-hidden">
+            <div class="h-[50%] flex flex-col">
+                <div class="px-4 py-2 bg-[#252526] text-[11px] text-gray-400 font-bold uppercase border-b border-black">Python3 實作</div>
+                <div class="flex-1 overflow-y-auto custom-scrollbar p-4 vscode-bg" id="code-area"></div>
+            </div>
+            <div class="flex-1 border-t border-black bg-[#121212] flex flex-col">
+                <div class="px-4 py-2 bg-[#1A1A1A] text-[11px] text-gray-500 font-bold uppercase border-b border-black">執行詳情</div>
+                <div id="detail-logs" class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-3 log-font"></div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const algorithms = {
+            BFS: {
+                label: "BFS (Queue-based)",
+                code: [
+                    "class Solution:",
+                    "    def goodNodes(self, root: TreeNode) -> int:",
+                    "        res = 0",
+                    "        q = deque([(root, -float('inf'))])",
+                    "        ",
+                    "        while q:",
+                    "            node, maxval = q.popleft()",
+                    "            if node.val >= maxval:",
+                    "                res += 1",
+                    "            ",
+                    "            if node.left:",
+                    "                q.append((node.left, max(maxval, node.val)))",
+                    "            if node.right:",
+                    "                q.append((node.right, max(maxval, node.val)))",
+                    "        return res"
+                ],
+                trace: [
+                    { line: 3, node: 3, ds: ["(3, -inf)"], res: 0, log: "初始化隊列，放入根節點 [3]。" },
+                    { line: 6, node: 3, ds: ["[]"], res: 0, log: "popleft(): 彈出 [3], maxval 為 -inf。" },
+                    { line: 8, node: 3, ds: ["[]"], res: 1, log: "3 >= -inf，[3] 為好節點！res = 1。" },
+                    { line: 11, node: 1, ds: ["(1, 3)"], res: 1, log: "左子節點 [1] 入隊，傳遞最大值 max(3, -inf) = 3。" },
+                    { line: 13, node: 4, ds: ["(1, 3)", "(4, 3)"], res: 1, log: "右子節點 [4] 入隊，傳遞最大值 3。" },
+                    { line: 6, node: 1, ds: ["(4, 3)"], res: 1, log: "popleft(): 處理節點 [1], maxval 為 3。" },
+                    { line: 8, node: 1, ds: ["(4, 3)"], res: 1, log: "1 < 3，不是好節點。" },
+                    { line: 11, node: 33, ds: ["(4, 3)", "(3, 3)"], res: 1, log: "[1] 的左子節點 [3] 入隊，傳遞 max(3, 1) = 3。" },
+                    { line: 6, node: 4, ds: ["(3, 3)"], res: 1, log: "popleft(): 處理節點 [4], maxval 為 3。" },
+                    { line: 8, node: 4, ds: ["(3, 3)"], res: 2, log: "4 >= 3，[4] 為好節點！res = 2。" },
+                    { line: 11, node: 11, ds: ["(3, 3)", "(1, 4)"], res: 2, log: "[4] 的左節點 [1] 入隊，傳遞 max(3, 4) = 4。" },
+                    { line: 13, node: 5, ds: ["(3, 3)", "(1, 4)", "(5, 4)"], res: 2, log: "[4] 的右節點 [5] 入隊，傳遞 4。" },
+                    { line: 6, node: 33, ds: ["(1, 4)", "(5, 4)"], res: 2, log: "popleft(): 處理 [3]，maxval 3。" },
+                    { line: 8, node: 33, ds: ["(1, 4)", "(5, 4)"], res: 3, log: "3 >= 3，好節點！res = 3。" },
+                    { line: 6, node: 11, ds: ["(5, 4)"], res: 3, log: "popleft(): 處理 [1]，maxval 4。1 < 4 (Bad)。" },
+                    { line: 6, node: 5, ds: ["[]"], res: 3, log: "popleft(): 處理 [5]，maxval 4。" },
+                    { line: 8, node: 5, ds: ["[]"], res: 4, log: "5 >= 4，好節點！最終 res = 4。" }
+                ]
+            },
+            DFS: {
+                label: "DFS (Recursive)",
+                code: [
+                    "def goodNodes(self, root):",
+                    "    def dfs(node, max_val):",
+                    "        if not node: return 0",
+                    "        res = 1 if node.val >= max_val else 0",
+                    "        new_max = max(max_val, node.val)",
+                    "        res += dfs(node.left, new_max)",
+                    "        res += dfs(node.right, new_max)",
+                    "        return res",
+                    "    return dfs(root, root.val)"
+                ],
+                trace: [
+                    { line: 1, node: 3, ds: ["Depth: 0"], res: 1, log: "DFS 從根節點 [3] 開始。3 >= 3，好節點。" },
+                    { line: 5, node: 1, ds: ["Depth: 1"], res: 1, log: "遞迴向左：[1] < 3，不是好節點。" },
+                    { line: 5, node: 33, ds: ["Depth: 2"], res: 2, log: "再向左：[3] >= 3，好節點。res 增加。" },
+                    { line: 6, node: 4, ds: ["Depth: 1"], res: 3, log: "回溯後向右：[4] >= 3，好節點！更新路徑最大值為 4。" },
+                    { line: 5, node: 11, ds: ["Depth: 2"], res: 3, log: "向左：[1] < 4，不是。" },
+                    { line: 6, node: 5, ds: ["Depth: 2"], res: 4, log: "向右：[5] >= 4，好節點。" }
+                ]
+            }
+        };
+
+        let currentMode = 'BFS', currentCase = 0, curStep = 0, isPlaying = false, timer = null;
+
+        function renderCode() {
+            const area = document.getElementById('code-area');
+            area.innerHTML = algorithms[currentMode].code.map((line, i) => {
+                let html = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/\b(class|def|if|not|return|while|for|in|from|import|deque)\b/g, '<span style="color:var(--syntax-keyword)">$1</span>')
+                    .replace(/\b(popleft|append|max|float)\b/g, '<span style="color:var(--syntax-func)">$1</span>')
+                    .replace(/\b(node|maxval|res|q|root|val|left|right)\b/g, '<span style="color:var(--syntax-prop)">$1</span>');
+                return `<div id="line-${i}" class="px-4 py-0.5 code-font whitespace-pre transition-all border-l-4 border-transparent"><code>${html}</code></div>`;
+            }).join('');
+        }
+
+        function drawTree() {
+            const svg = document.getElementById('svg-tree');
+            svg.innerHTML = '';
+            const w = svg.clientWidth, h = svg.clientHeight, r = 16;
+            
+            // 座標計算：[3,1,4,3,null,1,5]
+            const nodes = [
+                {id: 3, x: w/2, y: 40, px: null, py: null},
+                {id: 1, x: w/3.5, y: 100, px: w/2, py: 40},
+                {id: 4, x: w/1.4, y: 100, px: w/2, py: 40},
+                {id: 33, x: w/4.5, y: 160, px: w/3.5, py: 100}, // 1的左
+                {id: 11, x: w/1.6, y: 160, px: w/1.4, py: 100}, // 4的左
+                {id: 5, x: w/1.25, y: 160, px: w/1.4, py: 100}  // 4的右
+            ];
+
+            nodes.forEach(n => {
+                if(n.px) {
+                    const dx = n.x - n.px, dy = n.y - n.py, len = Math.sqrt(dx*dx + dy*dy);
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", n.px + (dx/len)*r); line.setAttribute("y1", n.py + (dy/len)*r);
+                    line.setAttribute("x2", n.x - (dx/len)*r); line.setAttribute("y2", n.y - (dy/len)*r);
+                    line.setAttribute("stroke", "#444"); line.setAttribute("stroke-width", "1.5");
+                    svg.appendChild(line);
+                }
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.id = `node-${n.id}`;
+                g.innerHTML = `<circle cx="${n.x}" cy="${n.y}" r="${r}" fill="#2D2D2D" stroke="#3E4451" class="node-circle" />
+                               <text x="${n.x}" y="${n.y+5}" font-size="11" text-anchor="middle" fill="#D4D4D4" class="font-bold">${String(n.id).charAt(0)}</text>`;
+                svg.appendChild(g);
+            });
+        }
+
+        function updateUI() {
+            const trace = algorithms[currentMode].trace[curStep];
+            if(!trace) return;
+
+            document.querySelectorAll('.vscode-active-line').forEach(l => l.classList.remove('vscode-active-line'));
+            const codeLines = document.getElementById('code-area').children;
+            if(codeLines[trace.line]) codeLines[trace.line].classList.add('vscode-active-line');
+
+            document.querySelectorAll('.node-circle').forEach(c => c.classList.remove('node-active'));
+            if(trace.node) {
+                const node = document.getElementById(`node-${trace.node}`);
+                if(node) node.querySelector('circle').classList.add('node-active');
+            }
+
+            // 標記好節點
+            if(trace.log.includes("好節點")) {
+                const node = document.getElementById(`node-${trace.node}`);
+                if(node) node.querySelector('circle').classList.add('node-good');
+            }
+
+            const dsC = document.getElementById('ds-container');
+            dsC.innerHTML = trace.ds.map(s => `<div class="ds-cell-active px-3 py-1 rounded-md bg-[#1E1E1E] border border-[#3E4451] text-[10px] font-mono text-blue-300">${s}</div>`).join('');
+            
+            document.getElementById('res-display').innerText = trace.res;
+            document.getElementById('cur-step').innerText = curStep;
+            document.getElementById('total-step').innerText = algorithms[currentMode].trace.length - 1;
+
+            const logBox = document.getElementById('detail-logs');
+            const entry = document.createElement('div');
+            entry.className = "pl-2 border-l-2 border-blue-500 py-1 bg-white/5 animate-fade-in";
+            entry.innerHTML = `<span class="text-blue-400 font-bold mr-2">STEP ${curStep}:</span> ${trace.log}`;
+            logBox.prepend(entry);
+        }
+
+        function step(dir) {
+            pause();
+            const len = algorithms[currentMode].trace.length;
+            curStep = Math.max(0, Math.min(len - 1, curStep + dir));
+            updateUI();
+        }
+
+        function togglePlay() {
+            if(isPlaying) pause();
+            else {
+                isPlaying = true;
+                document.getElementById('play-icon').setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z'); // Pause Icon
+                timer = setInterval(() => {
+                    if(curStep < algorithms[currentMode].trace.length - 1) {
+                        curStep++;
+                        updateUI();
+                    } else pause();
+                }, 1000);
+            }
+        }
+
+        function pause() {
+            isPlaying = false;
+            clearInterval(timer);
+            document.getElementById('play-icon').setAttribute('d', 'M8 5v14l11-7z'); // Play Icon
+        }
+
+        function reset() {
+            pause(); curStep = 0;
+            document.getElementById('detail-logs').innerHTML = '';
+            document.querySelectorAll('.node-good').forEach(n => n.classList.remove('node-good'));
+            updateUI();
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-BFS').className = `px-4 py-1 rounded transition-all font-medium ${mode==='BFS'?'tab-active bg-blue-600/20':'text-gray-500'}`;
+            document.getElementById('btn-DFS').className = `px-4 py-1 rounded transition-all font-medium ${mode==='DFS'?'tab-active bg-blue-600/20':'text-gray-500'}`;
+            document.getElementById('algo-type-indicator').innerText = mode === 'BFS' ? 'BFS MODE (Queue-based)' : 'DFS MODE (Stack-based)';
+            document.getElementById('ds-title').innerText = mode === 'BFS' ? '隊列狀態 (Queue: [node, maxval])' : '遞迴深度 (Call Stack)';
+            renderCode(); reset();
+        }
+
+        window.onload = () => { renderCode(); drawTree(); updateUI(); };
+    </script>
+</body>
+</html>

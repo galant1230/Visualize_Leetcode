@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>124. Binary Tree Maximum Path Sum</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 45, 85, 0.15); color: var(--hard); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--blue); margin-bottom: 4px; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .sol-tab-btn { background: #1a1a1a; border: 1px solid var(--border); color: var(--text-dim); padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; }
+    .sol-tab-btn.active { background: var(--orange); color: #000; font-weight: bold; border-color: var(--orange); }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.76rem; overflow-x: auto; max-height: 380px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.75rem; min-height: 110px; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+    .stack-frame.returning { border-color: var(--green); border-left-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+    
+    .tree-pane { width: 100%; height: 210px; background: #141414; border: 1px solid var(--border); border-radius: 4px; position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+    .tree-pane-title { font-size: 0.75rem; font-weight: bold; font-family: monospace; color: var(--orange); }
+    
+    svg.tree-svg { width: 100%; height: 180px; }
+    .tree-node-circle { fill: #333; stroke: var(--border); stroke-width: 2px; transition: all 0.2s; }
+    .tree-node-circle.active { fill: rgba(255, 161, 22, 0.35); stroke: var(--orange); stroke-width: 3px; }
+    .tree-node-circle.visited { fill: rgba(80, 250, 123, 0.25); stroke: var(--green); stroke-width: 2px; }
+    .tree-node-circle.best-path { fill: rgba(255, 45, 85, 0.35); stroke: var(--hard); stroke-width: 3px; }
+    .tree-text { fill: #fff; font-family: monospace; font-weight: bold; font-size: 13px; text-anchor: middle; dominant-baseline: middle; }
+    .tree-edge { stroke: #555; stroke-width: 2px; }
+
+    /* 全局最大和區域計算卡片 */
+    .calc-vis-container { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; gap: 10px; justify-content: space-between; font-family: monospace; }
+    .calc-card { flex: 1; background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 8px; text-align: center; }
+    .calc-label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 2px; }
+    .calc-val { font-size: 1.1rem; font-weight: bold; color: var(--green); }
+    .calc-val.max { color: var(--hard); }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 75px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">124. Binary Tree Maximum Path Sum</span>
+    <span class="badge">Hard</span>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: [-10, 9, 20, null, null, 15, 7]</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: [1, 2, 3]</button>
+    <button class="tab-btn" onclick="setPreset(2)">Ex 3: [-3] (Single Negative)</button>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄：題目、程式碼、Call Stack -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與複雜度</div>
+        <div class="problem-desc">
+          二元樹中的<b>路徑</b>被定義為一條鏈結序列，序列中相鄰節點之間需有邊連結。同一節點在同一條路徑中<b>最多出現一次</b>。計算並返回所有可能路徑中的<b>最大路徑和</b>。
+        </div>
+
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(H)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 程式碼區塊（支援 3 種寫法切換） -->
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼解法選擇</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 4px;">
+          <button class="sol-tab-btn active" onclick="setSolution(0)">解法一：後序遍歷 (Bottom-Up DFS)</button>
+          <button class="sol-tab-btn" onclick="setSolution(1)">解法二： nonlocal 變數遞迴</button>
+          <button class="sol-tab-btn" onclick="setSolution(2)">解法三：類別成員變數 (self.max_sum)</button>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (系統呼叫堆疊)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄：解題思路、實時計算與樹重構 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- 解題思路與公式推導區塊 -->
+      <div class="card">
+        <div class="idea-box">
+          <div class="idea-title">💡 如何推導出 Post-order DFS 公式？</div>
+          <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 4px;">
+            <li><b>理解路徑的特性</b>：路徑可以「拱起」（同時包含左右子樹），但向上回傳給父節點時，<b>只能選擇左或右其中一條分支</b>，否則無法連成不重複的路徑。</li>
+            <li><b>捨棄負貢獻</b>：如果左或右子樹帶來的路徑和為負數，不如不採納，因此取 <code>max(0, left_gain)</code>。</li>
+            <li><b>更新全域最大值 (拱形路徑)</b>：以當前節點為頂點的最長路徑為：<br><code>current_path = node.val + left_gain + right_gain</code><br>用此值更新全域最大和 <code>max_sum = max(max_sum, current_path)</code>。</li>
+            <li><b>回傳給父節點 (單邊路徑)</b>：傳給上一層父節點時，只能選一邊：<br><code>return node.val + max(left_gain, right_gain)</code></li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 遞迴運算實時狀態與動態視覺化</div>
+        
+        <div class="stage">
+          <div class="tree-pane">
+            <span class="tree-pane-title">二元樹走訪與路徑和 (Binary Tree Path Tracker)</span>
+            <div id="tree-svg-container" style="width: 100%; height: 100%;"></div>
+          </div>
+
+          <div class="calc-vis-container">
+            <div class="calc-card">
+              <div class="calc-label">左貢獻 (Left Gain)</div>
+              <div class="calc-val" id="val-left-gain">0</div>
+            </div>
+            <div class="calc-card">
+              <div class="calc-label">右貢獻 (Right Gain)</div>
+              <div class="calc-val" id="val-right-gain">0</div>
+            </div>
+            <div class="calc-card">
+              <div class="calc-label">當前拱形總和 (Current)</div>
+              <div class="calc-val" id="val-curr-sum">0</div>
+            </div>
+            <div class="calc-card" style="border-color: var(--hard); background: rgba(255,45,85,0.1);">
+              <div class="calc-label" style="color: var(--hard); font-weight: bold;">全局最大和 (Max Sum)</div>
+              <div class="calc-val max" id="val-max-sum">-∞</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">當前步驟計算 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 3 種 Python 解法
+    const solutions = [
+      {
+        name: "後序遍歷 (Bottom-Up DFS)",
+        timeComp: "O(N)",
+        spaceComp: "O(H)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">maxPathSum</span>(<span class="self">self</span>, root: Optional[TreeNode]) -> int:`,
+          `        max_sum = float(<span class="cm">'-inf'</span>)`,
+          ``,
+          `        <span class="kw">def</span> <span class="fn">max_gain</span>(node):`,
+          `            <span class="kw">nonlocal</span> max_sum`,
+          `            <span class="kw">if not</span> node: <span class="kw">return</span> 0`,
+          `            `,
+          `            <span class="cm"># 遞迴計算左右子樹最大單邊貢獻（若為負數則取 0 代表捨棄）</span>`,
+          `            left_gain = max(max_gain(node.left), 0)`,
+          `            right_gain = max(max_gain(node.right), 0)`,
+          `            `,
+          `            <span class="cm"># 以當前節點為最高頂點的拱形路徑總和</span>`,
+          `            price_newpath = node.val + left_gain + right_gain`,
+          `            max_sum = max(max_sum, price_newpath)`,
+          `            `,
+          `            <span class="cm"># 回傳給父節點只能選單邊分支</span>`,
+          `            <span class="kw">return</span> node.val + max(left_gain, right_gain)`,
+          ``,
+          `        max_gain(root)`,
+          `        <span class="kw">return</span> max_sum`
+        ]
+      },
+      {
+        name: "nonlocal 變數遞迴",
+        timeComp: "O(N)",
+        spaceComp: "O(H)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">maxPathSum</span>(<span class="self">self</span>, root: Optional[TreeNode]) -> int:`,
+          `        ans = float(<span class="cm">'-inf'</span>)`,
+          `        <span class="kw">def</span> <span class="fn">dfs</span>(node):`,
+          `            <span class="kw">nonlocal</span> ans`,
+          `            <span class="kw">if not</span> node: <span class="kw">return</span> 0`,
+          `            l = max(0, dfs(node.left))`,
+          `            r = max(0, dfs(node.right))`,
+          `            ans = max(ans, node.val + l + r)`,
+          `            <span class="kw">return</span> node.val + max(l, r)`,
+          `        dfs(root)`,
+          `        <span class="kw">return</span> ans`
+        ]
+      },
+      {
+        name: "類別成員變數 (self.max_sum)",
+        timeComp: "O(N)",
+        spaceComp: "O(H)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">maxPathSum</span>(<span class="self">self</span>, root: Optional[TreeNode]) -> int:`,
+          `        <span class="self">self</span>.max_sum = float(<span class="cm">'-inf'</span>)`,
+          `        <span class="kw">def</span> <span class="fn">helper</span>(node):`,
+          `            <span class="kw">if not</span> node: <span class="kw">return</span> 0`,
+          `            left = max(<span class="self">self</span>.helper(node.left), 0)`,
+          `            right = max(<span class="self">self</span>.helper(node.right), 0)`,
+          `            <span class="self">self</span>.max_sum = max(<span class="self">self</span>.max_sum, node.val + left + right)`,
+          `            <span class="kw">return</span> node.val + max(left, right)`,
+          `        helper(root)`,
+          `        <span class="kw">return</span> <span class="self">self</span>.max_sum`
+        ]
+      }
+    ];
+
+    // 二元樹測試資料
+    const presets = [
+      {
+        name: "Ex 1: Standard Tree",
+        nodes: {
+          1: { val: -10, left: 2, right: 3 },
+          2: { val: 9, left: null, right: null },
+          3: { val: 20, left: 4, right: 5 },
+          4: { val: 15, left: null, right: null },
+          5: { val: 7, left: null, right: null }
+        },
+        rootId: 1
+      },
+      {
+        name: "Ex 2: Simple Tree",
+        nodes: {
+          1: { val: 1, left: 2, right: 3 },
+          2: { val: 2, left: null, right: null },
+          3: { val: 3, left: null, right: null }
+        },
+        rootId: 1
+      },
+      {
+        name: "Ex 3: Single Negative",
+        nodes: {
+          1: { val: -3, left: null, right: null }
+        },
+        rootId: 1
+      }
+    ];
+
+    let currentSolution = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setSolution(idx) {
+      currentSolution = idx;
+      document.querySelectorAll('.sol-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      document.getElementById('time-comp').innerText = solutions[idx].timeComp;
+      document.getElementById('space-comp').innerText = solutions[idx].spaceComp;
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      let treeArrStr = p.name === "Ex 1: Standard Tree" ? "[-10, 9, 20, null, null, 15, 7]" : (p.name === "Ex 2: Simple Tree" ? "[1, 2, 3]" : "[-3]");
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>root = ${treeArrStr}</div>
+      `;
+    }
+
+    function renderCode() {
+      const codeArr = solutions[currentSolution].code;
+      document.getElementById('code-box').innerHTML = codeArr.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderTreeSVG(nodesData, rootId, activeId = null, visitedIds = [], bestPathIds = []) {
+      if (!nodesData || !rootId || !nodesData[rootId]) return '';
+
+      let posMap = {};
+      function calcPos(id, depth = 0, leftBound = 0, rightBound = 100) {
+        if (!id || !nodesData[id]) return;
+        let x = (leftBound + rightBound) / 2;
+        let y = depth * 45 + 30;
+        posMap[id] = { x, y, left: nodesData[id].left, right: nodesData[id].right, val: nodesData[id].val };
+        calcPos(nodesData[id].left, depth + 1, leftBound, x);
+        calcPos(nodesData[id].right, depth + 1, x, rightBound);
+      }
+      calcPos(rootId);
+
+      let edgesHTML = '', nodesHTML = '';
+      Object.keys(posMap).forEach(idStr => {
+        let id = Number(idStr);
+        let p = posMap[id];
+        if (p.left && posMap[p.left]) {
+          let lp = posMap[p.left];
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${lp.x}%" y2="${lp.y}" class="tree-edge" />`;
+        }
+        if (p.right && posMap[p.right]) {
+          let rp = posMap[p.right];
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${rp.x}%" y2="${rp.y}" class="tree-edge" />`;
+        }
+
+        let circleClass = 'tree-node-circle';
+        if (visitedIds.includes(id)) circleClass += ' visited';
+        if (bestPathIds.includes(id)) circleClass += ' best-path';
+        if (id === activeId) circleClass += ' active';
+
+        nodesHTML += `<g><circle cx="${p.x}%" cy="${p.y}" r="14" class="${circleClass}" /><text x="${p.x}%" y="${p.y}" class="tree-text">${p.val}</text></g>`;
+      });
+
+      return `<svg class="tree-svg">${edgesHTML}${nodesHTML}</svg>`;
+    }
+
+    function renderStackHTML(stackFrames) {
+      if (!stackFrames || stackFrames.length === 0) return `<div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>`;
+      return stackFrames.map(f => `
+        <div class="stack-frame ${f.returning ? 'returning' : ''}">
+          <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.7rem;">(${f.args})</span></div>
+          <div style="font-size:0.75rem; font-weight:bold; color:${f.returning ? 'var(--green)' : 'var(--orange)'};">${f.returning ? `➔ return ${f.retVal}` : 'Active'}</div>
+        </div>
+      `).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const presetData = presets[currentPreset];
+      const nodes = presetData.nodes;
+      const rootId = presetData.rootId;
+
+      let currentStack = [];
+      let globalMaxSum = -Infinity;
+      let visited = [];
+
+      function pushFrame(fnName, args) { currentStack.push({ fnName, args, returning: false, retVal: null }); }
+      function updateTopFrame(retVal) {
+        if (currentStack.length > 0) {
+          let top = currentStack[currentStack.length - 1];
+          top.returning = true;
+          top.retVal = retVal;
+        }
+      }
+      function popFrame() { currentStack.pop(); }
+
+      function dfs(nodeId) {
+        if (!nodeId || !nodes[nodeId]) {
+          pushFrame("max_gain", "None");
+          history.push({
+            line: 6, phase: "Line 6: if not node:",
+            desc: "遇到空節點，回傳單邊貢獻 0",
+            stack: JSON.parse(JSON.stringify(currentStack)), activeId: null, visitedIds: [...visited],
+            leftGain: 0, rightGain: 0, currSum: 0, maxSum: globalMaxSum
+          });
+          updateTopFrame(0);
+          popFrame();
+          return 0;
+        }
+
+        let currNode = nodes[nodeId];
+        pushFrame("max_gain", `Node(${currNode.val})`);
+        visited.push(nodeId);
+
+        history.push({
+          line: 4, phase: `Line 4: max_gain(Node ${currNode.val})`,
+          desc: `訪問節點 Node(${currNode.val})，準備遞迴計算左右子樹貢獻`,
+          stack: JSON.parse(JSON.stringify(currentStack)), activeId: nodeId, visitedIds: [...visited],
+          leftGain: "-", rightGain: "-", currSum: "-", maxSum: globalMaxSum
+        });
+
+        // Left gain
+        history.push({
+          line: 9, phase: `Line 9: 計算左子樹貢獻`,
+          desc: `準備呼叫 max_gain(node.left)...`,
+          stack: JSON.parse(JSON.stringify(currentStack)), activeId: nodeId, visitedIds: [...visited],
+          leftGain: "?", rightGain: "-", currSum: "-", maxSum: globalMaxSum
+        });
+        let rawLeft = dfs(currNode.left);
+        let leftGain = Math.max(0, rawLeft);
+
+        // Right gain
+        history.push({
+          line: 10, phase: `Line 10: 計算右子樹貢獻`,
+          desc: `左貢獻取 max(0, ${rawLeft}) = ${leftGain}。準備呼叫 max_gain(node.right)...`,
+          stack: JSON.parse(JSON.stringify(currentStack)), activeId: nodeId, visitedIds: [...visited],
+          leftGain: leftGain, rightGain: "?", currSum: "-", maxSum: globalMaxSum
+        });
+        let rawRight = dfs(currNode.right);
+        let rightGain = Math.max(0, rawRight);
+
+        // Current path price
+        let priceNewPath = currNode.val + leftGain + rightGain;
+        globalMaxSum = Math.max(globalMaxSum, priceNewPath);
+
+        history.push({
+          line: 13, phase: `Line 13-14: 計算拱形總和與更新全局最大和`,
+          desc: `拱形總和 = ${currNode.val} + ${leftGain} + ${rightGain} = ${priceNewPath}；更新全局 max_sum ➜ ${globalMaxSum}`,
+          stack: JSON.parse(JSON.stringify(currentStack)), activeId: nodeId, visitedIds: [...visited],
+          leftGain: leftGain, rightGain: rightGain, currSum: priceNewPath, maxSum: globalMaxSum
+        });
+
+        let singleReturn = currNode.val + Math.max(leftGain, rightGain);
+        updateTopFrame(singleReturn);
+
+        history.push({
+          line: 17, phase: `Line 17: return node.val + max(left, right)`,
+          desc: `將單邊最高貢獻 ${currNode.val} + max(${leftGain}, ${rightGain}) = ${singleReturn} 回傳給上一層父節點`,
+          stack: JSON.parse(JSON.stringify(currentStack)), activeId: nodeId, visitedIds: [...visited],
+          leftGain: leftGain, rightGain: rightGain, currSum: priceNewPath, maxSum: globalMaxSum
+        });
+
+        popFrame();
+        return singleReturn;
+      }
+
+      dfs(rootId);
+
+      history.push({
+        line: 19, phase: "🎉 遞迴搜尋完成！",
+        desc: `二元樹遍歷結束，最終最大路徑和 (Max Path Sum) 為 ${globalMaxSum}`,
+        stack: [], activeId: null, visitedIds: [...visited],
+        leftGain: "-", rightGain: "-", currSum: "-", maxSum: globalMaxSum
+      });
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      document.getElementById('val-left-gain').innerText = state.leftGain !== undefined ? state.leftGain : 0;
+      document.getElementById('val-right-gain').innerText = state.rightGain !== undefined ? state.rightGain : 0;
+      document.getElementById('val-curr-sum').innerText = state.currSum !== undefined ? state.currSum : 0;
+      document.getElementById('val-max-sum').innerText = (state.maxSum !== undefined && state.maxSum !== -Infinity) ? state.maxSum : "-∞";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = renderStackHTML(stackData);
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      const presetData = presets[currentPreset];
+      document.getElementById('tree-svg-container').innerHTML = renderTreeSVG(presetData.nodes, presetData.rootId, state.activeId, state.visitedIds);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>98. Validate Binary Search Tree - Visualizer</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --red: #ff2d55;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .tag { background: #383838; color: var(--text-dim); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
+
+    .approach-tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 6px; flex-wrap: wrap; background: #222; padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
+    .app-tab-btn { background: transparent; border: none; color: var(--text-dim); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: 0.2s; }
+    .app-tab-btn:hover { background: #333; color: #fff; }
+    .app-tab-btn.active { background: var(--orange); color: #000; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+    
+    .problem-desc { font-size: 0.82rem; color: #ccc; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+    
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .approach-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.8rem; color: #ddd; }
+
+    /* 新增的公式拆解專屬 Block 樣式 */
+    .formula-card { background: #1e1e1e; border: 1px solid var(--purple); border-radius: 6px; padding: 10px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 6px; }
+    .formula-title { color: var(--purple); font-weight: bold; font-size: 0.82rem; display: flex; align-items: center; gap: 6px; }
+    .formula-code { background: #121212; border: 1px solid var(--border); border-left: 3px solid var(--purple); padding: 6px 8px; font-family: monospace; color: #fff; border-radius: 4px; }
+    .formula-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+    .formula-subitem { background: #252525; border: 1px solid var(--border); padding: 6px; border-radius: 4px; }
+    .formula-subitem-title { font-weight: bold; color: var(--orange); font-size: 0.75rem; margin-bottom: 2px; }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.75rem; overflow-x: auto; max-height: 290px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .str { color: #f1fa8c; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.75rem; min-height: 120px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.2s ease-out; }
+    .stack-frame.returning { border-color: var(--green); border-left-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+    .stack-frame.invalid { border-color: var(--red); border-left-color: var(--red); background: rgba(255, 45, 85, 0.1); }
+    .stack-frame-title { color: #fff; font-weight: bold; }
+    .stack-frame-args { color: var(--text-dim); font-size: 0.7rem; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; height: 390px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; overflow: hidden; }
+    
+    .tree-container { display: flex; width: 100%; height: 210px; gap: 10px; }
+    .tree-pane { flex: 1; background: #141414; border: 1px solid var(--border); border-radius: 4px; position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+    .tree-pane-title { font-size: 0.75rem; font-weight: bold; font-family: monospace; color: var(--orange); }
+    
+    svg.tree-svg { width: 100%; height: 185px; }
+    .tree-node-circle { fill: #333; stroke: var(--border); stroke-width: 2px; transition: all 0.2s; }
+    .tree-node-circle.active { fill: rgba(255, 161, 22, 0.35); stroke: var(--orange); stroke-width: 3px; }
+    .tree-node-circle.valid { fill: rgba(80, 250, 123, 0.25); stroke: var(--green); stroke-width: 2px; }
+    .tree-node-circle.invalid { fill: rgba(255, 45, 85, 0.35); stroke: var(--red); stroke-width: 3px; }
+    .tree-text { fill: #fff; font-family: monospace; font-weight: bold; font-size: 13px; text-anchor: middle; dominant-baseline: middle; }
+    .tree-edge { stroke: #555; stroke-width: 2px; transition: all 0.2s; }
+
+    .ds-display { background: #141414; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 0.78rem; height: 140px; display: flex; flex-direction: column; justify-content: space-around; align-items: flex-start; gap: 4px; }
+    .queue-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .queue-item { background: #2d2d2d; border: 1px solid var(--medium); padding: 2px 8px; border-radius: 4px; color: var(--medium); font-weight: bold; }
+    .res-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .res-group { background: rgba(80, 250, 123, 0.15); border: 1px solid var(--green); padding: 2px 8px; border-radius: 4px; color: var(--green); font-weight: bold; }
+    .res-group.false-style { background: rgba(255, 45, 85, 0.15); border-color: var(--red); color: var(--red); }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.8rem; font-family: monospace; height: 65px; display: flex; flex-direction: column; justify-content: center; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">98. Validate Binary Search Tree</span>
+    <span class="badge">Medium</span>
+    <span class="tag">Tree</span>
+    <span class="tag">Depth-First Search</span>
+    <span class="tag">Binary Search Tree</span>
+  </div>
+
+  <div class="approach-tabs" id="app-tabs">
+    <button class="app-tab-btn active" onclick="switchApproach(0)">1. DFS 上下界遞迴 (valid)</button>
+    <button class="app-tab-btn" onclick="switchApproach(1)">2. BFS 佇列廣度走訪 (q)</button>
+    <button class="app-tab-btn" onclick="switchApproach(2)">3. Inorder 陣列走訪 (inorder_result)</button>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: Valid BST [2, 1, 3]</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: Invalid BST [5, 1, 4, null, null, 3, 6]</button>
+    <button class="tab-btn" onclick="setPreset(2)">Ex 3: Boundary Failure [10, 5, 15, null, null, 6, 20]</button>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個二元樹的根節點 <code>root</code>，判斷其是否為有效的<b>二元搜尋樹 (BST)</b>。<br/>
+          <b>BST 條件：</b>左子樹所有節點值必須<b>嚴格小於</b>當前節點；右子樹所有節點值必須<b>嚴格大於</b>當前節點。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">-</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼 (逐行追蹤)</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (系統呼叫堆疊)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display">
+          <div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">💡 解題思路說明</div>
+        <div class="approach-box" id="approach-desc"></div>
+      </div>
+
+      <!-- ★ 新增：核心遞迴更新公式拆解 Block ★ -->
+      <div class="formula-card">
+        <div class="formula-title">💡 遞迴核心公式拆解 (Boundary Renewal logic)</div>
+        <div class="formula-code">
+          return valid(node.left, left, node.val) and valid(node.right, node.val, right)
+        </div>
+        <div class="formula-grid">
+          <div class="formula-subitem">
+            <div class="formula-subitem-title">1. 左子樹更新 (Left Subtree)</div>
+            <div style="color: #bbb;">
+              帶入 <code>(node.left, left, node.val)</code><br/>
+              <b>上限改為 node.val</b>：確保左邊所有節點都嚴格小於當前父節點。
+            </div>
+          </div>
+          <div class="formula-subitem">
+            <div class="formula-subitem-title">2. 右子樹更新 (Right Subtree)</div>
+            <div style="color: #bbb;">
+              帶入 <code>(node.right, node.val, right)</code><br/>
+              <b>下限改為 node.val</b>：確保右邊所有節點都嚴格大於當前父節點。
+            </div>
+          </div>
+        </div>
+        <div style="color: var(--text-dim); font-size: 0.73rem; margin-top: 2px;">
+          • <b><code>and</code> 邏輯短路：</b>若左子樹傳回 <code>False</code>，Python 會立刻終止，不再計算右子樹。<br/>
+          • <b>夾殺祖先違規：</b>如 <code>10 -&gt; 15 -&gt; 6</code>，傳遞區間 <code>(10, 15)</code> 可精準捕捉 <code>6 &lt; 10</code> 的祖先違規！
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 完整執行步驟與範圍狀態 (Step Visualizer)</div>
+        
+        <div class="stage" id="stage-box"></div>
+
+        <div class="info">
+          <div class="info-row">
+            <span style="color: var(--text-dim);">當前階段 (Phase):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const approaches = [
+      {
+        name: "1. DFS 上下界遞迴 (valid)",
+        time: "O(N)", space: "O(H)",
+        desc: "<b>上下界限制法：</b>為每個節點維護允許的數值區間 <code>(left, right)</code>。往左走時更新上限 <code>right = node.val</code>；往右走時更新下限 <code>left = node.val</code>。若不滿足 <code>left < node.val < right</code> 則傳回 False。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isValidBST</span>(<span class="self">self</span>, root: Optional[TreeNode]) -> bool:`,
+          `        <span class="kw">def</span> <span class="fn">valid</span>(node, left, right):`,
+          `            <span class="kw">if not</span> node:`,
+          `                <span class="kw">return True</span>`,
+          `            <span class="kw">if not</span> (left < node.val < right):`,
+          `                <span class="kw">return False</span>`,
+          `            <span class="kw">return</span> valid(node.left, left, node.val) <span class="kw">and</span> valid(`,
+          `                node.right, node.val, right`,
+          `            )`,
+          `        <span class="kw">return</span> valid(root, float(<span class="str">"-inf"</span>), float(<span class="str">"inf"</span>))`
+        ]
+      },
+      {
+        name: "2. BFS 佇列廣度走訪 (q)",
+        time: "O(N)", space: "O(W)",
+        desc: "<b>BFS 廣度走訪：</b>使用 Queue 佇列 <code>q</code> 儲存 <code>(node, left, right)</code>。逐步彈出佇列頂端元素並檢查區間，若合規定將左、右子節點連同更新後的限制區間放入 <code>q</code>。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isValidBST</span>(<span class="self">self</span>, root: Optional[TreeNode]) -> bool:`,
+          `        <span class="kw">if not</span> root:`,
+          `            <span class="kw">return True</span>`,
+          `        q = deque([(root, float(<span class="str">"-inf"</span>), float(<span class="str">"inf"</span>))])`,
+          `        <span class="kw">while</span> q:`,
+          `            node, left, right = q.popleft()`,
+          `            <span class="kw">if not</span> (left < node.val < right):`,
+          `                <span class="kw">return False</span>`,
+          `            <span class="kw">if</span> node.left:`,
+          `                q.append((node.left, left, node.val))`,
+          `            <span class="kw">if</span> node.right:`,
+          `                q.append((node.right, node.val, right))`,
+          `        <span class="kw">return True</span>`
+        ]
+      },
+      {
+        name: "3. Inorder 陣列走訪 (inorder_result)",
+        time: "O(N)", space: "O(N)",
+        desc: "<b>中序收集與線性檢查：</b>先用遞迴進行中序走訪 (左-中-右)，將所有數值按順序收集進 <code>inorder_result</code> 陣列。走訪完成後，再用一個 <code>for</code> 迴圈檢查陣列中的元素是否滿足<b>嚴格遞增</b>。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isValidBST</span>(<span class="self">self</span>, root: Optional[TreeNode]) -> bool:`,
+          `        inorder_result = []`,
+          `        <span class="kw">def</span> <span class="fn">InOrder</span>(root): <span class="cm"># 左中右</span>`,
+          `            <span class="kw">if not</span> root:`,
+          `                <span class="kw">return</span>`,
+          `            <span class="kw">if</span>(root):`,
+          `                InOrder(root.left)`,
+          `                inorder_result.append(root.val)`,
+          `                InOrder(root.right)`,
+          `        InOrder(root)`,
+          `        <span class="kw">for</span> i <span class="kw">in</span> range(1, len(inorder_result)):`,
+          `            <span class="kw">if</span>(inorder_result[i] <= inorder_result[i-1]):`,
+          `                <span class="kw">return False</span>`,
+          `        <span class="kw">return True</span>`
+        ]
+      }
+    ];
+
+    const presets = [
+      { root: [2, 1, 3], expected: "true", name: "Ex 1: Valid BST [2, 1, 3]" },
+      { root: [5, 1, 4, null, null, 3, 6], expected: "false", name: "Ex 2: Invalid BST [5, 1, 4, null, null, 3, 6]" },
+      { root: [10, 5, 15, null, null, 6, 20], expected: "false", name: "Ex 3: Ancestor Violation [10, 5, 15, null, null, 6, 20]" }
+    ];
+
+    let currentApproach = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function switchApproach(idx) {
+      currentApproach = idx;
+      document.querySelectorAll('.app-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderApproachDetails();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderApproachDetails() {
+      const app = approaches[currentApproach];
+      document.getElementById('time-comp').innerText = app.time;
+      document.getElementById('space-comp').innerText = app.space;
+      document.getElementById('approach-desc').innerHTML = app.desc;
+      document.getElementById('code-box').innerHTML = app.code.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>Root Array = [${p.root.map(v => v === null ? 'null' : v).join(', ')}]</div>
+        <div>Expected Result: <b>${p.expected}</b></div>
+      `;
+    }
+
+    function createTree(arr) {
+      if (!arr || arr.length === 0) return null;
+      let nodes = arr.map((v, i) => v !== null ? { val: v, left: null, right: null, id: i } : null);
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i]) {
+          let leftIdx = 2 * i + 1;
+          let rightIdx = 2 * i + 2;
+          if (leftIdx < nodes.length) nodes[i].left = nodes[leftIdx];
+          if (rightIdx < nodes.length) nodes[i].right = nodes[rightIdx];
+        }
+      }
+      return nodes[0];
+    }
+
+    function renderSingleTreeSVG(root, activeVal = null, validVals = [], invalidVal = null) {
+      if (!root) return `<div style="color:var(--text-dim); font-family:monospace; margin:auto; font-size:0.8rem;">Tree is empty (None)</div>`;
+      let posMap = {};
+      function calcPos(node, depth = 0, leftBound = 0, rightBound = 100) {
+        if (!node) return;
+        let x = (leftBound + rightBound) / 2;
+        let y = depth * 42 + 25;
+        posMap[node.val + "_" + node.id] = { id: node.id, x, y, val: node.val, left: node.left, right: node.right };
+        calcPos(node.left, depth + 1, leftBound, x);
+        calcPos(node.right, depth + 1, x, rightBound);
+      }
+      calcPos(root);
+
+      let edgesHTML = '', nodesHTML = '';
+      Object.keys(posMap).forEach(key => {
+        let p = posMap[key];
+        if (p.left && posMap[p.left.val + "_" + p.left.id]) {
+          let lp = posMap[p.left.val + "_" + p.left.id];
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${lp.x}%" y2="${lp.y}" class="tree-edge" />`;
+        }
+        if (p.right && posMap[p.right.val + "_" + p.right.id]) {
+          let rp = posMap[p.right.val + "_" + p.right.id];
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${rp.x}%" y2="${rp.y}" class="tree-edge" />`;
+        }
+
+        let circleClass = 'tree-node-circle';
+        if (validVals.includes(p.val)) circleClass += ' valid';
+        if (p.val === invalidVal) circleClass += ' invalid';
+        if (p.val === activeVal) circleClass += ' active';
+
+        nodesHTML += `<g><circle cx="${p.x}%" cy="${p.y}" r="13" class="${circleClass}" /><text x="${p.x}%" y="${p.y}" class="tree-text">${p.val}</text></g>`;
+      });
+      return `<svg class="tree-svg">${edgesHTML}${nodesHTML}</svg>`;
+    }
+
+    function renderTreeStage(rRoot, activeVal, validVals, invalidVal, statusDisplayStr, resDisplay, isFalse = false) {
+      let isResultBool = typeof resDisplay === 'boolean';
+      let resClass = (isResultBool && !resDisplay) || isFalse ? 'res-group false-style' : 'res-group';
+
+      return `
+        <div class="tree-container">
+          <div class="tree-pane">
+            <span class="tree-pane-title">Binary Search Tree Validation</span>
+            ${renderSingleTreeSVG(rRoot, activeVal, validVals, invalidVal)}
+          </div>
+        </div>
+        <div class="ds-display">
+          <div class="queue-bar">
+            <span style="color:var(--text-dim); font-weight:bold;">Current State / Data:</span>
+            ${statusDisplayStr}
+          </div>
+          <div class="res-bar">
+            <span style="color:var(--text-dim); font-weight:bold;">Status / Return Value:</span>
+            <span class="${resClass}">${resDisplay}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStackHTML(stackFrames) {
+      if (!stackFrames || stackFrames.length === 0) {
+        return `<div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>`;
+      }
+      return stackFrames.map(f => `
+        <div class="stack-frame ${f.invalid ? 'invalid' : f.returning ? 'returning' : ''}">
+          <div>
+            <span class="stack-frame-title">${f.fnName}</span>
+            <span class="stack-frame-args">(${f.args})</span>
+          </div>
+          <div style="font-size:0.75rem; font-weight:bold; color:${f.invalid ? 'var(--red)' : f.returning ? 'var(--green)' : 'var(--orange)'};">
+            ${f.returning ? `➔ ${f.retVal}` : 'Active'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function fmtBound(v) {
+      if (v === -Infinity || v === '-inf') return '-∞';
+      if (v === Infinity || v === 'inf') return '+∞';
+      return v;
+    }
+
+    function buildSteps() {
+      history = [];
+      const presetData = presets[currentPreset];
+      let rRoot = createTree(presetData.root);
+      let currentStack = [];
+
+      function pushFrame(fnName, args) {
+        currentStack.push({ fnName, args, returning: false, retVal: null, invalid: false });
+      }
+      function popFrame(retVal, isInvalid = false) {
+        if (currentStack.length > 0) {
+          let top = currentStack[currentStack.length - 1];
+          top.returning = true;
+          top.retVal = retVal;
+          top.invalid = isInvalid;
+        }
+      }
+      function finalizePop() {
+        currentStack.pop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 0: DFS 上下界遞迴 (valid)
+      // ----------------------------------------------------
+      if (currentApproach === 0) {
+        pushFrame("isValidBST", `root:${rRoot ? rRoot.val : 'None'}`);
+
+        history.push({
+          line: 1, phase: "Line 1-2: 進入 isValidBST",
+          desc: `開始驗證樹 root = ${rRoot ? rRoot.val : 'None'}`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], null, `-`, `Validating...`)
+        });
+
+        let validVals = [];
+
+        function valid(node, left, right) {
+          let leftStr = fmtBound(left), rightStr = fmtBound(right);
+          pushFrame("valid", `node:${node ? node.val : 'None'}, ${leftStr}, ${rightStr}`);
+
+          history.push({
+            line: 2, phase: `Line 3: 進入 valid(node=${node ? node.val : 'None'})`,
+            desc: `檢查區域範圍: ${leftStr} < node.val < ${rightStr}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node ? node.val : null, validVals, null, `<span class="queue-item">Range: (${leftStr}, ${rightStr})</span>`, `Validating...`)
+          });
+
+          if (!node) {
+            history.push({
+              line: 3, phase: "Line 4: if not node 成立",
+              desc: "節點為 None (空樹枝)，傳回 True",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, null, validVals, null, `<span class="queue-item">Range: (${leftStr}, ${rightStr})</span>`, `True`)
+            });
+            popFrame("True");
+            finalizePop();
+            return true;
+          }
+
+          let isValid = (node.val > left && node.val < right);
+          history.push({
+            line: 5, phase: `Line 6: 檢查 ${leftStr} < ${node.val} < ${rightStr}`,
+            desc: isValid ? `數值 ${node.val} 符合區間範圍！` : `❌ 數值 ${node.val} 違規！不在範圍 (${leftStr}, ${rightStr}) 內！`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, validVals, isValid ? null : node.val, `<span class="queue-item" style="border-color:${isValid?'var(--green)':'var(--red)'}">${leftStr} < ${node.val} < ${rightStr}</span>`, isValid ? `Validating...` : `False`, !isValid)
+          });
+
+          if (!isValid) {
+            popFrame("False", true);
+            finalizePop();
+            return false;
+          }
+
+          validVals.push(node.val);
+
+          history.push({
+            line: 7, phase: "Line 8: 遞迴左子樹 valid(node.left, left, node.val)",
+            desc: `限制左子樹上限 right = ${node.val}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, validVals, null, `<span class="queue-item">Left Range: (${leftStr}, ${node.val})</span>`, `Validating...`)
+          });
+
+          let leftOk = valid(node.left, left, node.val);
+          if (!leftOk) {
+            popFrame("False", true);
+            finalizePop();
+            return false;
+          }
+
+          history.push({
+            line: 8, phase: "Line 9: 遞迴右子樹 valid(node.right, node.val, right)",
+            desc: `限制右子樹下限 left = ${node.val}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, validVals, null, `<span class="queue-item">Right Range: (${node.val}, ${rightStr})</span>`, `Validating...`)
+          });
+
+          let rightOk = valid(node.right, node.val, right);
+          if (!rightOk) {
+            popFrame("False", true);
+            finalizePop();
+            return false;
+          }
+
+          popFrame("True");
+          history.push({
+            line: 7, phase: "Line 8-10: 左右子樹均為合法 BST",
+            desc: `以 ${node.val} 為根的子樹符合 BST，傳回 True`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, validVals, null, `<span class="queue-item">Node(${node.val}) OK</span>`, `True`)
+          });
+          finalizePop();
+          return true;
+        }
+
+        history.push({
+          line: 10, phase: "Line 11: 呼叫 valid(root, -inf, inf)",
+          desc: "啟動遞迴，初始範圍為 (-∞, +∞)",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, rRoot ? rRoot.val : null, [], null, `<span class="queue-item">Range: (-∞, +∞)</span>`, `Validating...`)
+        });
+
+        let finalRes = valid(rRoot, -Infinity, Infinity);
+
+        popFrame(finalRes ? "True" : "False", !finalRes);
+        history.push({
+          line: 10, phase: "完成驗證",
+          desc: finalRes ? "整棵樹完全符合 BST 規則，傳回 True！" : "❌ 檢測到違反 BST 規則的節點，傳回 False！",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, validVals, finalRes ? null : history[history.length-1]?.invalidVal, `<span style="color:${finalRes?'var(--green)':'var(--red)'}">${finalRes?'Valid BST':'Invalid BST'}</span>`, finalRes ? `True` : `False`, !finalRes)
+        });
+        finalizePop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 1: BFS Queue (q)
+      // ----------------------------------------------------
+      else if (currentApproach === 1) {
+        pushFrame("isValidBST", `root:${rRoot ? rRoot.val : 'None'}`);
+
+        history.push({
+          line: 1, phase: "Line 1-2: 進入 isValidBST",
+          desc: `開始 BFS 驗證 root = ${rRoot ? rRoot.val : 'None'}`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], null, `-`, `Validating...`)
+        });
+
+        if (!rRoot) {
+          history.push({
+            line: 2, phase: "Line 3-4: if not root",
+            desc: "root 為空，傳回 True",
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, [], null, `Empty`, `True`)
+          });
+          popFrame("True");
+          finalizePop();
+          return;
+        }
+
+        let q = [{ node: rRoot, left: -Infinity, right: Infinity }];
+        let validVals = [];
+
+        history.push({
+          line: 4, phase: "Line 5: 初始化 q 佇列",
+          desc: `將 (root[${rRoot.val}], -inf, inf) 推入 q`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], null, q.map(item => `<span class="queue-item">Node(${item.node.val}):(${fmtBound(item.left)},${fmtBound(item.right)})</span>`).join(''), `Validating...`)
+        });
+
+        let isInvalid = false;
+        while (q.length > 0) {
+          history.push({
+            line: 6, phase: "Line 7: while q 條件檢查",
+            desc: `q 中還有 ${q.length} 個待檢查節點`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, validVals, null, q.map(item => `<span class="queue-item">Node(${item.node.val})</span>`).join(''), `Validating...`)
+          });
+
+          let curr = q.shift();
+          let node = curr.node, left = curr.left, right = curr.right;
+          let leftStr = fmtBound(left), rightStr = fmtBound(right);
+
+          history.push({
+            line: 7, phase: "Line 8: node, left, right = q.popleft()",
+            desc: `取出隊頭 Node(${node.val})，限制範圍 (${leftStr}, ${rightStr})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, validVals, null, `<span class="queue-item">Node(${node.val}): (${leftStr}, ${rightStr})</span>`, `Validating...`)
+          });
+
+          let isValid = (node.val > left && node.val < right);
+          history.push({
+            line: 8, phase: `Line 9: 檢查 if not (${leftStr} < ${node.val} < ${rightStr})`,
+            desc: isValid ? `數值 ${node.val} 在合法範圍內！` : `❌ 數值 ${node.val} 違規！不在範圍 (${leftStr}, ${rightStr}) 內！`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, validVals, isValid ? null : node.val, `<span class="queue-item" style="border-color:${isValid?'var(--green)':'var(--red)'}">${leftStr} < ${node.val} < ${rightStr}</span>`, isValid ? `Validating...` : `False`, !isValid)
+          });
+
+          if (!isValid) {
+            isInvalid = true;
+            break;
+          }
+
+          validVals.push(node.val);
+
+          if (node.left) {
+            q.push({ node: node.left, left: left, right: node.val });
+            history.push({
+              line: 10, phase: "Line 11-12: q.append((node.left, left, node.val))",
+              desc: `將 (Node(${node.left.val}), ${leftStr}, ${node.val}) 加入 q`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, node.val, validVals, null, q.map(item => `<span class="queue-item">Node(${item.node.val}):(${fmtBound(item.left)},${fmtBound(item.right)})</span>`).join(''), `Validating...`)
+            });
+          }
+
+          if (node.right) {
+            q.push({ node: node.right, left: node.val, right: right });
+            history.push({
+              line: 12, phase: "Line 13-14: q.append((node.right, node.val, right))",
+              desc: `將 (Node(${node.right.val}), ${node.val}, ${rightStr}) 加入 q`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, node.val, validVals, null, q.map(item => `<span class="queue-item">Node(${item.node.val}):(${fmtBound(item.left)},${fmtBound(item.right)})</span>`).join(''), `Validating...`)
+            });
+          }
+        }
+
+        popFrame(isInvalid ? "False" : "True", isInvalid);
+        history.push({
+          line: 15, phase: "Line 16: return 結果",
+          desc: isInvalid ? "❌ 發現違反 BST 條件，傳回 False！" : "q 已清空，所有節點皆合法，傳回 True！",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, validVals, isInvalid ? history[history.length-1]?.invalidVal : null, `<span style="color:${isInvalid?'var(--red)':'var(--green)'}">${isInvalid?'Invalid BST':'Valid BST'}</span>`, isInvalid ? `False` : `True`, isInvalid)
+        });
+        finalizePop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 2: Inorder 陣列走訪 (inorder_result)
+      // ----------------------------------------------------
+      else if (currentApproach === 2) {
+        pushFrame("isValidBST", `root:${rRoot ? rRoot.val : 'None'}`);
+        let inorder_result = [];
+        let visitedNodes = [];
+
+        history.push({
+          line: 2, phase: "Line 3: 初始化 inorder_result = []",
+          desc: "建立空陣列用來存放中序走訪收集到的節點值",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], null, `inorder_result = []`, `Validating...`)
+        });
+
+        function InOrder(node) {
+          pushFrame("InOrder", `root:${node ? node.val : 'None'}`);
+
+          history.push({
+            line: 3, phase: `Line 4: 進入 InOrder(root=${node ? node.val : 'None'})`,
+            desc: `處理節點 ${node ? node.val : 'None'}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node ? node.val : null, visitedNodes, null, `inorder_result = [${inorder_result.join(', ')}]`, `Validating...`)
+          });
+
+          if (!node) {
+            history.push({
+              line: 4, phase: "Line 5: if not root",
+              desc: "節點為 None，直接 return 結束此層遞迴",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, null, visitedNodes, null, `inorder_result = [${inorder_result.join(', ')}]`, `Validating...`)
+            });
+            popFrame("None");
+            finalizePop();
+            return;
+          }
+
+          history.push({
+            line: 7, phase: "Line 8: 遞迴左子樹 InOrder(root.left)",
+            desc: `前往左子樹 root.left (${node.left ? node.left.val : 'None'})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, visitedNodes, null, `InOrder Left`, `Validating...`)
+          });
+
+          InOrder(node.left);
+
+          inorder_result.push(node.val);
+          visitedNodes.push(node.val);
+
+          history.push({
+            line: 8, phase: `Line 9: inorder_result.append(${node.val})`,
+            desc: `將當前節點值 ${node.val} 加入 inorder_result 陣列`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, visitedNodes, null, `<span class="queue-item">inorder_result = [${inorder_result.join(', ')}]</span>`, `Validating...`)
+          });
+
+          history.push({
+            line: 9, phase: "Line 10: 遞迴右子樹 InOrder(root.right)",
+            desc: `前往右子樹 root.right (${node.right ? node.right.val : 'None'})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, visitedNodes, null, `InOrder Right`, `Validating...`)
+          });
+
+          InOrder(node.right);
+
+          popFrame("Return");
+          finalizePop();
+        }
+
+        history.push({
+          line: 10, phase: "Line 11: 呼叫 InOrder(root)",
+          desc: "開始進行全樹的中序走訪收集",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, rRoot ? rRoot.val : null, [], null, `inorder_result = []`, `Validating...`)
+        });
+
+        InOrder(rRoot);
+
+        history.push({
+          line: 11, phase: "Line 12: 中序走訪完成",
+          desc: `收集完成！最終陣列 inorder_result = [${inorder_result.join(', ')}]，準備進行遞增檢查`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, visitedNodes, null, `<span class="queue-item">Result: [${inorder_result.join(', ')}]</span>`, `Validating...`)
+        });
+
+        let isInvalid = false;
+        let failIdx = -1;
+
+        for (let i = 1; i < inorder_result.length; i++) {
+          let curr = inorder_result[i];
+          let prev = inorder_result[i - 1];
+          let isValid = curr > prev;
+
+          history.push({
+            line: 12, phase: `Line 13: 檢查 index i=${i} (${curr} <= ${prev})`,
+            desc: isValid ? `比對 inorder_result[${i}](${curr}) > inorder_result[${i-1}](${prev}) ➔ 符合遞增` : `❌ 發現違規！inorder_result[${i}](${curr}) <= inorder_result[${i-1}](${prev})！`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, curr, visitedNodes, isValid ? null : curr, `<span class="queue-item" style="border-color:${isValid?'var(--green)':'var(--red)'}">i=${i}: ${curr} vs ${prev}</span>`, isValid ? `Validating...` : `False`, !isValid)
+          });
+
+          if (!isValid) {
+            isInvalid = true;
+            failIdx = i;
+            break;
+          }
+        }
+
+        popFrame(isInvalid ? "False" : "True", isInvalid);
+        history.push({
+          line: 15, phase: "Line 16: return 結果",
+          desc: isInvalid ? `❌ 陣列非嚴格遞增，傳回 False！` : "陣列完全符合嚴格遞增，傳回 True！",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, visitedNodes, isInvalid ? inorder_result[failIdx] : null, `<span style="color:${isInvalid?'var(--red)':'var(--green)'}">${isInvalid?'Invalid Order':'Strictly Increasing'}</span>`, isInvalid ? `False` : `True`, isInvalid)
+        });
+        finalizePop();
+      }
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = renderStackHTML(stackData);
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      const stageBox = document.getElementById('stage-box');
+      stageBox.innerHTML = state.html || `<div style="font-size:0.85rem; font-family:monospace; color:#fff;">${state.desc}</div>`;
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderApproachDetails();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

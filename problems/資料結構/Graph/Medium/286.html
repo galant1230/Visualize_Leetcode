@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>286. Walls and Gates - Multi-source BFS Lab</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;700&display=swap');
+        :root { --vs-bg: #1E1E1E; --vs-sidebar: #252526; --vs-border: #3C3C3C; }
+        body { background-color: var(--vs-bg); color: #D4D4D4; font-family: 'Inter', sans-serif; margin: 0; height: 100vh; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        .kw { color: #C586C0; } .fn { color: #DCDCAA; } .st { color: #CE9178; } .cn { color: #569CD6; } .co { color: #6A9955; }
+        .active-line { background-color: #37373D; border-left: 3px solid #007ACC; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #454545; border-radius: 10px; }
+        .queue-item { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .cell-pop { animation: pop 0.4s ease-out; }
+        @keyframes pop { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const INF = 2147483647;
+
+        const GRID_INIT = [
+            [INF, -1,  0,  INF],
+            [INF, INF, INF, -1],
+            [INF, -1,  INF, -1],
+            [ 0,  -1,  INF, INF]
+        ];
+
+        const CODE_SNIPPET = [
+            { t: "class Solution:", i: 0 },
+            { t: "    def wallsAndGates(self, rooms: List[List[int]]):", i: 1 },
+            { t: "        R, C = len(rooms), len(rooms[0])", i: 2 },
+            { t: "        q = collections.deque()", i: 2 },
+            { t: "        for r in range(R):", i: 2 },
+            { t: "            for c in range(C):", i: 3 },
+            { t: "                if rooms[r][c] == 0:", i: 4 },
+            { t: "                    q.append((r, c))", i: 5 },
+            { t: "        while q:", i: 2 },
+            { t: "            r, c = q.popleft()", i: 3 },
+            { t: "            for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:", i: 3 },
+            { t: "                nr, nc = r+dr, c+dc", i: 4 },
+            { t: "                if 0<=nr<R and 0<=nc<C and rooms[nr][nc]==INF:", i: 4 },
+            { t: "                    rooms[nr][nc] = rooms[r][c] + 1", i: 5 },
+            { t: "                    q.append((nr, nc))", i: 5 }
+        ];
+
+        const highlight = (text) => {
+            return text.replace(/\b(class|def|if|not|return|for|in|while|range|self)\b/g, '<span class="kw">$1</span>')
+                       .replace(/\b(wallsAndGates|len|append|popleft)\b/g, '<span class="fn">$1</span>')
+                       .replace(/'[^']*'|#.*$/g, (m) => m.startsWith('#') ? `<span class="co">${m}</span>` : `<span class="st">${m}</span>`)
+                       .replace(/\b(rooms|R|C|q|r|c|dr|dc|nr|nc|INF)\b/g, '<span class="cn">$1</span>');
+        };
+
+        const App = () => {
+            const [cur, setCur] = useState(0);
+            const [playing, setPlaying] = useState(false);
+            const [steps, setSteps] = useState([]);
+            const timer = useRef(null);
+
+            const generateSteps = (gridInput) => {
+                const history = [];
+                const rooms = gridInput.map(row => [...row]);
+                const R = rooms.length, C = rooms[0].length;
+                let q = [];
+
+                const log = (line, r, c, msg, qSnap) => {
+                    history.push({ line, r, c, msg, qSnap: [...qSnap], rooms: rooms.map(row => [...row]) });
+                };
+
+                log(2, null, null, "初始化地圖", q);
+                for (let r = 0; r < R; r++) {
+                    for (let c = 0; c < C; c++) {
+                        if (rooms[r][c] === 0) {
+                            q.push([r, c]);
+                            log(7, r, c, `發現門 (${r},${c})，加入 Queue`, q);
+                        }
+                    }
+                }
+
+                while (q.length > 0) {
+                    const [r, c] = q.shift();
+                    log(9, r, c, `取出隊首 (${r},${c}) 進行擴散`, q);
+
+                    for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+                        const nr = r + dr, nc = c + dc;
+                        if (nr >= 0 && nr < R && nc >= 0 && nc < C && rooms[nr][nc] === INF) {
+                            rooms[nr][nc] = rooms[r][c] + 1;
+                            q.push([nr, nc]);
+                            log(14, nr, nc, `更新 (${nr},${nc}) 距離為 ${rooms[nr][nc]}`, q);
+                        }
+                    }
+                }
+                log(8, null, null, "所有房間已填滿，結束", q);
+                return history;
+            };
+
+            useEffect(() => { setSteps(generateSteps(GRID_INIT)); setCur(0); }, []);
+            useEffect(() => {
+                if (playing) { timer.current = setInterval(() => { setCur(v => v < steps.length-1 ? v+1 : (setPlaying(false), v)); }, 400); }
+                else clearInterval(timer.current); return () => clearInterval(timer.current);
+            }, [playing, steps]);
+
+            const s = steps[cur] || { rooms: GRID_INIT, line: 0, r: null, c: null, qSnap: [], msg: "" };
+
+            return (
+                <div className="flex h-screen w-screen overflow-hidden text-sm">
+                    {/* LEFT PANEL: Problem & Logic */}
+                    <div className="w-1/4 bg-[#252526] border-r border-[#3C3C3C] flex flex-col p-6 overflow-y-auto custom-scroll">
+                        <h2 className="text-xl font-bold text-white mb-4 font-mono">286. Walls and Gates</h2>
+                        <div className="space-y-6">
+                            <section>
+                                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Description</h3>
+                                <div className="text-[12px] text-gray-400 bg-black/20 p-3 rounded border border-white/5 leading-relaxed">
+                                    填寫每個 <span className="text-blue-300">INF</span> 房間到最近門的距離。
+                                    <ul className="mt-2 space-y-1">
+                                        <li>• <b className="text-green-500">0</b>: Gate</li>
+                                        <li>• <b className="text-red-500">-1</b>: Wall</li>
+                                        <li>• <b className="text-gray-400">INF</b>: Empty Room</li>
+                                    </ul>
+                                </div>
+                            </section>
+                            <section>
+                                <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2">Multi-source BFS 思路</h3>
+                                <p className="text-[12px] text-gray-400 italic border-l-2 border-blue-500 pl-3">
+                                    與其從每個房間找門，不如<b>讓所有門同時發動 BFS</b>。第一波到達房間的步數即為最短距離。
+                                </p>
+                            </section>
+                            <section>
+                                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Example 1</h3>
+                                <div className="grid grid-cols-4 gap-1 opacity-60 scale-90 origin-top-left">
+                                    {GRID_INIT.flat().map((v, i) => (
+                                        <div key={i} className={`h-8 w-8 flex items-center justify-center border border-white/10 rounded-sm text-[10px] ${v===-1?'bg-red-900/20':v===0?'bg-green-900/20':'bg-white/5'}`}>
+                                            {v===INF?'∞':v}
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                            <div className="mt-auto flex gap-2">
+                                <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-[10px] font-mono border border-blue-500/20">Time: O(MN)</span>
+                                <span className="px-2 py-1 bg-green-500/10 text-green-400 rounded text-[10px] font-mono border border-green-500/20">Space: O(MN)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* MIDDLE PANEL: Visualization */}
+                    <div className="flex-1 flex flex-col p-6 bg-[#1E1E1E] gap-4">
+                        <div className="flex-1 bg-[#252526] rounded-md border border-[#3C3C3C] flex flex-col shadow-2xl overflow-hidden relative">
+                            <div className="p-4 border-b border-white/5 bg-black/10 flex justify-between items-center font-mono">
+                                <span className="text-[10px] text-blue-500 font-bold uppercase tracking-widest">Grid Visualization</span>
+                                <span className="text-gray-400 text-xs italic">{s.msg}</span>
+                            </div>
+                            <div className="flex-1 flex items-center justify-center bg-[#1A1A1A]">
+                                <div className="grid gap-2 p-6 bg-[#252526] rounded-xl border border-white/5" style={{ gridTemplateColumns: `repeat(4, 60px)` }}>
+                                    {s.rooms.map((row, r) => row.map((cell, c) => {
+                                        const isTarget = s.r === r && s.c === c;
+                                        let bg = 'bg-transparent';
+                                        let color = 'text-gray-500';
+                                        if (cell === -1) { bg = 'bg-red-500/10'; color = 'text-red-500'; }
+                                        else if (cell === 0) { bg = 'bg-green-500/20'; color = 'text-green-500 font-bold'; }
+                                        else if (cell !== INF) { bg = 'bg-blue-500/10'; color = 'text-blue-400 font-bold'; }
+                                        
+                                        return (
+                                            <div key={`${r}-${c}`} className={`h-[60px] w-[60px] rounded-lg border transition-all duration-300 flex flex-col items-center justify-center relative ${bg} ${isTarget ? 'border-orange-500 scale-110 z-10 shadow-2xl bg-orange-500/20' : 'border-white/5'}`}>
+                                                <span className={`${color} text-sm`}>{cell === INF ? 'INF' : cell}</span>
+                                                <span className="text-[8px] text-gray-700 absolute bottom-1 right-1">({r},{c})</span>
+                                                {isTarget && <div className="absolute inset-0 border-2 border-orange-500 rounded-lg animate-pulse"></div>}
+                                            </div>
+                                        );
+                                    }))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Controls */}
+                        <div className="h-20 bg-[#252526] rounded-md border border-[#3C3C3C] flex items-center px-10 gap-8 shadow-xl">
+                            <div className="flex gap-4">
+                                <button onClick={() => setCur(Math.max(0, cur-1))} className="text-gray-500 hover:text-white text-xl">⏮</button>
+                                <button onClick={() => setPlaying(!playing)} className={`px-8 py-2 rounded-full font-bold transition-all ${playing?'bg-red-500':'bg-blue-600'}`}>{playing?'PAUSE':'PLAY'}</button>
+                                <button onClick={() => setCur(Math.min(steps.length-1, cur+1))} className="text-gray-500 hover:text-white text-xl">⏭</button>
+                            </div>
+                            <div className="flex-1 h-1.5 bg-black rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 transition-all" style={{width:`${((cur+1)/steps.length)*100}%`}}></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RIGHT PANEL: Code & Dynamic Queue */}
+                    <div className="w-[30%] bg-[#1E1E1E] border-l border-[#3C3C3C] flex flex-col">
+                        <div className="h-10 bg-[#252526] border-b border-[#3C3C3C] flex items-center px-4 font-mono text-[10px] text-gray-500">SOURCE: Solution.py</div>
+                        <div className="flex-1 overflow-y-auto custom-scroll p-4">
+                            {CODE_SNIPPET.map((line, i) => (
+                                <div key={i} className={`flex min-h-[1.4rem] items-center ${s.line === i ? 'active-line' : ''}`}>
+                                    <span className="w-8 text-right pr-4 text-gray-800 text-[10px] font-mono">{i+1}</span>
+                                    <pre className="text-[11.5px] code-font" style={{ marginLeft: `${line.i * 1.5}rem` }} dangerouslySetInnerHTML={{ __html: highlight(line.t) }} />
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Dynamic Queue Visualization */}
+                        <div className="h-[45%] bg-[#252526] border-t border-[#3C3C3C] p-6 flex flex-col">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Queue Status</h3>
+                                <span className="text-[9px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded font-mono">Size: {s.qSnap.length}</span>
+                            </div>
+                            
+                            <div className="flex-1 overflow-x-auto custom-scroll flex items-center gap-2 pb-4">
+                                {s.qSnap.length === 0 ? (
+                                    <div className="w-full text-center text-gray-700 font-mono text-xs italic">Queue is empty</div>
+                                ) : (
+                                    s.qSnap.map((item, idx) => (
+                                        <div key={`${cur}-${idx}`} className="queue-item flex-shrink-0 w-16 h-16 bg-[#1E1E1E] border border-blue-500/30 rounded-lg flex flex-col items-center justify-center shadow-lg animate-pop">
+                                            <span className="text-[10px] text-gray-500 font-mono">({item[0]},{item[1]})</span>
+                                            <div className="w-4 h-0.5 bg-blue-500/50 mt-1"></div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                            
+                            <div className="mt-4 space-y-2 border-t border-white/5 pt-4">
+                                <div className="flex justify-between text-[11px] font-mono">
+                                    <span className="text-gray-500">Target Node:</span>
+                                    <span className="text-orange-400">{s.r !== null ? `(${s.r}, ${s.c})` : 'None'}</span>
+                                </div>
+                                <div className="p-2 bg-black/30 rounded text-[10px] text-gray-400 leading-tight">
+                                    <span className="text-blue-500 font-bold mr-2">LOG:</span>{s.msg}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

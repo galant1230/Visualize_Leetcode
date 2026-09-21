@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>200. Number of Islands - Step-by-Step DFS Visualization</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --green: #50fa7b;
+      --cyan: #8be9fd;
+      --water: #1e3a8a;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+
+    /* 版面布局：左欄寬 680px，右欄自動填滿 */
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 680px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    /* Python 程式碼區塊 (寬度 680px 顯示優化) */
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.88rem; overflow-x: auto; max-height: 460px; }
+    .code-line { padding: 3px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    /* Call Stack 區塊 */
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; min-height: 140px; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 6px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 6px 10px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* 控制與動態狀態 */
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; }
+
+    /* 2D Board Cell 網格設計 */
+    .tree-wrapper { background: #080808; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; height: 380px; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+    
+    .board-grid { display: grid; gap: 6px; margin: auto; }
+    .board-cell { width: 52px; height: 52px; border: 2px solid var(--border); background: #1e1e1e; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; font-size: 1.1rem; font-weight: bold; color: var(--text); position: relative; transition: all 0.2s; }
+    .board-cell .pos-tag { font-size: 0.55rem; color: var(--text-dim); position: absolute; top: 2px; left: 4px; font-weight: normal; }
+    .board-cell.land { border-color: #854d0e; background: #3f2c00; color: #fde047; }
+    .board-cell.water { border-color: #1e3a8a; background: #0f172a; color: #38bdf8; }
+    .board-cell.sunk { border-color: #334155; background: #1e293b; color: #64748b; opacity: 0.7; }
+    .board-cell.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.4); color: #fff; transform: scale(1.08); box-shadow: 0 0 10px var(--orange); z-index: 2; }
+    .board-cell.pruned { border-color: var(--hard); background: rgba(255, 45, 85, 0.25); color: var(--hard); transform: scale(0.95); }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 68px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">200. Number of Islands</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: 1 Island (4x5 Grid)</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: 3 Islands (4x5 Grid)</button>
+    <button class="tab-btn" onclick="setPreset(2)">Ex 3: Multi-Islands (3x3 Grid)</button>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄 (680px)：放大 Python 程式碼、題目描述、Call Stack -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個 <code>m x n</code> 的二維網格 <code>grid</code>，代表陸地 (<code>'1'</code>) 和水域 (<code>'0'</code>) 的地圖。請計算並傳回網格中**島嶼的數量**。<br>
+          島嶼被水域包圍，由相連（水平或垂直）的陸地單元格連接而成。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val">O(M * N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val">O(M * N)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (DFS 遞迴歷程)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄：核心三要素、2D Board 視覺化、狀態追蹤 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="idea-box">
+          <div class="idea-title">💡 網格浸水法 (Sinking Island / DFS)</div>
+          <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+            <li><b>Scan Grid</b>：遍歷網格，當發現 <code>grid[r][c] == '1'</code> 時，島嶼數 +1。</li>
+            <li><b>DFS Flood Fill</b>：將該陸地浸水（改為 <code>'0'</code>），向上下左右延伸把整座相連島嶼「淹沒」。</li>
+            <li><b>Base Cases</b>：越界或遇到水域 <code>grid[r][c] == '0'</code> 時停止延伸 (剪枝)。</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 2D Grid & 島嶼淹沒歷程</span>
+          <span style="font-size:0.7rem; color:var(--text-dim);">🟡 當前 | 🟨 陸地('1') | 🟦 水域('0') | ⬛ 淹沒('0')</span>
+        </div>
+
+        <div class="tree-wrapper">
+          <div class="board-grid" id="board-grid"></div>
+        </div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Grid (r, c): </span>
+              <span id="pos-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Islands Count: </span>
+              <span id="count-display" style="font-weight: bold; font-size: 1.1rem; color: var(--green);">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current State / Result:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Scanning...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">步驟說明 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeLines = [
+      `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">numIslands</span>(<span class="self">self</span>, grid: List[List[str]]) -> int:`,
+      `        <span class="kw">if not</span> grid: <span class="kw">return</span> <span class="cls">0</span>`,
+      `        R, C = len(grid), len(grid[0])`,
+      `        islands = <span class="cls">0</span>`,
+      `        <span class="kw">def</span> <span class="fn">dfs</span>(r, c):`,
+      `            <span class="kw">if</span> r < <span class="cls">0</span> <span class="kw">or</span> r >= R <span class="kw">or</span> c < <span class="cls">0</span> <span class="kw">or</span> c >= C <span class="kw">or</span> grid[r][c] == <span class="cm">'0'</span>:`,
+      `                <span class="kw">return</span>                  <span class="cm"># 1. 越界或是水域 '0'（剪枝）</span>`,
+      `            grid[r][c] = <span class="cm">'0'</span>            <span class="cm"># 2. 淹沒陸地（標記為 '0'）</span>`,
+      `            dfs(r + <span class="cls">1</span>, c)               <span class="cm"># 下</span>`,
+      `            dfs(r - <span class="cls">1</span>, c)               <span class="cm"># 上</span>`,
+      `            dfs(r, c + <span class="cls">1</span>)               <span class="cm"># 右</span>`,
+      `            dfs(r, c - <span class="cls">1</span>)               <span class="cm"># 左</span>`,
+      `        <span class="kw">for</span> r <span class="kw">in</span> range(R):`,
+      `            <span class="kw">for</span> c <span class="kw">in</span> range(C):`,
+      `                <span class="kw">if</span> grid[r][c] == <span class="cm">'1'</span>:    <span class="cm"># 發現陸地</span>`,
+      `                    islands += <span class="cls">1</span>`,
+      `                    dfs(r, c)          <span class="cm"># 將相連島嶼完全淹沒</span>`,
+      `        <span class="kw">return</span> islands`
+    ];
+
+    const presets = [
+      {
+        title: "Example 1 (Single Big Island)",
+        grid: [
+          ["1","1","1","1","0"],
+          ["1","1","0","1","0"],
+          ["1","1","0","0","0"],
+          ["0","0","0","0","0"]
+        ],
+        output: 1,
+        explanation: "All '1's form a single connected component. Output: 1"
+      },
+      {
+        title: "Example 2 (3 Separate Islands)",
+        grid: [
+          ["1","1","0","0","0"],
+          ["1","1","0","0","0"],
+          ["0","0","1","0","0"],
+          ["0","0","0","1","1"]
+        ],
+        output: 3,
+        explanation: "Top-left, middle, and bottom-right form 3 distinct islands. Output: 3"
+      },
+      {
+        title: "Example 3 (Small Grid)",
+        grid: [
+          ["1","0","1"],
+          ["0","1","0"],
+          ["1","0","1"]
+        ],
+        output: 5,
+        explanation: "5 isolated land cells. Output: 5"
+      }
+    ];
+
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Grid Size:</b> ${p.grid.length}x${p.grid[0].length} | <b>Expected Output:</b> ${p.output}</div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codeLines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    // 建構極微步驟（Micro-steps）錄製歷程
+    function buildSteps() {
+      history = [];
+      const p = presets[currentPreset];
+      const grid = JSON.parse(JSON.stringify(p.grid));
+      const initialGrid = JSON.parse(JSON.stringify(p.grid));
+      const R = grid.length;
+      const C = grid[0].length;
+
+      let islands = 0;
+      let currentStack = [];
+      // cellStatus: 'land'('1'), 'water'('0'), 'sunk'('0'-sunk)
+
+      function pushFrame(r, c) { currentStack.push({ fnName: "dfs", args: `r=${r}, c=${c}` }); }
+      function popFrame() { currentStack.pop(); }
+
+      function getGridSnapshot(curGrid, activePos, prunedPos) {
+        let snap = [];
+        for (let r = 0; r < R; r++) {
+          snap[r] = [];
+          for (let c = 0; c < C; c++) {
+            if (activePos && activePos.r === r && activePos.c === c) {
+              snap[r][c] = "active";
+            } else if (prunedPos && prunedPos.r === r && prunedPos.c === c) {
+              snap[r][c] = "pruned";
+            } else if (curGrid[r][c] === '0') {
+              snap[r][c] = initialGrid[r][c] === '1' ? "sunk" : "water";
+            } else {
+              snap[r][c] = "land";
+            }
+          }
+        }
+        return snap;
+      }
+
+      history.push({
+        line: 3, phase: "【初始化】",
+        desc: `初始化網格 (${R}x${C})，島嶼計數器 islands = 0`,
+        stack: [], pos: null, islands: 0,
+        gridState: getGridSnapshot(grid, null, null)
+      });
+
+      const dirNames = ["下 (r+1,c)", "上 (r-1,c)", "右 (r,c+1)", "左 (r,c-1)"];
+      const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+      function dfs(r, c) {
+        pushFrame(r, c);
+
+        history.push({
+          line: 5, phase: "⏬ 【Call DFS】進入遞迴",
+          desc: `呼叫 dfs(r=${r}, c=${c})，檢查此位置是否為可探測之陸地`,
+          stack: JSON.parse(JSON.stringify(currentStack)), pos: {r, c}, islands,
+          gridState: getGridSnapshot(grid, {r, c}, null)
+        });
+
+        // 檢查 Base Case (越界或是水域 '0')
+        if (r < 0 || r >= R || c < 0 || c >= C || grid[r][c] === '0') {
+          let reason = (r < 0 || r >= R || c < 0 || c >= C) 
+            ? "越界 (Out of Bounds)" 
+            : (initialGrid[r][c] === '1' ? "已淹沒陸地 ('0')" : "水域 ('0')");
+
+          history.push({
+            line: 7, phase: "💥 【Base Case / Pruned】止步",
+            desc: `(r=${r}, c=${c}) 原因：${reason}。返回上一層。`,
+            stack: JSON.parse(JSON.stringify(currentStack)), pos: {r, c}, islands,
+            gridState: getGridSnapshot(grid, null, (r >= 0 && r < R && c >= 0 && c < C) ? {r, c} : null)
+          });
+          popFrame();
+          return;
+        }
+
+        // Line 8: 淹沒陸地
+        grid[r][c] = '0';
+        history.push({
+          line: 8, phase: "🌊 【Sinking Land】將陸地淹沒",
+          desc: `(r=${r}, c=${c}) 標記為 '0' (浸水/已走訪)，防止重複計算`,
+          stack: JSON.parse(JSON.stringify(currentStack)), pos: {r, c}, islands,
+          gridState: getGridSnapshot(grid, {r, c}, null)
+        });
+
+        // 4個方向遞迴
+        for (let i = 0; i < 4; i++) {
+          let [dr, dc] = dirs[i];
+          let nr = r + dr, nc = c + dc;
+
+          history.push({
+            line: 9 + i, phase: `🧭 【Explore Direction】向${dirNames[i]}延伸`,
+            desc: `嘗試從 (r=${r}, c=${c}) 延伸探測 (${nr}, ${nc})`,
+            stack: JSON.parse(JSON.stringify(currentStack)), pos: {r, c}, islands,
+            gridState: getGridSnapshot(grid, {r, c}, null)
+          });
+
+          dfs(nr, nc);
+        }
+
+        history.push({
+          line: 12, phase: "↩️ 【Return DFS】方向探測結束",
+          desc: `(r=${r}, c=${c}) 4 個方向皆探測完畢，返回上一層`,
+          stack: JSON.parse(JSON.stringify(currentStack)), pos: {r, c}, islands,
+          gridState: getGridSnapshot(grid, {r, c}, null)
+        });
+
+        popFrame();
+      }
+
+      // 掃描 Grid 尋找島嶼起點
+      for (let r = 0; r < R; r++) {
+        for (let c = 0; c < C; c++) {
+          history.push({
+            line: 14, phase: `🔍 【Scan Grid】掃描 (${r}, ${c})`,
+            desc: `檢查格 (${r}, ${c})，當前值為 '${grid[r][c]}'`,
+            stack: [], pos: {r, c}, islands,
+            gridState: getGridSnapshot(grid, {r, c}, null)
+          });
+
+          if (grid[r][c] === '1') {
+            islands++;
+            history.push({
+              line: 16, phase: "🏝️ 【New Island Found!】發現新島嶼",
+              desc: `在 (${r}, ${c}) 發現未探索陸地 '1'！島嶼計數 islands 增至 ${islands}`,
+              stack: [], pos: {r, c}, islands,
+              gridState: getGridSnapshot(grid, {r, c}, null)
+            });
+
+            dfs(r, c);
+          }
+        }
+      }
+
+      history.push({
+        line: 18, phase: "🎉 【Search Complete】遍歷完成",
+        desc: `整張網格遍歷完畢，總共找到 ${islands} 座獨立島嶼！`,
+        stack: [], pos: null, islands,
+        gridState: getGridSnapshot(grid, null, null)
+      });
+    }
+
+    function renderBoard(gridSnapshot) {
+      const gridEl = document.getElementById('board-grid');
+      gridEl.innerHTML = '';
+      const R = gridSnapshot.length;
+      const C = gridSnapshot[0].length;
+      gridEl.style.gridTemplateColumns = `repeat(${C}, 52px)`;
+
+      for (let r = 0; r < R; r++) {
+        for (let c = 0; c < C; c++) {
+          let state = gridSnapshot[r][c];
+          let cellDiv = document.createElement('div');
+          let cls = "board-cell " + state;
+
+          let valChar = '0';
+          if (state === 'land' || state === 'active') valChar = '1';
+          if (state === 'sunk') valChar = '0';
+          if (state === 'water') valChar = '0';
+
+          cellDiv.className = cls;
+          cellDiv.innerHTML = `
+            <span class="pos-tag">${r},${c}</span>
+            <span>${valChar}</span>
+          `;
+          gridEl.appendChild(cellDiv);
+        }
+      }
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = stackData.length === 0 
+        ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Stack Empty</div>`
+        : stackData.map(f => `
+            <div class="stack-frame">
+              <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.75rem;">(${f.args})</span></div>
+            </div>
+          `).join('');
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      document.getElementById('pos-display').innerText = state.pos ? `(${state.pos.r}, ${state.pos.c})` : "None";
+      document.getElementById('count-display').innerText = state.islands !== undefined ? state.islands : "0";
+
+      const resEl = document.getElementById('result-text');
+      resEl.innerText = state.phase.includes("Complete") ? `Total Islands = ${state.islands}` : "Scanning...";
+      resEl.style.color = state.phase.includes("Complete") ? "var(--green)" : "var(--text-dim)";
+
+      if (state.gridState) {
+        renderBoard(state.gridState);
+      }
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

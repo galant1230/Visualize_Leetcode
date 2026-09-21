@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>36. Valid Sudoku 深度解析 - 全要素版</title>
+  <style>
+    :root {
+      --primary: #64ffda; --accent: #f39c12; --bg: #0a192f;
+      --card-bg: #112240; --text: #ccd6f6; --text-dim: #8892b0; --success: #2ecc71; --error: #ff4d4d;
+    }
+    body {
+      font-family: 'Consolas', 'Microsoft JhengHei', monospace; background: var(--bg);
+      color: var(--text); padding: 20px; margin: 0; line-height: 1.4;
+    }
+    .dashboard { max-width: 1450px; margin: auto; display: grid; grid-template-columns: 380px 1.2fr 1fr; gap: 20px; }
+    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #233554; }
+    .full-width { grid-column: span 3; }
+    h3 { color: var(--primary); margin: 0 0 10px 0; font-size: 1.1rem; border-bottom: 1px solid #233554; padding-bottom: 5px; }
+
+    /* 題目資訊 */
+    .problem-info { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 10px; border-left: 4px solid var(--primary); }
+
+    /* Log 系統 */
+    .log-container {
+      height: 600px; overflow-y: auto; background: #011627; padding: 10px; border-radius: 8px;
+      font-size: 0.85rem; display: flex; flex-direction: column-reverse;
+    }
+    .log-entry { margin-bottom: 4px; border-bottom: 1px solid #0d283d; }
+    .log-time { color: var(--text-dim); margin-right: 5px; }
+    .log-msg { color: #82aaff; }
+    .log-success { color: var(--success); }
+    .log-error { color: var(--error); font-weight: bold; }
+
+    /* 數獨主網格 */
+    .sudoku-container {
+      display: grid; grid-template-columns: repeat(9, 38px); grid-template-rows: repeat(9, 38px);
+      gap: 1px; justify-content: center; background: #233554; padding: 5px; border: 2px solid var(--primary); margin: 10px auto;
+    }
+    .cell { width: 38px; height: 38px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; color: var(--text); }
+    .cell.dot { color: #1d3b53; }
+    .cell.scanning { background: var(--accent); color: white; transform: scale(1.05); z-index: 5; }
+    .cell.invalid { background: var(--error); color: white; animation: shake 0.5s; }
+
+    /* 歷史 Sets 矩陣 (保留 1-9 內容) */
+    .history-grids { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+    .mini-grid-title { font-size: 0.75rem; color: var(--accent); text-align: center; margin-bottom: 5px; font-weight: bold; }
+    .mini-grid {
+      display: grid; grid-template-columns: repeat(9, 15px); grid-template-rows: repeat(9, 15px);
+      gap: 1px; background: #233554; padding: 2px; margin: auto;
+    }
+    .mini-cell { width: 15px; height: 15px; background: var(--bg); font-size: 9px; display: flex; align-items: center; justify-content: center; color: #1d3b53; }
+    .mini-cell.filled { background: var(--success); color: var(--bg); font-weight: bold; }
+    .mini-cell.highlight { background: var(--accent); color: white; }
+
+    /* 控制與代碼 */
+    .controls { text-align: center; margin-bottom: 10px; }
+    button { background: #233554; border: 1px solid var(--primary); color: var(--primary); padding: 5px 12px; border-radius: 4px; cursor: pointer; margin: 2px; font-family: inherit; }
+    button:hover { background: var(--primary); color: var(--bg); }
+    #stepBtn { background: var(--accent); color: white; border: none; font-weight: bold; }
+
+    .code-window { background: #011627; padding: 15px; border-radius: 8px; font-size: 0.8rem; height: 350px; overflow-y: auto; }
+    .line { white-space: pre; border-left: 4px solid transparent; padding-left: 10px; color: #82aaff; }
+    .active-line { background: #1d3b53; border-left-color: var(--primary); color: #fff; }
+
+    @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-3px);} 75% {transform: translateX(3px);} }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  <div class="card full-width">
+    <h3>🧩 36. Valid Sudoku (題目敘述)</h3>
+    <div class="problem-info">
+      <strong>題目目標：</strong>判斷一個 9x9 的數獨板是否有效。只需根據「已填入」的數字進行判斷。<br>
+      <strong>有效條件：</strong>(1) 每行、(2) 每列、(3) 每個 3x3 宮格內，數字 1-9 只能出現一次。<br>
+      <strong>範例：</strong>範例 1 為合法盤面 (True)；範例 2 將 (0,0) 的 '5' 改為 '8'，導致該列出現兩個 '8' (False)。
+    </div>
+  </div>
+
+  <div class="card" style="grid-row: span 2;">
+    <h3>🖥️ System Debug Log</h3>
+    <div class="log-container" id="logConsole">
+      <div class="log-entry"><span class="log-time">[INIT]</span><span class="log-msg">系統就緒，準備開始掃描...</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <button onclick="loadExample(1)">範例 1 (T)</button>
+      <button onclick="loadExample(2)">範例 2 (F)</button>
+      <button id="stepBtn" onclick="step()">NEXT STEP</button>
+      <button onclick="resetSim()" style="border-color:#444; color:#888;">RESET</button>
+    </div>
+    
+    <div class="sudoku-container" id="main-grid"></div>
+    <div id="finalBox" style="display:none; padding:8px; border:2px solid; margin:10px auto; text-align:center; border-radius:4px; font-weight:bold;"></div>
+
+    <div class="history-grids">
+      <div><div class="mini-grid-title">rows[0-8]</div><div class="mini-grid" id="grid-rows"></div></div>
+      <div><div class="mini-grid-title">cols[0-8]</div><div class="mini-grid" id="grid-cols"></div></div>
+      <div><div class="mini-grid-title">boxes[0-8]</div><div class="mini-grid" id="grid-boxes"></div></div>
+    </div>
+    <div style="font-size: 0.7rem; color: var(--text-dim); text-align: center; margin-top: 5px;">
+        矩陣橫軸: 數字 1-9 | 縱軸: 集合編號 0-8
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🐍 Python Implementation</h3>
+    <div class="code-window">
+<div class="line" id="l1">rows = [set() for _ in range(9)]</div>
+<div class="line" id="l2">cols = [set() for _ in range(9)]</div>
+<div class="line" id="l3">boxes = [[set() for _ in range(3)] for _ in range(3)]</div>
+<div class="line" id="l4">for r in range(9):</div>
+<div class="line" id="l5">    for c in range(9):</div>
+<div class="line" id="l6">        val = board[r][c]</div>
+<div class="line" id="l7">        if val == ".": continue</div>
+<div class="line" id="l9">        if val in rows[r] or val in cols[c] or \</div>
+<div class="line" id="l10">           val in boxes[r // 3][c // 3]:</div>
+<div class="line" id="l11">            return False</div>
+<div class="line" id="l13">        rows[r].add(val)</div>
+<div class="line" id="l14">        cols[c].add(val)</div>
+<div class="line" id="l15">        boxes[r // 3][c // 3].add(val)</div>
+<div class="line" id="l16">return True</div>
+    </div>
+    <div style="margin-top: 15px; font-size: 0.8rem;">
+      <strong>複雜度：</strong><br>
+      Time: O(1) - 盤面固定 81 格<br>
+      Space: O(1) - 集合大小總和固定
+    </div>
+  </div>
+</div>
+
+<script>
+const examples = {
+  1: [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]],
+  2: [["8","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
+};
+
+let board = examples[1], r = 0, c = 0, finished = false;
+let rowsHistory = Array.from({length:9}, () => new Set());
+let colsHistory = Array.from({length:9}, () => new Set());
+let boxesHistory = Array.from({length:9}, () => new Set());
+
+function addLog(type, msg) {
+  const console = document.getElementById("logConsole");
+  const entry = document.createElement("div");
+  entry.className = "log-entry";
+  const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  let colorClass = "log-msg";
+  if(type === 'ERR') colorClass = "log-error";
+  if(type === 'OK') colorClass = "log-success";
+  entry.innerHTML = `<span class="log-time">[${time}]</span><span class="${colorClass}">${msg}</span>`;
+  console.prepend(entry);
+}
+
+function initMiniGrids() {
+  const setup = (id) => {
+    const g = document.getElementById(id);
+    g.innerHTML = "";
+    for(let i=0; i<81; i++) {
+      const div = document.createElement("div");
+      div.className = "mini-cell";
+      div.innerText = (i % 9) + 1;
+      g.appendChild(div);
+    }
+  };
+  setup("grid-rows"); setup("grid-cols"); setup("grid-boxes");
+}
+
+function loadExample(n) {
+  board = examples[n];
+  addLog('INFO', `載入範例 ${n}`);
+  resetSim();
+}
+
+function resetSim() {
+  r = 0; c = 0; finished = false;
+  rowsHistory = Array.from({length:9}, () => new Set());
+  colsHistory = Array.from({length:9}, () => new Set());
+  boxesHistory = Array.from({length:9}, () => new Set());
+  document.getElementById("finalBox").style.display = "none";
+  document.getElementById("stepBtn").disabled = false;
+  initMiniGrids();
+  render();
+  clearHighlight();
+}
+
+function render() {
+  const container = document.getElementById("main-grid");
+  container.innerHTML = "";
+  board.forEach((row, i) => {
+    row.forEach((val, j) => {
+      const cell = document.createElement("div");
+      cell.className = "cell" + (val === "." ? " dot" : "");
+      cell.innerText = val;
+      if(i === r && j === c) cell.classList.add("scanning");
+      container.appendChild(cell);
+    });
+  });
+}
+
+function updateMiniGrids(highlightVal = null) {
+  const update = (id, history, currentIdx) => {
+    const cells = document.getElementById(id).children;
+    for(let i=0; i<9; i++) {
+      history[i].forEach(num => {
+        const val = parseInt(num);
+        const cellIdx = i * 9 + (val - 1);
+        cells[cellIdx].classList.add("filled");
+        if(i === currentIdx && num === highlightVal) cells[cellIdx].classList.add("highlight");
+      });
+    }
+  };
+  const bIdx = Math.floor(r/3) * 3 + Math.floor(c/3);
+  update("grid-rows", rowsHistory, r);
+  update("grid-cols", colsHistory, c);
+  update("grid-boxes", boxesHistory, bIdx);
+}
+
+function step() {
+  if (finished) return;
+  clearHighlight();
+  document.getElementById("l5").classList.add("active-line");
+
+  let val = board[r][c];
+  if (val === ".") {
+    next(); render(); updateMiniGrids(); return;
+  }
+
+  const bIdx = Math.floor(r/3) * 3 + Math.floor(c/3);
+  addLog('INFO', `檢查 (${r},${c}) 數值:${val}`);
+
+  setTimeout(() => {
+    if (rowsHistory[r].has(val) || colsHistory[c].has(val) || boxesHistory[bIdx].has(val)) {
+      addLog('ERR', `衝突！數字 ${val} 已存在於${rowsHistory[r].has(val)?'行':colsHistory[c].has(val)?'列':'宮格'}`);
+      end(false, `重複: ${val}`);
+      return;
+    }
+
+    document.getElementById("l13").classList.add("active-line");
+    rowsHistory[r].add(val);
+    colsHistory[c].add(val);
+    boxesHistory[bIdx].add(val);
+    addLog('OK', `通過，已更新 Sets。`);
+
+    updateMiniGrids(val);
+    next();
+    if (r >= 9) { addLog('OK', '驗證成功！'); end(true); }
+    else render();
+  }, 50);
+}
+
+function next() { c++; if (c > 8) { c = 0; r++; } }
+
+function end(ok, msg) {
+  finished = true;
+  document.getElementById("stepBtn").disabled = true;
+  const fb = document.getElementById("finalBox");
+  fb.style.display = "block";
+  fb.innerText = ok ? "✅ VALID" : "❌ INVALID: " + msg;
+  fb.style.borderColor = ok ? "var(--success)" : "var(--error)";
+  fb.style.color = ok ? "var(--success)" : "var(--error)";
+  if(!ok) document.querySelectorAll(".cell")[r*9+c].classList.add("invalid");
+}
+
+function clearHighlight() {
+  document.querySelectorAll(".line").forEach(l => l.classList.remove("active-line"));
+}
+
+resetSim();
+</script>
+</body>
+</html>

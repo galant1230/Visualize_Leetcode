@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>Swap Pairs 視覺化</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background: #f5f7fa; }
+    h1 { text-align: center; color: #007acc; }
+    .description { max-width: 800px; margin: 0 auto 2rem; background: #fff; padding: 1rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .list { display: flex; justify-content: center; flex-wrap: wrap; margin-top: 2rem; }
+    .node { position: relative; background: #3498db; color: white; font-weight: bold; padding: 10px 16px; border-radius: 10px; margin: 0 10px; }
+    .node::after { content: "→"; position: absolute; right: -18px; top: 50%; transform: translateY(-50%); font-size: 20px; color: #444; }
+    .node:last-child::after { display: none; }
+    .pointer { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); padding: 2px 6px; font-size: 12px; border-radius: 6px; color: #fff; }
+    .prev { background: #2ecc71; }
+    .curr { background: #e67e22; }
+    .nextNode { background: #f39c12; }
+    .nextNext { background: #9b59b6; }
+    .dummy { background: #95a5a6; }
+    #controls { text-align: center; margin-top: 2rem; }
+    button { padding: 10px 16px; background: #007acc; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0 10px; }
+    #codeBox { background: #272822; color: #f8f8f2; text-align: left; padding: 1rem; border-radius: 6px; max-width: 800px; margin: 2rem auto; font-family: monospace; }
+    .code-line { padding: 2px 0; }
+    .active-code { background-color: #444; }
+    table { margin: 2rem auto; border-collapse: collapse; width: 90%; max-width: 800px; }
+    td, th { border: 1px solid #ccc; padding: 8px; text-align: center; }
+  </style>
+</head>
+<body>
+<h1>Swap Nodes in Pairs</h1>
+
+<div class="description">
+  <h2>📌 題目描述</h2>
+  <p>給定一個連結串列，每兩個相鄰節點交換，並返回新的頭節點。</p>
+  <pre><code>Input: head = [1,2,3,4]
+Output: [2,1,4,3]</code></pre>
+</div>
+
+<div id="codeBox">
+  <div class="code-line" id="line1">1: dummy.next = head</div>
+  <div class="code-line" id="line2">2: prev = &dummy</div>
+  <div class="code-line" id="line3">3: curr = head</div>
+  <div class="code-line" id="line4">4: while (curr && curr.next) {</div>
+  <div class="code-line" id="line5">5: &nbsp;&nbsp;nextNode = curr.next</div>
+  <div class="code-line" id="line6">6: &nbsp;&nbsp;nextNext = nextNode.next</div>
+  <div class="code-line" id="line7">7: &nbsp;&nbsp;prev.next = nextNode</div>
+  <div class="code-line" id="line8">8: &nbsp;&nbsp;nextNode.next = curr</div>
+  <div class="code-line" id="line9">9: &nbsp;&nbsp;curr.next = nextNext</div>
+  <div class="code-line" id="line10">10: &nbsp;&nbsp;prev = curr</div>
+  <div class="code-line" id="line11">11: &nbsp;&nbsp;curr = curr.next</div>
+  <div class="code-line" id="line12">12: }</div>
+</div>
+
+<div class="list" id="linkedList"></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>dummy.next</th><th>prev</th><th>curr</th><th>nextNode</th><th>nextNext</th><th>目前串列</th>
+    </tr>
+  </thead>
+  <tbody id="stepTable"></tbody>
+</table>
+
+<div id="controls">
+  <button onclick="step()">下一步</button>
+  <button onclick="reset()">重置</button>
+</div>
+
+<script>
+let nodes = [1, 2, 3, 4];
+let state = [];
+let dummy = { next: 0 };
+let prev = null;
+let curr = null;
+let nextNode = null;
+let nextNext = null;
+
+function buildState() {
+  state = nodes.map((val, idx) => ({ val, next: idx + 1 < nodes.length ? idx + 1 : null }));
+  dummy = { next: 0 };
+  prev = -1;
+  curr = 0;
+  nextNode = null;
+  nextNext = null;
+  document.getElementById("stepTable").innerHTML = "";
+}
+
+function highlight(lineId) {
+  document.querySelectorAll('.code-line').forEach(line => line.classList.remove("active-code"));
+  if (lineId) document.getElementById(lineId).classList.add("active-code");
+}
+
+function render() {
+  const container = document.getElementById("linkedList");
+  container.innerHTML = "";
+
+  let visual = [];
+  let ptr = dummy.next;
+  while (ptr !== null) {
+    visual.push({ ...state[ptr], index: ptr });
+    ptr = state[ptr].next;
+  }
+
+  for (let node of visual) {
+    const el = document.createElement("div");
+    el.className = "node";
+    el.innerText = node.val;
+    if (node.index === dummy.next) {
+      const p = document.createElement("div");
+      p.className = "pointer dummy";
+      p.innerText = "dummy";
+      el.appendChild(p);
+    }
+    if (node.index === prev) {
+      const p = document.createElement("div");
+      p.className = "pointer prev";
+      p.innerText = "prev";
+      el.appendChild(p);
+    }
+    if (node.index === curr) {
+      const p = document.createElement("div");
+      p.className = "pointer curr";
+      p.innerText = "curr";
+      el.appendChild(p);
+    }
+    if (node.index === nextNode) {
+      const p = document.createElement("div");
+      p.className = "pointer nextNode";
+      p.innerText = "nextNode";
+      el.appendChild(p);
+    }
+    if (node.index === nextNext) {
+      const p = document.createElement("div");
+      p.className = "pointer nextNext";
+      p.innerText = "nextNext";
+      el.appendChild(p);
+    }
+    container.appendChild(el);
+  }
+
+  const row = document.createElement("tr");
+  row.innerHTML = `
+    <td>${dummy.next}</td>
+    <td>${prev}</td>
+    <td>${curr}</td>
+    <td>${nextNode}</td>
+    <td>${nextNext}</td>
+    <td>[${(function() {
+      let res = [], p = dummy.next;
+      while (p !== null) {
+        res.push(state[p].val + (p === dummy.next ? '*' : ''));
+        p = state[p].next;
+      }
+      return res.join(' → ');
+    })()}]</td>
+  `;
+  document.getElementById("stepTable").appendChild(row);
+}
+
+function step() {
+  if (curr === null || state[curr].next === null) {
+    highlight(null);
+    return;
+  }
+
+  highlight("line5");
+  nextNode = state[curr].next;
+
+  highlight("line6");
+  nextNext = state[nextNode].next;
+
+  highlight("line7");
+  if (prev === -1) dummy.next = nextNode;
+  else state[prev].next = nextNode;
+
+  highlight("line8");
+  state[nextNode].next = curr;
+
+  highlight("line9");
+  state[curr].next = nextNext;
+
+  highlight("line10");
+  prev = curr;
+
+  highlight("line11");
+  curr = curr.next;
+
+  render();
+}
+
+function reset() {
+  buildState();
+  highlight("line1");
+  setTimeout(() => highlight("line2"), 300);
+  setTimeout(() => highlight("line3"), 600);
+  render();
+}
+
+buildState();
+render();
+</script>
+</body>
+</html>
+

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>3212. 雙重前綴和視覺化</title>
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --primary: #58a6ff; --text: #c9d1d9;
+      --ide-bg: #0d1117; --ide-kw: #ff7b72; --ide-fn: #d2a8ff; --ide-vr: #79c0ff; --ide-nm: #79c0ff; --ide-cm: #8b949e;
+      --border: #30363d; --hl: #ffa657; --success: #238636;
+    }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+    .main-grid { max-width: 1450px; margin: auto; display: grid; grid-template-columns: 1fr 650px; gap: 24px; }
+    
+    .header { grid-column: span 2; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 10px; }
+    .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+    
+    /* 網格區佈局 */
+    .grid-container { display: flex; gap: 30px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+    .grid-box { text-align: center; }
+    .grid-label { font-size: 12px; color: var(--ide-cm); margin-bottom: 8px; font-weight: bold; text-transform: uppercase; }
+    
+    .grid { display: grid; gap: 3px; background: #010409; padding: 8px; border-radius: 6px; }
+    .cell { width: 45px; height: 45px; background: #0d1117; border: 1px solid #21262d; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 16px; position: relative; }
+    .cell-coord { position: absolute; top: 2px; left: 2px; font-size: 8px; color: #484f58; }
+    
+    /* 狀態顏色 */
+    .cell.active { border: 2px solid var(--primary); background: rgba(88, 166, 255, 0.1); }
+    .cell.x-val { color: #ff7b72; } /* X 用紅色系 */
+    .cell.y-val { color: #79c0ff; } /* Y 用藍色系 */
+    .cell.match { background: rgba(35, 134, 54, 0.2); border-color: var(--success); box-shadow: 0 0 8px rgba(35, 134, 54, 0.4); }
+
+    /* IDE 配色 */
+    .code-win { background: var(--ide-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border); font-family: 'Cascadia Code', monospace; font-size: 13px; line-height: 1.5; white-space: pre; height: 500px; overflow: auto; color: #e6edf3; }
+    .line-hl { background: #1c2128; border-left: 4px solid var(--success); display: block; margin-left: -20px; padding-left: 16px; }
+    .kw { color: var(--ide-kw); } .fn { color: var(--ide-fn); } .vr { color: var(--ide-vr); } .nm { color: var(--ide-nm); } .cm { color: var(--ide-cm); }
+
+    .btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; background: var(--success); color: white; margin-right: 10px; }
+    .stat-row { display: flex; gap: 20px; margin-top: 15px; }
+    .stat-card { background: #010409; padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); min-width: 100px; }
+  </style>
+</head>
+<body>
+
+<div class="main-grid">
+  <div class="header">
+    <h2 style="margin:0; color:var(--primary);">3212. Equal Frequency of X and Y</h2>
+    <p style="font-size: 14px; color:#8b949e; margin: 8px 0;">
+        尋找符合條件的子矩陣數量：(1) 左上角固定在 (0,0) (2) 'X' 的數量等於 'Y' 的數量 (3) 至少包含一個 'X'。
+    </p>
+    <div style="font-size: 12px; color: var(--hl); background: rgba(255,166,87,0.1); padding: 8px; border-radius: 4px;">
+        Example: grid = [["X","Y","."],["Y",".","."]] | Output: 3
+    </div>
+  </div>
+
+  <div class="left-col">
+    <div class="card grid-container">
+      <div class="grid-box">
+        <div class="grid-label">Input Grid</div>
+        <div class="grid" id="grid-input" style="grid-template-columns: repeat(3, 45px);"></div>
+      </div>
+      <div class="grid-box">
+        <div class="grid-label">prefixX (Count of 'X')</div>
+        <div class="grid" id="grid-px" style="grid-template-columns: repeat(4, 45px);"></div>
+      </div>
+      <div class="grid-box">
+        <div class="grid-label">prefixY (Count of 'Y')</div>
+        <div class="grid" id="grid-py" style="grid-template-columns: repeat(4, 45px);"></div>
+      </div>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat-card">
+            <div style="font-size: 10px; color: var(--ide-cm);">VALID SUBMATRICES</div>
+            <div id="ans-val" style="font-size: 24px; color: var(--success); font-weight: bold;">0</div>
+        </div>
+        <div class="stat-card" id="status-msg" style="flex-grow: 1; font-size: 13px; display: flex; align-items: center; color: var(--hl);">
+            Ready to start...
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:20px; font-size: 13px; line-height: 1.6;">
+        <strong style="color:var(--primary)">解題思路：</strong><br>
+        1. 建立兩個前綴和陣列 <strong>prefixX</strong> 與 <strong>prefixY</strong>。<br>
+        2. 當掃描到 (r, c) 時，計算從 (0,0) 到 (r,c) 的矩形內 X 與 Y 的總數。<br>
+        3. 公式依然是：上 + 左 - 左上 + 當前格子是否為該字母。<br>
+        4. 檢查條件：<code>prefixX[r+1][c+1] == prefixY[r+1][c+1]</code> 且 <code>prefixX > 0</code>。
+    </div>
+  </div>
+
+  <div class="right-col">
+    <div style="margin-bottom:15px;">
+        <button class="btn" onclick="step()">Next Step</button>
+        <button class="btn" style="background:#21262d;" onclick="reset()">Reset</button>
+    </div>
+    <div class="code-win" id="code"></div>
+  </div>
+</div>
+
+<script>
+const gridData = [["X","Y","."],["Y",".","."]];
+const R = gridData.length, C = gridData[0].length;
+let state = { r: 0, c: 0, ans: 0, px: [], py: [], finished: false };
+
+const pyCode = `<span class="kw">class</span> <span class="fn">Solution</span>:
+    <span class="kw">def</span> <span class="fn">numberOfSubmatrices</span>(<span class="vr">self</span>, <span class="vr">grid</span>):
+        <span class="vr">rows</span>, <span class="vr">cols</span> = <span class="fn">len</span>(<span class="vr">grid</span>), <span class="fn">len</span>(<span class="vr">grid</span>[<span class="nm">0</span>])
+        <span class="vr">prefixX</span> = [[<span class="nm">0</span>] * (<span class="vr">cols</span> + <span class="nm">1</span>) <span class="kw">for</span> <span class="vr">_</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="vr">rows</span> + <span class="nm">1</span>)]
+        <span class="vr">prefixY</span> = [[<span class="nm">0</span>] * (<span class="vr">cols</span> + <span class="nm">1</span>) <span class="kw">for</span> <span class="vr">_</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="vr">rows</span> + <span class="nm">1</span>)]
+        <span class="vr">ans</span> = <span class="nm">0</span>
+        
+        <span class="kw">for</span> <span class="vr">r</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="vr">rows</span>):
+            <span class="kw">for</span> <span class="vr">c</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="vr">cols</span>):
+                <span class="vr">isX</span> = <span class="nm">1</span> <span class="kw">if</span> <span class="vr">grid</span>[<span class="vr">r</span>][<span class="vr">c</span>] == <span class="st">'X'</span> <span class="kw">else</span> <span class="nm">0</span>
+                <span class="vr">isY</span> = <span class="nm">1</span> <span class="kw">if</span> <span class="vr">grid</span>[<span class="vr">r</span>][<span class="vr">c</span>] == <span class="st">'Y'</span> <span class="kw">else</span> <span class="nm">0</span>
+                
+                <span class="cm"># 2D Prefix Sum Formula</span>
+                <span class="vr">prefixX</span>[<span class="vr">r</span>+<span class="nm">1</span>][<span class="vr">c</span>+<span class="nm">1</span>] = <span class="vr">prefixX</span>[<span class="vr">r</span>][<span class="vr">c</span>+<span class="nm">1</span>] + \\
+                                     <span class="vr">prefixX</span>[<span class="vr">r</span>+<span class="nm">1</span>][<span class="vr">c</span>] - \\
+                                     <span class="vr">prefixX</span>[<span class="vr">r</span>][<span class="vr">c</span>] + <span class="vr">isX</span>
+                
+                <span class="vr">prefixY</span>[<span class="vr">r</span>+<span class="nm">1</span>][<span class="vr">c</span>+<span class="nm">1</span>] = <span class="vr">prefixY</span>[<span class="vr">r</span>][<span class="vr">c</span>+<span class="nm">1</span>] + \\
+                                     <span class="vr">prefixY</span>[<span class="vr">r</span>+<span class="nm">1</span>][<span class="vr">c</span>] - \\
+                                     <span class="vr">prefixY</span>[<span class="vr">r</span>][<span class="vr">c</span>] + <span class="vr">isY</span>
+                
+                <span class="kw">if</span> <span class="vr">prefixX</span>[<span class="vr">r</span>+<span class="nm">1</span>][<span class="vr">c</span>+<span class="nm">1</span>] == <span class="vr">prefixY</span>[<span class="vr">r</span>+<span class="nm">1</span>][<span class="vr">c</span>+<span class="nm">1</span>] \\
+                   <span class="kw">and</span> <span class="vr">prefixX</span>[<span class="vr">r</span>+<span class="nm">1</span>][<span class="vr">c</span>+<span class="nm">1</span>] > <span class="nm">0</span>:
+                    <span class="vr">ans</span> += <span class="nm">1</span>
+        <span class="kw">return</span> <span class="vr">ans</span>`;
+
+function reset() {
+    state = { 
+        r: 0, c: 0, ans: 0, finished: false,
+        px: Array.from({length: R+1}, () => Array(C+1).fill(0)),
+        py: Array.from({length: R+1}, () => Array(C+1).fill(0))
+    };
+    render();
+}
+
+function render() {
+    const inputG = document.getElementById('grid-input');
+    inputG.innerHTML = '';
+    gridData.forEach((row, r) => row.forEach((val, c) => {
+        let cls = 'cell';
+        if (val === 'X') cls += ' x-val';
+        if (val === 'Y') cls += ' y-val';
+        if (r === state.r && c === state.c && !state.finished) cls += ' active';
+        inputG.innerHTML += `<div class="${cls}">${val}</div>`;
+    }));
+
+    const renderPre = (id, data) => {
+        const g = document.getElementById(id);
+        g.innerHTML = '';
+        data.forEach((row, r) => row.forEach((val, c) => {
+            let cls = 'cell';
+            if (r === state.r + 1 && c === state.c + 1 && !state.finished) {
+                const curX = state.px[r][c];
+                const curY = state.py[r][c];
+                if (curX === curY && curX > 0) cls += ' match';
+                else cls += ' active';
+            }
+            g.innerHTML += `<div class="${cls}"><span class="cell-coord">${r},${c}</span>${val}</div>`;
+        }));
+    };
+    renderPre('grid-px', state.px);
+    renderPre('grid-py', state.py);
+
+    document.getElementById('ans-val').innerText = state.ans;
+    document.getElementById('code').innerHTML = pyCode.split('\n').map((l, i) => `<span id="L-${i}">${l}</span>`).join('\n');
+}
+
+function step() {
+    if (state.finished) return;
+    const { r, c } = state;
+    
+    const isX = gridData[r][c] === 'X' ? 1 : 0;
+    const isY = gridData[r][c] === 'Y' ? 1 : 0;
+
+    state.px[r+1][c+1] = state.px[r][c+1] + state.px[r+1][c] - state.px[r][c] + isX;
+    state.py[r+1][c+1] = state.py[r][c+1] + state.py[r+1][c] - state.py[r][c] + isY;
+
+    const curX = state.px[r+1][c+1];
+    const curY = state.py[r+1][c+1];
+    const msg = document.getElementById('status-msg');
+
+    if (curX === curY && curX > 0) {
+        state.ans++;
+        msg.innerHTML = `✅ Found Match at (${r},${c})! X:${curX} == Y:${curY}`;
+        msg.style.color = "var(--success)";
+    } else {
+        msg.innerHTML = `Checking (${r},${c})... X:${curX}, Y:${curY}`;
+        msg.style.color = "var(--hl)";
+    }
+
+    state.c++;
+    if (state.c >= C) { state.c = 0; state.r++; }
+    if (state.r >= R) state.finished = true;
+    
+    render();
+}
+
+reset();
+</script>
+</body>
+</html>

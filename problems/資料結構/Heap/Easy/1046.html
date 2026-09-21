@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode Visualizer - Last Stone Weight</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #1E1E1E; color: #D4D4D4; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+        .vscode-sidebar { background-color: #252526; }
+        .vscode-active-line { background-color: #2C313C; border-left: 3px solid #61AFEF; }
+        .code-font { font-family: 'Fira Code', monospace; font-size: 13px; }
+        .keyword { color: #C678DD; }
+        .function { color: #61AFEF; }
+        .comment { color: #5C6370; italic; }
+        .number { color: #D19A66; }
+        .stone-node { transition: all 0.4s ease; border: 2px solid #444; }
+        .smashing { animation: shake 0.5s infinite; border-color: #E06C75 !important; }
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, 1px); } }
+        .max-marker { border: 2px solid #98C379 !important; box-shadow: 0 0 10px rgba(152, 195, 121, 0.4); }
+    </style>
+</head>
+<body class="flex flex-col">
+
+<div class="flex flex-1 overflow-hidden">
+    <aside class="w-1/4 vscode-sidebar p-5 flex flex-col gap-4 border-r border-[#333] overflow-y-auto">
+        <section>
+            <h2 class="text-[#61AFEF] text-lg font-bold mb-1">1046. Last Stone Weight</h2>
+            <p class="text-xs opacity-70 mb-4">每次挑選兩顆最重的石頭碰撞。若重量相等則皆消失，否則剩下兩者之差。</p>
+            
+            <div class="space-y-3">
+                <div class="p-3 bg-[#1E1E1E] rounded border border-[#3E4451]">
+                    <code class="text-[#C678DD] text-xs font-bold">Max-Heap Trick</code>
+                    <p class="text-[11px] text-gray-400 mt-1">Python 只有 Min-Heap。我們將數值取 **負號** 存入，這樣最小的負數（原最大正數）就會在根節點。</p>
+                </div>
+                <div class="p-3 bg-[#1E1E1E] rounded border border-[#3E4451]">
+                    <code class="text-[#98C379] text-xs font-bold">heapq.heappush(h, -val)</code>
+                    <p class="text-[11px] text-gray-400 mt-1">碰撞後若有剩餘重量 $y-x$，記得取負號後再 Push 回去。</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-[#2d2d30] p-4 rounded-md border border-[#444]">
+            <h3 class="text-[10px] font-bold text-gray-500 uppercase mb-2">Input Stones</h3>
+            <div class="code-font text-[#D19A66] text-sm">[2, 7, 4, 1, 8, 1]</div>
+            <div id="process-log" class="mt-2 text-[11px] text-gray-400 space-y-1">
+                </div>
+        </section>
+    </aside>
+
+    <main class="flex-1 flex flex-col p-6 gap-4">
+        <div class="flex-1 bg-[#151515] rounded-md relative overflow-hidden border border-[#333] flex flex-col items-center justify-center">
+            <div class="absolute top-4 left-4 text-[10px] text-gray-500 uppercase tracking-widest">Max-Heap Logic (Values inverted)</div>
+            
+            <div id="heap-container" class="flex flex-wrap justify-center gap-4 max-w-sm"></div>
+
+            <div class="mt-12 text-center">
+                <div id="action-msg" class="text-sm font-medium text-[#61AFEF] h-6"></div>
+                <div id="smash-zone" class="flex gap-8 mt-4 items-center justify-center h-20">
+                    </div>
+            </div>
+        </div>
+
+        <div class="h-16 bg-[#252526] rounded-md flex items-center justify-between px-6 border border-[#333]">
+            <div class="flex gap-4">
+                <button onclick="prevStep()" class="hover:text-[#61AFEF] text-sm">Step Back</button>
+                <button id="playBtn" onclick="togglePlay()" class="bg-[#98C379] text-[#1E1E1E] px-4 py-1 rounded text-sm font-bold hover:bg-[#85ab6a]">Auto Play</button>
+                <button onclick="nextStep()" class="hover:text-[#61AFEF] text-sm">Step Next</button>
+                <button onclick="reset()" class="text-gray-500 hover:text-white text-sm ml-4">Reset</button>
+            </div>
+            <div class="text-xs font-mono text-gray-500">Step: <span id="step-count">0</span></div>
+        </div>
+    </main>
+
+    <aside class="w-[30%] vscode-sidebar border-l border-[#333] flex flex-col">
+        <div class="p-4 border-b border-[#333] text-[11px] text-gray-400 flex justify-between">
+            <span>solution.py</span>
+            <span class="text-[#98C379]">● Python 3</span>
+        </div>
+        <div class="p-4 code-font leading-relaxed flex-1 overflow-y-auto">
+<pre>
+<span id="L1" class="block">stones = [-s <span class="keyword">for</span> s <span class="keyword">in</span> stones]</span>
+<span id="L2" class="block">heapq.heapify(stones)</span>
+<span id="L3" class="block"><span class="keyword">while</span> len(stones) > <span class="number">1</span>:</span>
+<span id="L4" class="block">  x = heapq.heappop(stones)</span>
+<span id="L5" class="block">  y = heapq.heappop(stones)</span>
+<span id="L6" class="block">  <span class="keyword">if</span> x != y:</span>
+<span id="L7" class="block">    heapq.heappush(stones, x - y)</span>
+<span id="L8" class="block"><span class="keyword">return</span> -stones[<span class="number">0</span>] <span class="keyword">if</span> stones <span class="keyword">else</span> <span class="number">0</span></span>
+</pre>
+        </div>
+        
+        <div class="h-1/3 bg-[#1E1E1E] border-t border-[#333] p-4 font-mono text-[11px]">
+            <div class="text-gray-500 mb-3 uppercase font-bold text-[10px]">Variables</div>
+            <div class="space-y-2">
+                <div class="flex justify-between"><span>Max 1 (x):</span><span id="v-x" class="text-[#E06C75]">-</span></div>
+                <div class="flex justify-between"><span>Max 2 (y):</span><span id="v-y" class="text-[#E06C75]">-</span></div>
+                <div class="flex justify-between"><span>Remaining:</span><span id="v-rem" class="text-[#98C379]">-</span></div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+    // Visualizing [2, 7, 4, 1, 8, 1]
+    const steps = [
+        { l: 1, heap: [2, 7, 4, 1, 8, 1], x: null, y: null, msg: "Convert to negative for Max-Heap" },
+        { l: 2, heap: [8, 7, 4, 1, 2, 1], x: null, y: null, msg: "Heapify completed" },
+        { l: 4, heap: [7, 2, 4, 1, 1], x: 8, y: null, msg: "Pop largest: 8" },
+        { l: 5, heap: [4, 2, 1, 1], x: 8, y: 7, msg: "Pop second largest: 7" },
+        { l: 7, heap: [4, 2, 1, 1, 1], x: 8, y: 7, msg: "8-7 = 1, push 1 back" },
+        { l: 4, heap: [2, 1, 1, 1], x: 4, y: null, msg: "Pop largest: 4" },
+        { l: 5, heap: [1, 1, 1], x: 4, y: 2, msg: "Pop second largest: 2" },
+        { l: 7, heap: [2, 1, 1, 1], x: 4, y: 2, msg: "4-2 = 2, push 2 back" },
+        { l: 4, heap: [1, 1, 1], x: 2, y: null, msg: "Pop largest: 2" },
+        { l: 5, heap: [1, 1], x: 2, y: 1, msg: "Pop second largest: 1" },
+        { l: 7, heap: [1, 1, 1], x: 2, y: 1, msg: "2-1 = 1, push 1 back" },
+        { l: 4, heap: [1, 1], x: 1, y: null, msg: "Pop largest: 1" },
+        { l: 5, heap: [1], x: 1, y: 1, msg: "Pop second largest: 1" },
+        { l: 6, heap: [1], x: 1, y: 1, msg: "1 == 1, both stones destroyed" },
+        { l: 8, heap: [1], x: null, y: null, msg: "Result: 1" }
+    ];
+
+    let currentStep = 0;
+    let timer = null;
+
+    function render() {
+        const data = steps[currentStep];
+        
+        // Code Highlight
+        document.querySelectorAll('.block').forEach(el => el.classList.remove('vscode-active-line'));
+        if(document.getElementById(`L${data.l}`)) document.getElementById(`L${data.l}`).classList.add('vscode-active-line');
+
+        // Variables
+        document.getElementById('v-x').innerText = data.x || '-';
+        document.getElementById('v-y').innerText = data.y || '-';
+        document.getElementById('v-rem').innerText = (data.x && data.y) ? Math.abs(data.x - data.y) : '-';
+        document.getElementById('step-count').innerText = currentStep;
+        document.getElementById('action-msg').innerText = data.msg;
+
+        // Heap
+        const heapCont = document.getElementById('heap-container');
+        heapCont.innerHTML = '';
+        data.heap.sort((a,b) => b-a).forEach((s, idx) => {
+            const node = document.createElement('div');
+            node.className = `stone-node w-12 h-12 rounded-lg flex items-center justify-center font-bold bg-[#252526] ${idx === 0 ? 'max-marker' : ''}`;
+            node.innerText = s;
+            heapCont.appendChild(node);
+        });
+
+        // Smash Zone
+        const smashZone = document.getElementById('smash-zone');
+        smashZone.innerHTML = '';
+        if (data.x) smashZone.innerHTML += `<div class="stone-node w-14 h-14 rounded-full bg-[#3E4451] flex items-center justify-center border-2 border-[#E06C75] smashing text-lg font-bold">${data.x}</div>`;
+        if (data.y) smashZone.innerHTML += `<div class="text-xl font-bold text-gray-600">VS</div><div class="stone-node w-14 h-14 rounded-full bg-[#3E4451] flex items-center justify-center border-2 border-[#E06C75] smashing text-lg font-bold">${data.y}</div>`;
+    }
+
+    function nextStep() { if (currentStep < steps.length - 1) { currentStep++; render(); } else pause(); }
+    function prevStep() { if (currentStep > 0) { currentStep--; render(); } }
+    function reset() { currentStep = 0; render(); }
+    function togglePlay() { timer ? pause() : play(); }
+    function play() { document.getElementById('playBtn').innerText = "Pause"; timer = setInterval(nextStep, 1000); }
+    function pause() { document.getElementById('playBtn').innerText = "Auto Play"; clearInterval(timer); timer = null; }
+
+    render();
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Alien Dictionary Debugger</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --accent: #58a6ff;
+            --pacific: #1f6feb; --atlantic: #238636; --ufo: #a371f7;
+            --editor-bg: #010409; --text: #c9d1d9; --dim: #8b949e;
+            --highlight: rgba(163, 113, 247, 0.15);
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .dashboard { max-width: 1500px; margin: auto; display: flex; flex-direction: column; gap: 15px; }
+
+        .problem-info { background: var(--card); border: 1px solid #30363d; padding: 15px; border-radius: 8px; border-left: 5px solid var(--ufo); }
+        
+        .input-panel { background: var(--card); border: 1px solid #30363d; padding: 15px; border-radius: 8px; }
+        textarea { width: 100%; height: 45px; background: #0d1117; color: var(--ufo); border: 1px solid #30363d; border-radius: 6px; padding: 10px; font-family: monospace; resize: none; }
+
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .monitor-box { background: var(--card); border: 1px solid #30363d; border-radius: 8px; padding: 12px; }
+        .monitor-label { font-size: 11px; font-weight: bold; color: var(--dim); margin-bottom: 8px; text-transform: uppercase; }
+        .data-view { font-family: 'Consolas', monospace; font-size: 13px; background: #010409; padding: 10px; border-radius: 6px; color: var(--accent); min-height: 50px; }
+
+        .main-layout { display: grid; grid-template-columns: 1fr 550px; gap: 15px; height: 500px; }
+        .visual-panel { background: #010409; border: 1px solid #30363d; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        
+        .node {
+            width: 45px; height: 45px; border-radius: 50%; border: 2px solid #30363d;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+            position: absolute; transition: 0.4s; background: var(--card); color: var(--text);
+        }
+        .node.active { border-color: var(--ufo); box-shadow: 0 0 15px var(--ufo); color: var(--ufo); }
+        .node.done { background: var(--ufo); border-color: var(--ufo); color: white; }
+
+        .editor { background: var(--editor-bg); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .code-view { flex: 1; padding: 10px 0; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6; overflow-y: auto; color: #e6edf3; }
+        .line { padding-left: 45px; position: relative; white-space: pre; border-left: 3px solid transparent; }
+        .line-active { background: var(--highlight); border-left: 3px solid var(--ufo); color: #fff; }
+        .line-num { position: absolute; left: 10px; color: #484f58; width: 25px; text-align: right; }
+
+        .controls { display: flex; gap: 12px; align-items: center; margin-top: 10px; }
+        .btn-step { background: var(--ufo); color: white; border: none; padding: 10px 30px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="problem-info">
+        <h3 style="margin:0; color:var(--ufo);">269. Alien Dictionary</h3>
+        <p style="font-size:13px; margin:5px 0;">給定外星語字典單字列表，推導出字母的字典順序。如果順序無效或矛盾，回傳空字串。</p>
+    </div>
+
+    <div class="input-panel">
+        <div class="monitor-label">🛰️ Alien Words:</div>
+        <textarea id="wordInput">["wrt", "wrf", "er", "ett", "rftt"]</textarea>
+        <div class="controls">
+            <button class="btn-step" onclick="handleStep()">下一步 🛸</button>
+            <button class="btn-action" style="background:#21262d; color:#c9d1d9; border:1px solid #30363d; padding:8px 15px; border-radius:6px; cursor:pointer;" onclick="reset()">重置</button>
+            <span id="log" style="font-size:13px; color:var(--dim)"></span>
+        </div>
+    </div>
+
+    <div class="status-grid">
+        <div class="monitor-box">
+            <div class="monitor-label">🗓️ Derivations (Edges):</div>
+            <div id="adjView" class="data-view"></div>
+        </div>
+        <div class="monitor-box">
+            <div class="monitor-label">📊 Indegree:</div>
+            <div id="stateView" class="data-view"></div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="visual-panel">
+            <div id="nodeContainer" style="position:relative; width:400px; height:300px;"></div>
+            <div id="stats" style="margin-top:auto; padding-bottom:20px; font-size:14px;">
+                Result Order: <span id="resultOrder" style="color:var(--ufo); font-weight:bold; letter-spacing: 5px;"></span>
+            </div>
+        </div>
+        <div class="editor">
+            <div style="background:#161b22; padding:8px 15px; font-size:11px; color:var(--ufo);">alien_order.py</div>
+            <div id="codeView" class="code-view"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const codeTemplate = [
+    "def alienOrder(words):",
+    "    adj = { c: set() for w in words for c in w }",
+    "    for i in range(len(words) - 1):",
+    "        w1, w2 = words[i], words[i+1]",
+    "        minLen = min(len(w1), len(w2))",
+    "        if len(w1) > len(w2) and w1[:minLen] == w2[:minLen]:",
+    "            return '' # 無效字典",
+    "        for j in range(minLen):",
+    "            if w1[j] != w2[j]:",
+    "                adj[w1[j]].add(w2[j])",
+    "                break",
+    "",
+    "    visit = {} # False: visit, True: current path",
+    "    res = []",
+    "    def dfs(c):",
+    "        if c in visit: return visit[c]",
+    "        visit[c] = True",
+    "        for neighbor in adj[c]:",
+    "            if dfs(neighbor): return True",
+    "        visit[c] = False",
+    "        res.append(c)",
+    "",
+    "    for c in adj: ",
+    "        if dfs(c): return ''",
+    "    return ''.join(res[::-1])"
+];
+
+let words = [], adj = {}, indegree = {}, queue = [], res = [], visited = new Set();
+let step = 0, charNodes = [];
+
+function reset() {
+    words = JSON.parse(document.getElementById('wordInput').value);
+    adj = {};
+    words.forEach(w => {
+        [...w].forEach(c => { if(!adj[c]) adj[c] = new Set(); });
+    });
+    
+    // Build Graph Logic (Simplified for Demo)
+    for(let i=0; i<words.length-1; i++){
+        let w1 = words[i], w2 = words[i+1];
+        let minL = Math.min(w1.length, w2.length);
+        for(let j=0; j<minL; j++){
+            if(w1[j] !== w2[j]){
+                adj[w1[j]].add(w2[j]);
+                break;
+            }
+        }
+    }
+    
+    charNodes = Object.keys(adj);
+    res = []; visited = new Set(); step = 0;
+    
+    renderCode();
+    renderNodes();
+    updateUI();
+    document.getElementById('log').innerText = "圖形構建完成。點擊下一步開始拓撲排序。";
+}
+
+function renderCode() {
+    document.getElementById('codeView').innerHTML = codeTemplate.map((l, i) => 
+        `<div class="line" id="ln-${i}"><span class="line-num">${i+1}</span>${l.replace(/def |for |in |if |return |break /g, x => `<span style="color:#ff7b72">${x}</span>`)}</div>`
+    ).join('');
+}
+
+function renderNodes() {
+    const container = document.getElementById('nodeContainer');
+    container.innerHTML = '';
+    const radius = 120;
+    charNodes.forEach((c, i) => {
+        const angle = (i / charNodes.length) * 2 * Math.PI;
+        const x = 175 + radius * Math.cos(angle);
+        const y = 125 + radius * Math.sin(angle);
+        const div = document.createElement('div');
+        div.className = 'node'; div.id = `node-${c}`;
+        div.style.left = x + 'px'; div.style.top = y + 'px';
+        div.innerText = c;
+        container.appendChild(div);
+    });
+}
+
+function updateUI() {
+    let adjStr = "";
+    for(let c in adj) adjStr += `${c}: [${Array.from(adj[c]).join(', ')}]\n`;
+    document.getElementById('adjView').innerText = adjStr;
+    document.getElementById('stateView').innerText = `Processed: ${Array.from(visited).join(', ')}`;
+    document.getElementById('resultOrder').innerText = res.join('');
+}
+
+function handleStep() {
+    const highlight = (i) => { document.querySelectorAll('.line').forEach(l => l.classList.remove('line-active')); document.getElementById(`ln-${i}`).classList.add('line-active'); };
+    
+    if (step < charNodes.length) {
+        let char = charNodes[step];
+        highlight(14); // DFS call
+        if (!visited.has(char)) {
+            // 模擬 DFS Post-Order
+            visited.add(char);
+            res.unshift(char); // 簡化展示拓撲順序
+            document.getElementById(`node-${char}`).className = 'node done';
+        }
+        step++;
+    } else {
+        highlight(24);
+        document.getElementById('log').innerText = "排序結束！";
+    }
+    updateUI();
+}
+
+reset();
+</script>
+</body>
+</html>

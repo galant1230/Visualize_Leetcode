@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>54. Spiral Matrix - Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 520px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 110px; max-height: 180px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .array-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 320px; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 16px; }
+    
+    .matrix-grid { display: grid; gap: 8px; background: #151821; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
+    .matrix-cell { width: 54px; height: 54px; background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: monospace; font-weight: bold; font-size: 1.1rem; color: #fff; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    
+    /* Cell States */
+    .cell-curr { background: rgba(255, 161, 22, 0.5); border-color: var(--orange); color: #fff; transform: scale(1.1); box-shadow: 0 0 12px rgba(255, 161, 22, 0.8); }
+    .cell-visited { background: rgba(0, 122, 255, 0.25); border-color: rgba(0, 122, 255, 0.5); color: #8be9fd; }
+    .cell-boundary { border-color: var(--purple); }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">54. Spiral Matrix</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Boundary Simulation (四邊界收縮法)</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. Direction Vectors (方向向量與走訪標記)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">3x3 Rect Grid</button>
+      <button class="tab-btn" onclick="setPreset(1)">3x4 Rect Grid</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與限制</div>
+        <div class="problem-desc">
+          給定一個 <code>m x n</code> 的 2D 矩陣 <b>matrix</b>，請按照<b>順時針螺旋順序</b> (Spiral Order)，回傳矩陣中的所有元素。<br>
+          <b>限制條件：</b>必須依序存取所有 m × n 個格子，且不重複走訪。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(M × N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Micro-steps Enabled</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 螺旋歷程視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="array-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Coord: </span>
+              <span id="pos-curr-display" style="font-weight: bold; color: var(--orange);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Direction: </span>
+              <span id="dir-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Visited Count: </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.15rem; color: var(--green);">-</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Collected Spiral Result:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--green);">[]</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Boundary Simulation (四邊界收縮法) - 附詳細中文註解
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">spiralOrder</span>(<span class="self">self</span>, matrix: List[List[int]]) -> List[int]:`,
+       `        <span class="cm"># 初始化四個邊界指標</span>`,
+       `        top, bottom = 0, len(matrix) - 1     <span class="cm"># row index : 0 ~ m - 1</span>`,
+       `        left, right = 0, len(matrix[0]) - 1 <span class="cm"># column index : 0 ~ n - 1</span>`,
+       `        result = []`,
+       ``,
+       `        <span class="cm"># 當上下與左右邊界均未交錯時，繼續螺旋走訪</span>`,
+       `        <span class="kw">while</span> top <= bottom <span class="kw">and</span> left <= right:`,
+       `            <span class="cm"># 第一步驟 : 從左到右走訪當前的 top 列</span>`,
+       `            <span class="kw">for</span> i <span class="kw">in</span> range(left, right + 1):`,
+       `                result.append(matrix[top][i])`,
+       `            top = top + 1  <span class="cm"># 走訪完最上面的列後，將上邊界下移一格</span>`,
+       ``,
+       `            <span class="cm"># 第二步驟 : 從上到下走訪當前的 right 行</span>`,
+       `            <span class="kw">for</span> i <span class="kw">in</span> range(top, bottom + 1):`,
+       `                result.append(matrix[i][right])`,
+       `            right = right - 1  <span class="cm"># 走訪完最右邊的行後，將右邊界左移一格</span>`,
+       ``,
+       `            <span class="cm"># 第三步驟 : 從右到左走訪當前的 bottom 列</span>`,
+       `            <span class="kw">if</span> top <= bottom:  <span class="cm"># 確保還能走，避免重複存取同一列</span>`,
+       `                <span class="kw">for</span> i <span class="kw">in</span> range(right, left - 1, -1):`,
+       `                    result.append(matrix[bottom][i])`,
+       `                bottom = bottom - 1  <span class="cm"># 走訪完最下面的列後，將下邊界上移一格</span>`,
+       ``,
+       `            <span class="cm"># 第四步驟 : 從下到上走訪當前的 left 行</span>`,
+       `            <span class="kw">if</span> left <= right:  <span class="cm"># 確保還能走，避免重複存取同一行</span>`,
+       `                <span class="kw">for</span> i <span class="kw">in</span> range(bottom, top - 1, -1):`,
+       `                    result.append(matrix[i][left])`,
+       `                left = left + 1  <span class="cm"># 走訪完最左邊的行後，將左邊界右移一格</span>`,
+       ``,
+       `        <span class="kw">return</span> result`],
+
+      // 2. Direction Vectors
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">spiralOrder</span>(<span class="self">self</span>, matrix: List[List[int]]) -> List[int]:`,
+       `        m, n = len(matrix), len(matrix[0])`,
+       `        visited = [[<span class="kw">False</span>]*n <span class="kw">for</span> _ <span class="kw">in</span> range(m)]`,
+       `        res = []`,
+       `        dr = [0, 1, 0, -1]  <span class="cm"># 右, 下, 左, 上</span>`,
+       `        dc = [1, 0, -1, 0]`,
+       `        r = c = di = 0`,
+       `        <span class="kw">for</span> _ <span class="kw">in</span> range(m * n):`,
+       `            res.append(matrix[r][c])`,
+       `            visited[r][c] = <span class="kw">True</span>`,
+       `            nr, nc = r + dr[di], c + dc[di]`,
+       `            <span class="kw">if</span> not (0 <= nr < m <span class="kw">and</span> 0 <= nc < n <span class="kw">and</span> not visited[nr][nc]):`,
+       `                di = (di + 1) % 4`,
+       `                nr, nc = r + dr[di], c + dc[di]`,
+       `            r, c = nr, nc`,
+       `        <span class="kw">return</span> res`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Boundary Simulation (四邊界收縮法)",
+        time: "O(M × N)", space: "O(1)",
+        idea: `<b>解法思路：</b><br>
+維護上下左右四個動態邊界 top, bottom, left, right。<br>
+1. <b>向右</b> 走完最上一列，縮小上邊界 (top += 1)<br>
+2. <b>向下</b> 走完最右一行，縮小右邊界 (right -= 1)<br>
+3. <b>向左</b> 走完最下一列，縮小下邊界 (bottom -= 1)<br>
+4. <b>向上</b> 走完最左一行，縮小左邊界 (left += 1)<br><br>
+重複此週期直到邊界交錯過界。`
+      },
+      {
+        title: "2. Direction Vectors (方向向量與走訪標記)",
+        time: "O(M × N)", space: "O(M × N)",
+        idea: `<b>解法思路：</b>利用方向向量陣列 dr = [0, 1, 0, -1] 與 dc = [1, 0, -1, 0] 定義（右、下、左、上）四個方向。<br>
+當遇到矩陣邊界或已被標記為已走訪 (visited == True) 時，即時將方向轉角轉向：di = (di + 1) % 4。`
+      }
+    ];
+
+    const presets = [
+      { title: "3x3 Rect Grid", matrix: [[1,2,3],[4,5,6],[7,8,9]], expected: "[1, 2, 3, 6, 9, 8, 7, 4, 5]" },
+      { title: "3x4 Rect Grid", matrix: [[1,2,3,4],[5,6,7,8],[9,10,11,12]], expected: "[1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7]" }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      const ideaCard = document.getElementById('idea-card');
+      ideaCard.innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input Matrix:</b> ${JSON.stringify(p.matrix)}</div>
+        <div><b>Expected Spiral:</b> <span style="color:var(--green)">${p.expected}</span></div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const matrix = presets[currentPreset].matrix;
+
+      if (currentAlgo === 0) {
+        buildBoundarySteps(matrix);
+      } else {
+        buildVectorSteps(matrix);
+      }
+    }
+
+    // Algo 1: Boundary Shrinking Steps (映射更新後的行號)
+    function buildBoundarySteps(matrix) {
+      const m = matrix.length, n = matrix[0].length;
+      let top = 0, bottom = m - 1, left = 0, right = n - 1;
+      let res = [];
+      let visited = Array.from({length: m}, () => Array(n).fill(false));
+
+      history.push({
+        line: 5, phase: "⚡ 【初始化邊界】",
+        desc: `Top: ${top}, Bottom: ${bottom}, Left: ${left}, Right: ${right}`,
+        curr: null, visited: JSON.parse(JSON.stringify(visited)), res: [...res],
+        bounds: {top, bottom, left, right}, dir: "INIT"
+      });
+
+      while (top <= bottom && left <= right) {
+        // Traverse Right
+        for (let col = left; col <= right; col++) {
+          res.push(matrix[top][col]);
+          visited[top][col] = true;
+          history.push({
+            line: 11, phase: "➡️ 【向右走訪 (Top Row)】",
+            desc: `存取 <code>matrix[${top}][${col}]</code> = ${matrix[top][col]}`,
+            curr: [top, col], visited: JSON.parse(JSON.stringify(visited)), res: [...res],
+            bounds: {top, bottom, left, right}, dir: "RIGHT"
+          });
+        }
+        top++;
+        history.push({
+          line: 12, phase: "🔽 【上邊界收縮】",
+          desc: `Top 邊界下移至 row ${top}`,
+          curr: null, visited: JSON.parse(JSON.stringify(visited)), res: [...res],
+          bounds: {top, bottom, left, right}, dir: "RIGHT"
+        });
+
+        // Traverse Down
+        for (let row = top; row <= bottom; row++) {
+          res.push(matrix[row][right]);
+          visited[row][right] = true;
+          history.push({
+            line: 16, phase: "⬇️ 【向下走訪 (Right Col)】",
+            desc: `存取 <code>matrix[${row}][${right}]</code> = ${matrix[row][right]}`,
+            curr: [row, right], visited: JSON.parse(JSON.stringify(visited)), res: [...res],
+            bounds: {top, bottom, left, right}, dir: "DOWN"
+          });
+        }
+        right--;
+        history.push({
+          line: 17, phase: "◀️ 【右邊界收縮】",
+          desc: `Right 邊界左移至 col ${right}`,
+          curr: null, visited: JSON.parse(JSON.stringify(visited)), res: [...res],
+          bounds: {top, bottom, left, right}, dir: "DOWN"
+        });
+
+        // Traverse Left
+        if (top <= bottom) {
+          for (let col = right; col >= left; col--) {
+            res.push(matrix[bottom][col]);
+            visited[bottom][col] = true;
+            history.push({
+              line: 22, phase: "⬅️ 【向左走訪 (Bottom Row)】",
+              desc: `存取 <code>matrix[${bottom}][${col}]</code> = ${matrix[bottom][col]}`,
+              curr: [bottom, col], visited: JSON.parse(JSON.stringify(visited)), res: [...res],
+              bounds: {top, bottom, left, right}, dir: "LEFT"
+            });
+          }
+          bottom--;
+          history.push({
+            line: 23, phase: "🔼 【下邊界收縮】",
+            desc: `Bottom 邊界上移至 row ${bottom}`,
+            curr: null, visited: JSON.parse(JSON.stringify(visited)), res: [...res],
+            bounds: {top, bottom, left, right}, dir: "LEFT"
+          });
+        }
+
+        // Traverse Up
+        if (left <= right) {
+          for (let row = bottom; row >= top; row--) {
+            res.push(matrix[row][left]);
+            visited[row][left] = true;
+            history.push({
+              line: 28, phase: "⬆️ 【向上走訪 (Left Col)】",
+              desc: `存取 <code>matrix[${row}][${left}]</code> = ${matrix[row][left]}`,
+              curr: [row, left], visited: JSON.parse(JSON.stringify(visited)), res: [...res],
+              bounds: {top, bottom, left, right}, dir: "UP"
+            });
+          }
+          left++;
+          history.push({
+            line: 29, phase: "▶️ 【左邊界收縮】",
+            desc: `Left 邊界右移至 col ${left}`,
+            curr: null, visited: JSON.parse(JSON.stringify(visited)), res: [...res],
+            bounds: {top, bottom, left, right}, dir: "UP"
+          });
+        }
+      }
+
+      history.push({
+        line: 31, phase: "🎉 【Complete: 螺旋走訪完成】",
+        desc: `已完成全矩陣 ${m * n} 個元素的螺旋走訪！`,
+        curr: null, visited: JSON.parse(JSON.stringify(visited)), res: [...res],
+        bounds: {top, bottom, left, right}, dir: "DONE"
+      });
+    }
+
+    // Algo 2: Direction Vectors Steps
+    function buildVectorSteps(matrix) {
+      const m = matrix.length, n = matrix[0].length;
+      let visited = Array.from({length: m}, () => Array(n).fill(false));
+      let res = [];
+      let dr = [0, 1, 0, -1];
+      let dc = [1, 0, -1, 0];
+      let dirNames = ["RIGHT ➡️", "DOWN ⬇️", "LEFT ⬅️", "UP ⬆️"];
+      let r = 0, c = 0, di = 0;
+
+      history.push({
+        line: 7, phase: "⚡ 【初始化走訪變數】",
+        desc: `從 起點 [0, 0] 開始，初始方向: ${dirNames[di]}`,
+        curr: null, visited: JSON.parse(JSON.stringify(visited)), res: [...res], dir: dirNames[di]
+      });
+
+      for (let step = 0; step < m * n; step++) {
+        res.push(matrix[r][c]);
+        visited[r][c] = true;
+
+        history.push({
+          line: 9, phase: `🌀 【存取節點 (${step + 1}/${m * n})】`,
+          desc: `走到 <code>matrix[${r}][${c}]</code> = ${matrix[r][c]}，標記為已走訪。`,
+          curr: [r, c], visited: JSON.parse(JSON.stringify(visited)), res: [...res], dir: dirNames[di]
+        });
+
+        if (step === m * n - 1) break;
+
+        let nr = r + dr[di];
+        let nc = c + dc[di];
+
+        if (!(nr >= 0 && nr < m && nc >= 0 && nc < n && !visited[nr][nc])) {
+          di = (di + 1) % 4;
+          nr = r + dr[di];
+          nc = c + dc[di];
+          history.push({
+            line: 12, phase: "🔄 【碰壁/已走訪 -> 轉向】",
+            desc: `轉向為 <b>${dirNames[di]}</b>，下一個目標點: <code>[${nr}, ${nc}]</code>`,
+            curr: [r, c], visited: JSON.parse(JSON.stringify(visited)), res: [...res], dir: dirNames[di]
+          });
+        }
+        r = nr;
+        c = nc;
+      }
+
+      history.push({
+        line: 14, phase: "🎉 【Complete: 螺旋走訪完成】",
+        desc: `全部 ${m * n} 個元素皆已收集完了！`,
+        curr: null, visited: JSON.parse(JSON.stringify(visited)), res: [...res], dir: "DONE"
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const matrix = presets[currentPreset].matrix;
+      const m = matrix.length, n = matrix[0].length;
+
+      let html = `<div class="matrix-grid" style="grid-template-columns: repeat(${n}, 54px);">`;
+
+      for (let r = 0; r < m; r++) {
+        for (let c = 0; c < n; c++) {
+          let cellCls = "";
+
+          if (state.curr && state.curr[0] === r && state.curr[1] === c) {
+            cellCls = "cell-curr";
+          } else if (state.visited && state.visited[r][c]) {
+            cellCls = "cell-visited";
+          }
+
+          if (state.bounds) {
+            const { top, bottom, left, right } = state.bounds;
+            if (r >= top && r <= bottom && c >= left && c <= right) {
+              cellCls += " cell-boundary";
+            }
+          }
+
+          html += `<div class="matrix-cell ${cellCls}">${matrix[r][c]}</div>`;
+        }
+      }
+
+      html += `</div>`;
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack / Trace Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟 (Step):</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          <div><b>• 收集進度 (Progress):</b> <span style="color:var(--green); font-weight:bold;">${state.res ? state.res.length : 0}</span> / ${presets[currentPreset].matrix.length * presets[currentPreset].matrix[0].length}</div>
+        </div>
+      `;
+
+      // Dynamic Variables
+      document.getElementById('pos-curr-display').innerText = state.curr ? `[${state.curr[0]}, ${state.curr[1]}]` : "-";
+      document.getElementById('dir-display').innerText = state.dir || "-";
+      document.getElementById('status-display').innerText = state.res ? `${state.res.length}` : "0";
+
+      // Dynamic Panel
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (currentAlgo === 0 && state.bounds) {
+        dynPanel.innerHTML = `
+          <div style="display:flex; gap:16px; font-family:monospace; font-size:0.8rem; color:#ddd;">
+            <span>top: <b style="color:var(--orange)">${state.bounds.top}</b></span>
+            <span>bottom: <b style="color:var(--orange)">${state.bounds.bottom}</b></span>
+            <span>left: <b style="color:var(--cyan)">${state.bounds.left}</b></span>
+            <span>right: <b style="color:var(--cyan)">${state.bounds.right}</b></span>
+          </div>
+        `;
+      } else {
+        dynPanel.innerHTML = `
+          <div style="font-size:0.8rem; color:#ddd; font-family:monospace;">
+            Visited Count: <b style="color:var(--green)">${state.res ? state.res.length : 0}</b>
+          </div>
+        `;
+      }
+
+      // Result Text
+      const resEl = document.getElementById('result-text');
+      resEl.innerText = JSON.stringify(state.res || []);
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

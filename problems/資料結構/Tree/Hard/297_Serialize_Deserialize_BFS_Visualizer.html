@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>297. Serialize and Deserialize Binary Tree</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 45, 85, 0.15); color: var(--hard); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--blue); margin-bottom: 4px; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .sol-tab-btn { background: #1a1a1a; border: 1px solid var(--border); color: var(--text-dim); padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; }
+    .sol-tab-btn.active { background: var(--orange); color: #000; font-weight: bold; border-color: var(--orange); }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.76rem; overflow-x: auto; max-height: 380px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.75rem; min-height: 110px; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+    .stack-frame.returning { border-color: var(--green); border-left-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+    
+    .tree-pane { width: 100%; height: 200px; background: #141414; border: 1px solid var(--border); border-radius: 4px; position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+    .tree-pane-title { font-size: 0.75rem; font-weight: bold; font-family: monospace; color: var(--orange); }
+    
+    svg.tree-svg { width: 100%; height: 170px; }
+    .tree-node-circle { fill: #333; stroke: var(--border); stroke-width: 2px; transition: all 0.2s; }
+    .tree-node-circle.active { fill: rgba(255, 161, 22, 0.35); stroke: var(--orange); stroke-width: 3px; }
+    .tree-node-circle.visited { fill: rgba(80, 250, 123, 0.25); stroke: var(--green); stroke-width: 2px; }
+    .tree-node-circle.null-node { fill: rgba(138, 138, 138, 0.2); stroke: var(--text-dim); stroke-dasharray: 2 2; }
+    .tree-text { fill: #fff; font-family: monospace; font-weight: bold; font-size: 12px; text-anchor: middle; dominant-baseline: middle; }
+    .tree-edge { stroke: #555; stroke-width: 2px; }
+
+    /* 序列化字串與佇列視覺化 */
+    .stream-vis-container { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px; font-family: monospace; }
+    .stream-row { display: flex; align-items: center; gap: 10px; }
+    .stream-label { width: 85px; font-weight: bold; font-size: 0.72rem; color: var(--text-dim); text-align: right; }
+    .stream-cells { display: flex; gap: 4px; flex: 1; overflow-x: auto; padding-bottom: 2px; }
+    .cell-wrapper { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .cell-idx { font-size: 0.65rem; color: var(--text-dim); }
+    .cell { min-width: 32px; height: 32px; padding: 0 6px; border-radius: 4px; border: 1px solid var(--border); background: #222; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; }
+    
+    .cell.active { background: rgba(255, 161, 22, 0.35); border-color: var(--orange); color: var(--orange); transform: scale(1.05); }
+    .cell.null-val { color: var(--text-dim); background: #1a1a1a; }
+    .cell.consumed { opacity: 0.3; background: #181818; text-decoration: line-through; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 75px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">297. Serialize and Deserialize Binary Tree</span>
+    <span class="badge">Hard</span>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: root = [1,2,3,null,null,4,5]</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: root = []</button>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄：題目、程式碼、Call Stack -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與複雜度</div>
+        <div class="problem-desc">
+          設計一個演算法將二元樹<b>序列化 (Serialize)</b> 為字串，並能將該字串<b>反序列化 (Deserialize)</b> 還原為原本的二元樹結構。
+        </div>
+
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(N)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 程式碼區塊（支援 3 種寫法切換） -->
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼解法選擇</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 4px;">
+          <button class="sol-tab-btn active" onclick="setSolution(0)">解法一：前序遞迴 DFS (Preorder DFS)</button>
+          <button class="sol-tab-btn" onclick="setSolution(1)">解法二：層序廣度優先 BFS (Queue)</button>
+          <button class="sol-tab-btn" onclick="setSolution(2)">解法三：後序遞迴 DFS (Postorder DFS)</button>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (系統呼叫堆疊)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄：解題思路、實時計算與樹重構 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- 解題思路與公式推導區塊 -->
+      <div class="card">
+        <div class="idea-box">
+          <div class="idea-title">💡 如何完美的序列化與反序列化二元樹？</div>
+          <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 4px;">
+            <li><b>標記空節點 (Null Symbol)</b>：單靠前序遍歷無法唯一確定樹結構，必須<b>顯式記錄 Null 節點</b>（例如用 <code>"#"</code> 或 <code>"N"</code>）。</li>
+            <li><b>序列化 (Serialize)</b>：前序 DFS 順序為 <code>[根, 左子樹, 右子樹]</code>。遇到 <code>None</code> 時寫入 <code>"#"</code>，並用逗號分隔成字串。</li>
+            <li><b>反序列化 (Deserialize)</b>：將字串用逗號分割為陣列/佇列，利用佇列 **FIFO (先進先出)** 特性：
+              <br>• 彈出第一個元素作為 Root。
+              <br>• 若為 <code>"#"</code> 代表 None。
+              <br>• 否則建立節點，並<b>依序遞迴建構 left 與 right</b>。
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 序列化字串與二元樹重建動態視覺化</div>
+        
+        <div class="stage">
+          <div class="tree-pane">
+            <span class="tree-pane-title">二元樹走訪與動態重構 (Binary Tree Dynamic Reconstruction)</span>
+            <div id="tree-svg-container" style="width: 100%; height: 100%;"></div>
+          </div>
+
+          <div class="stream-vis-container" id="stream-vis-box"></div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">當前步驟計算 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 3 種 Python 解法
+    const solutions = [
+      {
+        name: "前序遞迴 DFS (Preorder DFS)",
+        timeComp: "O(N)",
+        spaceComp: "O(N)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Codec</span>:`,
+          `    <span class="kw">def</span> <span class="fn">serialize</span>(<span class="self">self</span>, root: Optional[TreeNode]) -> str:`,
+          `        res = []`,
+          `        <span class="kw">def</span> <span class="fn">dfs</span>(node):`,
+          `            <span class="kw">if not</span> node:`,
+          `                res.append(<span class="cm">"#"</span>)`,
+          `                <span class="kw">return</span>`,
+          `            res.append(str(node.val))`,
+          `            dfs(node.left)`,
+          `            dfs(node.right)`,
+          `        dfs(root)`,
+          `        <span class="kw">return</span> <span class="cm">","</span>.join(res)`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">deserialize</span>(<span class="self">self</span>, data: str) -> Optional[TreeNode]:`,
+          `        vals = collections.deque(data.split(<span class="cm">","</span>))`,
+          `        <span class="kw">def</span> <span class="fn">build</span>():`,
+          `            <span class="kw">if not</span> vals: <span class="kw">return None</span>`,
+          `            val = vals.popleft()`,
+          `            <span class="kw">if</span> val == <span class="cm">"#"</span>: <span class="kw">return None</span>`,
+          `            node = TreeNode(int(val))`,
+          `            node.left = build()`,
+          `            node.right = build()`,
+          `            <span class="kw">return</span> node`,
+          `        <span class="kw">return</span> build()`
+        ]
+      },
+      {
+        name: "層序廣度優先 BFS (Queue)",
+        timeComp: "O(N)",
+        spaceComp: "O(N)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Codec</span>:`,
+          `    <span class="kw">def</span> <span class="fn">serialize</span>(<span class="self">self</span>, root: Optional[TreeNode]) -> str:`,
+          `        <span class="kw">if not</span> root: <span class="kw">return</span> <span class="cm">""</span>`,
+          `        q = collections.deque([root])`,
+          `        res = []`,
+          `        <span class="kw">while</span> q:`,
+          `            node = q.popleft()`,
+          `            <span class="kw">if</span> node:`,
+          `                res.append(str(node.val))`,
+          `                q.append(node.left)`,
+          `                q.append(node.right)`,
+          `            <span class="kw">else</span>:`,
+          `                res.append(<span class="cm">"#"</span>)`,
+          `        <span class="kw">return</span> <span class="cm">","</span>.join(res)`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">deserialize</span>(<span class="self">self</span>, data: str) -> Optional[TreeNode]:`,
+          `        <span class="kw">if not</span> data: <span class="kw">return None</span>`,
+          `        vals = data.split(<span class="cm">","</span>)`,
+          `        root = TreeNode(int(vals[0]))`,
+          `        q = collections.deque([root])`,
+          `        i = 1`,
+          `        <span class="kw">while</span> q:`,
+          `            node = q.popleft()`,
+          `            <span class="kw">if</span> vals[i] != <span class="cm">"#"</span>:`,
+          `                node.left = TreeNode(int(vals[i]))`,
+          `                q.append(node.left)`,
+          `            i += 1`,
+          `            <span class="kw">if</span> vals[i] != <span class="cm">"#"</span>:`,
+          `                node.right = TreeNode(int(vals[i]))`,
+          `                q.append(node.right)`,
+          `            i += 1`,
+          `        <span class="kw">return</span> root`
+        ]
+      },
+      {
+        name: "後序遞迴 DFS (Postorder DFS)",
+        timeComp: "O(N)",
+        spaceComp: "O(N)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Codec</span>:`,
+          `    <span class="kw">def</span> <span class="fn">serialize</span>(<span class="self">self</span>, root: Optional[TreeNode]) -> str:`,
+          `        res = []`,
+          `        <span class="kw">def</span> <span class="fn">dfs</span>(node):`,
+          `            <span class="kw">if not</span> node:`,
+          `                res.append(<span class="cm">"#"</span>)`,
+          `                <span class="kw">return</span>`,
+          `            dfs(node.left)`,
+          `            dfs(node.right)`,
+          `            res.append(str(node.val))`,
+          `        dfs(root)`,
+          `        <span class="kw">return</span> <span class="cm">","</span>.join(res)`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">deserialize</span>(<span class="self">self</span>, data: str) -> Optional[TreeNode]:`,
+          `        vals = data.split(<span class="cm">","</span>)`,
+          `        <span class="kw">def</span> <span class="fn">build</span>():`,
+          `            <span class="kw">if not</span> vals: <span class="kw">return None</span>`,
+          `            val = vals.pop()`,
+          `            <span class="kw">if</span> val == <span class="cm">"#"</span>: <span class="kw">return None</span>`,
+          `            node = TreeNode(int(val))`,
+          `            node.right = build()`,
+          `            node.left = build()`,
+          `            <span class="kw">return</span> node`,
+          `        <span class="kw">return</span> build()`
+        ]
+      }
+    ];
+
+    // 測試資料
+    const presets = [
+      {
+        name: "Ex 1: Standard Tree",
+        nodes: {
+          1: { val: 1, left: 2, right: 3 },
+          2: { val: 2, left: null, right: null },
+          3: { val: 3, left: 4, right: 5 },
+          4: { val: 4, left: null, right: null },
+          5: { val: 5, left: null, right: null }
+        },
+        rootId: 1
+      },
+      {
+        name: "Ex 2: Empty Tree",
+        nodes: {},
+        rootId: null
+      }
+    ];
+
+    let currentSolution = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setSolution(idx) {
+      currentSolution = idx;
+      document.querySelectorAll('.sol-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      document.getElementById('time-comp').innerText = solutions[idx].timeComp;
+      document.getElementById('space-comp').innerText = solutions[idx].spaceComp;
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      let str = p.name === "Ex 1: Standard Tree" ? "[1, 2, 3, null, null, 4, 5]" : "[]";
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>root = ${str}</div>
+      `;
+    }
+
+    function renderCode() {
+      const codeArr = solutions[currentSolution].code;
+      document.getElementById('code-box').innerHTML = codeArr.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderTreeSVG(nodesData, rootId, activeId = null, visitedIds = []) {
+      if (!nodesData || !rootId || !nodesData[rootId]) {
+        return `<div style="color:var(--text-dim); font-family:monospace; margin:auto; font-size:0.8rem; text-align:center; padding-top:60px;">( Tree is empty / Null )</div>`;
+      }
+
+      let posMap = {};
+      function calcPos(id, depth = 0, leftBound = 0, rightBound = 100) {
+        if (!id || !nodesData[id]) return;
+        let x = (leftBound + rightBound) / 2;
+        let y = depth * 40 + 25;
+        posMap[id] = { x, y, left: nodesData[id].left, right: nodesData[id].right, val: nodesData[id].val };
+        calcPos(nodesData[id].left, depth + 1, leftBound, x);
+        calcPos(nodesData[id].right, depth + 1, x, rightBound);
+      }
+      calcPos(rootId);
+
+      let edgesHTML = '', nodesHTML = '';
+      Object.keys(posMap).forEach(idStr => {
+        let id = Number(idStr);
+        let p = posMap[id];
+        if (p.left && posMap[p.left]) {
+          let lp = posMap[p.left];
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${lp.x}%" y2="${lp.y}" class="tree-edge" />`;
+        }
+        if (p.right && posMap[p.right]) {
+          let rp = posMap[p.right];
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${rp.x}%" y2="${rp.y}" class="tree-edge" />`;
+        }
+
+        let circleClass = 'tree-node-circle';
+        if (visitedIds.includes(id)) circleClass += ' visited';
+        if (id === activeId) circleClass += ' active';
+
+        nodesHTML += `<g><circle cx="${p.x}%" cy="${p.y}" r="13" class="${circleClass}" /><text x="${p.x}%" y="${p.y}" class="tree-text">${p.val}</text></g>`;
+      });
+
+      return `<svg class="tree-svg">${edgesHTML}${nodesHTML}</svg>`;
+    }
+
+    function renderStreamHTML(streamArr, activeIdx, consumedCount) {
+      let cellsHTML = streamArr.map((val, idx) => {
+        let cellClass = "cell";
+        if (val === "#") cellClass += " null-val";
+        if (idx < consumedCount) cellClass += " consumed";
+        if (idx === activeIdx) cellClass += " active";
+
+        return `<div class="cell-wrapper"><span class="cell-idx">${idx}</span><div class="${cellClass}">${val}</div></div>`;
+      }).join('');
+
+      return `
+        <div class="stream-row">
+          <div class="stream-label">Serialized:</div>
+          <div class="stream-cells">${cellsHTML}</div>
+        </div>
+      `;
+    }
+
+    function renderStackHTML(stackFrames) {
+      if (!stackFrames || stackFrames.length === 0) return `<div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>`;
+      return stackFrames.map(f => `
+        <div class="stack-frame ${f.returning ? 'returning' : ''}">
+          <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.7rem;">(${f.args})</span></div>
+          <div style="font-size:0.75rem; font-weight:bold; color:${f.returning ? 'var(--green)' : 'var(--orange)'};">${f.returning ? `➔ return ${f.retVal}` : 'Active'}</div>
+        </div>
+      `).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const presetData = presets[currentPreset];
+      const nodes = presetData.nodes;
+      const rootId = presetData.rootId;
+
+      let currentStack = [];
+      let serializedArr = [];
+      let visited = [];
+
+      function pushFrame(fnName, args) { currentStack.push({ fnName, args, returning: false, retVal: null }); }
+      function updateTopFrame(retVal) {
+        if (currentStack.length > 0) {
+          let top = currentStack[currentStack.length - 1];
+          top.returning = true;
+          top.retVal = retVal;
+        }
+      }
+      function popFrame() { currentStack.pop(); }
+
+      // 階段一：Serialize 走訪
+      function serializeDFS(nodeId) {
+        if (!nodeId || !nodes[nodeId]) {
+          pushFrame("serialize_dfs", "None");
+          serializedArr.push("#");
+          history.push({
+            line: 5, phase: "【Serialize】遇 Null 節點",
+            desc: "遇到空節點，寫入 '#' 到序列化陣列",
+            stack: JSON.parse(JSON.stringify(currentStack)), activeId: null, visitedIds: [...visited],
+            stream: [...serializedArr], activeIdx: serializedArr.length - 1, consumed: 0
+          });
+          updateTopFrame("None");
+          popFrame();
+          return;
+        }
+
+        let currNode = nodes[nodeId];
+        pushFrame("serialize_dfs", `Node(${currNode.val})`);
+        visited.push(nodeId);
+        serializedArr.push(String(currNode.val));
+
+        history.push({
+          line: 7, phase: `【Serialize】寫入 Node(${currNode.val})`,
+          desc: `寫入值 ${currNode.val} 並遞迴寫入左、右子樹`,
+          stack: JSON.parse(JSON.stringify(currentStack)), activeId: nodeId, visitedIds: [...visited],
+          stream: [...serializedArr], activeIdx: serializedArr.length - 1, consumed: 0
+        });
+
+        serializeDFS(currNode.left);
+        serializeDFS(currNode.right);
+
+        popFrame();
+      }
+
+      pushFrame("serialize", rootId ? `Root(${nodes[rootId].val})` : "None");
+      history.push({
+        line: 1, phase: "【Serialize】開始序列化",
+        desc: "觸發 serialize(root)，執行前序 DFS 將二元樹轉為字串",
+        stack: JSON.parse(JSON.stringify(currentStack)), activeId: rootId, visitedIds: [],
+        stream: [], activeIdx: -1, consumed: 0
+      });
+
+      serializeDFS(rootId);
+      popFrame();
+
+      let finalString = serializedArr.join(",");
+      history.push({
+        line: 11, phase: "【Serialize】完成序列化",
+        desc: `序列化結果："${finalString}"`,
+        stack: [], activeId: null, visitedIds: [...visited],
+        stream: [...serializedArr], activeIdx: -1, consumed: 0
+      });
+
+      // 階段二：Deserialize 動態還原
+      let deque = [...serializedArr];
+      let consumedCount = 0;
+      let reconstructedTree = {};
+      let visitedDes = [];
+
+      function deserializeBuild() {
+        pushFrame("build", `vals[${consumedCount}]`);
+
+        if (deque.length === 0) {
+          updateTopFrame("None");
+          popFrame();
+          return null;
+        }
+
+        let val = deque.shift();
+        let currIdx = consumedCount;
+        consumedCount++;
+
+        history.push({
+          line: 17, phase: `【Deserialize】彈出元素: '${val}'`,
+          desc: `從 Deque 彈出元素 '${val}' (Index: ${currIdx})`,
+          stack: JSON.parse(JSON.stringify(currentStack)), activeId: null, visitedIds: [...visitedDes],
+          stream: [...serializedArr], activeIdx: currIdx, consumed: consumedCount
+        });
+
+        if (val === "#") {
+          history.push({
+            line: 18, phase: "【Deserialize】遇 '#'",
+            desc: "元素為 '#'，代表 Null 節點，回傳 None",
+            stack: JSON.parse(JSON.stringify(currentStack)), activeId: null, visitedIds: [...visitedDes],
+            stream: [...serializedArr], activeIdx: currIdx, consumed: consumedCount
+          });
+          updateTopFrame("None");
+          popFrame();
+          return null;
+        }
+
+        let nodeVal = parseInt(val);
+        let nodeId = currIdx + 100; // 假設定位 ID
+        reconstructedTree[nodeId] = { val: nodeVal, left: null, right: null };
+        visitedDes.push(nodeId);
+
+        history.push({
+          line: 19, phase: `【Deserialize】建立 TreeNode(${nodeVal})`,
+          desc: `建立節點 TreeNode(${nodeVal})，準備建立 left 與 right`,
+          stack: JSON.parse(JSON.stringify(currentStack)), activeId: nodeId, visitedIds: [...visitedDes],
+          stream: [...serializedArr], activeIdx: currIdx, consumed: consumedCount,
+          treeOverride: JSON.parse(JSON.stringify(reconstructedTree)), rootOverride: 100
+        });
+
+        let leftChild = deserializeBuild();
+        if (leftChild) reconstructedTree[nodeId].left = leftChild;
+
+        let rightChild = deserializeBuild();
+        if (rightChild) reconstructedTree[nodeId].right = rightChild;
+
+        updateTopFrame(`TreeNode(${nodeVal})`);
+        history.push({
+          line: 22, phase: `【Deserialize】TreeNode(${nodeVal}) 左右建立完成`,
+          desc: `TreeNode(${nodeVal}) 左右子樹皆建立完成，回傳該節點`,
+          stack: JSON.parse(JSON.stringify(currentStack)), activeId: nodeId, visitedIds: [...visitedDes],
+          stream: [...serializedArr], activeIdx: currIdx, consumed: consumedCount,
+          treeOverride: JSON.parse(JSON.stringify(reconstructedTree)), rootOverride: 100
+        });
+
+        popFrame();
+        return nodeId;
+      }
+
+      pushFrame("deserialize", `data="${finalString}"`);
+      history.push({
+        line: 13, phase: "【Deserialize】開始反序列化",
+        desc: "將字串分割為 Deque 佇列，準備遞迴重建二元樹",
+        stack: JSON.parse(JSON.stringify(currentStack)), activeId: null, visitedIds: [],
+        stream: [...serializedArr], activeIdx: -1, consumed: 0
+      });
+
+      let desRoot = deserializeBuild();
+      popFrame();
+
+      history.push({
+        line: 23, phase: "🎉 序列化與反序列化完美完成！",
+        desc: "成功還原二元樹結構！",
+        stack: [], activeId: desRoot, visitedIds: [...visitedDes],
+        stream: [...serializedArr], activeIdx: -1, consumed: serializedArr.length,
+        treeOverride: JSON.parse(JSON.stringify(reconstructedTree)), rootOverride: 100
+      });
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = renderStackHTML(stackData);
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      const presetData = presets[currentPreset];
+      let treeNodes = state.treeOverride || presetData.nodes;
+      let rootId = state.rootOverride !== undefined ? state.rootOverride : presetData.rootId;
+
+      document.getElementById('tree-svg-container').innerHTML = renderTreeSVG(treeNodes, rootId, state.activeId, state.visitedIds);
+
+      if (state.stream) {
+        document.getElementById('stream-vis-box').innerHTML = renderStreamHTML(state.stream, state.activeIdx, state.consumed);
+      }
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

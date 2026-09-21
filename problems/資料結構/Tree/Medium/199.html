@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 199: Binary Tree Right Side View - 極致教學面板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --vscode-bg: #1E1E1E;
+            --vscode-sidebar: #252526;
+            --vscode-highlight: #2C313C;
+            --vscode-border: #3E4451;
+            --vscode-text: #D4D4D4;
+            --syntax-keyword: #C678DD;
+            --syntax-func: #61AFEF;
+            --syntax-number: #D19A66;
+            --syntax-prop: #E06C75;
+            --syntax-comment: #5C6370;
+        }
+
+        body { background-color: var(--vscode-bg); color: var(--vscode-text); font-family: 'Inter', sans-serif; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; font-size: 13px; line-height: 1.5; }
+        .log-font { font-size: 12px; line-height: 1.4; }
+        .vscode-active-line { background-color: var(--vscode-highlight); border-left: 4px solid #61AFEF; }
+        
+        /* 節點樣式 */
+        .node-circle { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); stroke-width: 2; }
+        .node-active { stroke: #61AFEF; stroke-width: 4; filter: drop-shadow(0 0 8px rgba(97, 175, 239, 0.8)); }
+        .node-right-view { stroke: #D19A66; stroke-width: 5; fill: #3E372E; filter: drop-shadow(0 0 10px rgba(209, 154, 102, 0.5)); }
+        
+        /* 側邊按鈕 */
+        .case-btn { border: 1px solid transparent; transition: all 0.2s; }
+        .case-btn.active { border-color: #61AFEF; background-color: #37373D; box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }
+        
+        /* DP Table / DS Matrix 動態網格動畫 */
+        @keyframes cell-highlight {
+            0% { background-color: rgba(97, 175, 239, 0.5); border-color: #61AFEF; }
+            100% { background-color: rgba(37, 37, 3d, 0.3); border-color: #3E4451; }
+        }
+        .ds-cell-active { animation: cell-highlight 0.5s ease-out; border-width: 2px; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3E4451; border-radius: 10px; }
+        
+        .tab-active { border-bottom: 2px solid #61AFEF; color: white !important; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <div class="bg-[#323233] px-6 py-2.5 flex items-center justify-between border-b border-black shadow-lg">
+        <div class="flex items-center space-x-4">
+            <div class="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">Medium</div>
+            <h1 class="text-white font-semibold text-sm tracking-wide">199. Binary Tree Right Side View</h1>
+        </div>
+        <div class="flex items-center space-x-6">
+            <div class="flex bg-[#252526] rounded-md p-1 border border-[#3E4451]">
+                <button onclick="switchMode('BFS')" id="btn-BFS" class="px-4 py-1 text-[11px] rounded transition-all font-medium tab-active">BFS 模式</button>
+                <button onclick="switchMode('DFS')" id="btn-DFS" class="px-4 py-1 text-[11px] rounded transition-all font-medium text-gray-500">DFS 模式</button>
+            </div>
+            <div class="h-4 w-[1px] bg-gray-700"></div>
+            <div class="flex space-x-3">
+                <button onclick="step(-1)" class="text-gray-400 hover:text-white"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6L18 6v12z"/></svg></button>
+                <button onclick="togglePlay()" id="play-btn" class="text-blue-400 hover:text-blue-300"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                <button onclick="step(1)" class="text-gray-400 hover:text-white"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <aside class="w-[28%] bg-[#252526] border-r border-black flex flex-col overflow-hidden">
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+                <section>
+                    <h2 class="text-gray-400 text-[11px] font-bold uppercase tracking-[2px] mb-3">題目描述 / Description</h2>
+                    <p class="text-sm text-gray-300 leading-relaxed space-y-3">
+                        想像你站在一棵二元樹的 <span class="text-orange-400 font-bold">右側</span>往左看，請依據從上到下的順序，回傳你能看到的節點數值（去符號化，顯示如 10）。
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-gray-400 text-[11px] font-bold uppercase tracking-[2px] mb-3">複雜度 / Complexity Analysis</h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-[#1E1E1E] p-3 rounded-lg border border-[#3E4451]">
+                            <div class="text-[10px] text-gray-500 mb-1">Time</div>
+                            <div class="text-sm font-mono text-green-400">O(N)</div>
+                        </div>
+                        <div class="bg-[#1E1E1E] p-3 rounded-lg border border-[#3E4451]">
+                            <div class="text-[10px] text-gray-500 mb-1">Space</div>
+                            <div class="text-sm font-mono text-green-400" id="space-comp">O(W)</div>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-gray-600 mt-3 italic leading-tight">N 為節點總數。BFS 的空間取決於最大寬度 W，DFS 取決於樹的高度 H。</p>
+                </section>
+
+                <section>
+                    <h2 class="text-gray-400 text-[11px] font-bold uppercase tracking-[2px] mb-3">測試案例 / Test Cases</h2>
+                    <div class="space-y-2">
+                        <button onclick="loadCase(0)" id="case-0" class="case-btn w-full text-left p-3 rounded-lg bg-[#2D2D2D] hover:bg-[#37373D]">
+                            <div class="text-xs font-bold text-gray-200">Example 1: 標準結構</div>
+                            <div class="text-[10px] font-mono text-gray-500">root = [1,2,3,null,5,null,4]</div>
+                        </button>
+                        <button onclick="loadCase(1)" id="case-1" class="case-btn w-full text-left p-3 rounded-lg bg-[#2D2D2D] hover:bg-[#37373D]">
+                            <div class="text-xs font-bold text-gray-200">Example 2: 左長右短 (重要)</div>
+                            <div class="text-[10px] font-mono text-gray-500">root = [1,2,3,4,null,null,null,5]</div>
+                        </button>
+                        <button onclick="loadCase(2)" id="case-2" class="case-btn w-full text-left p-3 rounded-lg bg-[#2D2D2D] hover:bg-[#37373D]">
+                            <div class="text-xs font-bold text-gray-200">Example 3: 單邊右樹</div>
+                            <div class="text-[10px] font-mono text-gray-500">root = [1,null,3]</div>
+                        </button>
+                        <button onclick="loadCase(3)" id="case-3" class="case-btn w-full text-left p-3 rounded-lg bg-[#2D2D2D] hover:bg-[#37373D]">
+                            <div class="text-xs font-bold text-gray-200">Example 4: 空樹</div>
+                            <div class="text-[10px] font-mono text-gray-500">root = []</div>
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+            <div class="p-6 bg-[#1e1e1e] border-t border-black">
+                <div class="text-[11px] text-gray-500 font-bold uppercase mb-2 tracking-widest">目前結果 (res)</div>
+                <div id="res-display" class="text-3xl font-mono text-orange-400 tracking-tighter bg-[#252526] p-3 rounded-md border border-[#3E4451]">[]</div>
+            </div>
+        </aside>
+
+        <main class="w-[42%] bg-[#1E1E1E] flex flex-col p-6 overflow-hidden space-y-6">
+            <div class="flex-1 bg-[#252526] rounded-xl border border-[#3E4451] relative flex flex-col">
+                <div class="p-4 border-b border-[#3E4451] flex justify-between items-center bg-[#2D2D2D]/50 rounded-t-xl">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">樹狀結構視覺化 / Tree Visualization</span>
+                    <div id="algo-type-indicator" class="text-[10px] font-mono text-blue-400 px-2 py-0.5 bg-blue-500/10 rounded border border-blue-500/20">BFS MODE</div>
+                </div>
+                <div class="flex-1 relative flex items-center justify-center p-8">
+                    <svg id="svg-tree" class="w-full h-full p-4"></svg>
+                </div>
+            </div>
+
+            <div class="h-36 bg-[#252526] border border-[#3E4451] rounded-xl p-5 flex flex-col">
+                <div id="ds-title" class="text-[11px] text-gray-500 uppercase font-bold tracking-widest mb-4">目前數據狀態 (Data Structure)</div>
+                <div id="ds-container" class="flex-1 flex items-center space-x-3 overflow-x-auto custom-scrollbar pb-2">
+                    </div>
+            </div>
+
+            <div class="flex items-center justify-between bg-[#252526] p-4 rounded-xl border border-[#3E4451] select-none">
+                <div class="flex space-x-3">
+                    <button onclick="step(-1)" class="hover:text-blue-400 transition-colors">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6L18 6v12z"/></svg>
+                    </button>
+                    <button onclick="step(1)" class="hover:text-blue-400 transition-colors">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                    <button onclick="reset()" class="hover:text-red-400 transition-colors pl-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v4.992m-9.144 2.152L4.032 10.375M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0z"/></svg>
+                    </button>
+                </div>
+                <div class="text-[11px] font-mono text-gray-500">進度 (Step): <span id="cur-step" class="text-blue-400">0</span> / <span id="total-step">0</span></div>
+            </div>
+        </main>
+
+        <aside class="w-[30%] bg-[#1E1E1E] border-l border-black flex flex-col overflow-hidden">
+            <div class="h-[48%] overflow-hidden flex flex-col">
+                <div class="px-4 py-2 bg-[#252526] text-[11px] text-gray-400 font-bold uppercase border-b border-black tracking-widest">Python3 代碼實作</div>
+                <div class="flex-1 overflow-y-auto custom-scrollbar p-4 vscode-bg" id="code-area"></div>
+            </div>
+            
+            <div class="flex-1 border-t border-black bg-[#121212] flex flex-col overflow-hidden">
+                <div class="px-4 py-2 bg-[#1A1A1A] text-[11px] text-gray-500 font-bold uppercase border-b border-black tracking-widest">逐步執行日誌 (Detailed Logs)</div>
+                <div id="detail-logs" class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-3 log-font"></div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // --- 核心演算法數據 ---
+        const algorithms = {
+            BFS: {
+                label: "BFS (層序遍歷)",
+                space: "O(W) - 最大寬度",
+                desc: "利用隊列按層遍歷，捕捉每一層最後一個節點。",
+                code: [
+                    "def rightSideView(self, root):",
+                    "    if not root: return []",
+                    "    res, queue = [], deque([root])",
+                    "    while queue:",
+                    "        size = len(queue)",
+                    "        for i in range(size):",
+                    "            node = queue.popleft()",
+                    "            # 如果是該層最後一個",
+                    "            if i == size - 1:",
+                    "                res.append(node.val)",
+                    "            if node.left: queue.append(node.left)",
+                    "            if node.right: queue.append(node.right)",
+                    "    return res"
+                ]
+            },
+            DFS: {
+                label: "DFS (遞迴模式)",
+                space: "O(H) - 樹的高度",
+                desc: "優先走右子樹，利用 len(res) 捕捉每一層第一個遇到的節點。",
+                code: [
+                    "def rightSideView(self, root):",
+                    "    res = []",
+                    "    def dfs(node, depth):",
+                    "        if not node: return",
+                    "        if depth == len(res):",
+                    "            res.append(node.val)",
+                    "        dfs(node.right, depth + 1)",
+                    "        dfs(node.left, depth + 1)",
+                    "    dfs(root, 0)",
+                    "    return res"
+                ]
+            }
+        };
+
+        // --- 測試案例 Trace 資料 ---
+        const testCases = [
+            { // Case 0: Normal
+                tree: [1,2,3,null,5,null,4],
+                BFS: [
+                    { line: 2, node: 1, ds: ["Q: [1]"], res: [], log: "根 [1] 入隊。" },
+                    { line: 8, node: 1, ds: ["(空)"], res: [1], log: "層 0 結束，捕捉 [1]。" },
+                    { line: 10, node: 2, ds: ["Q: [2, 3]"], res: [1], log: "層 1 入隊：[2, 3]。" },
+                    { line: 8, node: 3, ds: ["Q: [5, 4]"], res: [1, 3], log: "層 1 結束，捕捉 [3]。" },
+                    { line: 8, node: 4, ds: ["(空)"], res: [1, 3, 4], log: "層 2 結束，捕捉 [4]。" }
+                ],
+                DFS: [
+                    { line: 9, node: 1, ds: ["Depth: 0"], res: [], log: "DFS 從 [1] 開始。" },
+                    { line: 5, node: 1, ds: ["Depth: 0"], res: [1], log: "捕捉：Depth 0 紀錄 [1]。" },
+                    { line: 7, node: 3, ds: ["Depth: 1"], res: [1], log: "向右：抵達 [3]。" },
+                    { line: 5, node: 3, ds: ["Depth: 1"], res: [1, 3], log: "捕捉：Depth 1 紀錄 [3]。" },
+                    { line: 7, node: 4, ds: ["Depth: 2"], res: [1, 3], log: "向右：抵達 [4]。" },
+                    { line: 5, node: 4, ds: ["Depth: 2"], res: [1, 3, 4], log: "捕捉：Depth 2 紀錄 [4]。" }
+                ]
+            },
+            { // Case 1: Deep Left
+                tree: [1,2,3,4,null,null,null,5],
+                BFS: [
+                    { line: 2, node: 1, ds: ["Q: [1]"], res: [], log: "根 [1] 入隊。" },
+                    { line: 8, node: 1, ds: ["(空)"], res: [1], log: "層 0 捕捉 [1]。" },
+                    { line: 8, node: 3, ds: ["Q: [4]"], res: [1, 3], log: "層 1 捕捉 [3]。" },
+                    { line: 8, node: 4, ds: ["Q: []"], res: [1, 3, 4], log: "層 2 捕捉 [4]。" },
+                    { line: 8, node: 5, ds: ["Q: []"], res: [1, 3, 4, 5], log: "層 3 捕捉 [5]。" }
+                ],
+                DFS: [
+                    { line: 5, node: 1, ds: ["D: 0"], res: [1], log: "根 [1] 加入。" },
+                    { line: 5, node: 3, ds: ["D: 1"], res: [1, 3], log: "右路捕捉 [3]。" },
+                    { line: 5, node: 2, ds: ["D: 1"], res: [1, 3], log: "左路 [2]，該層已記錄，略過。" },
+                    { line: 5, node: 4, ds: ["D: 2"], res: [1, 3, 4], log: "捕捉 [4]。" },
+                    { line: 5, node: 5, ds: ["D: 3"], res: [1, 3, 4, 5], log: "捕捉深層左樹 [5]。" }
+                ]
+            },
+            { // Case 2: Right only
+                tree: [1,null,3],
+                BFS: [
+                    { line: 8, node: 1, ds: ["Q: []"], res: [1], log: "捕捉 [1]。" },
+                    { line: 8, node: 3, ds: ["Q: []"], res: [1, 3], log: "捕捉 [3]。" }
+                ],
+                DFS: [
+                    { line: 5, node: 1, ds: ["D: 0"], res: [1], log: "根 [1] 加入。" },
+                    { line: 5, node: 3, ds: ["D: 1"], res: [1, 3], log: "捕捉 [3]。" }
+                ]
+            },
+            { // Case 3: Empty
+                tree: [],
+                BFS: [{ line: 1, node: null, ds: ["None"], res: [], log: "空樹，返回 []。" }],
+                DFS: [{ line: 3, node: null, ds: ["None"], res: [], log: "空樹，返回。" }]
+            }
+        ];
+
+        let currentMode = 'BFS';
+        let currentCase = 0;
+        let curStep = 0;
+        let timer = null;
+
+        // --- Core Functions ---
+        function renderCode() {
+            const area = document.getElementById('code-area');
+            const algo = algorithms[currentMode];
+            area.innerHTML = algo.code.map((line, i) => {
+                let html = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/\b(if|return|not|def|while|for|in|from|import|deque)\b/g, '<span style="color:var(--syntax-keyword)">$1</span>')
+                    .replace(/\b(popleft|append|dfs|rightSideView|len|range)\b/g, '<span style="color:var(--syntax-func)">$1</span>')
+                    .replace(/\b(res|queue|size|i|node|val|left|right|root|depth)\b/g, '<span style="color:var(--syntax-prop)">$1</span>')
+                    .replace(/\b(None|True|False)\b/g, '<span style="color:var(--syntax-number)">$1</span>')
+                    .replace(/(#.*)/g, '<span style="color:var(--syntax-comment)">$1</span>');
+                return `<div id="line-${i}" class="px-4 py-0.5 code-font whitespace-pre transition-all border-l-4 border-transparent"><code>${html}</code></div>`;
+            }).join('');
+        }
+
+        // SVG Drawing with precision connections
+        function drawTree(data) {
+            const svg = document.getElementById('svg-tree');
+            svg.innerHTML = '';
+            const w = svg.clientWidth;
+            const h = svg.clientHeight;
+            if (!data || data.length === 0) {
+                svg.innerHTML = `<text x="${w/2}" y="${h/2}" text-anchor="middle" fill="#5C6370" font-family="monospace">EMPTY TREE</text>`;
+                return;
+            }
+
+            const nodes = [];
+            const r = 16; // 節點半徑
+
+            // 結構化座標計算 (修正樹枝穿透圈圈問題)
+            if (currentCase === 1) { // 深度左樹
+                nodes.push({id: 1, x: w/2, y: 50, px: null, py: null});
+                nodes.push({id: 2, x: w/3, y: 110, px: w/2, py: 50});
+                nodes.push({id: 3, x: w/1.5, y: 110, px: w/2, py: 50});
+                nodes.push({id: 4, x: w/4, y: 170, px: w/3, py: 110});
+                nodes.push({id: 5, x: w/6, y: 230, px: w/4, py: 170});
+            } else if (currentCase === 2) { // 只有右邊
+                nodes.push({id: 1, x: w/2, y: 50, px: null, py: null});
+                nodes.push({id: 3, x: w/1.5, y: 110, px: w/2, py: 50});
+            } else {
+                nodes.push({id: 1, x: w/2, y: 50, px: null, py: null});
+                nodes.push({id: 2, x: w/3.5, y: 110, px: w/2, py: 50});
+                nodes.push({id: 3, x: w/1.4, y: 110, px: w/2, py: 50});
+                nodes.push({id: 5, x: w/2.5, y: 180, px: w/3.5, py: 110});
+                nodes.push({id: 4, x: w/1.2, y: 180, px: w/1.4, py: 110});
+            }
+
+            // 繪製樹枝 (連線) - 修正樹枝穿透問題
+            nodes.forEach(n => {
+                if(n.px !== null) {
+                    // 計算連線與圈圈邊緣的交點 (精密對齊)
+                    const dx = n.x - n.px;
+                    const dy = n.y - n.py;
+                    const len = Math.sqrt(dx*dx + dy*dy);
+                    
+                    // 從父節點邊緣出發
+                    const xStart = n.px + (dx / len) * r;
+                    const yStart = n.py + (dy / len) * r;
+                    // 終止於子節點邊緣
+                    const xEnd = n.x - (dx / len) * r;
+                    const yEnd = n.y - (dy / len) * r;
+
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", xStart); line.setAttribute("y1", yStart);
+                    line.setAttribute("x2", xEnd); line.setAttribute("y2", yEnd);
+                    line.setAttribute("stroke", "#444"); line.setAttribute("stroke-width", "1.5");
+                    line.setAttribute("stroke-linecap", "round");
+                    svg.appendChild(line);
+                }
+            });
+
+            // 繪製節點圈圈與數值
+            nodes.forEach(n => {
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.id = `node-${n.id}`;
+                
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", n.x); circle.setAttribute("cy", n.y);
+                circle.setAttribute("r", r);
+                circle.setAttribute("fill", "#2D2D2D"); circle.setAttribute("stroke", "#3E4451");
+                circle.setAttribute("class", "node-circle");
+                g.appendChild(circle);
+
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", n.x); text.setAttribute("y", n.y + 4);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("fill", "#D4D4D4"); text.setAttribute("font-family", "monospace");
+                text.setAttribute("font-size", "11px"); text.setAttribute("class", "font-bold");
+                text.textContent = n.id;
+                g.appendChild(text);
+
+                svg.appendChild(g);
+            });
+        }
+
+        // UI Updates
+        function updateUI() {
+            const steps = testCases[currentCase][currentMode];
+            const stepData = steps[curStep];
+            const maxSteps = steps.length - 1;
+            if(!stepData) return;
+
+            // 1. 代碼高亮
+            document.querySelectorAll('.vscode-active-line').forEach(l => l.classList.remove('vscode-active-line'));
+            const codeLines = document.getElementById('code-area').children;
+            if(codeLines[stepData.line]) codeLines[stepData.line].classList.add('vscode-active-line');
+
+            // 2. 樹節點樣式
+            document.querySelectorAll('.node-circle').forEach(c => c.classList.remove('node-active', 'node-right-view'));
+            if(stepData.node) {
+                const target = document.getElementById(`node-${stepData.node}`);
+                if(target) target.querySelector('circle').classList.add('node-active');
+            }
+            // 已在結果陣列中的節點
+            stepData.res.forEach(val => {
+                const n = document.getElementById(`node-${val}`);
+                if(n) n.querySelector('circle').classList.add('node-right-view');
+            });
+
+            // 3. 結果與數據容器顯示 (仿 DP Table 高亮)
+            const resDisplay = document.getElementById('res-display');
+            resDisplay.innerText = JSON.stringify(stepData.res);
+            resDisplay.classList.add('ds-cell-active');
+            setTimeout(() => resDisplay.classList.remove('ds-cell-active'), 500);
+
+            // 更新數據容器 (閃爍動畫)
+            const dsC = document.getElementById('ds-container');
+            dsC.innerHTML = stepData.ds.map(s => {
+                const isErr = s.includes("None");
+                return `<div class="ds-cell-active px-3 py-1 rounded bg-[#2D2D2D] border border-[#3E4451] text-xs font-mono text-blue-300 shadow-inner">${s}</div>`;
+            }).join('');
+            setTimeout(() => {
+                dsC.querySelectorAll('.ds-cell-active').forEach(c => c.classList.remove('ds-cell-active'));
+            }, 500);
+
+            // 4. 更新日誌與進度
+            const logBox = document.getElementById('detail-logs');
+            const entry = document.createElement('div');
+            entry.className = "pl-2 border-l-2 border-blue-600/50 text-gray-400 py-1 bg-white/5 animate-pulse-short";
+            entry.innerHTML = `<span class="text-blue-400 font-bold mr-2">步驟 ${curStep}:</span> ${stepData.log}`;
+            logBox.prepend(entry);
+            
+            document.getElementById('cur-step').innerText = curStep;
+            document.getElementById('total-step').innerText = maxSteps;
+        }
+
+        // Controls
+        function switchMode(mode) {
+            pause(); currentMode = mode;
+            document.getElementById('btn-BFS').className = `px-4 py-1 rounded transition-all font-medium ${mode === 'BFS' ? 'tab-active' : 'text-gray-500'}`;
+            document.getElementById('btn-DFS').className = `px-4 py-1 rounded transition-all font-medium ${mode === 'DFS' ? 'tab-active' : 'text-gray-500'}`;
+            document.getElementById('algo-type-indicator').innerText = algorithms[mode].label;
+            document.getElementById('space-comp').innerText = algorithms[mode].space;
+            document.getElementById('ds-title').innerText = mode === 'BFS' ? '隊列狀態 (Queue)' : '遞迴層級 (Depth)';
+            renderCode(); reset();
+        }
+
+        function loadCase(idx) {
+            pause(); currentCase = idx;
+            document.querySelectorAll('.case-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+            drawTree(testCases[idx].tree);
+            reset();
+        }
+
+        function step(dir) { pause(); const steps = testCases[currentCase][currentMode]; curStep = Math.max(0, Math.min(steps.length - 1, curStep + dir)); updateUI(); }
+        function togglePlay() { alert("Playback logic not fully implemented. Please step forward."); }
+        function pause() { clearInterval(timer); timer = null; }
+        function reset() { pause(); curStep = 0; document.getElementById('detail-logs').innerHTML = ''; updateUI(); }
+
+        window.onload = () => { renderCode(); loadCase(0); };
+    </script>
+</body>
+</html>

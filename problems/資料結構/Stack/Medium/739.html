@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>739. Daily Temperatures | 演算法面試教學面板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #1E1E1E; --bg-side: #252526;
+            --text-keyword: #C586C0; --text-func: #DCDCAA; --accent: #007ACC;
+        }
+        body { background-color: var(--bg-main); color: #D4D4D4; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        .line-active { background-color: rgba(255, 255, 255, 0.15); border-left: 4px solid var(--accent); }
+        .pop-effect { animation: pop-out 0.5s ease-out forwards; }
+        @keyframes pop-out {
+            0% { transform: translateY(0) scale(1); opacity: 1; border-color: #ef4444; }
+            100% { transform: translateY(-50px) scale(1.2); opacity: 0; }
+        }
+        .update-flash { animation: flash-green 0.6s ease; }
+        @keyframes flash-green {
+            0% { background-color: rgba(34, 197, 94, 0.4); }
+            100% { background-color: transparent; }
+        }
+        .complexity-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #333; color: #aaa; margin-right: 4px; }
+        .scroll-v::-webkit-scrollbar { width: 4px; }
+        .scroll-v::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <header class="h-9 bg-black flex items-center px-4 text-[11px] text-gray-500 border-b border-[#121212] justify-between select-none">
+        <div class="flex items-center space-x-4">
+            <span class="text-white font-bold tracking-tight">LeetCode 739. Daily Temperatures</span>
+            <span>演算法模擬器 v2.1</span>
+        </div>
+        <div class="text-[10px] flex items-center space-x-3">
+            <span class="flex items-center"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>台北伺服器</span>
+        </div>
+    </header>
+
+    <main class="flex flex-1 overflow-hidden">
+        
+        <aside class="w-1/4 bg-[#252526] border-r border-black flex flex-col overflow-hidden">
+            <div class="flex-1 p-5 overflow-y-auto scroll-v">
+                <h2 class="text-xs font-bold text-blue-400 mb-2 tracking-widest uppercase">題目描述 (Problem)</h2>
+                <div class="text-[11px] text-gray-400 leading-relaxed mb-6 border-b border-[#333] pb-4">
+                    給定一個代表每日溫度的整數陣列 <code class="text-orange-300">T</code>，返回一個陣列 <code class="text-orange-300">Ans</code>，其中 <code class="text-white">Ans[i]</code> 是指在第 <code class="text-white">i</code> 天之後，需要等待多少天才能等到更溫暖的溫度。如果之後都沒有更高溫，則填入 <code class="text-white">0</code>。
+                </div>
+
+                <div id="complexity-box" class="mb-6 p-3 bg-black/30 rounded border border-[#333]">
+                    <div class="text-[10px] text-gray-500 font-bold mb-3 uppercase">複雜度分析</div>
+                    <div class="flex items-center mb-2">
+                        <span class="text-[11px] w-20 text-gray-400">時間複雜度</span>
+                        <span id="time-comp" class="text-yellow-500 font-mono text-[11px]">O(N)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-[11px] w-20 text-gray-400">空間複雜度</span>
+                        <span id="space-comp" class="text-blue-400 font-mono text-[11px]">O(N)</span>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label class="text-[10px] text-gray-500 font-bold block mb-2 uppercase">選擇演算法</label>
+                        <select id="sol-select" onchange="app.switchSolution(this.value)" class="w-full bg-[#1E1E1E] text-xs p-2.5 rounded border border-[#444] text-blue-300 outline-none focus:border-blue-500">
+                            <option value="stack">單調棧 (Monotonic Stack)</option>
+                            <option value="dp">動態規劃 (DP Jump)</option>
+                            <option value="brute">暴力搜索 (Brute Force)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] text-gray-500 font-bold block mb-2 uppercase">測試數據控制</label>
+                        <div class="space-y-2">
+                            <button onclick="app.loadCase([73,74,75,71,69,72,76,73], '範例 1')" class="w-full text-left p-2.5 bg-[#2D2D2D] hover:bg-[#3E3E42] rounded text-[10px] border border-[#333] transition">
+                                <div class="text-blue-400 font-bold mb-1">Example 1</div>
+                                <div class="truncate text-gray-500">[73, 74, 75, 71, 69, 72, 76, 73]</div>
+                            </button>
+                            <button onclick="app.loadCase([30,40,50,60], '範例 2')" class="w-full text-left p-2.5 bg-[#2D2D2D] hover:bg-[#3E3E42] rounded text-[10px] border border-[#333] transition">
+                                <div class="text-blue-400 font-bold mb-1">Example 2</div>
+                                <div class="truncate text-gray-500">[30, 40, 50, 60]</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <section class="w-[45%] flex flex-col bg-[#1E1E1E] border-r border-black relative">
+            <div class="flex-1 flex flex-col items-center justify-center p-6">
+                <div class="w-full mb-10">
+                    <div id="array-container" class="flex justify-center gap-1.5 h-16"></div>
+                    <div class="text-[10px] text-gray-600 mt-4 text-center font-bold tracking-widest">INPUT: TEMPERATURES</div>
+                </div>
+                
+                <div id="viz-canvas" class="w-full h-64 bg-[#252526]/50 border border-[#333] rounded-2xl flex items-center justify-center relative overflow-hidden shadow-inner">
+                    </div>
+
+                <div class="w-full mt-10">
+                    <div id="ans-container" class="flex justify-center gap-1.5 h-14"></div>
+                    <div class="text-[10px] text-gray-600 mt-4 text-center font-bold tracking-widest">OUTPUT: ANSWER (DAYS)</div>
+                </div>
+            </div>
+
+            <div class="h-16 bg-[#252526] border-t border-black flex items-center justify-between px-8">
+                <div class="flex items-center space-x-3">
+                    <button onclick="app.prev()" class="text-gray-400 hover:text-white px-3 py-1 text-xs border border-[#444] rounded">上一步</button>
+                    <button id="play-btn" onclick="app.togglePlay()" class="bg-blue-600 text-white px-8 py-1 rounded text-xs font-bold shadow-lg hover:bg-blue-500 transition">播放</button>
+                    <button onclick="app.next()" class="text-gray-400 hover:text-white px-3 py-1 text-xs border border-[#444] rounded">下一步</button>
+                    <button onclick="app.reset()" class="text-red-400 hover:text-red-300 px-3 py-1 text-xs border border-red-900/30 rounded ml-4">重置</button>
+                </div>
+                <div class="text-[10px] font-mono text-gray-500">
+                    進度: <span id="step-cur" class="text-white">0</span> / <span id="step-total">0</span>
+                </div>
+            </div>
+        </section>
+
+        <aside class="w-[30%] bg-[#252526] flex flex-col overflow-hidden">
+            <div class="h-1/2 flex flex-col bg-[#1E1E1E]">
+                <div class="px-4 py-2 text-[10px] text-gray-500 font-bold border-b border-black flex items-center">
+                    <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>SOLUTION.PY
+                </div>
+                <div id="code-area" class="flex-1 p-4 text-[12px] leading-5 code-font overflow-auto scroll-v"></div>
+            </div>
+
+            <div class="h-1/2 flex flex-col border-t border-black bg-black/10">
+                <div class="px-4 py-2 text-[10px] text-gray-500 font-bold flex justify-between bg-[#2D2D2D]">
+                    <span>偵錯輸出 (DEBUG CONSOLE)</span>
+                    <button onclick="app.clearLog()" class="hover:text-white opacity-50">清除</button>
+                </div>
+                <div id="log-container" class="flex-1 p-4 font-mono text-[11px] overflow-y-auto space-y-1.5 scroll-v"></div>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        const SOL_INFO = {
+            stack: { 
+                time: "O(N)", space: "O(N)",
+                code: ["class Solution:", "    def dailyTemperatures(self, T):", "        res = [0] * len(T)", "        stack = []", "        for i, t in enumerate(T):", "            while stack and t > stack[-1][0]:", "                _, idx = stack.pop()", "                res[idx] = i - idx", "            stack.append((t, i))", "        return res"] 
+            },
+            brute: { 
+                time: "O(N²)", space: "O(1)",
+                code: ["class Solution:", "    def dailyTemperatures(self, T):", "        n = len(T)", "        res = [0] * n", "        for i in range(n):", "            for j in range(i + 1, n):", "                if T[j] > T[i]:", "                    res[i] = j - i", "                    break", "        return res"] 
+            },
+            dp: { 
+                time: "O(N)", space: "O(1)",
+                code: ["class Solution:", "    def dailyTemperatures(self, T):", "        n = len(T)", "        res = [0] * n", "        for i in range(n - 2, -1, -1):", "            j = i + 1", "            while j < n and T[j] <= T[i]:", "                if res[j] == 0: j = n; break", "                j += res[j]", "            if j < n: res[i] = j - i", "        return res"] 
+            }
+        };
+
+        class Visualizer {
+            constructor() {
+                this.temps = [73, 74, 75, 71, 69, 72, 76, 73];
+                this.curSol = 'stack';
+                this.steps = [];
+                this.stepIdx = 0;
+                this.timer = null;
+                this.init();
+            }
+
+            init() { this.switchSolution(this.curSol); }
+
+            switchSolution(val) {
+                this.curSol = val;
+                this.reset();
+                this.renderCode();
+                this.generateSteps();
+                document.getElementById('time-comp').innerText = SOL_INFO[val].time;
+                document.getElementById('space-comp').innerText = SOL_INFO[val].space;
+                this.addLog(`[系統] 切換至 ${val} 解法。`);
+                this.update();
+            }
+
+            loadCase(c, name) {
+                this.temps = c;
+                this.addLog(`[數據] 載入 ${name}: [${c.join(', ')}]`);
+                this.switchSolution(this.curSol);
+            }
+
+            reset() { this.stop(); this.stepIdx = 0; this.clearLog(); this.update(); }
+
+            renderCode() {
+                const area = document.getElementById('code-area');
+                area.innerHTML = SOL_INFO[this.curSol].code.map((line, i) => 
+                    `<div id="line-${i}" class="px-2 whitespace-pre"><span class="w-8 inline-block text-gray-600 text-right mr-3 select-none">${i+1}</span>${this.highlight(line)}</div>`
+                ).join('');
+            }
+
+            highlight(l) {
+                return l.replace(/\b(class|def|for|while|if|in|return|break|enumerate|self)\b/g, '<span style="color:var(--text-keyword)">$1</span>')
+                        .replace(/\b(len|range)\b/g, '<span style="color:var(--text-func)">$1</span>')
+                        .replace(/\d+/g, '<span style="color:#B5CEA8">$&</span>');
+            }
+
+            generateSteps() {
+                this.steps = [];
+                const T = this.temps, n = T.length, res = Array(n).fill(0);
+                
+                if (this.curSol === 'stack') {
+                    let stack = [];
+                    for(let i=0; i<n; i++) {
+                        this.steps.push({ line: 4, i, t: T[i], res: [...res], stack: [...stack], log: `▶ 處理索引 ${i} (${T[i]}°)` });
+                        while(stack.length && T[i] > stack[stack.length-1].t) {
+                            let top = stack.pop();
+                            res[top.idx] = i - top.idx;
+                            this.steps.push({ line: 7, i, t: T[i], res: [...res], stack: [...stack], pop: top.idx, log: `💥 Pop! 索引 ${top.idx} 找到更高溫。距離 ${res[top.idx]} 天。` });
+                        }
+                        stack.push({ t: T[i], idx: i });
+                        this.steps.push({ line: 8, i, t: T[i], res: [...res], stack: [...stack], log: `📥 壓入棧: (${T[i]}°, 索引:${i})` });
+                    }
+                } else if (this.curSol === 'brute') {
+                    for(let i=0; i<n; i++) {
+                        this.steps.push({ line: 4, i, j: null, res: [...res], log: `▶ 檢查第 ${i} 天` });
+                        for(let j=i+1; j<n; j++) {
+                            this.steps.push({ line: 6, i, j, res: [...res], log: `  ↳ 比較索引 ${j} (${T[j]}°)` });
+                            if(T[j] > T[i]) {
+                                res[i] = j - i;
+                                this.steps.push({ line: 7, i, j, res: [...res], log: `  ✅ 成功！距離 ${res[i]} 天。` });
+                                break;
+                            }
+                        }
+                    }
+                } else { // DP
+                    for(let i=n-1; i>=0; i--) {
+                        if (i === n-1) { this.steps.push({ line: 4, i, res: [...res], log: `▶ 最後一天 i=${i} 自動設為 0。` }); continue; }
+                        let j = i + 1;
+                        this.steps.push({ line: 5, i, j, res: [...res], log: `▶ 處理索引 ${i} (${T[i]}°)，從 j=${j} 開始。` });
+                        while(j < n && T[j] <= T[i]) {
+                            if(res[j] === 0) { j = n; break; }
+                            const oldJ = j; j += res[j];
+                            this.steps.push({ line: 8, i, j, jumpFrom: oldJ, res: [...res], log: `🚀 跳躍！利用 res[${oldJ}] 直接跳到索引 ${j}。` });
+                        }
+                        if(j < n) { res[i] = j - i; this.steps.push({ line: 9, i, j, res: [...res], log: `✅ 找到！索引 ${j} 較溫暖。` }); }
+                    }
+                }
+                document.getElementById('step-total').innerText = this.steps.length - 1;
+            }
+
+            addLog(msg) {
+                const container = document.getElementById('log-container');
+                const div = document.createElement('div');
+                div.className = 'text-[11px] text-gray-400 border-l-2 border-blue-500/50 pl-2';
+                div.innerHTML = `<span class="text-blue-500 mr-1">➜</span> ${msg}`;
+                container.appendChild(div);
+                container.scrollTop = container.scrollHeight;
+            }
+
+            clearLog() { document.getElementById('log-container').innerHTML = ''; }
+
+            update() {
+                const s = this.steps[this.stepIdx] || { res: Array(this.temps.length).fill(0), line: -1, stack: [] };
+                document.querySelectorAll('[id^="line-"]').forEach(el => el.classList.remove('line-active'));
+                document.getElementById(`line-${s.line}`)?.classList.add('line-active');
+                if (s.log) this.addLog(s.log);
+                this.renderVisuals(s);
+                document.getElementById('step-cur').innerText = this.stepIdx;
+            }
+
+            renderVisuals(s) {
+                const arr = document.getElementById('array-container');
+                const ans = document.getElementById('ans-container');
+                
+                arr.innerHTML = this.temps.map((t, idx) => `
+                    <div class="w-10 h-14 border-2 ${idx === s.i ? 'border-blue-500 bg-blue-500/20' : idx === s.j ? 'border-yellow-500 bg-yellow-500/10' : 'border-[#333]'} rounded flex flex-col items-center justify-center transition-all">
+                        <span class="text-xs font-bold text-white">${t}°</span>
+                        <span class="text-[8px] text-gray-500 mt-1">${idx}</span>
+                    </div>
+                `).join('');
+
+                ans.innerHTML = s.res.map((v, idx) => `
+                    <div class="w-10 h-10 border ${s.pop === idx || (s.line >= 7 && s.i === idx) ? 'border-green-500 update-flash' : 'border-[#333]'} rounded flex flex-col items-center justify-center text-xs relative">
+                        <span class="font-mono font-bold ${v>0?'text-green-400':'text-gray-600'}">${v}</span>
+                        <span class="text-[8px] text-gray-600 absolute -bottom-5">${idx}</span>
+                    </div>
+                `).join('');
+
+                const canvas = document.getElementById('viz-canvas');
+                if (this.curSol === 'stack') {
+                    canvas.innerHTML = `
+                        <div class="flex items-end space-x-3 h-36 border-b-2 border-gray-700 px-6 relative">
+                            ${(s.stack || []).map(x => `<div class="w-8 bg-blue-600 rounded-t flex flex-col items-center justify-center text-[10px] font-bold" style="height:${(x.t/100)*100}%"><span class="mb-1">${x.t}</span><span class="text-[8px] opacity-60">${x.idx}</span></div>`).join('')}
+                            ${s.pop !== undefined ? `<div class="w-8 bg-red-600 rounded-t absolute pop-effect flex flex-col items-center justify-center text-[10px] font-bold" style="left:${(s.stack.length)*44 + 24}px; height:${(this.temps[s.pop]/100)*100}%"><span class="mb-1">${this.temps[s.pop]}</span><span class="text-[8px]">POP</span></div>` : ''}
+                        </div>
+                        <div class="absolute top-4 right-4 text-[9px] text-gray-500 font-bold bg-black/40 px-2 py-1 rounded">STACK MONITOR</div>`;
+                } else if (this.curSol === 'dp') {
+                    canvas.innerHTML = s.jumpFrom ? `<div class="text-center animate-pulse"><div class="text-yellow-400 text-3xl font-black italic">DP JUMP!</div><div class="text-[10px] text-gray-500 mt-2">利用結果跳過天數</div></div>` : `<div class="text-gray-500 text-xs tracking-tighter">動態規劃計算中...</div>`;
+                } else {
+                    canvas.innerHTML = s.j !== null ? `<div class="text-xl font-bold text-white tracking-tighter">${this.temps[s.i]}° vs ${this.temps[s.j]}°</div>` : '';
+                }
+            }
+
+            next() { if(this.stepIdx < this.steps.length-1) { this.stepIdx++; this.update(); } }
+            prev() { if(this.stepIdx > 0) { this.stepIdx--; this.update(); } }
+            stop() { clearInterval(this.timer); this.timer = null; document.getElementById('play-btn').innerText = "播放"; }
+            togglePlay() {
+                if(this.timer) this.stop();
+                else {
+                    document.getElementById('play-btn').innerText = "暫停";
+                    this.timer = setInterval(() => {
+                        if(this.stepIdx < this.steps.length-1) this.next();
+                        else this.stop();
+                    }, 500);
+                }
+            }
+        }
+        const app = new Visualizer();
+    </script>
+</body>
+</html>

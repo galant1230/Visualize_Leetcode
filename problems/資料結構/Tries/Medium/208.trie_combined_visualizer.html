@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>208. Implement Trie (Prefix Tree)</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--blue); margin-bottom: 4px; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .sol-tab-btn { background: #1a1a1a; border: 1px solid var(--border); color: var(--text-dim); padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; }
+    .sol-tab-btn.active { background: var(--orange); color: #000; font-weight: bold; border-color: var(--orange); }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.76rem; overflow-x: auto; max-height: 380px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.75rem; min-height: 110px; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+    .stack-frame.returning { border-color: var(--green); border-left-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+    
+    /* 修正畫布容器：加上滾動條 */
+    .trie-pane { width: 100%; height: 320px; background: #141414; border: 1px solid var(--border); border-radius: 4px; position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 4px; overflow: auto; }
+    .trie-pane-title { font-size: 0.75rem; font-weight: bold; font-family: monospace; color: var(--orange); position: sticky; top: 0; background: rgba(20, 20, 20, 0.8); width: 100%; text-align: center; padding: 2px 0; z-index: 10; }
+    
+    svg.trie-svg { width: 100%; min-height: 280px; }
+    .trie-node-circle { fill: #333; stroke: var(--border); stroke-width: 2px; transition: all 0.2s; }
+    .trie-node-circle.active { fill: rgba(255, 161, 22, 0.35); stroke: var(--orange); stroke-width: 3px; }
+    .trie-node-circle.is-word { fill: rgba(80, 250, 123, 0.25); stroke: var(--green); stroke-width: 2px; }
+    .trie-node-circle.is-word.active { stroke: var(--orange); stroke-width: 3px; }
+    .trie-text { fill: #fff; font-family: monospace; font-weight: bold; font-size: 11px; text-anchor: middle; dominant-baseline: middle; }
+    .trie-edge { stroke: #555; stroke-width: 2px; }
+
+    /* 字串比對進度條 */
+    .word-tracker { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; align-items: center; gap: 10px; font-family: monospace; }
+    .tracker-label { font-size: 0.75rem; color: var(--text-dim); font-weight: bold; }
+    .char-cells { display: flex; gap: 4px; }
+    .char-cell { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; background: #222; }
+    .char-cell.active { background: rgba(255, 161, 22, 0.35); border-color: var(--orange); color: var(--orange); transform: scale(1.1); }
+    .char-cell.matched { background: rgba(80, 250, 123, 0.2); border-color: var(--green); color: var(--green); }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 75px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">208. Implement Trie (Prefix Tree)</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: insert("apple"), search("apple"), startsWith("app")</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: insert("app"), insert("apple"), search("app")</button>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與複雜度</div>
+        <div class="problem-desc">
+          請實現一個 <b>Trie (前綴樹 / 字典樹)</b>，包含 <code>insert</code>、<code>search</code> 和 <code>startsWith</code> 三種方法：
+          <br>• <code>insert(word)</code>: 向字典樹插入字串。
+          <br>• <code>search(word)</code>: 如果字串在字典樹中，返回 <code>true</code>。
+          <br>• <code>startsWith(prefix)</code>: 如果存在任何以該前綴開頭的字串，返回 <code>true</code>。
+        </div>
+
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(L) per op</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(N × L)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼解法選擇</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 4px;">
+          <button class="sol-tab-btn active" onclick="setSolution(0)">解法一：Nested Dict 字典實作</button>
+          <button class="sol-tab-btn" onclick="setSolution(1)">解法二：TrieNode 類別封裝</button>
+          <button class="sol-tab-btn" onclick="setSolution(2)">解法三：Fixed Array (26 字母陣列)</button>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (系統呼叫堆疊)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="idea-box">
+          <div class="idea-title">💡 Trie (前綴樹) 的核心運作機制</div>
+          <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 4px;">
+            <li><b>樹狀結構與共享前綴</b>：每個節點代表一個字元。擁有相同前綴的單字（如 "app" 與 "apple"）會共享相同的樹狀路徑，節省空間。</li>
+            <li><b>結尾標記 (End of Word Flag)</b>：必須用特殊標記（如 <code>is_end = True</code> 或 <code>"#"</code>）記錄某字元是否為完整單字的結尾。</li>
+            <li><b><code>search</code> vs <code>startsWith</code> 的差別</b>：
+              <br>• <code>startsWith</code>: 只要能順利沿著路徑走完所有字元即傳回 <code>True</code>。
+              <br>• <code>search</code>: 除了走完字元，該終點節點必須標記為 <code>is_end == True</code>。
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 Trie 字典樹動態視覺化</div>
+        
+        <div class="stage">
+          <div class="trie-pane">
+            <span class="trie-pane-title">Trie Tree Structure (綠邊/綠點 = 完整單字結尾)</span>
+            <div id="trie-svg-container" style="width: 100%; display: flex; justify-content: center;"></div>
+          </div>
+
+          <div class="word-tracker">
+            <span class="tracker-label">Word/Prefix Match:</span>
+            <div class="char-cells" id="char-cells-box"></div>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">當前步驟計算 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const solutions = [
+      {
+        name: "Nested Dict 字典實作",
+        timeComp: "O(L)",
+        spaceComp: "O(N × L)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Trie</span>:`,
+          `    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="self">self</span>):`,
+          `        <span class="self">self</span>.root = {}`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">insert</span>(<span class="self">self</span>, word: str) -> <span class="kw">None</span>:`,
+          `        node = <span class="self">self</span>.root`,
+          `        <span class="kw">for</span> char <span class="kw">in</span> word:`,
+          `            <span class="kw">if</span> char <span class="kw">not in</span> node:`,
+          `                node[char] = {}`,
+          `            node = node[char]`,
+          `        node[<span class="cm">'#'</span>] = <span class="kw">True</span>  <span class="cm"># End of word</span>`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">search</span>(<span class="self">self</span>, word: str) -> bool:`,
+          `        node = <span class="self">self</span>.root`,
+          `        <span class="kw">for</span> char <span class="kw">in</span> word:`,
+          `            <span class="kw">if</span> char <span class="kw">not in</span> node: <span class="kw">return False</span>`,
+          `            node = node[char]`,
+          `        <span class="kw">return</span> <span class="cm">'#'</span> <span class="kw">in</span> node`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">startsWith</span>(<span class="self">self</span>, prefix: str) -> bool:`,
+          `        node = <span class="self">self</span>.root`,
+          `        <span class="kw">for</span> char <span class="kw">in</span> prefix:`,
+          `            <span class="kw">if</span> char <span class="kw">not in</span> node: <span class="kw">return False</span>`,
+          `            node = node[char]`,
+          `        <span class="kw">return True</span>`
+        ]
+      },
+      {
+        name: "TrieNode 類別封裝",
+        timeComp: "O(L)",
+        spaceComp: "O(N × L)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">TrieNode</span>:`,
+          `    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="self">self</span>):`,
+          `        <span class="self">self</span>.children = {}`,
+          `        <span class="self">self</span>.is_end = <span class="kw">False</span>`,
+          ``,
+          `<span class="kw">class</span> <span class="cls">Trie</span>:`,
+          `    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="self">self</span>):`,
+          `        <span class="self">self</span>.root = TrieNode()`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">insert</span>(<span class="self">self</span>, word: str) -> <span class="kw">None</span>:`,
+          `        curr = <span class="self">self</span>.root`,
+          `        <span class="kw">for</span> ch <span class="kw">in</span> word:`,
+          `            <span class="kw">if</span> ch <span class="kw">not in</span> curr.children:`,
+          `                curr.children[ch] = TrieNode()`,
+          `            curr = curr.children[ch]`,
+          `        curr.is_end = <span class="kw">True</span>`
+        ]
+      },
+      {
+        name: "Fixed Array (26 字母陣列)",
+        timeComp: "O(L)",
+        spaceComp: "O(N × L)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">TrieNode</span>:`,
+          `    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="self">self</span>):`,
+          `        <span class="self">self</span>.children = [<span class="kw">None</span>] * 26`,
+          `        <span class="self">self</span>.is_end = <span class="kw">False</span>`,
+          ``,
+          `<span class="kw">class</span> <span class="cls">Trie</span>:`,
+          `    <span class="kw">def</span> <span class="fn">insert</span>(<span class="self">self</span>, word: str) -> <span class="kw">None</span>:`,
+          `        node = <span class="self">self</span>.root`,
+          `        <span class="kw">for</span> ch <span class="kw">in</span> word:`,
+          `            idx = ord(ch) - ord(<span class="cm">'a'</span>)`,
+          `            <span class="kw">if not</span> node.children[idx]:`,
+          `                node.children[idx] = TrieNode()`,
+          `            node = node.children[idx]`,
+          `        node.is_end = <span class="kw">True</span>`
+        ]
+      }
+    ];
+
+    const presets = [
+      {
+        name: "Ex 1: Standard Flow",
+        ops: [
+          { type: "insert", word: "apple" },
+          { type: "search", word: "apple", expected: true },
+          { type: "search", word: "app", expected: false },
+          { type: "startsWith", word: "app", expected: true },
+          { type: "insert", word: "app" },
+          { type: "search", word: "app", expected: true }
+        ]
+      },
+      {
+        name: "Ex 2: Substring First",
+        ops: [
+          { type: "insert", word: "app" },
+          { type: "insert", word: "apple" },
+          { type: "search", word: "app", expected: true },
+          { type: "startsWith", word: "ap", expected: true }
+        ]
+      }
+    ];
+
+    let currentSolution = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setSolution(idx) {
+      currentSolution = idx;
+      document.querySelectorAll('.sol-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      document.getElementById('time-comp').innerText = solutions[idx].timeComp;
+      document.getElementById('space-comp').innerText = solutions[idx].spaceComp;
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>Operations: ${p.ops.map(o => `${o.type}("${o.word}")`).join(" ➜ ")}</div>
+      `;
+    }
+
+    function renderCode() {
+      const codeArr = solutions[currentSolution].code;
+      document.getElementById('code-box').innerHTML = codeArr.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    // 重寫 SVG 繪製計算：精確絕對座標動態算高，完全不被切割
+    function renderTrieSVG(treeData, activeNodeId = 0) {
+      if (!treeData) return '';
+
+      let maxDepth = 0;
+      let posMap = {};
+
+      // 第一階段：算高與相對寬度
+      function calcPos(node, depth = 0, leftBound = 0, rightBound = 360) {
+        if (depth > maxDepth) maxDepth = depth;
+        let x = (leftBound + rightBound) / 2;
+        let y = depth * 45 + 30; // 固定垂直層級間距
+        posMap[node.id] = { id: node.id, x, y, char: node.char, isEnd: node.isEnd, children: node.children };
+        
+        let keys = Object.keys(node.children);
+        if (keys.length > 0) {
+          let step = (rightBound - leftBound) / keys.length;
+          keys.forEach((k, idx) => {
+            calcPos(node.children[k], depth + 1, leftBound + idx * step, leftBound + (idx + 1) * step);
+          });
+        }
+      }
+      calcPos(treeData);
+
+      const svgWidth = 380;
+      const svgHeight = Math.max(280, (maxDepth + 1) * 45 + 35);
+
+      let edgesHTML = '', nodesHTML = '';
+      Object.keys(posMap).forEach(idStr => {
+        let p = posMap[idStr];
+        Object.keys(p.children).forEach(k => {
+          let child = p.children[k];
+          let cp = posMap[child.id];
+          edgesHTML += `<line x1="${p.x}" y1="${p.y}" x2="${cp.x}" y2="${cp.y}" class="trie-edge" />`;
+        });
+
+        let circleClass = 'trie-node-circle';
+        if (p.isEnd) circleClass += ' is-word';
+        if (p.id === activeNodeId) circleClass += ' active';
+
+        nodesHTML += `<g><circle cx="${p.x}" cy="${p.y}" r="12" class="${circleClass}" /><text x="${p.x}" y="${p.y}" class="trie-text">${p.char}</text></g>`;
+      });
+
+      return `<svg class="trie-svg" viewBox="0 0 ${svgWidth} ${svgHeight}" style="height: ${svgHeight}px;">${edgesHTML}${nodesHTML}</svg>`;
+    }
+
+    function renderCharCells(word, activeIdx, matchedIdxs = []) {
+      if (!word) return `<div style="color:var(--text-dim); font-size:0.75rem;">None</div>`;
+      return word.split('').map((ch, idx) => {
+        let cls = "char-cell";
+        if (idx === activeIdx) cls += " active";
+        if (matchedIdxs.includes(idx)) cls += " matched";
+        return `<div class="${cls}">${ch}</div>`;
+      }).join('');
+    }
+
+    function renderStackHTML(stackFrames) {
+      if (!stackFrames || stackFrames.length === 0) return `<div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>`;
+      return stackFrames.map(f => `
+        <div class="stack-frame ${f.returning ? 'returning' : ''}">
+          <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.7rem;">(${f.args})</span></div>
+          <div style="font-size:0.75rem; font-weight:bold; color:${f.returning ? 'var(--green)' : 'var(--orange)'};">${f.returning ? `➔ return ${f.retVal}` : 'Active'}</div>
+        </div>
+      `).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const presetData = presets[currentPreset];
+
+      let nodeIdCounter = 0;
+      let rootNode = { id: nodeIdCounter++, char: 'ROOT', isEnd: false, children: {} };
+      let currentStack = [];
+
+      function pushFrame(fnName, args) { currentStack.push({ fnName, args, returning: false, retVal: null }); }
+      function updateTopFrame(retVal) {
+        if (currentStack.length > 0) {
+          let top = currentStack[currentStack.length - 1];
+          top.returning = true;
+          top.retVal = retVal;
+        }
+      }
+      function popFrame() { currentStack.pop(); }
+
+      function cloneTree(node) {
+        let copy = { id: node.id, char: node.char, isEnd: node.isEnd, children: {} };
+        Object.keys(node.children).forEach(k => {
+          copy.children[k] = cloneTree(node.children[k]);
+        });
+        return copy;
+      }
+
+      presetData.ops.forEach(op => {
+        let word = op.word;
+        let matched = [];
+
+        if (op.type === "insert") {
+          pushFrame("insert", `word="${word}"`);
+          history.push({
+            line: 4, phase: `【insert("${word}")】開始插入單字`,
+            desc: `準備將字串 "${word}" 逐字元插入 Trie 中`,
+            stack: JSON.parse(JSON.stringify(currentStack)), activeNodeId: rootNode.id,
+            tree: cloneTree(rootNode), word: word, activeCharIdx: -1, matched: []
+          });
+
+          let curr = rootNode;
+          for (let i = 0; i < word.length; i++) {
+            let ch = word[i];
+            let isNew = !(ch in curr.children);
+            if (isNew) {
+              curr.children[ch] = { id: nodeIdCounter++, char: ch, isEnd: false, children: {} };
+            }
+            curr = curr.children[ch];
+            matched.push(i);
+
+            history.push({
+              line: isNew ? 8 : 9, phase: `【insert】處理字元 '${ch}' (${i+1}/${word.length})`,
+              desc: isNew ? `字元 '${ch}' 不存在，建立新 Trie 節點` : `字元 '${ch}' 已存在，直接沿用舊節點`,
+              stack: JSON.parse(JSON.stringify(currentStack)), activeNodeId: curr.id,
+              tree: cloneTree(rootNode), word: word, activeCharIdx: i, matched: [...matched]
+            });
+          }
+
+          curr.isEnd = true;
+          history.push({
+            line: 10, phase: `【insert】單字 "${word}" 插入完成`,
+            desc: `將當前終點節點標記為 is_end = True (綠色外框)`,
+            stack: JSON.parse(JSON.stringify(currentStack)), activeNodeId: curr.id,
+            tree: cloneTree(rootNode), word: word, activeCharIdx: word.length - 1, matched: [...matched]
+          });
+
+          popFrame();
+        } else if (op.type === "search" || op.type === "startsWith") {
+          let isSearch = op.type === "search";
+          let fnName = isSearch ? "search" : "startsWith";
+          pushFrame(fnName, `"${word}"`);
+
+          history.push({
+            line: isSearch ? 12 : 19, phase: `【${fnName}("${word}")】開始比對`,
+            desc: `準備在 Trie 中尋找 ${isSearch ? "完整單字" : "前綴"} "${word}"`,
+            stack: JSON.parse(JSON.stringify(currentStack)), activeNodeId: rootNode.id,
+            tree: cloneTree(rootNode), word: word, activeCharIdx: -1, matched: []
+          });
+
+          let curr = rootNode;
+          let found = true;
+          for (let i = 0; i < word.length; i++) {
+            let ch = word[i];
+            if (!(ch in curr.children)) {
+              found = false;
+              history.push({
+                line: isSearch ? 15 : 22, phase: `【${fnName}】字元 '${ch}' 匹配失敗`,
+                desc: `在 Trie 中找不到字元 '${ch}' 的分支，回傳 False`,
+                stack: JSON.parse(JSON.stringify(currentStack)), activeNodeId: curr.id,
+                tree: cloneTree(rootNode), word: word, activeCharIdx: i, matched: [...matched]
+              });
+              updateTopFrame("False");
+              break;
+            }
+            curr = curr.children[ch];
+            matched.push(i);
+
+            history.push({
+              line: isSearch ? 16 : 23, phase: `【${fnName}】字元 '${ch}' 匹配成功`,
+              desc: `成功沿著 '${ch}' 分支移動至下個 Trie 節點`,
+              stack: JSON.parse(JSON.stringify(currentStack)), activeNodeId: curr.id,
+              tree: cloneTree(rootNode), word: word, activeCharIdx: i, matched: [...matched]
+            });
+          }
+
+          if (found) {
+            let res = isSearch ? curr.isEnd : true;
+            let descStr = isSearch 
+              ? (res ? `路徑走完，且終點節點 is_end == True ➔ 回傳 True` : `路徑走完，但終點節點 is_end == False (僅為前綴) ➔ 回傳 False`)
+              : `前綴路徑全數匹配成功 ➔ 回傳 True`;
+
+            updateTopFrame(res ? "True" : "False");
+            history.push({
+              line: isSearch ? 17 : 24, phase: `【${fnName}】比對結果: ${res ? 'True' : 'False'}`,
+              desc: descStr,
+              stack: JSON.parse(JSON.stringify(currentStack)), activeNodeId: curr.id,
+              tree: cloneTree(rootNode), word: word, activeCharIdx: word.length - 1, matched: [...matched]
+            });
+          }
+
+          popFrame();
+        }
+      });
+
+      history.push({
+        line: 0, phase: "🎉 所有操作執行完成！",
+        desc: "Trie (前綴樹) 操作展示完畢",
+        stack: [], activeNodeId: rootNode.id,
+        tree: cloneTree(rootNode), word: "", activeCharIdx: -1, matched: []
+      });
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = renderStackHTML(stackData);
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      document.getElementById('trie-svg-container').innerHTML = renderTrieSVG(state.tree, state.activeNodeId);
+      document.getElementById('char-cells-box').innerHTML = renderCharCells(state.word, state.activeCharIdx, state.matched);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

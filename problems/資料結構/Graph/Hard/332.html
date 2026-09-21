@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 332 Visualizer | Final Production Version</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --leetcode-dark: #1a1a1a;
+            --vs-active-blue: #007acc;
+            --vs-complete-green: #4ec9b0;
+            --node-default-bg: #2d2d2d;
+            --vscode-highlight: rgba(38, 79, 120, 0.4);
+        }
+        body { background-color: var(--leetcode-dark); color: #eff1f6; font-family: 'Inter', 'Microsoft JhengHei', sans-serif; }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+        
+        .node-circle { 
+            background: var(--node-default-bg); 
+            border: 2px solid #444; 
+            color: #fff; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .node-processing { background: var(--vs-active-blue) !important; border-color: #4fc1ff !important; transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 122, 204, 0.4); }
+        .node-complete { background: var(--vs-complete-green) !important; border-color: #a6e22e !important; color: #1a1a1a !important; }
+        
+        .keyword { color: #569cd6; } 
+        .function { color: #dcdcaa; } 
+        .number { color: #b5cea8; } 
+        .string { color: #ce9178; } 
+        .builtin { color: #4ec9b0; } 
+
+        .active-line { background-color: var(--vscode-highlight); border-left: 3px solid #007acc; }
+        .log-entry { border-left: 2px solid #3e3e42; padding-left: 8px; margin-bottom: 2px; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-[13px]">
+
+    <div class="flex-1 flex overflow-hidden">
+        
+        <aside class="w-1/4 bg-[#1a1a1a] flex flex-col border-r border-[#333]">
+            <div class="p-5 border-b border-[#333] shrink-0">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-green-500 font-bold uppercase text-[10px] tracking-widest">Hard</span>
+                    <h1 class="text-lg font-bold text-white italic text-nowrap">332. Reconstruct Itinerary</h1>
+                </div>
+                <div class="text-[11px] text-gray-400 leading-relaxed space-y-2">
+                    <p>給定機票列表 <code class="text-gray-300">tickets</code>，其中 <code class="text-gray-300">[from, to]</code> 表示航班。</p>
+                    <p>行程必須以 <span class="text-white font-bold">"JFK"</span> 開頭。若有多個有效行程，回傳<span class="text-white font-bold underline">字典順序最小</span>者。</p>
+                    <p>必須使用所有機票<span class="text-white font-bold underline">一次且僅能使用一次</span>。</p>
+                </div>
+            </div>
+
+            <div class="p-5 bg-[#202020] border-b border-[#333] flex-1 overflow-y-auto">
+                <div class="text-[9px] text-gray-500 font-bold uppercase mb-3 tracking-widest italic underline">Algorithm & Complexity</div>
+                
+                <div class="space-y-4">
+                    <div class="pl-3 border-l-2 border-blue-500">
+                        <p class="text-white font-semibold text-[11px]">Hierholzer's DFS</p>
+                        <p class="text-gray-400 text-[10px]">利用 DFS 尋找歐拉通路。在回溯時記錄路徑，最後翻轉結果。</p>
+                    </div>
+
+                    <div class="space-y-3 mt-4">
+                        <div class="bg-[#1a1a1a] p-2 rounded border border-[#333]">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[10px] text-cyan-400 font-bold">Time Complexity</span>
+                                <span class="text-[10px] text-white font-mono">O(E log E)</span>
+                            </div>
+                            <p class="text-[9px] text-gray-500 leading-tight">主要開銷在於對鄰接表中的目的地進行排序。E 為機票數量。</p>
+                        </div>
+
+                        <div class="bg-[#1a1a1a] p-2 rounded border border-[#333]">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[10px] text-purple-400 font-bold">Space Complexity</span>
+                                <span class="text-[10px] text-white font-mono">O(V + E)</span>
+                            </div>
+                            <p class="text-[9px] text-gray-500 leading-tight">需要儲存圖結構（V 個機場與 E 條航線）以及 DFS 遞迴堆棧。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 bg-[#1a1a1a]">
+                <div class="flex gap-2 p-1 bg-[#262626] rounded-lg mb-3">
+                    <button id="tab-1" onclick="changeExample(1)" class="flex-1 py-1 text-xs rounded-md bg-[#333] text-white font-bold">Ex 1</button>
+                    <button id="tab-2" onclick="changeExample(2)" class="flex-1 py-1 text-xs rounded-md text-gray-500 hover:bg-[#333]">Ex 2</button>
+                </div>
+                <div class="p-2 bg-[#1e1e1e] rounded border border-[#333]">
+                    <div class="text-[8px] text-blue-500 font-bold mb-1 italic uppercase">Input Tickets</div>
+                    <div id="preview-in" class="code-font text-[10px] text-gray-400 break-all mb-2"></div>
+                    <div class="text-[8px] text-green-500 font-bold mb-1 italic uppercase">Expected Output</div>
+                    <div id="preview-out" class="code-font text-[10px] text-green-400 font-bold break-all"></div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 p-4 flex flex-col gap-3 bg-[#1e1e1e]">
+            <div class="flex-1 bg-[#1a1a1a] rounded-xl relative overflow-hidden border border-[#333]">
+                <div id="main-canvas" class="w-full h-full relative"></div>
+            </div>
+
+            <div class="bg-[#262626] rounded-xl border border-[#3e3e42] p-4 flex flex-col gap-3">
+                <div class="grid grid-cols-12 gap-4">
+                    <div class="col-span-5 bg-[#1a1a1a] p-3 rounded border border-[#333]">
+                        <div class="text-[9px] text-purple-400 font-bold uppercase mb-2 italic">Graph: Tickets Mapping</div>
+                        <div id="v-graph" class="code-font text-[10px] text-gray-400 h-24 overflow-y-auto leading-relaxed"></div>
+                    </div>
+                    <div class="col-span-3 bg-[#1a1a1a] p-3 rounded border border-[#333] flex flex-col justify-between">
+                        <div>
+                            <div class="text-[9px] text-green-400 font-bold uppercase mb-1">State</div>
+                            <div class="flex justify-between border-b border-[#333] py-1">
+                                <span class="text-gray-500 italic font-mono">curr:</span>
+                                <span id="v-curr" class="text-sm font-bold text-white">-</span>
+                            </div>
+                            <div class="flex justify-between py-1">
+                                <span class="text-gray-500 italic font-mono">pop:</span>
+                                <span id="v-next" class="text-sm font-bold text-orange-400">-</span>
+                            </div>
+                        </div>
+                        <div class="text-center bg-[#212121] p-1 rounded">
+                            <span class="text-[8px] text-gray-500">STACK DEPTH</span>
+                            <div id="v-stack-len" class="text-lg font-bold text-green-500">0</div>
+                        </div>
+                    </div>
+                    <div class="col-span-4 bg-[#1a1a1a] p-3 rounded border border-[#333] flex flex-col gap-2 overflow-hidden">
+                        <div>
+                            <span class="text-[9px] text-yellow-500 font-bold uppercase italic italic">route (append order)</span>
+                            <div id="v-route" class="code-font text-[10px] text-gray-500 truncate">[]</div>
+                        </div>
+                        <div class="mt-auto pt-2 border-t border-[#333]">
+                            <span class="text-[9px] text-cyan-400 font-bold uppercase italic italic">Result: route[::-1]</span>
+                            <div id="v-final" class="code-font text-[11px] text-cyan-400 font-bold truncate">[]</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="h-14 flex items-center justify-between px-6 bg-[#262626] rounded-xl border border-[#333]">
+                <div class="flex items-center gap-6">
+                    <button onclick="step(-1)" class="text-gray-400 hover:text-white font-bold transition">PREV</button>
+                    <button id="play-btn" onclick="togglePlay()" class="bg-[#007acc] px-10 py-1.5 rounded-full text-white font-bold hover:scale-105 transition-all shadow-lg">PLAY</button>
+                    <button onclick="step(1)" class="text-gray-400 hover:text-white font-bold transition">NEXT</button>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-[10px] text-gray-500 font-mono">STEP: <span id="v-step" class="text-white font-bold">0</span></div>
+                    <button onclick="reset()" class="text-red-500 font-bold text-[10px] uppercase hover:underline">Reset</button>
+                </div>
+            </div>
+        </main>
+
+        <aside class="w-1/3 bg-[#1a1a1a] border-l border-[#333] flex flex-col">
+            <div class="flex-1 p-6 code-font leading-6 overflow-y-auto text-[12px]" id="code-box">
+                <div id="line-5">graph = collections.<span class="function">defaultdict</span>(<span class="builtin">list</span>)</div>
+                <div id="line-6"><span class="keyword">for</span> src, dst <span class="keyword">in</span> <span class="function">sorted</span>(tickets, reverse=<span class="keyword">True</span>):</div>
+                <div id="line-7">&nbsp;&nbsp;graph[src].<span class="function">append</span>(dst)</div>
+                <div id="line-8">route = []</div>
+                <div id="line-9"><span class="keyword">def</span> <span class="function">dfs</span>(curr):</div>
+                <div id="line-11">&nbsp;&nbsp;<span class="keyword">while</span> graph[curr]:</div>
+                <div id="line-12">&nbsp;&nbsp;&nbsp;&nbsp;next_dest = graph[curr].<span class="function">pop</span>()</div>
+                <div id="line-13">&nbsp;&nbsp;&nbsp;&nbsp;<span class="function">dfs</span>(next_dest)</div>
+                <div id="line-15">&nbsp;&nbsp;route.<span class="function">append</span>(curr)</div>
+                <div id="line-16"><span class="function">dfs</span>(<span class="string">"JFK"</span>)</div>
+                <div id="line-17"><span class="keyword">return</span> route[::<span class="number">-1</span>]</div>
+            </div>
+            <div class="h-1/4 bg-[#161616] border-t border-[#333] p-4 flex flex-col overflow-hidden">
+                <div class="text-[#6a9955] mb-2 font-bold uppercase text-[9px] flex items-center gap-2 italic font-mono">
+                    <span class="w-1.5 h-1.5 bg-[#6a9955] rounded-full"></span> Trace Logger
+                </div>
+                <div id="log-container" class="flex-1 overflow-y-auto code-font text-[10px] text-gray-500 space-y-1"></div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        let currentStep = 0, activeEx = 1, isPlaying = false, playInterval;
+
+        const dataSet = {
+            1: {
+                in: '[["MUC","LHR"], ["JFK","MUC"], ["SFO","SJC"], ["LHR","SFO"]]',
+                out: '["JFK","MUC","LHR","SFO","SJC"]',
+                tickets: [["MUC","LHR"], ["JFK","MUC"], ["SFO","SJC"], ["LHR","SFO"]],
+                pos: { "JFK": {x:15, y:20}, "MUC": {x:50, y:20}, "LHR": {x:85, y:50}, "SFO": {x:50, y:80}, "SJC": {x:15, y:80} },
+                trace: [
+                    { line: 5, curr: "-", next: "-", stack: [], route: [], graph: {JFK:['MUC'], MUC:['LHR'], LHR:['SFO'], SFO:['SJC']}, log: "初始化鄰接表並排序目的地。" },
+                    { line: 16, curr: "JFK", next: "MUC", stack: ["JFK"], route: [], graph: {JFK:['MUC'], MUC:['LHR'], LHR:['SFO'], SFO:['SJC']}, log: "從起點 JFK 出發。" },
+                    { line: 12, curr: "JFK", next: "MUC", stack: ["JFK"], route: [], graph: {JFK:[], MUC:['LHR'], LHR:['SFO'], SFO:['SJC']}, log: "彈出 JFK -> MUC 有向邊。" },
+                    { line: 13, curr: "MUC", next: "LHR", stack: ["JFK", "MUC"], route: [], graph: {MUC:['LHR'], LHR:['SFO'], SFO:['SJC']}, log: "遞迴進入 MUC。" },
+                    { line: 15, curr: "SJC", next: "None", stack: ["JFK", "MUC", "LHR", "SFO", "SJC"], route: ["SJC"], graph: {}, log: "抵達死路 SJC，存入路徑並回溯。" },
+                    { line: 17, curr: "-", next: "-", stack: [], route: ["SJC", "SFO", "LHR", "MUC", "JFK"], graph: {}, log: "行程重建完成。" }
+                ]
+            },
+            2: {
+                in: '[["JFK","SFO"],["JFK","ATL"],["SFO","ATL"],["ATL","JFK"],["ATL","SFO"]]',
+                out: '["JFK","ATL","JFK","SFO","ATL","SFO"]',
+                tickets: [["JFK","SFO"],["JFK","ATL"],["SFO","ATL"],["ATL","JFK"],["ATL","SFO"]],
+                pos: { "JFK": {x:20, y:50}, "SFO": {x:50, y:20}, "ATL": {x:80, y:50} },
+                trace: [
+                    { line: 7, curr: "-", next: "-", stack: [], route: [], graph: {JFK:['SFO','ATL'], ATL:['SFO','JFK'], SFO:['ATL']}, log: "多重路徑：優先選擇字典序小的 ATL。" },
+                    { line: 12, curr: "JFK", next: "ATL", stack: ["JFK"], route: [], graph: {JFK:['SFO'], ATL:['SFO','JFK'], SFO:['ATL']}, log: "移動 JFK -> ATL。" },
+                    { line: 17, curr: "-", next: "-", stack: [], route: ["SFO", "ATL", "SFO", "JFK", "ATL", "JFK"], graph: {}, log: "成功重建最小字典序行程。" }
+                ]
+            }
+        };
+
+        function drawGraph() {
+            const container = document.getElementById('main-canvas');
+            container.innerHTML = '';
+            const data = dataSet[activeEx], ns = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(ns, "svg");
+            svg.setAttribute("class", "w-full h-full");
+            container.appendChild(svg);
+            
+            const defs = document.createElementNS(ns, "defs");
+            const marker = document.createElementNS(ns, "marker");
+            marker.id = "arrow"; marker.setAttribute("viewBox", "0 0 10 10");
+            marker.setAttribute("refX", "22"); marker.setAttribute("refY", "5");
+            marker.setAttribute("markerWidth", "5"); marker.setAttribute("markerHeight", "5");
+            marker.setAttribute("orient", "auto");
+            const ap = document.createElementNS(ns, "path");
+            ap.setAttribute("d", "M 0 0 L 10 5 L 0 10 z"); ap.setAttribute("fill", "#666");
+            marker.appendChild(ap); defs.appendChild(marker); svg.appendChild(defs);
+
+            data.tickets.forEach(t => {
+                const u = data.pos[t[0]], v = data.pos[t[1]];
+                const line = document.createElementNS(ns, "line");
+                line.setAttribute("x1", u.x+"%"); line.setAttribute("y1", u.y+"%");
+                line.setAttribute("x2", v.x+"%"); line.setAttribute("y2", v.y+"%");
+                line.setAttribute("stroke", "#333"); line.setAttribute("stroke-width", "2");
+                line.setAttribute("marker-end", "url(#arrow)");
+                svg.appendChild(line);
+            });
+
+            for(let id in data.pos) {
+                const node = document.createElement('div');
+                node.id = `node-${id}`;
+                node.className = `absolute w-12 h-12 node-circle rounded-full flex items-center justify-center font-bold text-[10px] z-10`;
+                node.style.left = `calc(${data.pos[id].x}% - 24px)`; node.style.top = `calc(${data.pos[id].y}% - 24px)`;
+                node.innerText = id; container.appendChild(node);
+            }
+        }
+
+        function updateUI() {
+            const t = dataSet[activeEx].trace[currentStep];
+            document.querySelectorAll('#code-box div').forEach(l => l.classList.remove('active-line'));
+            if(document.getElementById(`line-${t.line}`)) document.getElementById(`line-${t.line}`).classList.add('active-line');
+            
+            document.querySelectorAll('.node-circle').forEach(n => n.classList.remove('node-processing', 'node-complete'));
+            t.stack.forEach(id => document.getElementById(`node-${id}`)?.classList.add('node-processing'));
+            t.route.forEach(id => document.getElementById(`node-${id}`)?.classList.add('node-complete'));
+
+            const gBox = document.getElementById('v-graph');
+            gBox.innerHTML = Object.entries(t.graph).map(([k, v]) => `<div><span class="text-purple-300 font-bold">${k}</span>: [${v.join(', ')}]</div>`).join('') || '<div class="text-gray-600 italic">No tickets left.</div>';
+
+            document.getElementById('v-curr').innerText = t.curr;
+            document.getElementById('v-next').innerText = t.next;
+            document.getElementById('v-stack-len').innerText = t.stack.length;
+            document.getElementById('v-route').innerText = JSON.stringify(t.route);
+            document.getElementById('v-final').innerText = JSON.stringify([...t.route].reverse());
+            document.getElementById('v-step').innerText = currentStep;
+
+            const lb = document.getElementById('log-container');
+            if(currentStep === 0) lb.innerHTML = '';
+            const entry = document.createElement('div');
+            entry.className = "log-entry";
+            entry.innerHTML = `<span class="text-blue-500">#</span> ${t.log}`;
+            lb.appendChild(entry); lb.scrollTop = lb.scrollHeight;
+        }
+
+        function step(dir) {
+            const data = dataSet[activeEx];
+            if (dir === 1 && currentStep < data.trace.length - 1) currentStep++;
+            else if (dir === -1 && currentStep > 0) { currentStep--; document.getElementById('log-container').innerHTML = ''; }
+            updateUI();
+        }
+
+        function changeExample(ex) {
+            activeEx = ex;
+            document.getElementById('tab-1').className = ex === 1 ? 'flex-1 py-1 text-xs rounded-md bg-[#333] text-white font-bold' : 'flex-1 py-1 text-xs rounded-md text-gray-500 hover:bg-[#333]';
+            document.getElementById('tab-2').className = ex === 2 ? 'flex-1 py-1 text-xs rounded-md bg-[#333] text-white font-bold' : 'flex-1 py-1 text-xs rounded-md text-gray-500 hover:bg-[#333]';
+            document.getElementById('preview-in').innerText = dataSet[ex].in;
+            document.getElementById('preview-out').innerText = dataSet[ex].out;
+            reset(); drawGraph();
+        }
+
+        function togglePlay() { 
+            isPlaying = !isPlaying; document.getElementById('play-btn').innerText = isPlaying ? "PAUSE" : "PLAY";
+            if(isPlaying) playInterval = setInterval(() => { if(currentStep < dataSet[activeEx].trace.length-1) step(1); else togglePlay(); }, 1000);
+            else clearInterval(playInterval);
+        }
+
+        function reset() { currentStep = 0; isPlaying = false; clearInterval(playInterval); updateUI(); }
+        window.onload = () => { changeExample(1); };
+    </script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Search in Rotated Sorted Array 視覺化教學</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --code-bg: #1e293b;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #334155;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: var(--text-main); padding: 20px; line-height: 1.6; }
+        .container { max-width: 1050px; margin: auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        
+        h1 { text-align: center; color: #0f172a; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #64748b; margin-bottom: 30px; }
+
+        /* 題目描述區塊 */
+        .desc-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 30px; }
+        .example-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 10px; }
+        .example-item { background: white; padding: 10px; border-radius: 8px; border-left: 4px solid var(--primary); font-size: 0.85rem; }
+
+        /* 陣列視覺化 */
+        .viz-box { background: white; border: 2px solid #e2e8f0; border-radius: 12px; padding: 65px 20px 45px 20px; margin-bottom: 30px; position: relative; overflow-x: auto; }
+        .array-row { display: flex; justify-content: center; gap: 10px; min-width: 600px; }
+        .element {
+            width: 55px; height: 55px; display: flex; align-items: center; justify-content: center;
+            background: white; border: 2px solid #cbd5e1; border-radius: 8px;
+            font-weight: 800; font-size: 1.1rem; transition: all 0.3s;
+            position: relative;
+        }
+        .active-range { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
+        .target-found { background: var(--success) !important; color: white !important; border-color: var(--success) !important; transform: scale(1.1); }
+        
+        /* 指標樣式 */
+        .ptr { position: absolute; left: 50%; transform: translateX(-50%); font-size: 11px; padding: 2px 6px; border-radius: 4px; color: white; font-weight: bold; white-space: nowrap; }
+        .ptr-l { top: -35px; background: var(--success); }
+        .ptr-m { top: -65px; background: var(--warning); }
+        .ptr-r { top: -35px; background: var(--danger); }
+
+        /* 佈局 */
+        .grid { display: grid; grid-template-columns: 1.4fr 0.6fr; gap: 25px; }
+        
+        /* 程式碼面板 */
+        .code-panel { background: var(--code-bg); color: #e2e8f0; padding: 20px; border-radius: 12px; font-family: 'Consolas', monospace; font-size: 13px; line-height: 1.5; }
+        .line { display: block; border-left: 4px solid transparent; padding-left: 12px; white-space: pre; }
+        .active-line { background: #334155; border-left-color: #3b82f6; color: #fff; }
+        
+        /* 控制項 */
+        .controls { text-align: center; margin-bottom: 25px; background: #f8fafc; padding: 20px; border-radius: 12px; }
+        .controls input { padding: 8px; border: 2px solid #cbd5e1; border-radius: 6px; margin: 0 10px; font-family: monospace; }
+        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin: 0 5px; }
+        button:disabled { background: #cbd5e1; }
+
+        .keyword { color: #c678dd; }
+        .comment { color: #5c6370; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Search in Rotated Sorted Array</h1>
+    <p class="subtitle">LeetCode #33 · 進階二分搜尋法</p>
+
+    <div class="desc-box">
+        <strong>題目描述：</strong> 在一個被旋轉過的升序陣列中尋找目標值 <code>target</code>。
+        <div class="example-grid">
+            <div class="example-item">輸入: [4,5,6,7,0,1,2], t=0<br>輸出: 4</div>
+            <div class="example-item">輸入: [4,5,6,7,0,1,2], t=3<br>輸出: -1</div>
+            <div class="example-item">輸入: [1], t=0<br>輸出: -1</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        陣列：<input type="text" id="inputArr" value="4,5,6,7,0,1,2" style="width: 180px;">
+        Target：<input type="number" id="inputTarget" value="0" style="width: 50px;">
+        <button onclick="initSim()">初始化</button>
+        <button id="nextBtn" onclick="runStep()" disabled>下一步 (Step)</button>
+    </div>
+
+    <div class="viz-box">
+        <div class="array-row" id="array-container"></div>
+    </div>
+
+    <div class="grid">
+        <div class="code-panel" id="code-content">
+<span class="line" id="l1">l, r = 0, len(nums) - 1</span>
+<span class="line" id="l2"><span class="keyword">while</span> l <= r:</span>
+<span class="line" id="l3">    mid = (l + r) // 2</span>
+<span class="line" id="l4">    <span class="keyword">if</span> nums[mid] == target: <span class="keyword">return</span> mid</span>
+<span class="line" id="l5">    <span class="keyword">if</span> nums[l] <= nums[mid]: <span class="comment"># 左側有序</span></span>
+<span class="line" id="l6">        <span class="keyword">if</span> nums[l] <= target < nums[mid]:</span>
+<span class="line" id="l7">            r = mid - 1</span>
+<span class="line" id="l8">        <span class="keyword">else</span>: l = mid + 1</span>
+<span class="line" id="l9">    <span class="keyword">else</span>: <span class="comment"># 右側有序</span></span>
+<span class="line" id="l10">        <span class="keyword">if</span> nums[mid] < target <= nums[r]:</span>
+<span class="line" id="l11">            l = mid + 1</span>
+<span class="line" id="l12">        <span class="keyword">else</span>: r = mid - 1</span>
+        </div>
+
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 0.9rem;">
+            <div style="font-weight: bold; color: var(--primary); margin-bottom: 10px;">搜尋進度</div>
+            <p>Left Index: <span id="v-l">0</span></p>
+            <p>Right Index: <span id="v-r">0</span></p>
+            <p>Mid Index: <span id="v-m">-</span></p>
+            <hr>
+            <p id="v-msg" style="color: #64748b; font-weight: 600;">點擊初始化開始...</p>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <h3>⏱ 複雜度分析</h3>
+        <p><strong>時間複雜度：O(log n)</strong> - 雖然陣列經過旋轉，但我們每次依然能透過判斷哪一側有序來捨棄一半的範圍。</p>
+        <p><strong>空間複雜度：O(1)</strong> - 僅使用常數個指標變數。</p>
+    </div>
+</div>
+
+<script>
+    let nums = [];
+    let target = 0;
+    let l = 0, r = 0, mid = -1;
+    let phase = 0;
+    let found = false;
+
+    function initSim() {
+        nums = document.getElementById('inputArr').value.split(',').map(Number);
+        target = parseInt(document.getElementById('inputTarget').value);
+        l = 0;
+        r = nums.length - 1;
+        mid = -1;
+        phase = 0;
+        found = false;
+        document.getElementById('nextBtn').disabled = false;
+        updateUI(1, "初始化指標範圍。");
+    }
+
+    function runStep() {
+        if (found) return;
+        if (l > r) {
+            updateUI(0, "搜尋結束，找不到目標值。回傳 -1", true);
+            document.getElementById('nextBtn').disabled = true;
+            return;
+        }
+
+        switch(phase) {
+            case 0:
+                updateUI(2, "檢查條件：l <= r 是否成立？");
+                phase = 1;
+                break;
+            case 1:
+                mid = Math.floor((l + r) / 2);
+                updateUI(3, `計算中間點 mid = ${mid} (值: ${nums[mid]})`);
+                phase = 2;
+                break;
+            case 2:
+                if (nums[mid] === target) {
+                    found = true;
+                    updateUI(4, `找到目標值！索引為 ${mid}`, false, true);
+                    document.getElementById('nextBtn').disabled = true;
+                } else if (nums[l] <= nums[mid]) {
+                    updateUI(5, "左側部分 [l...mid] 是有序的。");
+                    phase = 3;
+                } else {
+                    updateUI(9, "左側有無序斷層，代表右側 [mid...r] 是有序的。");
+                    phase = 4;
+                }
+                break;
+            case 3: // 左側有序的內部判斷
+                if (nums[l] <= target && target < nums[mid]) {
+                    r = mid - 1;
+                    updateUI(7, `Target 在左側有序區間內，更新 r = mid - 1`);
+                } else {
+                    l = mid + 1;
+                    updateUI(8, `Target 不在左側區間內，搜尋右側，更新 l = mid + 1`);
+                }
+                phase = 0;
+                break;
+            case 4: // 右側有序的內部判斷
+                if (nums[mid] < target && target <= nums[r]) {
+                    l = mid + 1;
+                    updateUI(11, `Target 在右側有序區間內，更新 l = mid + 1`);
+                } else {
+                    r = mid - 1;
+                    updateUI(12, `Target 不在右側區間內，搜尋左側，更新 r = mid - 1`);
+                }
+                phase = 0;
+                break;
+        }
+    }
+
+    function updateUI(lineNum, msg, isEnd = false, isFound = false) {
+        document.getElementById('v-l').innerText = l;
+        document.getElementById('v-r').innerText = r;
+        document.getElementById('v-m').innerText = mid === -1 ? "-" : mid;
+        document.getElementById('v-msg').innerText = msg;
+
+        document.querySelectorAll('.line').forEach(ln => ln.classList.remove('active-line'));
+        if (lineNum > 0) document.getElementById('l' + lineNum).classList.add('active-line');
+
+        const container = document.getElementById('array-container');
+        container.innerHTML = '';
+        nums.forEach((val, i) => {
+            const el = document.createElement('div');
+            el.className = 'element';
+            if (i >= l && i <= r) el.classList.add('active-range');
+            if (isFound && i === mid) el.classList.add('target-found');
+            el.innerText = val;
+            if (i === l) el.innerHTML += '<div class="ptr ptr-l">L</div>';
+            if (i === mid) el.innerHTML += '<div class="ptr ptr-m">M</div>';
+            if (i === r) el.innerHTML += '<div class="ptr ptr-r">R</div>';
+            container.appendChild(el);
+        });
+    }
+
+    initSim();
+</script>
+</body>
+</html>
+
+

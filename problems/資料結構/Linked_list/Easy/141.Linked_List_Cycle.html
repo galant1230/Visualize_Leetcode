@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>141. Linked List Cycle - Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-easy: #00b8a3;
+      --lc-blue: #007aff;
+      --lc-purple: #a855f7;
+      --lc-green: #2cbb5d;
+      --lc-red: #ff2d55;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(0, 184, 163, 0.15);
+      color: var(--lc-easy);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 16px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .tab-group {
+      display: flex;
+      gap: 6px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+      color: var(--lc-text);
+      margin-bottom: 8px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 2px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-easy); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 480px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      padding: 30px 10px 20px 10px;
+      margin-bottom: 16px;
+      position: relative;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .list-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      position: relative;
+      padding: 20px 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .node-item {
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .node {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #333;
+      border: 2px solid var(--lc-border);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 1rem;
+      position: relative;
+      transition: all 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .node.ptr-slow {
+      border-color: var(--lc-purple);
+      background: rgba(168, 85, 247, 0.3);
+    }
+    .node.ptr-fast {
+      border-color: var(--lc-orange);
+      background: rgba(255, 161, 22, 0.3);
+    }
+    .node.matched {
+      border-color: var(--lc-green);
+      background: rgba(44, 187, 93, 0.4);
+      box-shadow: 0 0 12px rgba(44, 187, 93, 0.6);
+    }
+
+    .arrow-next {
+      width: 24px;
+      height: 2px;
+      background: var(--lc-text-dim);
+      position: relative;
+      margin: 0 4px;
+    }
+    .arrow-next::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: -3px;
+      border-width: 4px 0 4px 6px;
+      border-style: solid;
+      border-color: transparent transparent transparent var(--lc-text-dim);
+    }
+
+    .ptr-container {
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .ptr-label {
+      font-size: 0.65rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: white;
+      white-space: nowrap;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .p-slow { background: var(--lc-purple); }
+    .p-fast { background: var(--lc-orange); }
+
+    .idx-label {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      color: var(--lc-text-dim);
+      font-family: monospace;
+    }
+
+    .svg-cycle-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .info-panel {
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .calc-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1e1e1e;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #3e3e3e;
+    }
+
+    .control-panel {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 7px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-medium, #ffc01e); color: #000; }
+    .btn-primary:hover { background: #e0a800; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">141. Linked List Cycle</span>
+    <span class="lc-badge">Easy</span>
+    <span class="lc-tag">Hash Table</span>
+    <span class="lc-tag">Linked List</span>
+    <span class="lc-tag">Two Pointers</span>
+  </div>
+
+  <div class="config-tabs">
+    <div style="font-size: 0.85rem; color: var(--lc-text-dim); font-weight: bold;">測試資料 (Presets):</div>
+    <div class="tab-group">
+      <button class="tab-btn active" onclick="switchPreset(0)">Ex 1: [3,2,0,-4], pos=1</button>
+      <button class="tab-btn" onclick="switchPreset(1)">Ex 2: [1,2], pos=0</button>
+      <button class="tab-btn" onclick="switchPreset(2)">Ex 3: [1], pos=-1 (無環)</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個單向鏈表的頭節點 <code>head</code>，判斷鏈表中是否有環 (Cycle)。<br>
+            若鏈表中存在某個節點，可以透過持續追蹤 <code>next</code> 指標再次到達該節點，則表示鏈表中存在環。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> head = [3, 2, 0, -4], pos = 1</div>
+            <div><strong>Output:</strong> true (鏈表末端 -4 連回 index 1)</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val">O(N)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val">O(1)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span>🐍 程式碼實作 (Floyd's Cycle Algorithm)</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (State & Visualizer)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title">💡 解題思路：快慢指標法 (Tortoise & Hare)</div>
+            <div>1. 使用雙指標：<code>slow</code> 每次走 <b>1 步</b>，<code>fast</code> 每次走 <b>2 步</b>。<br>2. 若鏈表<b>有環</b>，<code>fast</code> 最終必然會在環內<b>追上 (相遇)</b> <code>slow</code>。<br>3. 若鏈表<b>無環</b>，<code>fast</code> 或 <code>fast.next</code> 會先遇到 <code>null</code>，結束搜尋。</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">準備開始模擬...</div>
+          </div>
+
+          <div class="stage" id="main-stage">
+            <svg class="svg-cycle-layer" id="svg-layer"></svg>
+            <div class="list-wrapper" id="list-container"></div>
+          </div>
+
+          <div class="info-panel">
+            <div class="calc-row">
+              <span style="color: var(--lc-text-dim);">Slow 指標節點:</span>
+              <span id="val-slow" style="font-weight: bold; color: var(--lc-purple);">-</span>
+            </div>
+            <div class="calc-row">
+              <span style="color: var(--lc-text-dim);">Fast 指標節點:</span>
+              <span id="val-fast" style="font-weight: bold; color: var(--lc-orange);">-</span>
+            </div>
+            <div class="calc-row">
+              <span style="color: var(--lc-text-dim);">結果判斷 (Result):</span>
+              <span id="val-result" style="font-weight: bold; color: var(--lc-text);">-</span>
+            </div>
+          </div>
+
+          <div class="control-panel" style="margin-top: 16px;">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const presets = [
+      { nodes: [3, 2, 0, -4], pos: 1 },
+      { nodes: [1, 2], pos: 0 },
+      { nodes: [1], pos: -1 }
+    ];
+
+    let currentPresetIdx = 0;
+    let currentStep = 0;
+    let history = [];
+
+    const pyCodeLines = [
+      `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">hasCycle</span>(<span class="self">self</span>, head: Optional[ListNode]) -&gt; bool:`,
+      `        <span class="kw">if</span> <span class="kw">not</span> head <span class="kw">or</span> <span class="kw">not</span> head.next:`,
+      `            <span class="kw">return False</span>`,
+      `        slow = head`,
+      `        fast = head`,
+      `        <span class="kw">while</span> fast <span class="kw">and</span> fast.next:`,
+      `            slow = slow.next`,
+      `            fast = fast.next.next`,
+      `            <span class="kw">if</span> slow == fast:`,
+      `                <span class="kw">return True</span>`,
+      `        <span class="kw">return False</span>`
+    ];
+
+    function buildHistory() {
+      history = [];
+      const { nodes, pos } = presets[currentPresetIdx];
+      const N = nodes.length;
+
+      // 特殊情況檢查
+      if (N === 0 || N === 1 && pos === -1) {
+        history.push({
+          line: 2,
+          title: "邊界條件檢查",
+          desc: "head 為空或僅一個節點且無環，直接回傳 False。",
+          slowIdx: 0, fastIdx: 0, result: "False"
+        });
+        history.push({
+          line: 3,
+          title: "回傳 False",
+          desc: "鏈表不可能存在環。",
+          slowIdx: null, fastIdx: null, result: "False (No Cycle)"
+        });
+        return;
+      }
+
+      // 步驟 1: 初始化 slow, fast
+      let slow = 0;
+      let fast = 0;
+
+      history.push({
+        line: 4,
+        title: "初始化指標 slow = head, fast = head",
+        desc: `slow 和 fast 指標皆指向 head (節點值 ${nodes[0]})。`,
+        slowIdx: slow, fastIdx: fast, result: "Checking..."
+      });
+
+      let stepsCount = 0;
+      const maxSteps = 20; // 安全機制
+
+      while (true) {
+        // 檢查 while 條件
+        if (fast === null || (fast >= N && pos === -1)) {
+          break;
+        }
+
+        // 移動 slow 1 步
+        let nextSlow = (slow + 1);
+        if (slow === N - 1) {
+          nextSlow = pos !== -1 ? pos : null;
+        }
+
+        // 移動 fast 2 步
+        let nextFast1 = (fast + 1);
+        if (fast === N - 1) {
+          nextFast1 = pos !== -1 ? pos : null;
+        }
+
+        let nextFast2 = null;
+        if (nextFast1 !== null) {
+          if (nextFast1 === N - 1) {
+            nextFast2 = pos !== -1 ? pos : null;
+          } else if (nextFast1 < N - 1) {
+            nextFast2 = nextFast1 + 1;
+          }
+        }
+
+        // 記錄移動前 state (檢查 while)
+        history.push({
+          line: 6,
+          title: "檢查 while fast and fast.next",
+          desc: `當前 fast 指向 [${fast !== null ? fast : 'null'}]，條件成立，準備推進。`,
+          slowIdx: slow, fastIdx: fast, result: "Searching..."
+        });
+
+        // 推進步驟
+        slow = nextSlow;
+        fast = nextFast2;
+        stepsCount++;
+
+        history.push({
+          line: 8,
+          title: `推進：slow 走 1 步 ➔ [${slow}], fast 走 2 步 ➔ [${fast !== null ? fast : 'null'}]`,
+          desc: `slow 指向 ${slow !== null ? nodes[slow] : 'null'}，fast 指向 ${fast !== null ? nodes[fast] : 'null'}。`,
+          slowIdx: slow, fastIdx: fast, result: "Searching..."
+        });
+
+        // 相遇判斷
+        if (slow !== null && fast !== null && slow === fast) {
+          history.push({
+            line: 9,
+            title: "🎯 觸發 slow == fast！",
+            desc: `快慢指標在索引 [${slow}] (值 ${nodes[slow]}) 相遇！證實存在環。`,
+            slowIdx: slow, fastIdx: fast, isMatch: true, result: "True (Cycle Found!)"
+          });
+          history.push({
+            line: 10,
+            title: "回傳 True",
+            desc: "成功偵測到環，函數傳回 True。",
+            slowIdx: slow, fastIdx: fast, isMatch: true, result: "True"
+          });
+          return;
+        }
+
+        if (fast === null || (fast >= N - 1 && pos === -1 && nextFast1 === null)) {
+          break;
+        }
+
+        if (stepsCount > maxSteps) break;
+      }
+
+      history.push({
+        line: 11,
+        title: "fast 遇到末端 null 節點",
+        desc: "while 條件不成立，說明鏈表終點無環。",
+        slowIdx: slow, fastIdx: fast, result: "False (No Cycle)"
+      });
+    }
+
+    function switchPreset(idx) {
+      currentPresetIdx = idx;
+      const btns = document.querySelectorAll('.config-tabs .tab-btn');
+      btns.forEach((b, i) => {
+        if (i === idx) b.classList.add('active');
+        else b.classList.remove('active');
+      });
+      resetSim();
+    }
+
+    function resetSim() {
+      buildHistory();
+      currentStep = 0;
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateLineHighlight(state.line);
+      document.getElementById('step-title').innerText = state.title;
+      document.getElementById('step-desc').innerText = state.desc;
+      document.getElementById('stepHint').innerText = state.title.toUpperCase();
+
+      renderStage(state);
+      renderInfo(state);
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = pyCodeLines
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateLineHighlight(line) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if (document.getElementById('l' + line)) {
+        document.getElementById('l' + line).classList.add('active-line');
+      }
+    }
+
+    function renderStage(state) {
+      const { nodes, pos } = presets[currentPresetIdx];
+      const container = document.getElementById('list-container');
+      container.innerHTML = '';
+
+      nodes.forEach((val, idx) => {
+        const item = document.createElement('div');
+        item.className = 'node-item';
+        item.id = `node-${idx}`;
+
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.innerText = val;
+
+        let ptrLabels = [];
+        if (idx === state.slowIdx) {
+          node.classList.add('ptr-slow');
+          ptrLabels.push('<div class="ptr-label p-slow">slow</div>');
+        }
+        if (idx === state.fastIdx) {
+          node.classList.add('ptr-fast');
+          ptrLabels.push('<div class="ptr-label p-fast">fast</div>');
+        }
+
+        if (state.isMatch && idx === state.slowIdx) {
+          node.className = 'node matched';
+        }
+
+        if (ptrLabels.length > 0) {
+          node.innerHTML += `<div class="ptr-container">${ptrLabels.join('')}</div>`;
+        }
+
+        node.innerHTML += `<div class="idx-label">[${idx}]</div>`;
+        item.appendChild(node);
+
+        // 一般 next 箭頭
+        if (idx < nodes.length - 1) {
+          const arrow = document.createElement('div');
+          arrow.className = 'arrow-next';
+          item.appendChild(arrow);
+        }
+
+        container.appendChild(item);
+      });
+
+      // 繪製 SVG 環狀箭頭 (若有環)
+      setTimeout(() => drawCycleSvg(pos, nodes.length), 50);
+    }
+
+    function drawCycleSvg(pos, totalNodes) {
+      const svg = document.getElementById('svg-layer');
+      svg.innerHTML = '';
+
+      if (pos === -1 || totalNodes <= 1) return;
+
+      const lastNode = document.getElementById(`node-${totalNodes - 1}`);
+      const targetNode = document.getElementById(`node-${pos}`);
+
+      if (!lastNode || !targetNode) return;
+
+      const stageRect = document.getElementById('main-stage').getBoundingClientRect();
+      const lastRect = lastNode.getBoundingClientRect();
+      const targetRect = targetNode.getBoundingClientRect();
+
+      const startX = lastRect.left + lastRect.width / 2 - stageRect.left;
+      const startY = lastRect.bottom - stageRect.top - 8;
+
+      const endX = targetRect.left + targetRect.width / 2 - stageRect.left;
+      const endY = targetRect.bottom - stageRect.top - 8;
+
+      const curveY = startY + 35;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const d = `M ${startX} ${startY} C ${startX} ${curveY}, ${endX} ${curveY}, ${endX} ${endY}`;
+      
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', '#ff2d55');
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('stroke-dasharray', '4,4');
+
+      // 箭頭 marker
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      defs.innerHTML = `
+        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff2d55" />
+        </marker>
+      `;
+
+      path.setAttribute('marker-end', 'url(#arrow)');
+      svg.appendChild(defs);
+      svg.appendChild(path);
+    }
+
+    function renderInfo(state) {
+      const { nodes } = presets[currentPresetIdx];
+      
+      const slowVal = state.slowIdx !== null && state.slowIdx < nodes.length 
+        ? `${nodes[state.slowIdx]} (idx: ${state.slowIdx})` : 'null';
+      const fastVal = state.fastIdx !== null && state.fastIdx < nodes.length 
+        ? `${nodes[state.fastIdx]} (idx: ${state.fastIdx})` : 'null';
+
+      document.getElementById('val-slow').innerText = slowVal;
+      document.getElementById('val-fast').innerText = fastVal;
+      
+      const resEl = document.getElementById('val-result');
+      resEl.innerText = state.result;
+      if (state.result.includes('True')) resEl.style.color = 'var(--lc-green)';
+      else if (state.result.includes('False')) resEl.style.color = 'var(--lc-red)';
+      else resEl.style.color = 'var(--lc-text)';
+    }
+
+    window.onload = resetSim;
+    window.onresize = () => {
+      const { pos, nodes } = presets[currentPresetIdx];
+      drawCycleSvg(pos, nodes.length);
+    };
+  </script>
+</body>
+</html>

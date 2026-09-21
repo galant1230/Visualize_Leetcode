@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>230. Kth Smallest Element in a BST - Visualizer</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --red: #ff2d55;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .tag { background: #383838; color: var(--text-dim); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
+
+    .approach-tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 6px; flex-wrap: wrap; background: #222; padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
+    .app-tab-btn { background: transparent; border: none; color: var(--text-dim); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: 0.2s; }
+    .app-tab-btn:hover { background: #333; color: #fff; }
+    .app-tab-btn.active { background: var(--orange); color: #000; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+    
+    .problem-desc { font-size: 0.82rem; color: #ccc; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+    
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .approach-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.8rem; color: #ddd; }
+
+    /* 核心邏輯與更新公式拆解 Block 樣式 */
+    .formula-card { background: #1e1e1e; border: 1px solid var(--purple); border-radius: 6px; padding: 10px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 6px; }
+    .formula-title { color: var(--purple); font-weight: bold; font-size: 0.82rem; display: flex; align-items: center; gap: 6px; }
+    .formula-code { background: #121212; border: 1px solid var(--border); border-left: 3px solid var(--purple); padding: 6px 8px; font-family: monospace; color: #fff; border-radius: 4px; }
+    .formula-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+    .formula-subitem { background: #252525; border: 1px solid var(--border); padding: 6px; border-radius: 4px; }
+    .formula-subitem-title { font-weight: bold; color: var(--orange); font-size: 0.75rem; margin-bottom: 2px; }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.75rem; overflow-x: auto; max-height: 290px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .str { color: #f1fa8c; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.75rem; min-height: 120px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.2s ease-out; }
+    .stack-frame.returning { border-color: var(--green); border-left-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+    .stack-frame.found { border-color: var(--orange); border-left-color: var(--orange); background: rgba(255, 161, 22, 0.2); }
+    .stack-frame-title { color: #fff; font-weight: bold; }
+    .stack-frame-args { color: var(--text-dim); font-size: 0.7rem; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; height: 390px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; overflow: hidden; }
+    
+    .tree-container { display: flex; width: 100%; height: 210px; gap: 10px; }
+    .tree-pane { flex: 1; background: #141414; border: 1px solid var(--border); border-radius: 4px; position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+    .tree-pane-title { font-size: 0.75rem; font-weight: bold; font-family: monospace; color: var(--orange); }
+    
+    svg.tree-svg { width: 100%; height: 185px; }
+    .tree-node-circle { fill: #333; stroke: var(--border); stroke-width: 2px; transition: all 0.2s; }
+    .tree-node-circle.active { fill: rgba(255, 161, 22, 0.35); stroke: var(--orange); stroke-width: 3px; }
+    .tree-node-circle.visited { fill: rgba(80, 250, 123, 0.25); stroke: var(--green); stroke-width: 2px; }
+    .tree-node-circle.target { fill: rgba(168, 85, 247, 0.45); stroke: var(--purple); stroke-width: 3px; }
+    .tree-text { fill: #fff; font-family: monospace; font-weight: bold; font-size: 13px; text-anchor: middle; dominant-baseline: middle; }
+    .tree-edge { stroke: #555; stroke-width: 2px; transition: all 0.2s; }
+
+    .ds-display { background: #141414; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 0.78rem; height: 140px; display: flex; flex-direction: column; justify-content: space-around; align-items: flex-start; gap: 4px; }
+    .queue-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .queue-item { background: #2d2d2d; border: 1px solid var(--medium); padding: 2px 8px; border-radius: 4px; color: var(--medium); font-weight: bold; }
+    .res-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .res-group { background: rgba(80, 250, 123, 0.15); border: 1px solid var(--green); padding: 2px 8px; border-radius: 4px; color: var(--green); font-weight: bold; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.8rem; font-family: monospace; height: 65px; display: flex; flex-direction: column; justify-content: center; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">230. Kth Smallest Element in a BST</span>
+    <span class="badge">Medium</span>
+    <span class="tag">Tree</span>
+    <span class="tag">Depth-First Search</span>
+    <span class="tag">Binary Search Tree</span>
+  </div>
+
+  <div class="approach-tabs" id="app-tabs">
+    <button class="app-tab-btn active" onclick="switchApproach(0)">1. DFS 遞迴中序 (提前剪枝)</button>
+    <button class="app-tab-btn" onclick="switchApproach(1)">2. 迭代中序走訪 (Stack)</button>
+    <button class="app-tab-btn" onclick="switchApproach(2)">3. 中序陣列收集 (Inorder Array)</button>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: [3, 1, 4, null, 2], k = 1</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: [5, 3, 6, 2, 4, null, null, 1], k = 3</button>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個二元搜尋樹 (BST) 的根節點 <code>root</code> 和一個整數 <code>k</code>，請找出樹中第 <code>k</code> 小的節點值（1-indexed）。<br/>
+          <b>BST 關鍵特性：</b>中序走訪（Inorder Traversal: 左 -&gt; 中 -&gt; 右）產生的節點序列為<b>嚴格遞增排序</b>。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">-</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼 (逐行追蹤)</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (系統呼叫堆疊)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display">
+          <div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">💡 解題思路說明</div>
+        <div class="approach-box" id="approach-desc"></div>
+      </div>
+
+      <!-- 核心遞迴更新與計數拆解 Block -->
+      <div class="formula-card" id="formula-block">
+        <div class="formula-title">💡 中序走訪與 K 值遞減核心邏輯 (Inorder Logic)</div>
+        <div class="formula-code" id="formula-code-display">
+          k -= 1; if k == 0: return node.val
+        </div>
+        <div class="formula-grid">
+          <div class="formula-subitem">
+            <div class="formula-subitem-title">1. 左子樹優先 (Left Branch First)</div>
+            <div style="color: #bbb;">
+              遵循 BST 性質，先一路探底至最左小節點，確保處理順序嚴格由小到大。
+            </div>
+          </div>
+          <div class="formula-subitem">
+            <div class="formula-subitem-title">2. 訪問節點與計數 (Visit & Count)</div>
+            <div style="color: #bbb;">
+              當「中」被訪問時計數器減 1（或加 1），剛好抵達第 $k$ 小時立刻記錄結果。
+            </div>
+          </div>
+        </div>
+        <div style="color: var(--text-dim); font-size: 0.73rem; margin-top: 2px;" id="formula-foot-display">
+          • <b>提前剪枝 (Early Exit)：</b>找到答案後，後續的右子樹與未訪問節點皆無須繼續遞迴，省下大幅時間！
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 完整執行步驟與節點狀態 (Step Visualizer)</div>
+        
+        <div class="stage" id="stage-box"></div>
+
+        <div class="info">
+          <div class="info-row">
+            <span style="color: var(--text-dim);">當前階段 (Phase):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const approaches = [
+      {
+        name: "1. DFS 遞迴中序 (提前剪枝)",
+        time: "O(H + k)", space: "O(H)",
+        desc: "<b>DFS 遞迴中序走訪：</b>利用 BST 中序走訪必為遞增序列的特性。走訪至「中」節點時將 <code>self.k -= 1</code>，當 <code>self.k == 0</code> 時找到答案並直接回傳，達到提前剪枝效益。",
+        formulaCode: "self.k -= 1\nif self.k == 0: self.ans = node.val; return",
+        formulaFoot: "• <b>提前剪枝：</b>找到答案後透過 <code>self.ans is not None</code> 判斷，立刻中斷後續無用遞迴。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">kthSmallest</span>(<span class="self">self</span>, root: Optional[TreeNode], k: int) -> int:`,
+          `        <span class="self">self</span>.k = k`,
+          `        <span class="self">self</span>.ans = <span class="kw">None</span>`,
+          `        <span class="kw">def</span> <span class="fn">inorder</span>(node):`,
+          `            <span class="kw">if not</span> node <span class="kw">or</span> <span class="self">self</span>.ans <span class="kw">is not None</span>:`,
+          `                <span class="kw">return</span>`,
+          `            inorder(node.left)`,
+          `            <span class="self">self</span>.k -= 1`,
+          `            <span class="kw">if</span> <span class="self">self</span>.k == 0:`,
+          `                <span class="self">self</span>.ans = node.val`,
+          `                <span class="kw">return</span>`,
+          `            inorder(node.right)`,
+          `        inorder(root)`,
+          `        <span class="kw">return</span> <span class="self">self</span>.ans`
+        ]
+      },
+      {
+        name: "2. 迭代中序走訪 (Stack)",
+        time: "O(H + k)", space: "O(H)",
+        desc: "<b>迭代 Stack 模擬：</b>使用顯式堆疊 <code>stack</code> 模擬中序走訪。先一路將左子節點推入堆疊，彈出時代表訪問該節點（<code>k -= 1</code>），一旦 <code>k == 0</code> 即為第 $k$ 小元素。",
+        formulaCode: "curr = stack.pop()\nk -= 1\nif k == 0: return curr.val",
+        formulaFoot: "• <b>空間優勢：</b>只需維護樹高 $H$ 的堆疊大小，一旦找到解答立刻 terminate 迴圈。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">kthSmallest</span>(<span class="self">self</span>, root: Optional[TreeNode], k: int) -> int:`,
+          `        stack = []`,
+          `        curr = root`,
+          `        <span class="kw">while</span> curr <span class="kw">or</span> stack:`,
+          `            <span class="kw">while</span> curr:`,
+          `                stack.append(curr)`,
+          `                curr = curr.left`,
+          `            curr = stack.pop()`,
+          `            k -= 1`,
+          `            <span class="kw">if</span> k == 0:`,
+          `                <span class="kw">return</span> curr.val`,
+          `            curr = curr.right`
+        ]
+      },
+      {
+        name: "3. 中序陣列收集 (Inorder Array)",
+        time: "O(N)", space: "O(N)",
+        desc: "<b>陣列完整收集法：</b>先透過中序走訪 (Inorder Traversal) 將全樹所有節點依序收集至 <code>inorder_result</code> 陣列中，最後直接存取 index <code>k - 1</code> 的數值。",
+        formulaCode: "inorder_result.append(node.val)\nreturn inorder_result[k - 1]",
+        formulaFoot: "• <b>直觀簡易：</b>先拉平樹結構為有序陣列，取第 $k$ 小元素等同於取陣列索引 <code>k - 1</code>。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">kthSmallest</span>(<span class="self">self</span>, root: Optional[TreeNode], k: int) -> int:`,
+          `        inorder_result = []`,
+          `        <span class="kw">def</span> <span class="fn">InOrder</span>(node):`,
+          `            <span class="kw">if not</span> node:`,
+          `                <span class="kw">return</span>`,
+          `            InOrder(node.left)`,
+          `            inorder_result.append(node.val)`,
+          `            InOrder(node.right)`,
+          `        InOrder(root)`,
+          `        <span class="kw">return</span> inorder_result[k - 1]`
+        ]
+      }
+    ];
+
+    const presets = [
+      { root: [3, 1, 4, null, 2], k: 1, expected: 1, name: "Ex 1: [3, 1, 4, null, 2], k = 1" },
+      { root: [5, 3, 6, 2, 4, null, null, 1], k: 3, expected: 3, name: "Ex 2: [5, 3, 6, 2, 4, null, null, 1], k = 3" }
+    ];
+
+    let currentApproach = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function switchApproach(idx) {
+      currentApproach = idx;
+      document.querySelectorAll('.app-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderApproachDetails();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderApproachDetails() {
+      const app = approaches[currentApproach];
+      document.getElementById('time-comp').innerText = app.time;
+      document.getElementById('space-comp').innerText = app.space;
+      document.getElementById('approach-desc').innerHTML = app.desc;
+      document.getElementById('formula-code-display').innerText = app.formulaCode;
+      document.getElementById('formula-foot-display').innerHTML = app.formulaFoot;
+      document.getElementById('code-box').innerHTML = app.code.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>Root Array = [${p.root.map(v => v === null ? 'null' : v).join(', ')}], k = ${p.k}</div>
+        <div>Expected Answer: <b>${p.expected}</b></div>
+      `;
+    }
+
+    function createTree(arr) {
+      if (!arr || arr.length === 0) return null;
+      let nodes = arr.map((v, i) => v !== null ? { val: v, left: null, right: null, id: i } : null);
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i]) {
+          let leftIdx = 2 * i + 1;
+          let rightIdx = 2 * i + 2;
+          if (leftIdx < nodes.length) nodes[i].left = nodes[leftIdx];
+          if (rightIdx < nodes.length) nodes[i].right = nodes[rightIdx];
+        }
+      }
+      return nodes[0];
+    }
+
+    function renderSingleTreeSVG(root, activeVal = null, visitedVals = [], targetVal = null) {
+      if (!root) return `<div style="color:var(--text-dim); font-family:monospace; margin:auto; font-size:0.8rem;">Tree is empty (None)</div>`;
+      let posMap = {};
+      function calcPos(node, depth = 0, leftBound = 0, rightBound = 100) {
+        if (!node) return;
+        let x = (leftBound + rightBound) / 2;
+        let y = depth * 40 + 25;
+        posMap[node.val + "_" + node.id] = { id: node.id, x, y, val: node.val, left: node.left, right: node.right };
+        calcPos(node.left, depth + 1, leftBound, x);
+        calcPos(node.right, depth + 1, x, rightBound);
+      }
+      calcPos(root);
+
+      let edgesHTML = '', nodesHTML = '';
+      Object.keys(posMap).forEach(key => {
+        let p = posMap[key];
+        if (p.left && posMap[p.left.val + "_" + p.left.id]) {
+          let lp = posMap[p.left.val + "_" + p.left.id];
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${lp.x}%" y2="${lp.y}" class="tree-edge" />`;
+        }
+        if (p.right && posMap[p.right.val + "_" + p.right.id]) {
+          let rp = posMap[p.right.val + "_" + p.right.id];
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${rp.x}%" y2="${rp.y}" class="tree-edge" />`;
+        }
+
+        let circleClass = 'tree-node-circle';
+        if (visitedVals.includes(p.val)) circleClass += ' visited';
+        if (p.val === targetVal) circleClass += ' target';
+        if (p.val === activeVal) circleClass += ' active';
+
+        nodesHTML += `<g><circle cx="${p.x}%" cy="${p.y}" r="13" class="${circleClass}" /><text x="${p.x}%" y="${p.y}" class="tree-text">${p.val}</text></g>`;
+      });
+      return `<svg class="tree-svg">${edgesHTML}${nodesHTML}</svg>`;
+    }
+
+    function renderTreeStage(rRoot, activeVal, visitedVals, targetVal, statusDisplayStr, resDisplay) {
+      return `
+        <div class="tree-container">
+          <div class="tree-pane">
+            <span class="tree-pane-title">BST Inorder Traversal Visualization</span>
+            ${renderSingleTreeSVG(rRoot, activeVal, visitedVals, targetVal)}
+          </div>
+        </div>
+        <div class="ds-display">
+          <div class="queue-bar">
+            <span style="color:var(--text-dim); font-weight:bold;">Current State / Counters:</span>
+            ${statusDisplayStr}
+          </div>
+          <div class="res-bar">
+            <span style="color:var(--text-dim); font-weight:bold;">Answer Status:</span>
+            <span class="res-group">${resDisplay}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStackHTML(stackFrames) {
+      if (!stackFrames || stackFrames.length === 0) {
+        return `<div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>`;
+      }
+      return stackFrames.map(f => `
+        <div class="stack-frame ${f.found ? 'found' : f.returning ? 'returning' : ''}">
+          <div>
+            <span class="stack-frame-title">${f.fnName}</span>
+            <span class="stack-frame-args">(${f.args})</span>
+          </div>
+          <div style="font-size:0.75rem; font-weight:bold; color:${f.found ? 'var(--purple)' : f.returning ? 'var(--green)' : 'var(--orange)'};">
+            ${f.found ? `🎯 Target` : f.returning ? `➔ ${f.retVal}` : 'Active'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const presetData = presets[currentPreset];
+      let rRoot = createTree(presetData.root);
+      let targetK = presetData.k;
+      let currentStack = [];
+
+      function pushFrame(fnName, args) {
+        currentStack.push({ fnName, args, returning: false, retVal: null, found: false });
+      }
+      function popFrame(retVal, isFound = false) {
+        if (currentStack.length > 0) {
+          let top = currentStack[currentStack.length - 1];
+          top.returning = true;
+          top.retVal = retVal;
+          top.found = isFound;
+        }
+      }
+      function finalizePop() {
+        currentStack.pop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 0: DFS 遞迴中序 (提前剪枝)
+      // ----------------------------------------------------
+      if (currentApproach === 0) {
+        pushFrame("kthSmallest", `root:${rRoot ? rRoot.val : 'None'}, k:${targetK}`);
+
+        let stateK = targetK;
+        let ans = null;
+        let visitedVals = [];
+
+        history.push({
+          line: 1, phase: "Line 2-4: 初始化 self.k 與 self.ans",
+          desc: `設定 self.k = ${stateK}, self.ans = None`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], null, `<span class="queue-item">k = ${stateK}</span>`, `Searching...`)
+        });
+
+        function inorder(node) {
+          pushFrame("inorder", `node:${node ? node.val : 'None'}`);
+
+          history.push({
+            line: 4, phase: `Line 5: 進入 inorder(node=${node ? node.val : 'None'})`,
+            desc: `檢查當前節點 ${node ? node.val : 'None'}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node ? node.val : null, visitedVals, ans, `<span class="queue-item">k = ${stateK}</span>`, ans !== null ? `Ans = ${ans}` : `Searching...`)
+          });
+
+          if (!node || ans !== null) {
+            history.push({
+              line: 5, phase: "Line 6: Base Case 成立",
+              desc: !node ? "節點為 None，返回上一層" : "已經找到答案 (ans != None)，觸發提前剪枝返回",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, null, visitedVals, ans, `<span class="queue-item">k = ${stateK}</span>`, ans !== null ? `Ans = ${ans}` : `Searching...`)
+            });
+            popFrame("Return");
+            finalizePop();
+            return;
+          }
+
+          history.push({
+            line: 7, phase: "Line 8: 遞迴左子樹 inorder(node.left)",
+            desc: `前往左子樹 node.left (${node.left ? node.left.val : 'None'})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, visitedVals, ans, `<span class="queue-item">k = ${stateK}</span>`, `Searching...`)
+          });
+
+          inorder(node.left);
+
+          if (ans !== null) {
+            popFrame("Pruned");
+            finalizePop();
+            return;
+          }
+
+          stateK -= 1;
+          visitedVals.push(node.val);
+
+          history.push({
+            line: 8, phase: `Line 9: 訪問當前節點 ${node.val}，self.k -= 1`,
+            desc: `中序訪問節點 ${node.val}，剩餘需要計數 k = ${stateK}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, visitedVals, ans, `<span class="queue-item">Visited: [${visitedVals.join(', ')}]</span> <span class="queue-item">k = ${stateK}</span>`, `Searching...`)
+          });
+
+          if (stateK === 0) {
+            ans = node.val;
+            history.push({
+              line: 9, phase: "Line 10-11: self.k == 0 成立！",
+              desc: `🎯 成功找到第 ${targetK} 小的節點！數值為 ${ans}`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, node.val, visitedVals, ans, `<span class="queue-item" style="border-color:var(--purple); color:var(--purple);">Found Target: ${ans}</span>`, `Target = ${ans}`)
+            });
+            popFrame(`Ans:${ans}`, true);
+            finalizePop();
+            return;
+          }
+
+          history.push({
+            line: 12, phase: "Line 13: 遞迴右子樹 inorder(node.right)",
+            desc: `前往右子樹 node.right (${node.right ? node.right.val : 'None'})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, visitedVals, ans, `<span class="queue-item">k = ${stateK}</span>`, `Searching...`)
+          });
+
+          inorder(node.right);
+
+          popFrame("Return");
+          finalizePop();
+        }
+
+        history.push({
+          line: 13, phase: "Line 14: 呼叫 inorder(root)",
+          desc: "啟動中序遞迴走訪",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, rRoot ? rRoot.val : null, [], null, `<span class="queue-item">k = ${stateK}</span>`, `Searching...`)
+        });
+
+        inorder(rRoot);
+
+        popFrame(`Ans:${ans}`, true);
+        history.push({
+          line: 14, phase: "完成搜尋",
+          desc: `回傳解答 self.ans = ${ans}`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, visitedVals, ans, `<span class="queue-item" style="border-color:var(--purple); color:var(--purple);">Kth Smallest: ${ans}</span>`, `Ans = ${ans}`)
+        });
+        finalizePop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 1: 迭代中序走訪 (Stack)
+      // ----------------------------------------------------
+      else if (currentApproach === 1) {
+        pushFrame("kthSmallest", `root:${rRoot ? rRoot.val : 'None'}, k:${targetK}`);
+
+        let stack = [];
+        let curr = rRoot;
+        let kCount = targetK;
+        let visitedVals = [];
+
+        history.push({
+          line: 2, phase: "Line 3-4: 初始化 stack = [], curr = root",
+          desc: `準備進行迭代走訪，k = ${kCount}`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], null, `stack = [], k = ${kCount}`, `Searching...`)
+        });
+
+        while (curr || stack.length > 0) {
+          history.push({
+            line: 4, phase: "Line 5: while curr or stack 檢查",
+            desc: `curr = ${curr ? curr.val : 'None'}，Stack 中元素個數 = ${stack.length}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, curr ? curr.val : null, visitedVals, null, `<span class="queue-item">Stack: [${stack.map(n=>n.val).join(', ')}]</span> <span class="queue-item">k = ${kCount}</span>`, `Searching...`)
+          });
+
+          while (curr) {
+            stack.push(curr);
+            history.push({
+              line: 6, phase: `Line 7-8: stack.append(${curr.val}) 並往左走`,
+              desc: `將節點 ${curr.val} 推入 Stack，繼續深入左子節點`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, curr.val, visitedVals, null, `<span class="queue-item">Stack: [${stack.map(n=>n.val).join(', ')}]</span>`, `Searching...`)
+            });
+            curr = curr.left;
+          }
+
+          curr = stack.pop();
+          kCount -= 1;
+          visitedVals.push(curr.val);
+
+          history.push({
+            line: 8, phase: `Line 9-10: curr = stack.pop() [${curr.val}], k -= 1`,
+            desc: `彈出 Stack 頂端節點 ${curr.val} 並進行訪問，剩餘 k = ${kCount}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, curr.val, visitedVals, null, `<span class="queue-item">Visited: [${visitedVals.join(', ')}]</span> <span class="queue-item">k = ${kCount}</span>`, `Searching...`)
+          });
+
+          if (kCount === 0) {
+            history.push({
+              line: 11, phase: "Line 12: if k == 0 成立！",
+              desc: `🎯 成功找到第 ${targetK} 小節點！回傳 ${curr.val}`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, curr.val, visitedVals, curr.val, `<span class="queue-item" style="border-color:var(--purple); color:var(--purple);">Found Target: ${curr.val}</span>`, `Ans = ${curr.val}`)
+            });
+            popFrame(`Ans:${curr.val}`, true);
+            finalizePop();
+            return;
+          }
+
+          history.push({
+            line: 12, phase: "Line 13: curr = curr.right",
+            desc: `轉向右子樹繼續處理 (${curr.right ? curr.right.val : 'None'})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, curr.val, visitedVals, null, `<span class="queue-item">k = ${kCount}</span>`, `Searching...`)
+          });
+          curr = curr.right;
+        }
+      }
+
+      // ----------------------------------------------------
+      // Approach 2: 中序陣列收集 (Inorder Array)
+      // ----------------------------------------------------
+      else if (currentApproach === 2) {
+        pushFrame("kthSmallest", `root:${rRoot ? rRoot.val : 'None'}, k:${targetK}`);
+
+        let inorder_result = [];
+        let visitedVals = [];
+
+        history.push({
+          line: 2, phase: "Line 3: 初始化 inorder_result = []",
+          desc: "建立空陣列準備收集所有節點數值",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, [], null, `inorder_result = []`, `Searching...`)
+        });
+
+        function InOrder(node) {
+          pushFrame("InOrder", `node:${node ? node.val : 'None'}`);
+
+          if (!node) {
+            history.push({
+              line: 4, phase: "Line 5: if not node",
+              desc: "節點為 None，返回",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, null, visitedVals, null, `inorder_result = [${inorder_result.join(', ')}]`, `Searching...`)
+            });
+            popFrame("None");
+            finalizePop();
+            return;
+          }
+
+          history.push({
+            line: 6, phase: "Line 7: 遞迴左子樹 InOrder(node.left)",
+            desc: `前往左子樹 node.left (${node.left ? node.left.val : 'None'})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, visitedVals, null, `InOrder Left`, `Searching...`)
+          });
+
+          InOrder(node.left);
+
+          inorder_result.push(node.val);
+          visitedVals.push(node.val);
+
+          history.push({
+            line: 7, phase: `Line 8: inorder_result.append(${node.val})`,
+            desc: `將當前節點值 ${node.val} 加入 inorder_result 陣列`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, visitedVals, null, `<span class="queue-item">inorder_result = [${inorder_result.join(', ')}]</span>`, `Searching...`)
+          });
+
+          history.push({
+            line: 8, phase: "Line 9: 遞迴右子樹 InOrder(node.right)",
+            desc: `前往右子樹 node.right (${node.right ? node.right.val : 'None'})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, visitedVals, null, `InOrder Right`, `Searching...`)
+          });
+
+          InOrder(node.right);
+
+          popFrame("Return");
+          finalizePop();
+        }
+
+        history.push({
+          line: 9, phase: "Line 10: 呼叫 InOrder(root)",
+          desc: "開始全樹中序走訪收集",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, rRoot ? rRoot.val : null, [], null, `inorder_result = []`, `Searching...`)
+        });
+
+        InOrder(rRoot);
+
+        let ans = inorder_result[targetK - 1];
+
+        history.push({
+          line: 10, phase: `Line 11: 回傳 inorder_result[k - 1]`,
+          desc: `🎯 全樹收集完成！取索引 k-1 = ${targetK - 1} 的數值: ${ans}`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, null, visitedVals, ans, `<span class="queue-item" style="border-color:var(--purple); color:var(--purple);">inorder_result[${targetK - 1}] = ${ans}</span>`, `Ans = ${ans}`)
+        });
+        popFrame(`Ans:${ans}`, true);
+        finalizePop();
+      }
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = renderStackHTML(stackData);
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      const stageBox = document.getElementById('stage-box');
+      stageBox.innerHTML = state.html || `<div style="font-size:0.85rem; font-family:monospace; color:#fff;">${state.desc}</div>`;
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderApproachDetails();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

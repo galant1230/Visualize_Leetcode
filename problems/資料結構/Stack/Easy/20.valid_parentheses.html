@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>20. Valid Parentheses - Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-easy: #00b8a3;
+      --lc-blue: #007aff;
+      --lc-green: #2cbb5d;
+      --lc-red: #ff2d55;
+      --lc-purple: #a855f7;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(0, 184, 163, 0.15);
+      color: var(--lc-easy);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 20px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 6px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+      color: var(--lc-text);
+      margin-bottom: 8px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 2px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-easy); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 480px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      height: 120px;
+      position: relative;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+
+    .array-container {
+      display: flex;
+      gap: 12px;
+      position: absolute;
+      left: 20px;
+      top: 40px;
+    }
+
+    .node {
+      width: 48px;
+      height: 48px;
+      background: #333;
+      border: 2px solid var(--lc-border);
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 1.2rem;
+      position: relative;
+      transition: all 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    .node.active-char {
+      border-color: var(--lc-orange);
+      background: rgba(255, 161, 22, 0.25);
+    }
+    .node.matched {
+      border-color: var(--lc-green);
+      background: rgba(44, 187, 93, 0.25);
+      color: var(--lc-green);
+    }
+    .node.mismatched {
+      border-color: var(--lc-red);
+      background: rgba(255, 45, 85, 0.25);
+      color: var(--lc-red);
+    }
+
+    .ptr-container {
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .ptr-label {
+      font-size: 0.65rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: white;
+      white-space: nowrap;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .p-curr { background: var(--lc-orange); }
+
+    .idx-label {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      color: var(--lc-text-dim);
+      font-family: monospace;
+    }
+
+    .stack-view {
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    .stack-title {
+      color: var(--lc-text-dim);
+      margin-bottom: 8px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+    }
+    .stack-container {
+      display: flex;
+      gap: 8px;
+      min-height: 52px;
+      align-items: center;
+      background: #1e1e1e;
+      border: 1px dashed var(--lc-border);
+      border-radius: 6px;
+      padding: 8px;
+      overflow-x: auto;
+    }
+    .stack-item {
+      width: 40px;
+      height: 40px;
+      background: #2a2a2a;
+      border: 2px solid var(--lc-blue);
+      color: var(--lc-blue);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.1rem;
+      animation: popIn 0.2s ease-out;
+    }
+    .stack-item.top {
+      border-color: var(--lc-orange);
+      color: var(--lc-orange);
+      background: rgba(255, 161, 22, 0.15);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .control-panel {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 7px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-easy); color: #fff; }
+    .btn-primary:hover { background: #009684; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">20. Valid Parentheses</span>
+    <span class="lc-badge">Easy</span>
+    <span class="lc-tag">String</span>
+    <span class="lc-tag">Stack</span>
+  </div>
+
+  <div class="config-tabs">
+    <div class="tab-group">
+      <button class="tab-btn active" id="algo-stack" onclick="setAlgo('stack')">堆疊法 (Stack)</button>
+    </div>
+    <div class="tab-group">
+      <button class="tab-btn active" id="lang-py" onclick="setLang('py')">Python3</button>
+      <button class="tab-btn" id="lang-c" onclick="setLang('c')">C++</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個只包含 <code>'('</code>, <code>')'</code>, <code>'{'</code>, <code>'}'</code>, <code>'['</code>, <code>']'</code> 的字串 <code>s</code>，判斷輸入字串是否有效。
+            <br>有效字串需滿足：左括號必須用相同類型的右括號閉合，且必須以正確的順序閉合。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> s = "()[]{}"</div>
+            <div><strong>Output:</strong> true</div>
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 2:</div>
+            <div><strong>Input:</strong> s = "([)]"</div>
+            <div><strong>Output:</strong> false</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val" id="tc-val">O(n)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val" id="sc-val">O(n)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span id="codeTitle">🐍 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (State & Visualizer)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title" id="approach-title">💡 解題思路 (Stack)</div>
+            <div id="approach-desc">利用 Stack 後進先出 (LIFO) 的特性。遇到左括號就將對應的右括號 Push 入 Stack；遇到右括號時，檢查是否與 Stack 頂端相符並 Pop，否則無效。</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">準備開始模擬...</div>
+          </div>
+
+          <div class="stage" id="main-stage">
+            <div class="array-container" id="array-nodes"></div>
+          </div>
+
+          <div class="stack-view">
+            <div class="stack-title">
+              <span>Stack 狀態 (頂端在右側)</span>
+              <span id="stack-size-label" style="color: var(--lc-text-dim); font-size: 0.75rem;">Size: 0</span>
+            </div>
+            <div class="stack-container" id="stack-items">
+              <span style="color: var(--lc-text-dim); font-size: 0.8rem;">[ Empty Stack ]</span>
+            </div>
+          </div>
+
+          <div class="control-panel" style="margin-top: 16px;">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleStr = "({[]})";
+    let lang = 'py';
+    let currentStep = 0;
+    let history = [];
+
+    const codes = {
+      stack: {
+        py: [
+          `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isValid</span>(<span class="self">self</span>, s: str) -&gt; bool:`,
+          `        stack = []`,
+          `        mapping = {")": "(", "}": "{", "]": "["}`,
+          `        <span class="kw">for</span> char <span class="kw">in</span> s:`,
+          `            <span class="kw">if</span> char <span class="kw">in</span> mapping:`,
+          `                top_element = stack.pop() <span class="kw">if</span> stack <span class="kw">else</span> '#'`,
+          `                <span class="kw">if</span> mapping[char] != top_element:`,
+          `                    <span class="kw">return False</span>`,
+          `            <span class="kw">else</span>:`,
+          `                stack.append(char)`,
+          `        <span class="kw">return not</span> stack`
+        ],
+        c: [
+          `<span class="kw">class</span> <span class="fn">Solution</span> {`,
+          `<span class="kw">public</span>:`,
+          `    bool <span class="fn">isValid</span>(string s) {`,
+          `        stack&lt;char&gt; st;`,
+          `        <span class="kw">for</span> (char c : s) {`,
+          `            <span class="kw">if</span> (c == '(' || c == '{' || c == '[') {`,
+          `                st.push(c);`,
+          `            } <span class="kw">else</span> {`,
+          `                <span class="kw">if</span> (st.empty()) <span class="kw">return false</span>;`,
+          `                char top = st.top(); st.pop();`,
+          `                <span class="kw">if</span> ((c == ')' && top != '(') ||`,
+          `                    (c == '}' && top != '{') ||`,
+          `                    (c == ']' && top != '[')) <span class="kw">return false</span>;`,
+          `            }`,
+          `        }`,
+          `        <span class="kw">return</span> st.empty();`,
+          `    }`,
+          `};`
+        ]
+      }
+    };
+
+    function setAlgo(a) { resetSim(); }
+    function setLang(l) { lang = l; resetSim(); }
+
+    function buildHistoryStack() {
+      history = [];
+      let stack = [];
+      const mapping = { ')': '(', '}': '{', ']': '[' };
+
+      // 0: 初始化
+      history.push({
+        line: lang === 'py' ? 2 : 3,
+        title: "初始化 Stack",
+        desc: "建立一個空的 Stack 用於暫存左括號，並定義括號匹配映射。",
+        idx: -1, stack: [...stack], status: 'normal'
+      });
+
+      for (let i = 0; i < sampleStr.length; i++) {
+        let char = sampleStr[i];
+
+        history.push({
+          line: lang === 'py' ? 4 : 4,
+          title: `讀取字元 s[${i}] = '${char}'`,
+          desc: `走訪到索引 ${i} 的字元 '${char}'。`,
+          idx: i, stack: [...stack], status: 'normal'
+        });
+
+        if (char in mapping) {
+          // 右括號
+          history.push({
+            line: lang === 'py' ? 5 : 7,
+            title: `遇到右括號 '${char}'`,
+            desc: `'${char}' 為右括號，準備檢查 Stack 頂端是否有對應的左括號 '${mapping[char]}'。`,
+            idx: i, stack: [...stack], status: 'normal'
+          });
+
+          if (stack.length === 0) {
+            history.push({
+              line: lang === 'py' ? 8 : 8,
+              title: "匹配失敗：Stack 為空",
+              desc: `遇到右括號 '${char}' 但 Stack 為空，沒有左括號可匹配，回傳 false！`,
+              idx: i, stack: [...stack], status: 'mismatched'
+            });
+            return;
+          }
+
+          let top = stack.pop();
+          let isMatch = (top === mapping[char]);
+
+          history.push({
+            line: lang === 'py' ? 7 : 9,
+            title: isMatch ? "彈出並匹配成功！" : "匹配失敗：括號不吻合",
+            desc: isMatch 
+              ? `Pop 出頂端元素 '${top}'，成功與右括號 '${char}' 匹配對銷！`
+              : `Pop 出頂端元素 '${top}'，與右括號 '${char}' 期望的 '${mapping[char]}' 不符，回傳 false！`,
+            idx: i, stack: [...stack], status: isMatch ? 'matched' : 'mismatched'
+          });
+
+          if (!isMatch) return;
+
+        } else {
+          // 左括號
+          stack.push(char);
+          history.push({
+            line: lang === 'py' ? 10 : 6,
+            title: `Push 左括號 '${char}' 入 Stack`,
+            desc: `'${char}' 為左括號，壓入 Stack 頂端等待後續右括號閉合。`,
+            idx: i, stack: [...stack], status: 'normal'
+          });
+        }
+      }
+
+      // 檢查 Stack 是否為空
+      let isValid = (stack.length === 0);
+      history.push({
+        line: lang === 'py' ? 11 : 15,
+        title: isValid ? "驗證成功！(Valid)" : "驗證失敗 (Invalid)",
+        desc: isValid 
+          ? "所有括號均完美匹配對銷，Stack 為空，回傳 true！"
+          : "字串走訪完畢，但 Stack 中仍殘留未閉合的左括號，回傳 false！",
+        idx: -1, stack: [...stack], status: isValid ? 'matched' : 'mismatched'
+      });
+    }
+
+    function resetSim() {
+      buildHistoryStack();
+      currentStep = 0;
+      updateUIElements();
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateLineHighlight(state.line);
+      document.getElementById('step-title').innerText = state.title;
+      document.getElementById('step-desc').innerText = state.desc;
+      document.getElementById('stepHint').innerText = state.title.toUpperCase();
+
+      renderStage(state);
+      renderStack(state);
+    }
+
+    function updateUIElements() {
+      document.getElementById('algo-stack').className = 'tab-btn active';
+      document.getElementById('lang-py').className = 'tab-btn ' + (lang === 'py' ? 'active' : '');
+      document.getElementById('lang-c').className = 'tab-btn ' + (lang === 'c' ? 'active' : '');
+
+      document.getElementById('tc-val').innerText = 'O(n)';
+      document.getElementById('sc-val').innerText = 'O(n)';
+      document.getElementById('approach-title').innerText = '💡 解題思路 (Stack 堆疊法)';
+      document.getElementById('approach-desc').innerText = '利用 Stack 後進先出 (LIFO) 的特性。遇到左括號時 Push 入 Stack；遇到右括號時檢查 Stack 頂端元素是否為對應的左括號並 Pop。最後若 Stack 恰好為空則代表括號全數有效閉合。';
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codes.stack[lang]
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateLineHighlight(line) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if (document.getElementById('l' + line)) {
+        document.getElementById('l' + line).classList.add('active-line');
+      }
+    }
+
+    function renderStage(state) {
+      const container = document.getElementById('array-nodes');
+      container.innerHTML = '';
+
+      sampleStr.split('').forEach((char, idx) => {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.innerText = char;
+
+        let ptrs = '';
+        if (idx === state.idx) {
+          if (state.status === 'matched') node.classList.add('matched');
+          else if (state.status === 'mismatched') node.classList.add('mismatched');
+          else node.classList.add('active-char');
+
+          ptrs += `<div class="ptr-label p-curr">s[${idx}]</div>`;
+        }
+
+        if (ptrs) {
+          node.innerHTML += `<div class="ptr-container">${ptrs}</div>`;
+        }
+
+        node.innerHTML += `<div class="idx-label">[${idx}]</div>`;
+        container.appendChild(node);
+      });
+    }
+
+    function renderStack(state) {
+      const container = document.getElementById('stack-items');
+      const sizeLabel = document.getElementById('stack-size-label');
+      container.innerHTML = '';
+
+      sizeLabel.innerText = `Size: ${state.stack.length}`;
+
+      if (!state.stack || state.stack.length === 0) {
+        container.innerHTML = `<span style="color: var(--lc-text-dim); font-size: 0.8rem;">[ Empty Stack ]</span>`;
+        return;
+      }
+
+      state.stack.forEach((item, idx) => {
+        const elem = document.createElement('div');
+        const isTop = (idx === state.stack.length - 1);
+        elem.className = `stack-item ${isTop ? 'top' : ''}`;
+        elem.innerText = item;
+        container.appendChild(elem);
+      });
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

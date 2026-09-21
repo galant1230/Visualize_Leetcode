@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dijkstra Debugger Pro | 最終細節優化版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --leetcode-dark: #1a1a1a;
+            --vs-active-blue: #007acc;
+            --vs-complete-green: #4ec9b0;
+            --node-default-bg: white;
+            --node-default-text: black;
+            --node-border-default: #444444;
+            --vscode-highlight: rgba(38, 79, 120, 0.4);
+        }
+        body { background-color: var(--leetcode-dark); color: #eff1f6; font-family: 'Inter', 'Microsoft JhengHei', sans-serif; }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+        
+        /* 節點樣式 */
+        .node-official { 
+            background: var(--node-default-bg); 
+            border: 2px solid var(--node-border-default); 
+            color: var(--node-default-text); 
+            transition: all 0.2s ease-out; 
+        }
+        .node-processing { 
+            background: var(--vs-active-blue) !important; 
+            border-color: #4fc1ff !important; 
+            color: white !important; 
+            transform: scale(1.1); 
+            box-shadow: 0 0 15px rgba(0,122,204,0.5); 
+        }
+        .node-complete {
+            background: var(--vs-complete-green) !important;
+            border-color: #a6e22e !important;
+            color: #1a1a1a !important;
+        }
+        
+        /* 代碼配色 */
+        .keyword { color: #c586c0; }
+        .function { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .comment { color: #6a9955; }
+        .active-line { background-color: var(--vscode-highlight); border-left: 3px solid #007acc; }
+        
+        .log-entry { border-left: 2px solid #3e3e42; padding-left: 8px; margin-bottom: 2px; }
+        .grid-cell { background: #2d2d2d; border: 1px solid #3e3e42; transition: all 0.3s; }
+        .cell-highlight { border-color: #007acc; background: rgba(0,122,204,0.2); }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-[13px]">
+
+    <div class="h-10 bg-[#262626] flex items-center px-4 border-b border-[#333]">
+        <div class="bg-[#1a1a1a] px-4 py-2 border-t-2 border-[#ffa116] flex items-center text-xs font-semibold">
+            <span class="text-[#ffa116] mr-2">問題描述</span>
+        </div>
+    </div>
+
+    <div class="flex-1 flex overflow-hidden">
+        
+        <aside class="w-1/4 bg-[#1a1a1a] p-5 border-r border-[#333] overflow-y-auto space-y-6">
+            <section>
+                <h1 class="text-lg font-bold text-white mb-2">743. 網路延遲時間</h1>
+                <p class="text-[12px] leading-relaxed text-gray-300">
+                    計算從節點 <code class="text-orange-400 font-bold">k</code> 發送訊號，所有節點收到訊號所需的<strong>最短時間</strong>。
+                </p>
+            </section>
+
+            <section>
+                <h3 class="text-[11px] font-bold text-blue-400 mb-2 uppercase italic">Example 1:</h3>
+                <div class="p-3 bg-[#1e1e1e] rounded border border-[#007acc] code-font text-[10px] text-gray-400">
+                    <p>Input: times = [[2,1,1],[2,3,1],[3,4,1]], n = 4, k = 2</p>
+                    <p>Output: 2</p>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-widest">解題思路</h3>
+                <div class="text-[11px] text-gray-400 space-y-2">
+                    <p>1. 建立鄰接表存儲圖結構。</p>
+                    <p>2. 使用 Min-Heap 維護當前最短路徑節點。</p>
+                    <p>3. 透過 dist 字典記錄已確定的最短距離。</p>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-widest">複雜度分析</h3>
+                <div class="bg-[#262626] p-3 rounded border border-[#3e3e42] code-font text-[10px]">
+                    <p>Time: <span class="text-purple-400 font-bold">O(E log E)</span></p>
+                    <p>Space: <span class="text-purple-400 font-bold">O(V + E)</span></p>
+                </div>
+            </section>
+        </aside>
+
+        <main class="flex-1 p-4 flex flex-col gap-3 bg-[#1e1e1e]">
+            <div class="flex-[1.5] bg-[#2d2d2d] rounded-lg relative overflow-hidden border border-[#3e3e42]">
+                <div id="main-canvas" class="w-full h-full relative"></div>
+            </div>
+
+            <div class="bg-[#262626] rounded-lg border border-[#3e3e42] p-4 flex flex-col gap-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-[#1a1a1a] p-2 rounded border border-[#333]">
+                        <div class="text-[9px] text-purple-400 font-bold uppercase mb-1">graph</div>
+                        <div id="v-graph" class="code-font text-[10px] text-gray-400">{}</div>
+                    </div>
+                    <div class="bg-[#1a1a1a] p-2 rounded border border-[#333]">
+                        <div class="text-[9px] text-green-400 font-bold uppercase mb-1">pq (heapq)</div>
+                        <div id="v-pq" class="code-font text-[10px] text-green-400 truncate">[]</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-[#1a1a1a] p-3 rounded border border-[#333] text-center">
+                        <div class="text-[9px] text-gray-500 uppercase italic">U (Node)</div>
+                        <div id="v-u" class="text-lg font-bold text-white">-</div>
+                    </div>
+                    <div class="bg-[#1a1a1a] p-3 rounded border border-[#333] text-center">
+                        <div class="text-[9px] text-gray-500 uppercase italic">TIME (Weight)</div>
+                        <div id="v-time" class="text-lg font-bold text-orange-400">-</div>
+                    </div>
+                    <div class="bg-[#1a1a1a] p-3 rounded border border-[#333] text-center">
+                        <div class="text-[9px] text-gray-500 uppercase italic">Step Count</div>
+                        <div id="cur-step-val" class="text-lg font-bold text-white">0</div>
+                    </div>
+                </div>
+
+                <div class="bg-[#1a1a1a] p-2 rounded border border-[#333]">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[9px] text-yellow-500 font-bold uppercase">dist 字典狀態</span>
+                        <span id="v-dist-dict" class="code-font text-[10px] text-gray-500">{}</span>
+                    </div>
+                    <div id="dist-grid" class="flex gap-2"></div>
+                </div>
+            </div>
+
+            <div class="h-12 flex items-center justify-between px-6 bg-[#333] rounded-lg border border-[#444]">
+                <div class="flex gap-4">
+                    <button onclick="step(-1)" class="text-gray-400 hover:text-white font-bold">PREV</button>
+                    <button id="play-btn" onclick="togglePlay()" class="bg-[#007acc] px-6 py-1 rounded text-white font-bold hover:bg-[#118ad4]">播放執行</button>
+                    <button onclick="step(1)" class="text-gray-400 hover:text-white font-bold">NEXT</button>
+                    <button onclick="reset()" class="text-red-500 text-xs ml-4">RESET</button>
+                </div>
+            </div>
+        </main>
+
+        <aside class="w-1/3 bg-[#262626] border-l border-[#333] flex flex-col">
+            <div class="flex-[1.8] p-4 code-font leading-5 overflow-y-auto text-[11px]" id="code-box">
+                <div id="line-1"><span class="keyword">class</span> <span class="function">Solution</span>:</div>
+                <div id="line-2">&nbsp;&nbsp;<span class="keyword">def</span> <span class="function">networkDelayTime</span>(<span class="keyword">self</span>, times, n, k):</div>
+                <div id="line-3">&nbsp;&nbsp;&nbsp;&nbsp;graph = defaultdict(list)</div>
+                <div id="line-4">&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">for</span> u, v, w <span class="keyword">in</span> times:</div>
+                <div id="line-5">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;graph[u].append((v, w))</div>
+                <div id="line-6">&nbsp;&nbsp;&nbsp;&nbsp;pq = [(<span class="number">0</span>, k)]</div>
+                <div id="line-7">&nbsp;&nbsp;&nbsp;&nbsp;dist = {}</div>
+                <div id="line-8">&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">while</span> pq:</div>
+                <div id="line-9">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;time, u = heapq.heappop(pq)</div>
+                <div id="line-10">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">if</span> u <span class="keyword">in</span> dist: <span class="keyword">continue</span></div>
+                <div id="line-11">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dist[u] = time</div>
+                <div id="line-12">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">if</span> u <span class="keyword">in</span> graph:</div>
+                <div id="line-13">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">for</span> v, w <span class="keyword">in</span> graph[u]:</div>
+                <div id="line-14">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">if</span> v <span class="keyword">not</span> <span class="keyword">in</span> dist:</div>
+                <div id="line-15">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;heapq.heappush(pq, (time + w, v))</div>
+                <div id="line-16">&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> <span class="function">max</span>(dist.values()) <span class="keyword">if</span> <span class="function">len</span>(dist) == n <span class="keyword">else</span> -<span class="number">1</span></div>
+            </div>
+
+            <div class="flex-1 bg-[#1a1a1a] border-t border-[#333] p-4 flex flex-col overflow-hidden">
+                <div class="text-[#6a9955] mb-2 font-bold uppercase text-[9px] tracking-widest">Execution Log</div>
+                <div id="log-container" class="flex-1 overflow-y-auto code-font text-[10px] text-gray-400 space-y-1"></div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        let currentStep = 0;
+        let isPlaying = false;
+        let playInterval;
+
+        const trace = [
+            { line: 3, u: null, time: null, dist: {}, pq: [], log: "初始化 graph = defaultdict(list)" },
+            { line: 5, u: null, time: null, dist: {}, pq: [], log: "建立鄰接表：2->1(1), 2->3(1), 3->4(1)" },
+            { line: 6, u: null, time: 0, dist: {}, pq: [[0, 2]], log: "pq 初始加入起始點 (0, 2)" },
+            { line: 7, u: null, time: 0, dist: {}, pq: [[0, 2]], log: "初始化空字典 dist = {}" },
+            { line: 9, u: 2, time: 0, dist: {}, pq: [], log: "heappop: 取得節點 2, 累計時間 0" },
+            { line: 11, u: 2, time: 0, dist: {2: 0}, pq: [], log: "確定節點 2 最短距離 = 0" },
+            { line: 13, u: 2, time: 0, dist: {2: 0}, pq: [], log: "遍歷節點 2 的鄰居：1 和 3" },
+            { line: 15, u: 2, time: 0, dist: {2: 0}, pq: [[1, 1], [1, 3]], log: "加入 (1, 1) 與 (1, 3) 到 pq" },
+            { line: 9, u: 1, time: 1, dist: {2: 0}, pq: [[1, 3]], log: "heappop: 取得節點 1, 累計時間 1" },
+            { line: 11, u: 1, time: 1, dist: {2: 0, 1: 1}, pq: [[1, 3]], log: "確定節點 1 最短距離 = 1" },
+            { line: 9, u: 3, time: 1, dist: {2: 0, 1: 1}, pq: [], log: "heappop: 取得節點 3, 累計時間 1" },
+            { line: 11, u: 3, time: 1, dist: {2: 0, 1: 1, 3: 1}, pq: [], log: "確定節點 3 最短距離 = 1" },
+            { line: 13, u: 3, time: 1, dist: {2: 0, 1: 1, 3: 1}, pq: [], log: "遍歷節點 3 的鄰居：4" },
+            { line: 15, u: 3, time: 1, dist: {2: 0, 1: 1, 3: 1}, pq: [[2, 4]], log: "累加時間並加入節點 4 (1+1=2) 到 pq" },
+            { line: 9, u: 4, time: 2, dist: {2: 0, 1: 1, 3: 1}, pq: [], log: "heappop: 取得節點 4, 累計時間 2" },
+            { line: 11, u: 4, time: 2, dist: {2: 0, 1: 1, 3: 1, 4: 2}, pq: [], log: "確定節點 4 最短距離 = 2" },
+            { line: 16, u: null, time: 2, dist: {2: 0, 1: 1, 3: 1, 4: 2}, pq: [], log: "回傳最終結果 max(dist.values()) = 2" }
+        ];
+
+        function drawGraph() {
+            const container = document.getElementById('main-canvas');
+            container.innerHTML = '';
+            const ns = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(ns, "svg");
+            svg.setAttribute("class", "w-full h-full");
+            container.appendChild(svg);
+            
+            const pos = { 2: {x:50, y:15}, 1: {x:25, y:50}, 3: {x:75, y:50}, 4: {x:50, y:85} };
+            
+            const defs = document.createElementNS(ns, "defs");
+            const marker = document.createElementNS(ns, "marker");
+            marker.id = "arrow"; marker.setAttribute("refX", "22"); marker.setAttribute("refY", "5");
+            marker.setAttribute("markerWidth", "10"); marker.setAttribute("markerHeight", "10"); marker.setAttribute("orient", "auto");
+            const path = document.createElementNS(ns, "path");
+            path.setAttribute("d", "M0,0 L0,10 L10,5 z"); path.setAttribute("fill", "#888");
+            marker.appendChild(path); defs.appendChild(marker); svg.appendChild(defs);
+
+            [[2,1,1],[2,3,1],[3,4,1]].forEach(e => {
+                const u = pos[e[0]], v = pos[e[1]];
+                const line = document.createElementNS(ns, "line");
+                line.setAttribute("x1", u.x+"%"); line.setAttribute("y1", u.y+"%");
+                line.setAttribute("x2", v.x+"%"); line.setAttribute("y2", v.y+"%");
+                line.setAttribute("stroke", "#888"); line.setAttribute("stroke-width", "1.5");
+                line.setAttribute("marker-end", "url(#arrow)");
+                svg.appendChild(line);
+                const txt = document.createElementNS(ns, "text");
+                txt.setAttribute("x", ((u.x+v.x)/2 - 3)+"%"); txt.setAttribute("y", ((u.y+v.y)/2)+"%");
+                txt.setAttribute("fill", "#aaa"); txt.textContent = e[2];
+                svg.appendChild(txt);
+            });
+
+            for(let id in pos) {
+                const node = document.createElement('div');
+                node.id = `node-${id}`;
+                node.className = `absolute w-10 h-10 node-official rounded-full flex items-center justify-center font-bold z-10`;
+                node.style.left = `calc(${pos[id].x}% - 20px)`; node.style.top = `calc(${pos[id].y}% - 20px)`;
+                node.innerText = id;
+                container.appendChild(node);
+            }
+        }
+
+        function updateUI() {
+            const d = trace[currentStep];
+            document.querySelectorAll('#code-box div').forEach(l => l.classList.remove('active-line'));
+            if(document.getElementById(`line-${d.line}`)) document.getElementById(`line-${d.line}`).classList.add('active-line');
+
+            document.querySelectorAll('.node-official').forEach(n => n.classList.remove('node-processing', 'node-complete'));
+            for(let id in d.dist) document.getElementById(`node-${id}`).classList.add('node-complete');
+            if(d.u) document.getElementById(`node-${d.u}`).classList.add('node-processing');
+
+            document.getElementById('v-graph').innerText = currentStep >= 1 ? "{2: [(1,1), (3,1)], 3: [(4,1)]}" : "{}";
+            document.getElementById('v-pq').innerText = JSON.stringify(d.pq);
+            document.getElementById('v-dist-dict').innerText = JSON.stringify(d.dist);
+            document.getElementById('v-u').innerText = d.u || "-";
+            document.getElementById('v-time').innerText = d.time !== null ? d.time : "-";
+            document.getElementById('cur-step-val').innerText = currentStep;
+
+            const grid = document.getElementById('dist-grid');
+            grid.innerHTML = '';
+            [1,2,3,4].forEach(i => {
+                const cell = document.createElement('div');
+                cell.className = `flex-1 h-12 rounded flex flex-col items-center justify-center grid-cell ${d.u==i?'cell-highlight':''}`;
+                cell.innerHTML = `<span class="text-[8px] text-gray-500">節點 ${i}</span><span class="text-xs font-bold text-orange-400">${d.dist[i] ?? '∞'}</span>`;
+                grid.appendChild(cell);
+            });
+
+            const lb = document.getElementById('log-container');
+            if(currentStep === 0) lb.innerHTML = '';
+            const entry = document.createElement('div');
+            entry.className = "log-entry";
+            entry.innerHTML = `<span class="text-blue-500 mr-1">●</span> ${d.log}`;
+            lb.appendChild(entry);
+            lb.scrollTop = lb.scrollHeight;
+        }
+
+        function step(dir) {
+            if (dir === -1 && currentStep > 0) {
+                currentStep--;
+                const lb = document.getElementById('log-container'); lb.innerHTML = '';
+                for(let i=0; i<=currentStep; i++) {
+                    const entry = document.createElement('div');
+                    entry.className = "log-entry"; entry.innerHTML = `<span class="text-blue-500 mr-1">●</span> ${trace[i].log}`;
+                    lb.appendChild(entry);
+                }
+                updateUI();
+            } else if (dir === 1 && currentStep < trace.length - 1) {
+                currentStep++;
+                updateUI();
+            }
+        }
+
+        function togglePlay() { 
+            isPlaying = !isPlaying; 
+            document.getElementById('play-btn').innerText = isPlaying ? "暫停執行" : "播放執行";
+            if(isPlaying) playInterval = setInterval(() => { if(currentStep < trace.length-1) step(1); else togglePlay(); }, 800);
+            else clearInterval(playInterval);
+        }
+
+        function reset() { currentStep = 0; isPlaying = false; clearInterval(playInterval); document.getElementById('play-btn').innerText="播放執行"; updateUI(); }
+
+        window.onload = () => { drawGraph(); updateUI(); };
+    </script>
+</body>
+</html>

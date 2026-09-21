@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>235. Lowest Common Ancestor of a BST - Precise Step Visualizer</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --red: #ff2d55;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .tag { background: #383838; color: var(--text-dim); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
+
+    .approach-tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 6px; flex-wrap: wrap; background: #222; padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
+    .app-tab-btn { background: transparent; border: none; color: var(--text-dim); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: 0.2s; }
+    .app-tab-btn:hover { background: #333; color: #fff; }
+    .app-tab-btn.active { background: var(--orange); color: #000; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+    
+    .problem-desc { font-size: 0.82rem; color: #ccc; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+    
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .approach-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.8rem; color: #ddd; }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.75rem; overflow-x: auto; max-height: 270px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .str { color: #f1fa8c; } .self { color: #bd93f9; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.75rem; min-height: 120px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.2s ease-out; }
+    .stack-frame.returning { border-color: var(--green); border-left-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+    .stack-frame-title { color: #fff; font-weight: bold; }
+    .stack-frame-args { color: var(--text-dim); font-size: 0.7rem; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; height: 390px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; overflow: hidden; }
+    
+    .tree-container { display: flex; width: 100%; height: 210px; gap: 10px; }
+    .tree-pane { flex: 1; background: #141414; border: 1px solid var(--border); border-radius: 4px; position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+    .tree-pane-title { font-size: 0.75rem; font-weight: bold; font-family: monospace; color: var(--orange); }
+    
+    svg.tree-svg { width: 100%; height: 185px; }
+    .tree-node-circle { fill: #333; stroke: var(--border); stroke-width: 2px; transition: all 0.2s; }
+    .tree-node-circle.active { fill: rgba(255, 161, 22, 0.35); stroke: var(--orange); stroke-width: 3px; }
+    .tree-node-circle.target-p { fill: rgba(80, 250, 123, 0.3); stroke: var(--green); stroke-width: 3px; }
+    .tree-node-circle.target-q { fill: rgba(255, 192, 30, 0.3); stroke: var(--medium); stroke-width: 3px; }
+    .tree-node-circle.lca-found { fill: rgba(168, 85, 247, 0.4); stroke: var(--purple); stroke-width: 4px; }
+    .tree-text { fill: #fff; font-family: monospace; font-weight: bold; font-size: 13px; text-anchor: middle; dominant-baseline: middle; }
+    .tree-edge { stroke: #555; stroke-width: 2px; transition: all 0.2s; }
+
+    .ds-display { background: #141414; border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.78rem; color: var(--purple); height: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; word-break: break-all; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.8rem; font-family: monospace; height: 65px; display: flex; flex-direction: column; justify-content: center; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">235. Lowest Common Ancestor of a BST</span>
+    <span class="badge">Medium</span>
+    <span class="tag">Tree</span>
+    <span class="tag">Binary Search Tree</span>
+    <span class="tag">Depth-First Search</span>
+  </div>
+
+  <div class="approach-tabs" id="app-tabs">
+    <button class="app-tab-btn active" onclick="switchApproach(0)">1. BST Iterative Walk (O(1) Space)</button>
+    <button class="app-tab-btn" onclick="switchApproach(1)">2. BST Recursion (DFS)</button>
+    <button class="app-tab-btn" onclick="switchApproach(2)">3. Universal Binary Tree LCA (LeetCode 236 General)</button>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: p=2, q=8 (LCA = 6)</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: p=2, q=4 (LCA = 2)</button>
+    <button class="tab-btn" onclick="setPreset(2)">Ex 3: p=3, q=5 (LCA = 4)</button>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個二元搜尋樹 (BST) 與兩個指定節點 <code>p</code> 和 <code>q</code>，請找出它們的<b>最低公共祖先 (Lowest Common Ancestor, LCA)</b>。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">-</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼 (逐行追蹤)</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (系統呼叫堆疊)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display">
+          <div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">💡 解題思路說明</div>
+        <div class="approach-box" id="approach-desc"></div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 完整執行步驟與樹狀圖 (Step Visualizer)</div>
+        
+        <div class="stage" id="stage-box"></div>
+
+        <div class="info">
+          <div class="info-row">
+            <span style="color: var(--text-dim);">當前階段 (Phase):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const approaches = [
+      {
+        name: "1. BST Iterative Walk (O(1) Space)",
+        time: "O(H)", space: "O(1)",
+        desc: "<b>利用 BST 數值大小性質迭代走訪：</b>逐行模擬迴圈走訪。若 <code>p, q</code> 均小於當前點往左；若均大於當前點往右；一旦分岔即回傳當前點。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">lowestCommonAncestor</span>(<span class="self">self</span>, root, p, q):`,
+          `        curr = root`,
+          `        <span class="kw">while</span> curr:`,
+          `            <span class="kw">if</span> p.val &lt; curr.val <span class="kw">and</span> q.val &lt; curr.val:`,
+          `                curr = curr.left`,
+          `            <span class="kw">elif</span> p.val &gt; curr.val <span class="kw">and</span> q.val &gt; curr.val:`,
+          `                curr = curr.right`,
+          `            <span class="kw">else</span>:`,
+          `                <span class="kw">return</span> curr`,
+          `        <span class="kw">return</span> <span class="kw">None</span>`
+        ]
+      },
+      {
+        name: "2. BST Recursion (DFS)",
+        time: "O(H)", space: "O(H)",
+        desc: "<b>BST 遞迴搜尋：</b>精確追蹤每一層 Call Stack 的進入、條件評估 (if) 與傳回值 (return)。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">lowestCommonAncestor</span>(<span class="self">self</span>, root, p, q):`,
+          `        <span class="kw">if</span> p.val &lt; root.val <span class="kw">and</span> q.val &lt; root.val:`,
+          `            <span class="kw">return</span> <span class="self">self</span>.lowestCommonAncestor(root.left, p, q)`,
+          `        <span class="kw">if</span> p.val &gt; root.val <span class="kw">and</span> q.val &gt; root.val:`,
+          `            <span class="kw">return</span> <span class="self">self</span>.lowestCommonAncestor(root.right, p, q)`,
+          `        <span class="kw">return</span> root`
+        ]
+      },
+      {
+        name: "3. Universal Binary Tree LCA",
+        time: "O(N)", space: "O(H)",
+        desc: "<b>一般二元樹通用解法 (LeetCode 236)：</b>逐行剖析二元樹遞迴，包含基準條件檢查、左子樹遞迴、右子樹遞迴與合併判斷。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">lowestCommonAncestor</span>(<span class="self">self</span>, root, p, q):`,
+          `        <span class="kw">if not</span> root <span class="kw">or</span> root == p <span class="kw">or</span> root == q:`,
+          `            <span class="kw">return</span> root`,
+          `        left = <span class="self">self</span>.lowestCommonAncestor(root.left, p, q)`,
+          `        right = <span class="self">self</span>.lowestCommonAncestor(root.right, p, q)`,
+          `        <span class="kw">if</span> left <span class="kw">and</span> right: <span class="kw">return</span> root`,
+          `        <span class="kw">return</span> left <span class="kw">if</span> left <span class="kw">else</span> right`
+        ]
+      }
+    ];
+
+    const presets = [
+      { root: [6, 2, 8, 0, 4, 7, 9, null, null, 3, 5], p: 2, q: 8, lca: 6, name: "Ex 1: p=2, q=8 (Across root)" },
+      { root: [6, 2, 8, 0, 4, 7, 9, null, null, 3, 5], p: 2, q: 4, lca: 2, name: "Ex 2: p=2, q=4 (p is ancestor)" },
+      { root: [6, 2, 8, 0, 4, 7, 9, null, null, 3, 5], p: 3, q: 5, lca: 4, name: "Ex 3: p=3, q=5 (Deep subtree)" }
+    ];
+
+    let currentApproach = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function switchApproach(idx) {
+      currentApproach = idx;
+      document.querySelectorAll('.app-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderApproachDetails();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderApproachDetails() {
+      const app = approaches[currentApproach];
+      document.getElementById('time-comp').innerText = app.time;
+      document.getElementById('space-comp').innerText = app.space;
+      document.getElementById('approach-desc').innerHTML = app.desc;
+      document.getElementById('code-box').innerHTML = app.code.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>BST Root = [${p.root.map(v => v === null ? 'null' : v).join(', ')}]</div>
+        <div>Target p = <b>${p.p}</b>, Target q = <b>${p.q}</b></div>
+        <div>Expected LCA: <b>${p.lca}</b></div>
+      `;
+    }
+
+    function createTree(arr) {
+      if (!arr || arr.length === 0) return null;
+      let nodes = arr.map(v => v !== null ? { val: v, left: null, right: null, id: 'node_' + v } : null);
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i]) {
+          let leftIdx = 2 * i + 1;
+          let rightIdx = 2 * i + 2;
+          if (leftIdx < nodes.length) nodes[i].left = nodes[leftIdx];
+          if (rightIdx < nodes.length) nodes[i].right = nodes[rightIdx];
+        }
+      }
+      return nodes[0];
+    }
+
+    function renderSingleTreeSVG(root, activeVal = null, pVal = null, qVal = null, lcaVal = null) {
+      if (!root) return `<div style="color:var(--text-dim); font-family:monospace; margin:auto; font-size:0.8rem;">Tree is empty (None)</div>`;
+      let posMap = {};
+      function calcPos(node, depth = 0, leftBound = 0, rightBound = 100) {
+        if (!node) return;
+        let x = (leftBound + rightBound) / 2;
+        let y = depth * 38 + 22;
+        posMap[node.val] = { x, y, val: node.val, left: node.left, right: node.right };
+        calcPos(node.left, depth + 1, leftBound, x);
+        calcPos(node.right, depth + 1, x, rightBound);
+      }
+      calcPos(root);
+
+      let edgesHTML = '', nodesHTML = '';
+      Object.keys(posMap).forEach(vStr => {
+        let val = parseInt(vStr);
+        let p = posMap[val];
+        if (p.left && posMap[p.left.val]) edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${posMap[p.left.val].x}%" y2="${posMap[p.left.val].y}" class="tree-edge" />`;
+        if (p.right && posMap[p.right.val]) edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${posMap[p.right.val].x}%" y2="${posMap[p.right.val].y}" class="tree-edge" />`;
+
+        let circleClass = 'tree-node-circle';
+        if (val === pVal) circleClass += ' target-p';
+        if (val === qVal) circleClass += ' target-q';
+        if (val === lcaVal) circleClass += ' lca-found';
+        if (val === activeVal && val !== lcaVal) circleClass += ' active';
+
+        nodesHTML += `<g><circle cx="${p.x}%" cy="${p.y}" r="13" class="${circleClass}" /><text x="${p.x}%" y="${p.y}" class="tree-text">${p.val}</text></g>`;
+      });
+      return `<svg class="tree-svg">${edgesHTML}${nodesHTML}</svg>`;
+    }
+
+    function renderTreeStage(rRoot, activeVal = null, pVal = null, qVal = null, lcaVal = null) {
+      return `
+        <div class="tree-container">
+          <div class="tree-pane">
+            <span class="tree-pane-title">Binary Search Tree (BST)</span>
+            ${renderSingleTreeSVG(rRoot, activeVal, pVal, qVal, lcaVal)}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStackHTML(stackFrames) {
+      if (!stackFrames || stackFrames.length === 0) {
+        return `<div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>`;
+      }
+      return stackFrames.map(f => `
+        <div class="stack-frame ${f.returning ? 'returning' : ''}">
+          <div>
+            <span class="stack-frame-title">${f.fnName}</span>
+            <span class="stack-frame-args">(${f.args})</span>
+          </div>
+          <div style="font-size:0.75rem; font-weight:bold; color:${f.returning ? 'var(--green)' : 'var(--orange)'};">
+            ${f.returning ? `➔ ${f.retVal}` : 'Active'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const presetData = presets[currentPreset];
+      let rRoot = createTree(presetData.root);
+      let pVal = presetData.p;
+      let qVal = presetData.q;
+
+      let currentStack = [];
+
+      function pushFrame(fnName, args) {
+        currentStack.push({ fnName, args, returning: false, retVal: null });
+      }
+      function popFrame(retVal) {
+        if (currentStack.length > 0) {
+          let top = currentStack[currentStack.length - 1];
+          top.returning = true;
+          top.retVal = retVal;
+        }
+      }
+      function finalizePop() {
+        currentStack.pop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 0: BST Iterative Walk (Statement-by-Statement)
+      // ----------------------------------------------------
+      if (currentApproach === 0) {
+        pushFrame("lowestCommonAncestor", `root:${rRoot.val}, p:${pVal}, q:${qVal}`);
+        
+        // Line 1: def lowestCommonAncestor
+        history.push({
+          line: 1, phase: "Line 1: 進入函式",
+          desc: `呼叫 lowestCommonAncestor(root, p=${pVal}, q=${qVal})`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, rRoot.val, pVal, qVal) + `<div class="ds-display"><span>Function Call: lowestCommonAncestor</span></div>`
+        });
+
+        // Line 2: curr = root
+        let curr = rRoot;
+        history.push({
+          line: 2, phase: "Line 2: 賦值 curr = root",
+          desc: `指標 curr 初始化指向 root 節點 [${curr.val}]`,
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderTreeStage(rRoot, curr.val, pVal, qVal) + `<div class="ds-display"><span>curr = Node(${curr.val})</span></div>`
+        });
+
+        while (true) {
+          // Line 3: while curr:
+          history.push({
+            line: 3, phase: "Line 3: while curr 條件檢查",
+            desc: `評估 while curr: curr 是否非空？ (${curr ? 'True, curr=' + curr.val : 'False'})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, curr ? curr.val : null, pVal, qVal) + `<div class="ds-display"><span>while curr: (${curr ? 'True' : 'False'})</span></div>`
+          });
+
+          if (!curr) {
+            // Line 10: return None
+            popFrame("None");
+            history.push({
+              line: 10, phase: "Line 10: return None",
+              desc: "curr 為空，搜尋結束，回傳 None",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, null, pVal, qVal) + `<div class="ds-display"><span style="color:var(--red);">Return None</span></div>`
+            });
+            finalizePop();
+            break;
+          }
+
+          // Line 4: if p.val < curr.val and q.val < curr.val:
+          let cond1 = pVal < curr.val && qVal < curr.val;
+          history.push({
+            line: 4, phase: "Line 4: 第一判斷式 (p, q < curr)",
+            desc: `檢查 if p(${pVal}) < ${curr.val} and q(${qVal}) < ${curr.val} ➔ 判斷結果: ${cond1}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, curr.val, pVal, qVal) + `<div class="ds-display"><span style="color:${cond1?'var(--green)':'var(--text-dim)'}">p, q < curr.val ? ${cond1}</span></div>`
+          });
+
+          if (cond1) {
+            // Line 5: curr = curr.left
+            curr = curr.left;
+            history.push({
+              line: 5, phase: "Line 5: curr = curr.left",
+              desc: `條件成立，指標向左移至 curr.left 節點 [${curr ? curr.val : 'None'}]`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, curr ? curr.val : null, pVal, qVal) + `<div class="ds-display"><span style="color:var(--blue);">curr = curr.left ➔ Node(${curr ? curr.val : 'None'})</span></div>`
+            });
+            continue;
+          }
+
+          // Line 6: elif p.val > curr.val and q.val > curr.val:
+          let cond2 = pVal > curr.val && qVal > curr.val;
+          history.push({
+            line: 6, phase: "Line 6: 第二判斷式 (p, q > curr)",
+            desc: `檢查 elif p(${pVal}) > ${curr.val} and q(${qVal}) > ${curr.val} ➔ 判斷結果: ${cond2}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, curr.val, pVal, qVal) + `<div class="ds-display"><span style="color:${cond2?'var(--green)':'var(--text-dim)'}">p, q > curr.val ? ${cond2}</span></div>`
+          });
+
+          if (cond2) {
+            // Line 7: curr = curr.right
+            curr = curr.right;
+            history.push({
+              line: 7, phase: "Line 7: curr = curr.right",
+              desc: `條件成立，指標向右移至 curr.right 節點 [${curr ? curr.val : 'None'}]`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, curr ? curr.val : null, pVal, qVal) + `<div class="ds-display"><span style="color:var(--medium);">curr = curr.right ➔ Node(${curr ? curr.val : 'None'})</span></div>`
+            });
+            continue;
+          }
+
+          // Line 8: else:
+          history.push({
+            line: 8, phase: "Line 8: else 區塊 (出現分岔或匹配)",
+            desc: `p(${pVal}) 與 q(${qVal}) 分屬兩側，或其中一點即為當前點 [${curr.val}]`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, curr.val, pVal, qVal) + `<div class="ds-display"><span>Branch split / Target matched at Node(${curr.val})</span></div>`
+          });
+
+          // Line 9: return curr
+          popFrame(`Node(${curr.val})`);
+          history.push({
+            line: 9, phase: "Line 9: return curr (找到 LCA)",
+            desc: `找到最低公共祖先！傳回 Node(${curr.val})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, pVal, qVal, curr.val) + 
+                  `<div class="ds-display"><span style="color:var(--green); font-size:1.1rem; font-weight:bold;">Return LCA = Node(${curr.val})</span></div>`
+          });
+          finalizePop();
+          break;
+        }
+      }
+
+      // ----------------------------------------------------
+      // Approach 1: BST Recursion (DFS - Precise Lines)
+      // ----------------------------------------------------
+      else if (currentApproach === 1) {
+        function lcaRec(node) {
+          pushFrame("lowestCommonAncestor", `root:${node ? node.val : 'None'}`);
+
+          // Line 1: def lowestCommonAncestor
+          history.push({
+            line: 1, phase: `Line 1: 進入 DFS(Node_${node ? node.val : 'None'})`,
+            desc: `遞迴呼叫 lowestCommonAncestor(root=Node_${node ? node.val : 'None'})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node ? node.val : null, pVal, qVal) + `<div class="ds-display"><span>DFS Stack Push: Node(${node ? node.val : 'None'})</span></div>`
+          });
+
+          if (!node) {
+            popFrame("None");
+            finalizePop();
+            return null;
+          }
+
+          // Line 2: if p.val < root.val and q.val < root.val:
+          let cond1 = pVal < node.val && qVal < node.val;
+          history.push({
+            line: 2, phase: "Line 2: 檢查左遞迴條件",
+            desc: `評估: p(${pVal}) < ${node.val} and q(${qVal}) < ${node.val} ➔ ${cond1}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, pVal, qVal) + `<div class="ds-display"><span style="color:${cond1?'var(--green)':'var(--text-dim)'}">p, q < ${node.val} ? ${cond1}</span></div>`
+          });
+
+          if (cond1) {
+            // Line 3: return self.lowestCommonAncestor(root.left, p, q)
+            history.push({
+              line: 3, phase: "Line 3: 往左子樹 Recursion",
+              desc: `準備呼叫 lowestCommonAncestor(root.left [${node.left ? node.left.val : 'None'}])`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, node.val, pVal, qVal) + `<div class="ds-display"><span style="color:var(--blue);">Recursing to Left child</span></div>`
+            });
+            let res = lcaRec(node.left);
+            popFrame(`Node(${res ? res.val : 'None'})`);
+            history.push({
+              line: 3, phase: "Line 3: 接收左子樹 Return 值",
+              desc: `左子樹傳回 Node(${res ? res.val : 'None'})，直接向上 Return。`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, node.val, pVal, qVal, res ? res.val : null) + `<div class="ds-display"><span style="color:var(--green);">Return Node(${res ? res.val : 'None'})</span></div>`
+            });
+            finalizePop();
+            return res;
+          }
+
+          // Line 4: if p.val > root.val and q.val > root.val:
+          let cond2 = pVal > node.val && qVal > node.val;
+          history.push({
+            line: 4, phase: "Line 4: 檢查右遞迴條件",
+            desc: `評估: p(${pVal}) > ${node.val} and q(${qVal}) > ${node.val} ➔ ${cond2}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, pVal, qVal) + `<div class="ds-display"><span style="color:${cond2?'var(--green)':'var(--text-dim)'}">p, q > ${node.val} ? ${cond2}</span></div>`
+          });
+
+          if (cond2) {
+            // Line 5: return self.lowestCommonAncestor(root.right, p, q)
+            history.push({
+              line: 5, phase: "Line 5: 往右子樹 Recursion",
+              desc: `準備呼叫 lowestCommonAncestor(root.right [${node.right ? node.right.val : 'None'}])`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, node.val, pVal, qVal) + `<div class="ds-display"><span style="color:var(--medium);">Recursing to Right child</span></div>`
+            });
+            let res = lcaRec(node.right);
+            popFrame(`Node(${res ? res.val : 'None'})`);
+            history.push({
+              line: 5, phase: "Line 5: 接收右子樹 Return 值",
+              desc: `右子樹傳回 Node(${res ? res.val : 'None'})，直接向上 Return。`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, node.val, pVal, qVal, res ? res.val : null) + `<div class="ds-display"><span style="color:var(--green);">Return Node(${res ? res.val : 'None'})</span></div>`
+            });
+            finalizePop();
+            return res;
+          }
+
+          // Line 6: return root
+          popFrame(`Node(${node.val})`);
+          history.push({
+            line: 6, phase: "Line 6: return root (找到 LCA)",
+            desc: `分岔條件成立，當前點即為 LCA！Return Node(${node.val})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, null, pVal, qVal, node.val) + 
+                  `<div class="ds-display"><span style="color:var(--green); font-size:1.1rem; font-weight:bold;">Return LCA = Node(${node.val})</span></div>`
+          });
+          finalizePop();
+          return node;
+        }
+
+        lcaRec(rRoot);
+      }
+
+      // ----------------------------------------------------
+      // Approach 2: Universal Binary Tree LCA (General DFS)
+      // ----------------------------------------------------
+      else if (currentApproach === 2) {
+        function lcaUniversal(node) {
+          pushFrame("lowestCommonAncestor", `root:${node ? node.val : 'None'}`);
+
+          // Line 1: def lowestCommonAncestor
+          history.push({
+            line: 1, phase: `Line 1: 進入 DFS(Node_${node ? node.val : 'None'})`,
+            desc: `呼叫 lowestCommonAncestor(root=Node_${node ? node.val : 'None'})`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node ? node.val : null, pVal, qVal) + `<div class="ds-display"><span>DFS Entry: Node(${node ? node.val : 'None'})</span></div>`
+          });
+
+          // Line 2: if not root or root == p or root == q:
+          let condBase = !node || node.val === pVal || node.val === qVal;
+          history.push({
+            line: 2, phase: "Line 2: 檢查 Base Case",
+            desc: `檢查 (not root) or (root == p) or (root == q) ➔ ${condBase}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node ? node.val : null, pVal, qVal) + `<div class="ds-display"><span style="color:${condBase?'var(--green)':'var(--text-dim)'}">Base Case Match? ${condBase}</span></div>`
+          });
+
+          if (condBase) {
+            // Line 3: return root
+            popFrame(node ? `Node(${node.val})` : "None");
+            history.push({
+              line: 3, phase: "Line 3: Base Case 回傳",
+              desc: `命中 Base Case，Return ${node ? 'Node(' + node.val + ')' : 'None'}`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, node ? node.val : null, pVal, qVal) + `<div class="ds-display"><span style="color:var(--green);">Return ${node ? 'Node(' + node.val + ')' : 'None'}</span></div>`
+            });
+            finalizePop();
+            return node;
+          }
+
+          // Line 4: left = self.lowestCommonAncestor(root.left, p, q)
+          history.push({
+            line: 4, phase: "Line 4: 呼叫左子樹遞迴",
+            desc: `準備執行 left = lowestCommonAncestor(root.left [${node.left ? node.left.val : 'None'}])`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, pVal, qVal) + `<div class="ds-display"><span style="color:var(--blue);">Recursing Left child</span></div>`
+          });
+          let leftRes = lcaUniversal(node.left);
+
+          history.push({
+            line: 4, phase: "Line 4: 取得 left 結果",
+            desc: `left 賦值為 ${leftRes ? 'Node(' + leftRes.val + ')' : 'None'}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, pVal, qVal) + `<div class="ds-display"><span>left = ${leftRes ? 'Node(' + leftRes.val + ')' : 'None'}</span></div>`
+          });
+
+          // Line 5: right = self.lowestCommonAncestor(root.right, p, q)
+          history.push({
+            line: 5, phase: "Line 5: 呼叫右子樹遞迴",
+            desc: `準備執行 right = lowestCommonAncestor(root.right [${node.right ? node.right.val : 'None'}])`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, pVal, qVal) + `<div class="ds-display"><span style="color:var(--medium);">Recursing Right child</span></div>`
+          });
+          let rightRes = lcaUniversal(node.right);
+
+          history.push({
+            line: 5, phase: "Line 5: 取得 right 結果",
+            desc: `right 賦值為 ${rightRes ? 'Node(' + rightRes.val + ')' : 'None'}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, pVal, qVal) + `<div class="ds-display"><span>right = ${rightRes ? 'Node(' + rightRes.val + ')' : 'None'}</span></div>`
+          });
+
+          // Line 6: if left and right: return root
+          let condBoth = leftRes && rightRes;
+          history.push({
+            line: 6, phase: "Line 6: 判斷 if left and right",
+            desc: `評估 (left != None and right != None) ➔ ${condBoth}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, pVal, qVal) + `<div class="ds-display"><span style="color:${condBoth?'var(--green)':'var(--text-dim)'}">Both Non-Empty? ${condBoth}</span></div>`
+          });
+
+          if (condBoth) {
+            popFrame(`Node(${node.val})`);
+            history.push({
+              line: 6, phase: "Line 6: return root (找到 LCA)",
+              desc: `左右子樹均回傳目標，節點 [${node.val}] 即為 LCA！Return Node(${node.val})`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderTreeStage(rRoot, null, pVal, qVal, node.val) + 
+                    `<div class="ds-display"><span style="color:var(--green); font-size:1.1rem; font-weight:bold;">Return LCA = Node(${node.val})</span></div>`
+            });
+            finalizePop();
+            return node;
+          }
+
+          // Line 7: return left if left else right
+          let retVal = leftRes ? leftRes : rightRes;
+          popFrame(retVal ? `Node(${retVal.val})` : "None");
+          history.push({
+            line: 7, phase: "Line 7: return left if left else right",
+            desc: `單側非空，向上傳遞: Return ${retVal ? 'Node(' + retVal.val + ')' : 'None'}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderTreeStage(rRoot, node.val, pVal, qVal) + `<div class="ds-display"><span>Return ${retVal ? 'Node(' + retVal.val + ')' : 'None'}</span></div>`
+          });
+          finalizePop();
+          return retVal;
+        }
+
+        lcaUniversal(rRoot);
+      }
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = renderStackHTML(stackData);
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      const stageBox = document.getElementById('stage-box');
+      stageBox.innerHTML = state.html || `<div style="font-size:0.85rem; font-family:monospace; color:#fff;">${state.desc}</div>`;
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderApproachDetails();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>RPN Ultimate Visualizer: 4 Strategies & 3 Examples</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --vs-bg: #1E1E1E; --vs-sidebar: #252526; --vs-border: #3E3E42; --vs-blue: #007ACC; --vs-active: #264F78; }
+        body { background: var(--vs-bg); color: #D4D4D4; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        .sidebar { background: var(--vs-sidebar); border: 1px solid var(--vs-border); }
+        .highlight-line { background: var(--vs-active); border-left: 3px solid var(--vs-blue); }
+        .py-k { color: #C586C0; } .py-f { color: #DCDCAA; } .py-n { color: #B5CEA8; } .py-c { color: #6A9955; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        .viz-box { border: 1px solid #444; transition: all 0.3s ease; position: relative; }
+        .pointer-label { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; color: #569CD6; }
+        .arrow { position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); color: #569CD6; }
+    </style>
+</head>
+<body class="p-4 flex flex-col h-screen gap-4">
+
+    <header class="flex items-center justify-between bg-black/40 p-2 rounded border border-gray-800">
+        <div class="flex gap-4">
+            <div class="flex gap-1 bg-gray-900 p-1 rounded">
+                <button onclick="setExample(0)" id="eb-0" class="ex-btn px-3 py-1 rounded text-[10px] font-bold transition">EX 1</button>
+                <button onclick="setExample(1)" id="eb-1" class="ex-btn px-3 py-1 rounded text-[10px] font-bold transition">EX 2</button>
+                <button onclick="setExample(2)" id="eb-2" class="ex-btn px-3 py-1 rounded text-[10px] font-bold transition">EX 3</button>
+            </div>
+            <div class="flex gap-1 bg-gray-900 p-1 rounded border-l border-gray-700 ml-2">
+                <button onclick="switchAlgo(0)" id="ab-0" class="algo-btn px-3 py-1 rounded text-[10px] font-bold transition">BRUTE FORCE</button>
+                <button onclick="switchAlgo(1)" id="ab-1" class="algo-btn px-3 py-1 rounded text-[10px] font-bold transition">LINKED LIST</button>
+                <button onclick="switchAlgo(2)" id="ab-2" class="algo-btn px-3 py-1 rounded text-[10px] font-bold transition">RECURSION</button>
+                <button onclick="switchAlgo(3)" id="ab-3" class="algo-btn px-3 py-1 rounded text-[10px] font-bold transition">STACK</button>
+            </div>
+        </div>
+        <div class="text-[10px] code-font text-gray-500 uppercase tracking-widest" id="strategy-name"></div>
+    </header>
+
+    <div class="flex flex-1 gap-4 overflow-hidden">
+        <aside class="w-1/4 flex flex-col gap-4">
+            <div class="sidebar rounded-md p-4 flex flex-col h-[40%]">
+                <h2 class="text-blue-400 font-bold text-sm mb-2">題目敘述 (Problem)</h2>
+                <div class="text-[11px] text-gray-400 space-y-3 overflow-y-auto custom-scroll pr-2">
+                    <p>根據<b>逆波蘭表示法 (RPN)</b>，求表達式的值。有效運算符為 <code class="text-orange-300">+ - * /</code>，每個操作數可以是整數或另一個表達式。兩個整數間的除法需<b>向零取整</b>。</p>
+                    <div id="ex-list" class="space-y-2">
+                        <div id="desc-0" class="p-2 border border-gray-800 rounded bg-black/20">
+                            <b class="text-white">範例 1:</b><br>輸入: ["2","1","+","3","*"]<br>輸出: 9 (解釋: ((2 + 1) * 3) = 9)
+                        </div>
+                        <div id="desc-1" class="p-2 border border-gray-800 rounded">
+                            <b class="text-white">範例 2:</b><br>輸入: ["4","13","5","/","+"]<br>輸出: 6 (解釋: (4 + (13 / 5)) = 6)
+                        </div>
+                        <div id="desc-2" class="p-2 border border-gray-800 rounded text-[10px]">
+                            <b class="text-white">範例 3:</b><br>輸入: tokens = ["10","6","9","3","+","-11","*","/","*","17","+","5","+"]<br>輸出: 22
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar rounded-md p-4 flex-1 flex flex-col overflow-hidden">
+                <h3 class="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-widest">Active Tokens</h3>
+                <div id="token-stream" class="flex flex-wrap gap-2 p-3 bg-black/40 rounded border border-gray-800 text-xs code-font"></div>
+                <div class="mt-4 p-2 bg-orange-400/10 border border-orange-400/20 rounded text-[11px] text-orange-200 italic" id="step-hint"></div>
+            </div>
+        </aside>
+
+        <section class="w-[45%] flex flex-col gap-4">
+            <div class="sidebar rounded-md flex-1 flex flex-col p-8 relative">
+                <div id="viz-stage" class="flex-1 flex flex-col items-center justify-center gap-10"></div>
+                <div id="math-formula" class="absolute top-10 left-10 text-2xl font-bold text-blue-400 code-font"></div>
+            </div>
+
+            <div class="sidebar rounded-md p-4 flex items-center justify-between">
+                <div class="flex gap-2">
+                    <button onclick="changeStep(-1)" class="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-xs transition">PREV</button>
+                    <button id="playBtn" onclick="toggleAuto()" class="px-6 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs font-bold transition">AUTO PLAY</button>
+                    <button onclick="changeStep(1)" class="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-xs transition">NEXT</button>
+                    <button onclick="resetLab()" class="px-4 py-1.5 bg-red-900/30 text-red-400 border border-red-900/50 hover:bg-red-700 hover:text-white rounded text-xs transition ml-2">RESET</button>
+                </div>
+                <div class="text-right">
+                    <div id="step-info" class="text-[10px] code-font text-gray-500">STEP: 0 / 0</div>
+                    <div class="w-32 h-1 bg-gray-800 rounded-full mt-1 overflow-hidden">
+                        <div id="prog-bar" class="h-full bg-blue-500 transition-all" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <aside class="w-[30%] flex flex-col gap-4">
+            <div class="sidebar rounded-md flex-[2] overflow-hidden flex flex-col">
+                <div class="bg-[#333] px-4 py-2 text-[10px] code-font flex justify-between">
+                    <span>python_solution.py</span>
+                </div>
+                <div id="code-box" class="p-4 text-[10px] leading-5 code-font flex-1 overflow-y-auto custom-scroll"></div>
+            </div>
+            <div class="sidebar rounded-md p-4 flex-1 flex flex-col overflow-hidden">
+                <h3 class="text-[10px] font-bold text-orange-400 mb-2 uppercase tracking-widest border-b border-gray-800 pb-1">Execution Log</h3>
+                <div id="debug-log" class="flex-1 overflow-y-auto custom-scroll text-[10px] code-font space-y-1 text-gray-500"></div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const examples = [
+            { tokens: ["2","1","+","3","*"], out: "9" },
+            { tokens: ["4","13","5","/","+"], out: "6" },
+            { tokens: ["10","6","9","3","+","-11","*","/","*","17","+","5","+"], out: "22" }
+        ];
+
+        const algos = [
+            {
+                name: "Brute Force",
+                code: `class Solution:
+    def evalRPN(self, tokens: List[str]) -> int:
+        while len(tokens) > 1:
+            for i in range(len(tokens)):
+                if tokens[i] in "+-*/":
+                    a = int(tokens[i-2])
+                    b = int(tokens[i-1])
+                    if tokens[i] == '+': result = a + b
+                    elif tokens[i] == '-': result = a - b
+                    elif tokens[i] == '*': result = a * b
+                    elif tokens[i] == '/': result = int(a / b)
+                    tokens = tokens[:i-2] + [str(result)] + tokens[i+1:]
+                    break
+        return int(tokens[0])`
+            },
+            {
+                name: "Doubly Linked List",
+                code: `class DoublyLinkedList:
+    def __init__(self, val, next=None, prev=None):
+        self.val = val
+        self.next = next
+        self.prev = prev
+
+class Solution:
+    def evalRPN(self, tokens: List[str]) -> int:
+        head = DoublyLinkedList(tokens[0])
+        curr = head
+        for i in range(1, len(tokens)):
+            curr.next = DoublyLinkedList(tokens[i], prev=curr)
+            curr = curr.next
+        while head is not None:
+            if head.val in "+-*/":
+                l = int(head.prev.prev.val)
+                r = int(head.prev.val)
+                res = calc(l, r, head.val)
+                head.val = str(res)
+                head.prev = head.prev.prev.prev
+                if head.prev: head.prev.next = head
+            ans = int(head.val)
+            head = head.next
+        return ans`
+            },
+            {
+                name: "Recursion (DFS)",
+                code: `class Solution:
+    def evalRPN(self, tokens: List[str]) -> int:
+        def dfs():
+            token = tokens.pop()
+            if token not in "+-*/":
+                return int(token)
+            right = dfs()
+            left = dfs()
+            if token == '+': return left + right
+            elif token == '-': return left - right
+            elif token == '*': return left * right
+            elif token == '/': return int(left / right)
+        return dfs()`
+            },
+            {
+                name: "Stack",
+                code: `class Solution:
+    def evalRPN(self, tokens: List[str]) -> int:
+        stack = []
+        for c in tokens:
+            if c == "+": stack.append(stack.pop() + stack.pop())
+            elif c == "-":
+                a, b = stack.pop(), stack.pop()
+                stack.append(b - a)
+            elif c == "*": stack.append(stack.pop() * stack.pop())
+            elif c == "/":
+                a, b = stack.pop(), stack.pop()
+                stack.append(int(float(b) / a))
+            else: stack.append(int(c))
+        return stack[0]`
+            }
+        ];
+
+        let curExIdx = 0, curAlgoIdx = 3, curStep = 0, timeline = [], timer = null;
+
+        function pyHighlight(code) {
+            return code.replace(/\b(class|def|if|elif|else|while|for|in|return|not|break)\b/g, '<span class="py-k">$1</span>')
+                       .replace(/\b(int|str|len|range|pop|append|List|float|None)\b/g, '<span class="py-f">$1</span>')
+                       .replace(/#.*$/gm, '<span class="py-c">$&</span>');
+        }
+
+        function resetLab() {
+            pause();
+            curStep = 0;
+            document.getElementById('debug-log').innerHTML = '';
+            render();
+        }
+
+        function setExample(idx) {
+            pause(); curExIdx = idx;
+            document.querySelectorAll('.ex-btn').forEach((b, i) => b.className = i === idx ? 'ex-btn px-3 py-1 rounded text-[10px] font-bold bg-blue-600 text-white' : 'ex-btn px-3 py-1 rounded text-[10px] font-bold bg-gray-800 text-gray-400');
+            document.querySelectorAll('#ex-list > div').forEach((d, i) => d.className = i === idx ? 'p-2 border border-blue-500 bg-blue-500/10 rounded' : 'p-2 border border-gray-800 rounded bg-black/20');
+            switchAlgo(curAlgoIdx);
+        }
+
+        function switchAlgo(idx) {
+            pause(); curAlgoIdx = idx; curStep = 0;
+            document.querySelectorAll('.algo-btn').forEach((b, i) => b.className = i === idx ? 'algo-btn px-3 py-1 rounded text-[10px] font-bold bg-blue-600 text-white' : 'algo-btn px-3 py-1 rounded text-[10px] font-bold bg-gray-800 text-gray-400');
+            document.getElementById('strategy-name').innerText = algos[idx].name;
+            document.getElementById('code-box').innerHTML = algos[idx].code.split('\n').map((l, i) => `<div id="l-${i}" class="px-2 flex gap-4"><span class="w-4 text-gray-600 text-right select-none">${i+1}</span><pre>${pyHighlight(l)}</pre></div>`).join('');
+            
+            const tokens = examples[curExIdx].tokens;
+            document.getElementById('token-stream').innerHTML = tokens.map((t, i) => `<span id="tk-${i}" class="px-1">${t}</span>`).join('');
+            
+            buildTimeline(idx, tokens);
+            render();
+        }
+
+        function buildTimeline(algoIdx, tokens) {
+            timeline = [];
+            const t = [...tokens];
+            
+            if (algoIdx === 3) { // Stack
+                let s = [];
+                timeline.push({ data: [], msg: "初始化空棧 (Initialize stack)", line: 2, tIdx: -1 });
+                t.forEach((token, i) => {
+                    if (!"+-*/".includes(token)) {
+                        s.push(token);
+                        timeline.push({ data: [...s], msg: `遇到數字，壓入棧: ${token}`, line: 12, tIdx: i });
+                    } else {
+                        let b = s.pop(), a = s.pop();
+                        let res = evalOp(a, b, token);
+                        timeline.push({ data: [...s, `(${a}${token}${b})`], msg: `彈出 ${b}, ${a} 並計算 ${token}`, line: 4, tIdx: i, math: `${a}${token}${b}=${res}` });
+                        s.push(res.toString());
+                        timeline.push({ data: [...s], msg: `計算結果 ${res} 壓回棧中`, line: 4, tIdx: i });
+                    }
+                });
+            } else if (algoIdx === 1) { // Linked List
+                timeline.push({ data: [...t], msg: "建立雙向鏈表並標記頭節點", line: 9, tIdx: 0, curr: 0 });
+                let currentTokens = [...t];
+                for(let i=0; i<currentTokens.length; i++) {
+                    if ("+-*/".includes(currentTokens[i])) {
+                        timeline.push({ data: [...currentTokens], msg: "找到運算符，開始執行指標操作", line: 13, tIdx: i, curr: i, prev: i-1 });
+                        let r = currentTokens[i-1], l = currentTokens[i-2];
+                        let res = evalOp(l, r, currentTokens[i]);
+                        currentTokens[i] = res.toString();
+                        currentTokens.splice(i-2, 2);
+                        timeline.push({ data: [...currentTokens], msg: `合併節點，更新指標。結果: ${res}`, line: 18, tIdx: -1, curr: i-2, math: `${l}${tokens[i]}${r}=${res}` });
+                        i = -1; 
+                    }
+                }
+            } else if (algoIdx === 0) { // Brute Force
+                let current = [...t];
+                timeline.push({ data: [...current], msg: "掃描陣列尋找運算符", line: 2, tIdx: -1 });
+                while(current.length > 1) {
+                    for(let i=0; i<current.length; i++) {
+                        if("+-*/".includes(current[i])) {
+                            timeline.push({ data: [...current], msg: `找到運算符 ${current[i]}`, line: 4, tIdx: i });
+                            let r = current[i-1], l = current[i-2];
+                            let res = evalOp(l, r, current[i]);
+                            current.splice(i-2, 3, res.toString());
+                            timeline.push({ data: [...current], msg: `替換為結果: ${res}`, line: 10, tIdx: -1, math: `${l}${tokens[i]}${r}=${res}` });
+                            break;
+                        }
+                    }
+                }
+            } else { // Recursion
+                timeline.push({ data: [...t], msg: "從最後一個 Token 開始遞迴 (DFS)", line: 12, tIdx: t.length-1 });
+                timeline.push({ data: t.slice(0, -1), msg: "彈出符號，遞迴求解右側與左側", line: 3, tIdx: t.length-1 });
+                timeline.push({ data: ["..."], msg: "遞迴深入展開中...", line: 6, tIdx: -1 });
+                timeline.push({ data: [examples[curExIdx].out], msg: "回溯完成，得到最終結果", line: 10, tIdx: -1 });
+            }
+        }
+
+        function evalOp(a, b, op) {
+            a = parseInt(a); b = parseInt(b);
+            if(op === '+') return a + b;
+            if(op === '-') return a - b;
+            if(op === '*') return a * b;
+            if(op === '/') return Math.trunc(a / b);
+            return 0;
+        }
+
+        function render() {
+            const step = timeline[curStep];
+            const stage = document.getElementById('viz-stage');
+            stage.innerHTML = '';
+
+            if (curAlgoIdx === 3) { // Stack Visualization
+                const stackBase = document.createElement('div');
+                stackBase.className = "w-32 border-x-4 border-b-4 border-gray-600 flex flex-col-reverse p-2 gap-2 min-h-[200px] rounded-b-lg";
+                step.data.forEach(val => {
+                    const item = document.createElement('div');
+                    item.className = "h-10 bg-blue-600 rounded flex items-center justify-center font-bold text-white shadow-lg";
+                    item.innerText = val;
+                    stackBase.appendChild(item);
+                });
+                stage.appendChild(stackBase);
+                const label = document.createElement('div');
+                label.className = "text-[10px] uppercase tracking-tighter text-gray-500 font-bold";
+                label.innerText = "Operand Stack";
+                stage.appendChild(label);
+            } else { // Array/List Visualization
+                const row = document.createElement('div');
+                row.className = "flex gap-4 items-center";
+                step.data.forEach((val, i) => {
+                    const box = document.createElement('div');
+                    box.className = `w-14 h-14 viz-box flex items-center justify-center rounded bg-gray-800 font-bold ${i === step.curr || i === step.prev ? 'border-blue-400 bg-blue-900/30' : ''}`;
+                    box.innerText = val;
+                    if(curAlgoIdx === 1) {
+                        if(i === step.curr) box.innerHTML += `<div class="pointer-label">CURR</div><div class="arrow">▼</div>`;
+                        if(i === step.prev) box.innerHTML += `<div class="pointer-label" style="color:#ce9178">PREV</div><div class="arrow" style="color:#ce9178">▼</div>`;
+                    }
+                    row.appendChild(box);
+                });
+                stage.appendChild(row);
+            }
+
+            document.getElementById('math-formula').innerText = step.math || "";
+            document.getElementById('step-hint').innerText = `> ${step.msg}`;
+            document.getElementById('step-info').innerText = `STEP: ${curStep} / ${timeline.length-1}`;
+            document.getElementById('prog-bar').style.width = `${(curStep/(timeline.length-1))*100}%`;
+
+            document.querySelectorAll('[id^="l-"]').forEach(el => el.classList.remove('highlight-line'));
+            if(document.getElementById(`l-${step.line}`)) document.getElementById(`l-${step.line}`).classList.add('highlight-line');
+            
+            document.querySelectorAll('[id^="tk-"]').forEach(el => el.classList.remove('bg-blue-600', 'text-white'));
+            if(document.getElementById(`tk-${step.tIdx}`)) document.getElementById(`tk-${step.tIdx}`).classList.add('bg-blue-600', 'text-white');
+
+            const log = document.getElementById('debug-log');
+            log.innerHTML = `<div><span class="text-blue-500">[#${curStep}]</span> ${step.msg}</div>` + log.innerHTML;
+        }
+
+        function changeStep(d) { curStep = Math.min(Math.max(0, curStep + d), timeline.length - 1); render(); }
+        function toggleAuto() { if(timer) pause(); else { timer = setInterval(() => { if(curStep < timeline.length-1) changeStep(1); else pause(); }, 1000); document.getElementById('playBtn').innerText = "PAUSE"; } }
+        function pause() { clearInterval(timer); timer = null; document.getElementById('playBtn').innerText = "AUTO PLAY"; }
+
+        setExample(0);
+    </script>
+</body>
+</html>

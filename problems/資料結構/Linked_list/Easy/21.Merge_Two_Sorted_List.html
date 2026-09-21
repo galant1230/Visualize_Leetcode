@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>21. Merge Two Sorted Lists - Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-easy: #00b8a3;
+      --lc-blue: #007aff;
+      --lc-green: #2cbb5d;
+      --lc-red: #ff2d55;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(0, 184, 163, 0.15);
+      color: var(--lc-easy);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 20px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 6px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+    
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+      color: var(--lc-text);
+      margin-bottom: 8px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 2px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-easy); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 480px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      height: 310px;
+      position: relative;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+
+    .row-label {
+      position: absolute;
+      left: 12px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      color: var(--lc-text-dim);
+      font-family: monospace;
+      text-transform: uppercase;
+    }
+
+    .node {
+      width: 44px;
+      height: 44px;
+      background: var(--lc-blue);
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 1rem;
+      position: absolute;
+      transition: all 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      z-index: 2;
+    }
+    .node.dummy {
+      background: #383838;
+      border: 2px dashed #666;
+      color: #aaa;
+      font-size: 0.75rem;
+    }
+    .node.l1-node { background: var(--lc-red); }
+    .node.l2-node { background: var(--lc-orange); }
+    .node.merged-node { background: var(--lc-green); }
+
+    .ptr-container {
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: center;
+    }
+
+    .ptr-label {
+      font-size: 0.65rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: white;
+      white-space: nowrap;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .p-curr { background: var(--lc-green); }
+    .p-l1 { background: var(--lc-red); }
+    .p-l2 { background: var(--lc-orange); }
+
+    .control-panel {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 7px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-easy); color: #fff; }
+    .btn-primary:hover { background: #009684; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">21. Merge Two Sorted Lists</span>
+    <span class="lc-badge">Easy</span>
+    <span class="lc-tag">Linked List</span>
+    <span class="lc-tag">Two Pointers</span>
+  </div>
+
+  <div class="config-tabs">
+    <div class="tab-group">
+      <button class="tab-btn active" id="lang-py" onclick="setLang('py')">Python3</button>
+      <button class="tab-btn" id="lang-c" onclick="setLang('c')">C++</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            將兩個已排序的鏈結串列 <code>list1</code> 與 <code>list2</code> 合併為一個新的遞增排序串列，並回傳標頭。合併必須透過拼接現有節點完成。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> list1 = [1,2,4], list2 = [1,3,4]</div>
+            <div><strong>Output:</strong> [1,1,2,3,4,4]</div>
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 2:</div>
+            <div><strong>Input:</strong> list1 = [], list2 = []</div>
+            <div><strong>Output:</strong> []</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val">O(n + m)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val">O(1)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span id="codeTitle">🐍 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (State & Stage)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title">💡 解題思路 (Approach)</div>
+            <div>
+              維護一個哨兵節點 <code>dummy</code> 做為起點，並使用 <code>curr</code> 指針記錄當前合併串列的尾端。比較 <code>list1</code> 與 <code>list2</code> 當前節點的值，將較小者接在 <code>curr.next</code> 後方並推進相應指標。當其中一方為空時，直接將另一方剩餘鏈結整體掛載。
+            </div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">準備開始合併...</div>
+          </div>
+
+          <div class="stage" id="main-stage">
+            <div class="row-label" style="top: 35px;">List 1</div>
+            <div class="row-label" style="top: 125px;">List 2</div>
+            <div class="row-label" style="top: 225px;">Merged</div>
+            <div id="elements-container"></div>
+          </div>
+
+          <div class="control-panel">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const list1Data = [1, 2, 4];
+    const list2Data = [1, 3, 4];
+    let lang = 'py', currentStep = 0;
+    let history = [];
+
+    const codes = {
+      py: [
+        `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+        `    <span class="kw">def</span> <span class="fn">mergeTwoLists</span>(<span class="self">self</span>, l1: Optional[ListNode], l2: Optional[ListNode]) -&gt; Optional[ListNode]:`,
+        `        dummy = curr = ListNode(0)`,
+        `        <span class="kw">while</span> l1 <span class="kw">and</span> l2:`,
+        `            <span class="kw">if</span> l1.val &lt;= l2.val:`,
+        `                curr.next = l1`,
+        `                l1 = l1.next`,
+        `            <span class="kw">else</span>:`,
+        `                curr.next = l2`,
+        `                l2 = l2.next`,
+        `            curr = curr.next`,
+        `        curr.next = l1 <span class="kw">or</span> l2`,
+        `        <span class="kw">return</span> dummy.next`
+      ],
+      c: [
+        `<span class="kw">class</span> <span class="fn">Solution</span> {`,
+        `<span class="kw">public</span>:`,
+        `    ListNode* <span class="fn">mergeTwoLists</span>(ListNode* l1, ListNode* l2) {`,
+        `        ListNode dummy(0);`,
+        `        ListNode* curr = &dummy;`,
+        `        <span class="kw">while</span> (l1 && l2) {`,
+        `            <span class="kw">if</span> (l1-&gt;val &lt;= l2-&gt;val) {`,
+        `                curr-&gt;next = l1;`,
+        `                l1 = l1-&gt;next;`,
+        `            } <span class="kw">else</span> {`,
+        `                curr-&gt;next = l2;`,
+        `                l2 = l2-&gt;next;`,
+        `            }`,
+        `            curr = curr-&gt;next;`,
+        `        }`,
+        `        curr-&gt;next = l1 ? l1 : l2;`,
+        `        <span class="kw">return</span> dummy.next;`,
+        `    }`,
+        `};`
+      ]
+    };
+
+    function setLang(l) { lang = l; resetSim(); }
+
+    function buildHistory() {
+      history = [];
+      let i = 0, j = 0;
+      let mergedNodes = [{ type: 'dummy', val: '0', orig: 'D' }];
+
+      // Step 0: 初始化 Dummy
+      history.push({
+        line: lang === 'py' ? 2 : 4,
+        title: "初始化",
+        desc: "建立哨兵節點 Dummy，設指標 curr 指向 Dummy。",
+        p1: i, p2: j,
+        merged: [...mergedNodes]
+      });
+
+      while (i < list1Data.length && j < list2Data.length) {
+        // Step A: 進入 while & 比較
+        history.push({
+          line: lang === 'py' ? 4 : 6,
+          title: "數值比較",
+          desc: `比較 list1 (${list1Data[i]}) 與 list2 (${list2Data[j]}) 的數值。`,
+          p1: i, p2: j,
+          merged: [...mergedNodes]
+        });
+
+        if (list1Data[i] <= list2Data[j]) {
+          // 接入 l1
+          mergedNodes.push({ type: 'l1', val: list1Data[i], orig: i });
+          history.push({
+            line: lang === 'py' ? 5 : 7,
+            title: "接入 List 1",
+            desc: `list1 數值 (${list1Data[i]}) 較小或相等，將 curr.next 指向 list1 節點 ${list1Data[i]}。`,
+            p1: i, p2: j,
+            merged: [...mergedNodes]
+          });
+          i++;
+        } else {
+          // 接入 l2
+          mergedNodes.push({ type: 'l2', val: list2Data[j], orig: j });
+          history.push({
+            line: lang === 'py' ? 8 : 10,
+            title: "接入 List 2",
+            desc: `list2 數值 (${list2Data[j]}) 較小，將 curr.next 指向 list2 節點 ${list2Data[j]}。`,
+            p1: i, p2: j,
+            merged: [...mergedNodes]
+          });
+          j++;
+        }
+
+        // 推進 curr
+        history.push({
+          line: lang === 'py' ? 10 : 13,
+          title: "推進 Curr",
+          desc: "將 curr 指標右移至當前新接上的節點。",
+          p1: i, p2: j,
+          merged: [...mergedNodes]
+        });
+      }
+
+      // 當其中一方為空
+      let restSide = i < list1Data.length ? `list1 (從 ${list1Data[i]} 開始)` : `list2 (從 ${list2Data[j]} 開始)`;
+      while (i < list1Data.length) {
+        mergedNodes.push({ type: 'l1', val: list1Data[i], orig: i });
+        i++;
+      }
+      while (j < list2Data.length) {
+        mergedNodes.push({ type: 'l2', val: list2Data[j], orig: j });
+        j++;
+      }
+
+      history.push({
+        line: lang === 'py' ? 11 : 15,
+        title: "拼接剩餘串列",
+        desc: `某一串列已遍歷完成，將剩餘的 ${restSide} 整體掛載到 curr.next。`,
+        p1: i, p2: j,
+        merged: [...mergedNodes]
+      });
+
+      // 回傳 dummy.next
+      history.push({
+        line: lang === 'py' ? 12 : 16,
+        title: "完成合併",
+        desc: "回傳 dummy.next 即為合併完成的有序鏈結串列頭點！",
+        p1: i, p2: j,
+        merged: [...mergedNodes]
+      });
+    }
+
+    function resetSim() {
+      buildHistory();
+      currentStep = 0;
+      updateTabs();
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+      
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateUI(state.line, state.title, state.desc);
+      renderStage(state);
+    }
+
+    function updateTabs() {
+      document.getElementById('lang-py').className = 'tab-btn ' + (lang === 'py' ? 'active' : '');
+      document.getElementById('lang-c').className = 'tab-btn ' + (lang === 'c' ? 'active' : '');
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codes[lang]
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateUI(line, title, desc) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if(document.getElementById('l'+line)) document.getElementById('l'+line).classList.add('active-line');
+      document.getElementById('step-title').innerText = title;
+      document.getElementById('step-desc').innerText = desc;
+      document.getElementById('stepHint').innerText = title.toUpperCase();
+    }
+
+    function renderStage(state) {
+      const container = document.getElementById('elements-container');
+      container.innerHTML = '';
+
+      const nodeX = (idx) => 70 + (idx * 75);
+
+      // 1. 繪製 List 1
+      list1Data.forEach((val, idx) => {
+        const node = document.createElement('div');
+        node.className = 'node l1-node';
+        node.innerText = val;
+        node.style.left = nodeX(idx) + 'px';
+        node.style.top = '25px';
+
+        if (idx === state.p1) {
+          node.innerHTML += `<div class="ptr-container"><div class="ptr-label p-l1">l1</div></div>`;
+        }
+        container.appendChild(node);
+      });
+
+      // 2. 繪製 List 2
+      list2Data.forEach((val, idx) => {
+        const node = document.createElement('div');
+        node.className = 'node l2-node';
+        node.innerText = val;
+        node.style.left = nodeX(idx) + 'px';
+        node.style.top = '115px';
+
+        if (idx === state.p2) {
+          node.innerHTML += `<div class="ptr-container"><div class="ptr-label p-l2">l2</div></div>`;
+        }
+        container.appendChild(node);
+      });
+
+      // 3. 繪製 Merged List
+      state.merged.forEach((item, idx) => {
+        const node = document.createElement('div');
+        node.className = 'node merged-node';
+        if (item.type === 'dummy') node.classList.add('dummy');
+        node.innerText = item.val;
+        node.style.left = nodeX(idx) + 'px';
+        node.style.top = '215px';
+
+        // 標示 curr 指針
+        if (idx === state.merged.length - 1) {
+          node.innerHTML += `<div class="ptr-container"><div class="ptr-label p-curr">curr</div></div>`;
+        }
+        container.appendChild(node);
+      });
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

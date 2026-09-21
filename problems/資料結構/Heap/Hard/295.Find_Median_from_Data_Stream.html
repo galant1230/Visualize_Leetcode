@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>295. Find Median from Data Stream - Step-by-Step Visualization</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --green: #50fa7b;
+      --cyan: #8be9fd;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 45, 85, 0.15); color: var(--hard); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--hard); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--hard); margin-bottom: 4px; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--hard); display: block; font-size: 0.85rem; }
+
+    .sol-tab-btn { background: #1a1a1a; border: 1px solid var(--border); color: var(--text-dim); padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; }
+    .sol-tab-btn.active { background: var(--orange); color: #000; font-weight: bold; border-color: var(--orange); }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.76rem; overflow-x: auto; max-height: 380px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.75rem; min-height: 110px; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+    .stack-frame.returning { border-color: var(--green); border-left-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+    
+    /* 雙堆對稱視覺化區域 */
+    .heaps-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .heap-panel { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px; display: flex; flex-direction: column; align-items: center; position: relative; }
+    .heap-title { font-size: 0.75rem; font-weight: bold; font-family: monospace; margin-bottom: 6px; }
+    .heap-title.small-heap { color: var(--cyan); }
+    .heap-title.large-heap { color: var(--purple); }
+
+    .heap-elements { display: flex; flex-direction: column; gap: 4px; width: 100%; align-items: center; min-height: 140px; }
+    .heap-item { width: 90%; padding: 4px 8px; background: #222; border: 1px solid var(--border); border-radius: 4px; font-family: monospace; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+    .heap-item.top { border-width: 2px; font-weight: bold; }
+    .small-heap .heap-item.top { border-color: var(--cyan); background: rgba(139, 233, 253, 0.15); }
+    .large-heap .heap-item.top { border-color: var(--purple); background: rgba(168, 85, 247, 0.15); }
+    .heap-item.moving { border-color: var(--orange) !important; background: rgba(255, 161, 22, 0.25) !important; transform: scale(1.05); }
+    .heap-item.comparing { border-color: var(--medium) !important; background: rgba(255, 192, 30, 0.2) !important; }
+
+    /* 中位數算術展示框 */
+    .median-display-box { background: #141414; border: 1px solid var(--green); background: rgba(80, 250, 123, 0.05); border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-family: monospace; }
+    .median-label { font-size: 0.78rem; color: var(--text-dim); font-weight: bold; }
+    .median-value { font-size: 1.1rem; font-weight: bold; color: var(--green); }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 85px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">295. Find Median from Data Stream</span>
+    <span class="badge">Hard</span>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: [1, 2, 3] -> Median</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: [5, 2, 10, 1, 3] -> Stream</button>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄：題目、程式碼、Call Stack -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與複雜度</div>
+        <div class="problem-desc">
+          <b>中位數</b> 是有序整數列表中間的值。列表大小為偶數時取中間兩數平均值。
+          <br>設計一個資料結構，支援 <code>addNum(num)</code> 與 <code>findMedian()</code>。
+        </div>
+
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">add: O(log N), find: O(1)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(N)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 程式碼區塊 -->
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼解法選擇</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 4px;">
+          <button class="sol-tab-btn active" onclick="setSolution(0)">解法一：雙堆 (Max-Heap + Min-Heap)</button>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (函數調用歷程)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄：解題思路與動態展示 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="idea-box">
+          <div class="idea-title">💡 超極細緻步驟拆解規則 (Granular Step Rule)</div>
+          <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+            <li><b>步驟 1 (Push)</b>：預設一律將新數字放入 <code>small</code> (Max-Heap)。</li>
+            <li><b>步驟 2 (Check Bound)</b>：比較 <code>small.top</code> 與 <code>large.top</code>，維護交界正確性。</li>
+            <li><b>步驟 3 (Check Size)</b>：檢查兩堆數量差，維持 <code>len(small) >= len(large)</code> 且相差不超過 1。</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 雙堆 (Dual Heap) 逐步動態視覺化</div>
+        
+        <div class="stage">
+          <div class="heaps-split">
+            <!-- 左堆：Max-Heap (small) -->
+            <div class="heap-panel small-heap">
+              <span class="heap-title small-heap">Small Half (Max-Heap)</span>
+              <div class="heap-elements" id="small-heap-list"></div>
+            </div>
+
+            <!-- 右堆：Min-Heap (large) -->
+            <div class="heap-panel large-heap">
+              <span class="heap-title large-heap">Large Half (Min-Heap)</span>
+              <div class="heap-elements" id="large-heap-list"></div>
+            </div>
+          </div>
+
+          <div class="median-display-box">
+            <span class="median-label">Current Median:</span>
+            <span class="median-value" id="median-val-display">N/A</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">當前微步驟紀錄 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const solutions = [
+      {
+        name: "雙堆 (Max-Heap + Min-Heap)",
+        timeComp: "add: O(log N), find: O(1)",
+        spaceComp: "O(N)",
+        code: [
+          `<span class="kw">import</span> heapq`,
+          ``,
+          `<span class="kw">class</span> <span class="cls">MedianFinder</span>:`,
+          `    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="self">self</span>):`,
+          `        <span class="self">self</span>.small = []  <span class="cm"># Max-Heap (儲存較小的一半)</span>`,
+          `        <span class="self">self</span>.large = []  <span class="cm"># Min-Heap (儲存較大的一半)</span>`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">addNum</span>(<span class="self">self</span>, num: int) -> <span class="kw">None</span>:`,
+          `        <span class="cm"># 1. 預設推入 small</span>`,
+          `        heapq.heappush(<span class="self">self</span>.small, -num)`,
+          ``,
+          `        <span class="cm"># 2. 檢查邊界：確保 small 頂端 <= large 頂端</span>`,
+          `        <span class="kw">if</span> <span class="self">self</span>.small <span class="kw">and</span> <span class="self">self</span>.large <span class="kw">and</span> (-<span class="self">self</span>.small[0]) > <span class="self">self</span>.large[0]:`,
+          `            val = -heapq.heappop(<span class="self">self</span>.small)`,
+          `            heapq.heappush(<span class="self">self</span>.large, val)`,
+          ``,
+          `        <span class="cm"># 3. 檢查數量平衡 (small 數量最多比 large 多 1)</span>`,
+          `        <span class="kw">if</span> len(<span class="self">self</span>.small) > len(<span class="self">self</span>.large) + 1:`,
+          `            val = -heapq.heappop(<span class="self">self</span>.small)`,
+          `            heapq.heappush(<span class="self">self</span>.large, val)`,
+          `        <span class="kw">elif</span> len(<span class="self">self</span>.large) > len(<span class="self">self</span>.small):`,
+          `            val = heapq.heappop(<span class="self">self</span>.large)`,
+          `            heapq.heappush(<span class="self">self</span>.small, -val)`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">findMedian</span>(<span class="self">self</span>) -> float:`,
+          `        <span class="kw">if</span> len(<span class="self">self</span>.small) > len(<span class="self">self</span>.large):`,
+          `            <span class="kw">return</span> float(-<span class="self">self</span>.small[0])`,
+          `        <span class="kw">return</span> (-<span class="self">self</span>.small[0] + <span class="self">self</span>.large[0]) / 2.0`
+        ]
+      }
+    ];
+
+    const presets = [
+      {
+        name: "Ex 1: [1, 2, 3]",
+        actions: [
+          { type: "add", val: 1 },
+          { type: "add", val: 2 },
+          { type: "find" },
+          { type: "add", val: 3 },
+          { type: "find" }
+        ]
+      },
+      {
+        name: "Ex 2: Unordered Stream [5, 2, 10, 1, 3]",
+        actions: [
+          { type: "add", val: 5 },
+          { type: "add", val: 2 },
+          { type: "add", val: 10 },
+          { type: "find" },
+          { type: "add", val: 1 },
+          { type: "add", val: 3 },
+          { type: "find" }
+        ]
+      }
+    ];
+
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      const seqStr = p.actions.map(a => a.type === 'add' ? `addNum(${a.val})` : `findMedian()`).join(' -> ');
+      document.getElementById('ex-display').innerHTML = `<div><b>Sequence:</b> ${seqStr}</div>`;
+    }
+
+    function renderCode() {
+      const codeArr = solutions[0].code;
+      document.getElementById('code-box').innerHTML = codeArr.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderHeapList(containerId, arr, isMaxHeap = false, statusMap = {}) {
+      const el = document.getElementById(containerId);
+      if (arr.length === 0) {
+        el.innerHTML = `<div style="color:var(--text-dim); font-size:0.75rem; margin:auto;">Empty Heap</div>`;
+        return;
+      }
+
+      let sortedArr = [...arr].sort((a, b) => isMaxHeap ? b - a : a - b);
+
+      el.innerHTML = sortedArr.map((val, idx) => {
+        let isTop = (idx === 0);
+        let cls = 'heap-item';
+        if (isTop) cls += ' top';
+        if (statusMap.movingVal === val) cls += ' moving';
+        if (statusMap.comparingVal === val) cls += ' comparing';
+
+        return `
+          <div class="${cls}">
+            <span>${val}</span>
+            <span style="font-size:0.68rem; color:var(--text-dim);">${isTop ? 'TOP' : ''}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStackHTML(stackFrames) {
+      if (!stackFrames || stackFrames.length === 0) return `<div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>`;
+      return stackFrames.map(f => `
+        <div class="stack-frame ${f.returning ? 'returning' : ''}">
+          <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.7rem;">(${f.args})</span></div>
+          <div style="font-size:0.75rem; font-weight:bold; color:${f.returning ? 'var(--green)' : 'var(--orange)'};">${f.returning ? `➔ ${f.retVal}` : 'Active'}</div>
+        </div>
+      `).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const actions = presets[currentPreset].actions;
+
+      let small = [];
+      let large = [];
+      let currentStack = [];
+
+      function pushFrame(fnName, args) { currentStack.push({ fnName, args, returning: false, retVal: null }); }
+      function popFrame() { currentStack.pop(); }
+      function getSmallTop() { return small.length > 0 ? Math.max(...small) : null; }
+      function getLargeTop() { return large.length > 0 ? Math.min(...large) : null; }
+
+      history.push({
+        line: 3, phase: "【初始化】",
+        desc: "建立空的 small (Max-Heap) 與 large (Min-Heap)",
+        stack: [], small: [], large: [], median: "N/A"
+      });
+
+      actions.forEach(act => {
+        if (act.type === "add") {
+          let num = act.val;
+          pushFrame("addNum", `num=${num}`);
+
+          // 步驟 1: heappush 到 small
+          small.push(num);
+          history.push({
+            line: 9, phase: `【addNum(${num})】步驟 1: 推入 small`,
+            desc: `直接將 ${num} 放進 small 堆中。目前 small: [${small.join(', ')}]`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            small: [...small], large: [...large], median: "Computing...", movingVal: num
+          });
+
+          // 步驟 2-1: 評估條件 if small and large and -small[0] > large[0]
+          let sTop = getSmallTop();
+          let lTop = getLargeTop();
+          let needSwap = (sTop !== null && lTop !== null && sTop > lTop);
+
+          history.push({
+            line: 12, phase: `【addNum(${num})】步驟 2-1: 檢查交界順序`,
+            desc: `檢查 (small.top=${sTop}) > (large.top=${lTop}) ? 答案: ${needSwap ? '是 (需調換)' : '否 (順序正確/無需調換)'}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            small: [...small], large: [...large], median: "Computing...", comparingVal: sTop
+          });
+
+          if (needSwap) {
+            // 步驟 2-2: pop small
+            small.splice(small.indexOf(sTop), 1);
+            history.push({
+              line: 13, phase: `【addNum(${num})】步驟 2-2: 從 small 彈出頂端 ${sTop}`,
+              desc: `因為 ${sTop} 大於 large 堆頂，不該留在 small 堆，先將其 pop 出`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              small: [...small], large: [...large], median: "Computing...", movingVal: sTop
+            });
+
+            // 步驟 2-3: push 到 large
+            large.push(sTop);
+            history.push({
+              line: 14, phase: `【addNum(${num})】步驟 2-3: 將 ${sTop} 推入 large`,
+              desc: `將剛彈出的 ${sTop} 推入 large 堆。現在 small: [${small.join(', ')}], large: [${large.join(', ')}]`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              small: [...small], large: [...large], median: "Computing...", movingVal: sTop
+            });
+          }
+
+          // 步驟 3-1: 評估數量平衡
+          let lenS = small.length;
+          let lenL = large.length;
+          history.push({
+            line: 17, phase: `【addNum(${num})】步驟 3-1: 檢查數量平衡`,
+            desc: `當前數量 -> small: ${lenS}, large: ${lenL}。`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            small: [...small], large: [...large], median: "Computing..."
+          });
+
+          if (lenS > lenL + 1) {
+            let val = getSmallTop();
+            // 步驟 3-2: pop small
+            small.splice(small.indexOf(val), 1);
+            history.push({
+              line: 18, phase: `【addNum(${num})】步驟 3-2: small 過多，彈出 ${val}`,
+              desc: `small 比 large 多了 2 個以上，從 small 彈出頂端元素 ${val}`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              small: [...small], large: [...large], median: "Computing...", movingVal: val
+            });
+
+            // 步驟 3-3: push large
+            large.push(val);
+            history.push({
+              line: 19, phase: `【addNum(${num})】步驟 3-3: 將 ${val} 移入 large`,
+              desc: `將 ${val} 放入 large 堆完成數量 Rebalance`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              small: [...small], large: [...large], median: "Computing...", movingVal: val
+            });
+          } else if (lenL > lenS) {
+            let val = getLargeTop();
+            // 步驟 3-2: pop large
+            large.splice(large.indexOf(val), 1);
+            history.push({
+              line: 21, phase: `【addNum(${num})】步驟 3-2: large 過多，彈出 ${val}`,
+              desc: `large 數量大於 small，從 large 彈出頂端元素 ${val}`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              small: [...small], large: [...large], median: "Computing...", movingVal: val
+            });
+
+            // 步驟 3-3: push small
+            small.push(val);
+            history.push({
+              line: 22, phase: `【addNum(${num})】步驟 3-3: 將 ${val} 移入 small`,
+              desc: `將 ${val} 放入 small 堆完成數量 Rebalance`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              small: [...small], large: [...large], median: "Computing...", movingVal: val
+            });
+          }
+
+          popFrame();
+
+        } else if (act.type === "find") {
+          pushFrame("findMedian", "");
+          let lenS = small.length;
+          let lenL = large.length;
+
+          history.push({
+            line: 24, phase: "【findMedian()】步驟 1: 判斷總元素奇偶性",
+            desc: `比較長度: len(small)=${lenS}, len(large)=${lenL}`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            small: [...small], large: [...large], median: "Computing..."
+          });
+
+          if (lenS > lenL) {
+            let med = getSmallTop();
+            history.push({
+              line: 26, phase: `🎯 【findMedian()】回傳 small.top = ${med}`,
+              desc: `奇數個元素 (small 多 1 個) ➔ 直接取 small 的頂端元素 ${med}`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              small: [...small], large: [...large], median: med.toFixed(1), comparingVal: med
+            });
+          } else {
+            let sTop = getSmallTop();
+            let lTop = getLargeTop();
+            let med = (sTop + lTop) / 2.0;
+            history.push({
+              line: 27, phase: `🎯 【findMedian()】兩堆頂平均 = (${sTop} + ${lTop}) / 2 = ${med}`,
+              desc: `偶數個元素 ➔ 取 small.top (${sTop}) 與 large.top (${lTop}) 相加除以 2`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              small: [...small], large: [...large], median: med.toFixed(1)
+            });
+          }
+
+          popFrame();
+        }
+      });
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = renderStackHTML(stackData);
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      renderHeapList('small-heap-list', state.small || [], true, state);
+      renderHeapList('large-heap-list', state.large || [], false, state);
+
+      document.getElementById('median-val-display').innerText = state.median || "N/A";
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>48. Rotate Image - Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 110px; max-height: 180px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .array-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 320px; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 16px; }
+    
+    .matrix-grid { display: grid; gap: 8px; background: #151821; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
+    .matrix-cell { width: 54px; height: 54px; background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: monospace; font-weight: bold; font-size: 1.1rem; color: #fff; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    
+    /* Cell Highlighting States */
+    .cell-active { background: rgba(255, 161, 22, 0.4); border-color: var(--orange); color: #fff; transform: scale(1.05); }
+    .cell-swap-a { background: rgba(0, 122, 255, 0.4); border-color: var(--blue); transform: scale(1.08); box-shadow: 0 0 10px rgba(0,122,255,0.6); }
+    .cell-swap-b { background: rgba(80, 250, 123, 0.4); border-color: var(--green); transform: scale(1.08); box-shadow: 0 0 10px rgba(80,250,123,0.6); }
+    .cell-swap-c { background: rgba(139, 92, 246, 0.4); border-color: var(--purple); transform: scale(1.08); }
+    .cell-swap-d { background: rgba(255, 85, 85, 0.4); border-color: var(--red); transform: scale(1.08); }
+    .cell-done { background: rgba(80, 250, 123, 0.15); border-color: rgba(80, 250, 123, 0.4); }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+  <!-- KaTeX for math formula rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">48. Rotate Image</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Transpose + Reverse (對角線轉置 + 水平翻轉)</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. 4-Way Cyclical Swap (四角外圈外環旋轉)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">3x3 Grid Matrix</button>
+      <button class="tab-btn" onclick="setPreset(1)">4x4 Grid Matrix</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與限制</div>
+        <div class="problem-desc">
+          給定一個 <code>n x n</code> 的 2D 矩陣 <b>matrix</b> 代表一張圖像。請將圖像<b>順時針旋轉 90 度</b>。<br>
+          <b>限制條件：</b>必須直接在原矩陣修改 (In-place)，不能開闢另一個 2D 矩陣。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(N²)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Micro-steps Enabled</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 矩陣旋轉視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="array-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Phase: </span>
+              <span id="pos-curr-display" style="font-weight: bold; color: var(--orange);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Indices: </span>
+              <span id="indices-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Status: </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.15rem; color: var(--green);">-</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Status / Output:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. Transpose + Reverse
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">rotate</span>(<span class="self">self</span>, matrix: List[List[int]]) -> None:`,
+       `        n = len(matrix)`,
+       `        <span class="cm"># 1. 轉置矩陣 (Transpose): 交換 (i, j) 與 (j, i)</span>`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(n):`,
+       `            <span class="kw">for</span> j <span class="kw">in</span> range(i + 1, n):`,
+       `                matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]`,
+       `        <span class="cm"># 2. 水平翻轉 (Reverse Rows): 左右鏡射反轉每一列</span>`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(n):`,
+       `            matrix[i].reverse()`],
+
+      // 2. 4-Way Cyclical Swap
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">rotate</span>(<span class="self">self</span>, matrix: List[List[int]]) -> None:`,
+       `        n = len(matrix)`,
+       `        <span class="kw">for</span> i <span class="kw">in</span> range(n // 2):`,
+       `            <span class="kw">for</span> j <span class="kw">in</span> range(i, n - i - 1):`,
+       `                temp = matrix[i][j]`,
+       `                matrix[i][j] = matrix[n - 1 - j][i]`,
+       `                matrix[n - 1 - j][i] = matrix[n - 1 - i][n - 1 - j]`,
+       `                matrix[n - 1 - i][n - 1 - j] = matrix[j][n - 1 - i]`,
+       `                matrix[j][n - 1 - i] = temp`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Transpose + Reverse (對角線轉置 + 水平翻轉)",
+        time: "O(N²)", space: "O(1)",
+        idea: `<b>解法思路：</b>幾何數學定理：將矩陣<b>順時針旋轉 90 度</b>等價於兩個基本步驟：<br>
+1. <b>主對角線轉置 (Transpose)：</b> 對於所有 $i < j$，交換 $\\text{matrix}[i][j]$ 與 $\\text{matrix}[j][i]$。<br>
+2. <b>左右水平翻轉 (Reverse Rows)：</b> 翻轉矩陣的每一列（即左右鏡射反轉）。<br>
+$$\\text{Rotate 90}^\\circ = \\text{Reverse}(\\text{Transpose}(M))$$`
+      },
+      {
+        title: "2. 4-Way Cyclical Swap (四角外圈外環順時針交換)",
+        time: "O(N²)", space: "O(1)",
+        idea: `<b>解法思路：</b>直接以四個對應點為一組進行四角位置交替覆蓋（順時針）：<br>
+$$\\text{Top-Left} \\leftarrow \\text{Bottom-Left} \\leftarrow \\text{Bottom-Right} \\leftarrow \\text{Top-Right} \\leftarrow \\text{Top-Left}$$<br>
+由外圈向內圈分層遞進，每層只需處理前半部的元素 $j \\in [i, n - 1 - i)$。`
+      }
+    ];
+
+    const presets = [
+      { title: "3x3 Grid Matrix", matrix: [[1,2,3],[4,5,6],[7,8,9]], expected: "[[7,4,1],[8,5,2],[9,6,3]]" },
+      { title: "4x4 Grid Matrix", matrix: [[5,1,9,11],[2,4,8,10],[13,3,6,7],[15,14,12,16]], expected: "[[15,13,2,5],[14,3,4,1],[12,6,8,9],[16,7,10,11]]" }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      const ideaCard = document.getElementById('idea-card');
+      ideaCard.innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+      if (window.renderMathInElement) {
+        renderMathInElement(ideaCard);
+      }
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input Matrix:</b> ${JSON.stringify(p.matrix)}</div>
+        <div><b>Expected Rotated:</b> <span style="color:var(--green)">${p.expected}</span></div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- Granular History Builders ---------------- */
+    function buildSteps() {
+      history = [];
+      const { matrix } = JSON.parse(JSON.stringify(presets[currentPreset]));
+
+      if (currentAlgo === 0) {
+        buildTransposeSteps(matrix);
+      } else {
+        buildCyclicalSteps(matrix);
+      }
+    }
+
+    // 1. Transpose + Reverse Steps
+    function buildTransposeSteps(matrix) {
+      let grid = JSON.parse(JSON.stringify(matrix));
+      let n = grid.length;
+
+      history.push({
+        line: 2, phase: "⚡ 【Step 1: 準備原始矩陣】",
+        desc: `原始 <code>${n}x${n}</code> 矩陣載入。`,
+        grid: JSON.parse(JSON.stringify(grid)), phaseName: "INIT", result: "Running..."
+      });
+
+      // Transpose
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          history.push({
+            line: 6, phase: `🔀 【轉置對角線：比對與準備交換】`,
+            desc: `準備交換 <code>matrix[${i}][${j}]</code> (值: ${grid[i][j]}) 與 <code>matrix[${j}][i]</code> (值: ${grid[j][i]})`,
+            grid: JSON.parse(JSON.stringify(grid)), activeCells: [[i, j], [j, i]], phaseName: "TRANSPOSE", result: "Running..."
+          });
+
+          let temp = grid[i][j];
+          grid[i][j] = grid[j][i];
+          grid[j][i] = temp;
+
+          history.push({
+            line: 6, phase: `✅ 【轉置完成】`,
+            desc: `已完成交換 <code>[${i}][${j}]</code> ↔ <code>[${j}][${i}]</code>`,
+            grid: JSON.parse(JSON.stringify(grid)), activeCells: [[i, j], [j, i]], phaseName: "TRANSPOSE", result: "Running..."
+          });
+        }
+      }
+
+      history.push({
+        line: 7, phase: "↔️ 【Step 2: 對角線轉置完成，進入列翻轉】",
+        desc: `矩陣現已完成轉置，下一步進行每一列的左右水平翻轉 (Reverse)。`,
+        grid: JSON.parse(JSON.stringify(grid)), phaseName: "TRANSPOSE_DONE", result: "Running..."
+      });
+
+      // Reverse rows
+      for (let i = 0; i < n; i++) {
+        grid[i].reverse();
+        history.push({
+          line: 9, phase: `🔄 【水平翻轉 Row ${i}】`,
+          desc: `翻轉第 ${i} 列: <code>${JSON.stringify(grid[i])}</code>`,
+          grid: JSON.parse(JSON.stringify(grid)), activeRow: i, phaseName: "REVERSE", result: "Running..."
+        });
+      }
+
+      history.push({
+        line: 9, phase: "🎉 【Complete: 順時針旋轉 90 度完成】",
+        desc: `矩陣旋轉 90 度成功完成！`,
+        grid: JSON.parse(JSON.stringify(grid)), phaseName: "DONE", result: "Done"
+      });
+    }
+
+    // 2. 4-Way Cyclical Swap Steps
+    function buildCyclicalSteps(matrix) {
+      let grid = JSON.parse(JSON.stringify(matrix));
+      let n = grid.length;
+
+      history.push({
+        line: 2, phase: "⚡ 【Step 1: 準備原始矩陣】",
+        desc: `原始 <code>${n}x${n}</code> 矩陣載入。`,
+        grid: JSON.parse(JSON.stringify(grid)), phaseName: "INIT", result: "Running..."
+      });
+
+      for (let i = 0; i < Math.floor(n / 2); i++) {
+        for (let j = i; j < n - i - 1; j++) {
+          let p1 = [i, j];
+          let p2 = [j, n - 1 - i];
+          let p3 = [n - 1 - i, n - 1 - j];
+          let p4 = [n - 1 - j, i];
+
+          history.push({
+            line: 5, phase: `🔄 【四角亮起：選定旋轉四點對應】`,
+            desc: `Top-Left: <code>[${p1}]</code> (${grid[p1[0]][p1[1]]}), Top-Right: <code>[${p2}]</code> (${grid[p2[0]][p2[1]]}), Bottom-Right: <code>[${p3}]</code> (${grid[p3[0]][p3[1]]}), Bottom-Left: <code>[${p4}]</code> (${grid[p4[0]][p4[1]]})`,
+            grid: JSON.parse(JSON.stringify(grid)), fourCorners: [p1, p2, p3, p4], phaseName: "CYCLE_SELECT", result: "Running..."
+          });
+
+          // 4-way swap
+          let temp = grid[i][j];
+          grid[i][j] = grid[n - 1 - j][i];
+          grid[n - 1 - j][i] = grid[n - 1 - i][n - 1 - j];
+          grid[n - 1 - i][n - 1 - j] = grid[j][n - 1 - i];
+          grid[j][n - 1 - i] = temp;
+
+          history.push({
+            line: 9, phase: `✅ 【四角順時針置換完成】`,
+            desc: `完成這 4 個點的位置順時針搬移與交換！`,
+            grid: JSON.parse(JSON.stringify(grid)), fourCorners: [p1, p2, p3, p4], phaseName: "CYCLE_SWAPPED", result: "Running..."
+          });
+        }
+      }
+
+      history.push({
+        line: 10, phase: "🎉 【Complete: 順時針旋轉 90 度完成】",
+        desc: `外圈到內圈全部置換完成！`,
+        grid: JSON.parse(JSON.stringify(grid)), phaseName: "DONE", result: "Done"
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const grid = state.grid || presets[currentPreset].matrix;
+      const n = grid.length;
+
+      let html = `<div class="matrix-grid" style="grid-template-columns: repeat(${n}, 54px);">`;
+
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          let cellCls = "";
+          
+          if (state.phaseName === "TRANSPOSE" && state.activeCells) {
+            if (state.activeCells.some(p => p[0] === r && p[1] === c)) cellCls = "cell-swap-a";
+          } else if (state.phaseName === "REVERSE" && state.activeRow === r) {
+            cellCls = "cell-active";
+          } else if (state.fourCorners) {
+            let fc = state.fourCorners;
+            if (fc[0][0] === r && fc[0][1] === c) cellCls = "cell-swap-a";
+            else if (fc[1][0] === r && fc[1][1] === c) cellCls = "cell-swap-b";
+            else if (fc[2][0] === r && fc[2][1] === c) cellCls = "cell-swap-c";
+            else if (fc[3][0] === r && fc[3][1] === c) cellCls = "cell-swap-d";
+          } else if (state.phaseName === "DONE") {
+            cellCls = "cell-done";
+          }
+
+          html += `<div class="matrix-cell ${cellCls}">${grid[r][c]}</div>`;
+        }
+      }
+
+      html += `</div>`;
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack / Trace Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟 (Step):</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          <div><b>• 當前階段 (Phase):</b> <span style="color:var(--cyan); font-weight:bold;">${state.phaseName || 'INIT'}</span></div>
+        </div>
+      `;
+
+      // Dynamic Variables
+      document.getElementById('pos-curr-display').innerText = state.phaseName || "-";
+      
+      let idxStr = "-";
+      if (state.activeCells) idxStr = JSON.stringify(state.activeCells);
+      else if (state.fourCorners) idxStr = JSON.stringify(state.fourCorners);
+      else if (state.activeRow !== undefined) idxStr = `Row ${state.activeRow}`;
+      
+      document.getElementById('indices-display').innerText = idxStr;
+      document.getElementById('status-display').innerText = state.result === "Done" ? "Completed" : "In Progress";
+
+      // Dynamic Panel
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      dynPanel.innerHTML = `
+        <div>
+          <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Current Matrix Snapshot:</span>
+          <span style="color:#ddd; font-family:monospace; font-size:0.8rem; margin-left:6px;">${JSON.stringify(state.grid || [])}</span>
+        </div>
+      `;
+
+      // Result Text
+      const resEl = document.getElementById('result-text');
+      if (state.result === "Done") {
+        resEl.innerHTML = `Matrix Rotation Complete!`;
+      } else {
+        resEl.innerHTML = "Transforming matrix in-place...";
+      }
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

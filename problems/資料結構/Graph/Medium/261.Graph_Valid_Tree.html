@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>261. Graph Valid Tree - Dual-Method Interactive Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --green: #50fa7b;
+      --cyan: #8be9fd;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 680px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.85rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; min-height: 120px; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 6px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 5px 10px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .tree-wrapper { background: #080808; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; height: 350px; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    
+    .graph-container { position: relative; width: 100%; height: 100%; min-width: 400px; min-height: 300px; }
+    .node { position: absolute; width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--border); background: #1e1e1e; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; font-weight: bold; font-size: 0.95rem; color: var(--text); z-index: 2; transition: all 0.3s ease; }
+    .node .parent-badge { font-size: 0.6rem; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 0 4px; font-weight: normal; margin-top: -2px; }
+    
+    /* Node Styles */
+    .node.unvisited { border-color: #555; background: #222; color: #888; }
+    .node.visiting { border-color: var(--orange); background: rgba(255, 161, 22, 0.2); color: var(--orange); transform: scale(1.15); box-shadow: 0 0 12px var(--orange); }
+    .node.visited { border-color: var(--green); background: rgba(80, 250, 123, 0.15); color: var(--green); }
+    .node.cycle { border-color: var(--hard); background: rgba(255, 45, 85, 0.3); color: var(--hard); transform: scale(1.2); box-shadow: 0 0 15px var(--hard); }
+    .node.uf-root { border-color: var(--cyan); background: rgba(139, 233, 253, 0.2); color: var(--cyan); transform: scale(1.1); box-shadow: 0 0 10px var(--cyan); }
+
+    svg.edges-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+    .edge-line { stroke: #444; stroke-width: 2; transition: all 0.3s ease; }
+    .edge-line.active { stroke: var(--orange); stroke-width: 3.5; }
+    .edge-line.cycle { stroke: var(--hard); stroke-width: 4; }
+    .edge-line.union { stroke: var(--green); stroke-width: 3; }
+    .edge-line.visited-edge { stroke: #666; stroke-width: 2; opacity: 0.6; }
+
+    .parent-table, .adj-table { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .table-item { background: #1e1e1e; border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.75rem; transition: all 0.2s ease; }
+    .table-item.active-target { border-color: var(--orange); color: var(--orange); font-weight: bold; transform: scale(1.08); }
+    .table-item.root-item { border-color: var(--cyan); color: var(--cyan); font-weight: bold; background: rgba(139, 233, 253, 0.1); }
+    .table-item.active-src { border-color: var(--purple); color: var(--cyan); font-weight: bold; background: rgba(139, 92, 246, 0.2); }
+
+    .var-badge { font-family: monospace; padding: 2px 6px; border-radius: 4px; background: #222; border: 1px solid var(--border); font-size: 0.78rem; }
+    .var-badge.highlight { border-color: var(--orange); color: var(--orange); font-weight: bold; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 68px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">261. Graph Valid Tree</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Algorithm:</span>
+      <button class="algo-btn active" onclick="setAlgo('dfs')">1. DFS / BFS (Cycle & Connect)</button>
+      <button class="algo-btn" onclick="setAlgo('unionfind')">2. Union-Find (Disjoint Set)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: Valid Tree</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: Has Cycle</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: Disconnected Graph</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定 <code>n</code> 個節點（<code>0</code> 到 <code>n - 1</code>）與邊列表 <code>edges</code>。<br>
+          判斷這些邊是否能組成一棵<b>有效的樹 (Valid Tree)</b>。<br>
+          <b>樹的兩大條件：</b> 1. 恰好連通 (無孤立節點) &nbsp; 2. 無環 (No Cycles)。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(V + E)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(V + E)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="stack-title">📚 Call Stack (DFS 遞迴歷程)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card">
+        <!-- 動態替換 Idea Box 內容 -->
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 無向圖與狀態視覺化 (Undirected Graph)</span>
+          <span id="legend-text" style="font-size:0.7rem; color:var(--text-dim);">狀態圖例</span>
+        </div>
+
+        <div class="tree-wrapper">
+          <div class="graph-container" id="graph-container">
+            <svg class="edges-layer" id="edges-svg"></svg>
+          </div>
+        </div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="pos-label">Current Node: </span>
+              <span id="pos-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="extra-label">Visited Set: </span>
+              <span id="extra-display" style="font-weight: bold; color: var(--orange);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="aux-label">components: </span>
+              <span id="aux-display" class="var-badge">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Is Valid Tree? </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.1rem; color: var(--text-dim);">Checking...</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- 動態渲染 Adjacency List 或 Parent Array / Rank -->
+          </div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current State / Result:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">步驟說明 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const dfsCodeLines = [
+      `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">validTree</span>(<span class="self">self</span>, n: int, edges: List[List[int]]) -> bool:`,
+      `        <span class="kw">if</span> len(edges) != n - <span class="cls">1</span>: <span class="kw">return False</span>  <span class="cm"># 邊數必須正好為 n - 1</span>`,
+      `        adj = [[] <span class="kw">for</span> _ <span class="kw">in</span> range(n)]`,
+      `        <span class="kw">for</span> u, v <span class="kw">in</span> edges:`,
+      `            adj[u].append(v); adj[v].append(u)`,
+      `        visit = set()`,
+      `        <span class="kw">def</span> <span class="fn">dfs</span>(node, parent):`,
+      `            <span class="kw">if</span> node <span class="kw">in</span> visit: <span class="kw">return False</span>  <span class="cm"># 發現環 (Cycle)</span>`,
+      `            visit.add(node)`,
+      `            <span class="kw">for</span> nei <span class="kw">in</span> adj[node]:`,
+      `                <span class="kw">if</span> nei == parent: <span class="kw">continue</span>`,
+      `                <span class="kw">if not</span> dfs(nei, node): <span class="kw">return False</span>`,
+      `            <span class="kw">return True</span>`,
+      `        <span class="kw">return</span> dfs(<span class="cls">0</span>, -<span class="cls">1</span>) <span class="kw">and</span> len(visit) == n`
+    ];
+
+    const ufCodeLines = [
+      `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">validTree</span>(<span class="self">self</span>, n: int, edges: List[List[int]]) -> bool:`,
+      `        <span class="kw">if</span> len(edges) != n - <span class="cls">1</span>: <span class="kw">return False</span>  <span class="cm"># 樹的邊數恆為 n - 1</span>`,
+      `        parent = [i <span class="kw">for</span> i <span class="kw">in</span> range(n)]`,
+      `        rank = [<span class="cls">1</span>] * n`,
+      `        <span class="kw">def</span> <span class="fn">find</span>(n):`,
+      `            p = parent[n]`,
+      `            <span class="kw">while</span> p != parent[p]:`,
+      `                parent[p] = parent[parent[p]] <span class="cm"># 路徑壓縮</span>`,
+      `                p = parent[p]`,
+      `            <span class="kw">return</span> p`,
+      `        <span class="kw">def</span> <span class="fn">union</span>(n1, n2):`,
+      `            p1, p2 = find(n1), find(n2)`,
+      `            <span class="kw">if</span> p1 == p2: <span class="kw">return False</span>          <span class="cm"># 同祖先，合併失敗，代表有環</span>`,
+      `            <span class="kw">if</span> rank[p1] > rank[p2]: parent[p2] = p1; rank[p1] += rank[p2]`,
+      `            <span class="kw">else</span>: parent[p1] = p2; rank[p2] += rank[p1]`,
+      `            <span class="kw">return True</span>`,
+      `        <span class="kw">for</span> n1, n2 <span class="kw">in</span> edges:`,
+      `            <span class="kw">if not</span> union(n1, n2): <span class="kw">return False</span>`,
+      `        <span class="kw">return True</span>`
+    ];
+
+    const presets = [
+      {
+        title: "Example 1 (Valid Tree)",
+        n: 5,
+        edges: [[0, 1], [0, 2], [0, 3], [1, 4]],
+        expected: true,
+        explanation: "無環且連通所有 5 個節點，此圖是一棵合法的樹。",
+        positions: [
+          { x: 200, y: 70 },
+          { x: 100, y: 160 },
+          { x: 200, y: 160 },
+          { x: 300, y: 160 },
+          { x: 100, y: 250 }
+        ]
+      },
+      {
+        title: "Example 2 (Has Cycle)",
+        n: 5,
+        edges: [[0, 1], [1, 2], [2, 3], [1, 3], [1, 4]],
+        expected: false,
+        explanation: "節點 1-2-3 之間存在環，無法組成樹。",
+        positions: [
+          { x: 100, y: 70 },
+          { x: 200, y: 70 },
+          { x: 300, y: 70 },
+          { x: 200, y: 200 },
+          { x: 300, y: 200 }
+        ]
+      },
+      {
+        title: "Example 3 (Disconnected)",
+        n: 4,
+        edges: [[0, 1], [2, 3]],
+        expected: false,
+        explanation: "邊數僅 2 條 (應為 3 條)，圖分成兩個非連通部分，無法組成樹。",
+        positions: [
+          { x: 100, y: 150 },
+          { x: 200, y: 150 },
+          { x: 300, y: 150 },
+          { x: 400, y: 150 }
+        ]
+      }
+    ];
+
+    let currentAlgo = 'dfs'; // 'dfs' or 'unionfind'
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(algo) {
+      currentAlgo = algo;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', (i === 0 && algo === 'dfs') || (i === 1 && algo === 'unionfind')));
+      
+      document.getElementById('time-comp').innerText = algo === 'dfs' ? "O(V + E)" : "O(E · α(V))";
+      document.getElementById('space-comp').innerText = algo === 'dfs' ? "O(V + E)" : "O(V)";
+
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const container = document.getElementById('idea-card');
+      if (currentAlgo === 'dfs') {
+        container.innerHTML = `
+          <div class="idea-box">
+            <div class="idea-title">💡 解法 1：DFS 深度優先搜尋 (檢測無向圖環與連通性)</div>
+            <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+              <li><b>快速過濾</b>：若 <code>len(edges) != n - 1</code>，必定無法組成樹（若非不連通即為有環）。</li>
+              <li><b>避免走回頭路</b>：記錄 <code>parent</code> 節點，防止無向邊的雙向走訪被誤判為環。</li>
+              <li><b>無環檢測</b>：若遇到已在 <code>visit set</code> 中的鄰居（且非 parent），代表<b>發現環</b>！</li>
+              <li><b>連通檢測</b>：DFS 結束後確認 <code>len(visit) == n</code>，確保全圖連通。</li>
+            </ol>
+          </div>
+        `;
+        document.getElementById('legend-text').innerText = "⚪ 未訪問 | 🟡 DFS 訪問中 | 🟢 已訪問 (Safe) | 🔴 發現環";
+        document.getElementById('stack-title').innerText = "📚 Call Stack (DFS 遞迴歷程)";
+        document.getElementById('pos-label').innerText = "Current Node: ";
+        document.getElementById('extra-label').innerText = "Visited Set: ";
+        document.getElementById('aux-label').innerText = "parent: ";
+      } else {
+        container.innerHTML = `
+          <div class="idea-box" style="border-left-color: var(--blue);">
+            <div class="idea-title" style="color: var(--blue);">💡 解法 2：並查集 (Union-Find / Disjoint Set)</div>
+            <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+              <li><b>邊數檢查</b>：合法樹必定恰好有 <code>n - 1</code> 條邊。</li>
+              <li><b>Find 與路徑壓縮</b>：尋找節點所屬集合的根節點 <code>p = find(n)</code>。</li>
+              <li><b>Union 按秩合併</b>：遍歷每條邊 <code>(u, v)</code>，若 <code>find(u) == find(v)</code> 代表兩點原本就連通，加入此邊會<b>形成環</b>！</li>
+              <li><b>連通分量</b>：若成功合併 <code>n - 1</code> 條邊且無環，即是一棵合法的樹。</li>
+            </ol>
+          </div>
+        `;
+        document.getElementById('legend-text').innerText = "⚪ 獨立點 | 🩵 集合 Root | 🟢 已合併 | 🔴 環形成邊";
+        document.getElementById('stack-title').innerText = "📥 Union-Find 操作日誌";
+        document.getElementById('pos-label').innerText = "Edge (n1, n2): ";
+        document.getElementById('extra-label').innerText = "Parent Table: ";
+        document.getElementById('aux-label').innerText = "components: ";
+      }
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Nodes (n):</b> ${p.n} | <b>Edges:</b> ${JSON.stringify(p.edges)} | <b>Expected:</b> ${p.expected}</div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = currentAlgo === 'dfs' ? dfsCodeLines : ufCodeLines;
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function deepCopyAdj(adj) {
+      return adj.map(arr => [...arr]);
+    }
+
+    function buildSteps() {
+      history = [];
+      const p = presets[currentPreset];
+      const n = p.n;
+
+      if (currentAlgo === 'dfs') {
+        buildDfsSteps(p, n);
+      } else {
+        buildUfSteps(p, n);
+      }
+    }
+
+    /* ---------------- DFS History Builder ---------------- */
+    function buildDfsSteps(p, n) {
+      history.push({
+        line: 2, phase: "【檢查邊數】",
+        desc: `檢查邊數量 len(edges) = ${p.edges.length} 是否等於 n - 1 (${n - 1})`,
+        stack: [], pos: null, visit: [], parent: null, result: "Checking..."
+      });
+
+      if (p.edges.length !== n - 1) {
+        history.push({
+          line: 2, phase: "❌ 【快速判定失敗】邊數量不符合",
+          desc: `邊數 ${p.edges.length} != ${n - 1}。無法組成合法樹，傳回 False`,
+          stack: [], pos: null, visit: [], parent: null, result: "False"
+        });
+        return;
+      }
+
+      const adj = Array.from({ length: n }, () => []);
+      p.edges.forEach(([u, v]) => {
+        adj[u].push(v);
+        adj[v].push(u);
+      });
+
+      history.push({
+        line: 5, phase: "【初始化鄰接表】",
+        desc: `建立無向圖鄰接表: adj = ${JSON.stringify(adj)}`,
+        adj: deepCopyAdj(adj), stack: [], pos: null, visit: [], parent: null, result: "Checking..."
+      });
+
+      const visit = new Set();
+      let currentStack = [];
+
+      function pushFrame(node, parent) { currentStack.push({ fnName: "dfs", args: `node=${node}, parent=${parent}` }); }
+      function popFrame() { currentStack.pop(); }
+
+      function dfs(node, parent) {
+        pushFrame(node, parent);
+
+        history.push({
+          line: 8, phase: "⏬ 【Call DFS】進入節點",
+          desc: `呼叫 dfs(node=${node}, parent=${parent})`,
+          adj: deepCopyAdj(adj), stack: JSON.parse(JSON.stringify(currentStack)), pos: node, visit: Array.from(visit), parentNode: parent, result: "Checking..."
+        });
+
+        if (visit.has(node)) {
+          history.push({
+            line: 8, phase: "🔴 【Cycle Detected】發現環！",
+            desc: `節點 ${node} 已在 visit 中，且非直屬 parent，代表圖中存在環！`,
+            adj: deepCopyAdj(adj), stack: JSON.parse(JSON.stringify(currentStack)), pos: node, visit: Array.from(visit), parentNode: parent, isCycle: true, result: "False"
+          });
+          popFrame();
+          return false;
+        }
+
+        visit.add(node);
+        history.push({
+          line: 9, phase: "🟢 【Add Visit】標記已訪問",
+          desc: `將節點 ${node} 加入 visit set (目前已訪問: [${Array.from(visit).join(', ')}])`,
+          adj: deepCopyAdj(adj), stack: JSON.parse(JSON.stringify(currentStack)), pos: node, visit: Array.from(visit), parentNode: parent, result: "Checking..."
+        });
+
+        for (let nei of adj[node]) {
+          if (nei === parent) {
+            history.push({
+              line: 11, phase: `⏭️ 【Skip Parent】跳過來路`,
+              desc: `鄰居 ${nei} 為直屬 parent，跳過不重複走訪`,
+              adj: deepCopyAdj(adj), stack: JSON.parse(JSON.stringify(currentStack)), pos: node, visit: Array.from(visit), parentNode: parent, result: "Checking..."
+            });
+            continue;
+          }
+
+          history.push({
+            line: 12, phase: `🧭 【Traverse Neighbor】探測鄰居 ${node} ➔ ${nei}`,
+            desc: `準備呼叫 dfs(node=${nei}, parent=${node})`,
+            adj: deepCopyAdj(adj), stack: JSON.parse(JSON.stringify(currentStack)), pos: node, activeEdge: { from: node, to: nei }, visit: Array.from(visit), parentNode: parent, result: "Checking..."
+          });
+
+          if (!dfs(nei, node)) {
+            popFrame();
+            return false;
+          }
+        }
+
+        history.push({
+          line: 13, phase: "↩️ 【Return True】節點探測完畢",
+          desc: `dfs(${node}) 子樹無環，傳回 True`,
+          adj: deepCopyAdj(adj), stack: JSON.parse(JSON.stringify(currentStack)), pos: node, visit: Array.from(visit), parentNode: parent, result: "Checking..."
+        });
+
+        popFrame();
+        return true;
+      }
+
+      const dfsSuccess = dfs(0, -1);
+      if (!dfsSuccess) {
+        history.push({
+          line: 14, phase: "❌ 【Result】判定為非法樹",
+          desc: `由於存在環，傳回 False`,
+          adj: deepCopyAdj(adj), stack: [], pos: null, visit: Array.from(visit), result: "False"
+        });
+        return;
+      }
+
+      const isConnected = visit.size === n;
+      history.push({
+        line: 14, phase: isConnected ? "🎉 【Result】成功！為合法樹" : "❌ 【Result】判定失敗：不連通",
+        desc: `檢查訪問節點數 (${visit.size}) == n (${n})。結果: ${isConnected ? 'True (合法樹)' : 'False (存在孤立點)'}`,
+        adj: deepCopyAdj(adj), stack: [], pos: null, visit: Array.from(visit), result: isConnected ? "True" : "False"
+      });
+    }
+
+    /* ---------------- Union-Find History Builder ---------------- */
+    function buildUfSteps(p, n) {
+      history.push({
+        line: 2, phase: "【檢查邊數】",
+        desc: `檢查邊數量 len(edges) = ${p.edges.length} 是否等於 n - 1 (${n - 1})`,
+        parent: [], rank: [], logs: [], result: "Checking..."
+      });
+
+      if (p.edges.length !== n - 1) {
+        history.push({
+          line: 2, phase: "❌ 【快速判定失敗】邊數量不符合",
+          desc: `邊數 ${p.edges.length} != ${n - 1}。無法組成合法樹，傳回 False`,
+          parent: [], rank: [], logs: ["Edge count mismatch"], result: "False"
+        });
+        return;
+      }
+
+      const parent = Array.from({ length: n }, (_, i) => i);
+      const rank = new Array(n).fill(1);
+      let compCount = n;
+      const logs = [];
+
+      history.push({
+        line: 3, phase: "【初始化 Parent Array】",
+        desc: `建立初始集合: parent = [${parent.join(', ')}]，此時共有 ${compCount} 個連通分量`,
+        parent: [...parent], rank: [...rank], compCount: compCount, logs: ["Initialized Disjoint Set"], result: "Checking..."
+      });
+
+      function find(node) {
+        let path = [];
+        let curr = node;
+        while (curr !== parent[curr]) {
+          path.push(curr);
+          curr = parent[curr];
+        }
+        return { root: curr, path };
+      }
+
+      for (let [n1, n2] of p.edges) {
+        history.push({
+          line: 17, phase: `🔨 【Union Edge】處理無向邊 (${n1}, ${n2})`,
+          desc: `準備進行 union(n1=${n1}, n2=${n2})`,
+          parent: [...parent], rank: [...rank], edge: [n1, n2], activeEdge: { from: n1, to: n2 }, compCount: compCount, logs: [...logs], result: "Checking..."
+        });
+
+        const res1 = find(n1);
+        const res2 = find(n2);
+
+        history.push({
+          line: 12, phase: `🔍 【Find Roots】尋找兩端 Root`,
+          desc: `find(${n1}) ➔ root: ${res1.root} | find(${n2}) ➔ root: ${res2.root}`,
+          parent: [...parent], rank: [...rank], edge: [n1, n2], activeTarget: res1.root, activeTarget2: res2.root, compCount: compCount, logs: [...logs], result: "Checking..."
+        });
+
+        if (res1.root === res2.root) {
+          logs.unshift(`❌ Union(${n1}, ${n2}) Failed: Cycle!`);
+          history.push({
+            line: 13, phase: `🔴 【Cycle Detected】同組成環！`,
+            desc: `節點 ${n1} 與 ${n2} 的祖先皆為 ${res1.root}！加入此邊會形成環！union 傳回 False`,
+            parent: [...parent], rank: [...rank], edge: [n1, n2], activeEdge: { from: n1, to: n2 }, isCycle: true, compCount: compCount, logs: [...logs], result: "False"
+          });
+          return;
+        }
+
+        // Perform Union
+        let p1 = res1.root, p2 = res2.root;
+        if (rank[p1] > rank[p2]) {
+          parent[p2] = p1;
+          rank[p1] += rank[p2];
+        } else {
+          parent[p1] = p2;
+          rank[p2] += rank[p1];
+        }
+        compCount--;
+        logs.unshift(`✅ Union(${n1}, ${n2}) Success: Root is ${parent[p1]}`);
+
+        history.push({
+          line: 14, phase: `🔗 【Union Successful】成功合併`,
+          desc: `將集合 ${p1} 與 ${p2} 合併！更新 parent = [${parent.join(', ')}]，剩餘分量: ${compCount}`,
+          parent: [...parent], rank: [...rank], edge: [n1, n2], activeEdge: { from: n1, to: n2 }, isUnion: true, compCount: compCount, logs: [...logs], result: "Checking..."
+        });
+      }
+
+      history.push({
+        line: 19, phase: "🎉 【Result】完全無環且連通！",
+        desc: `所有邊成功合併完畢，傳回 True`,
+        parent: [...parent], rank: [...rank], compCount: compCount, logs: [...logs], result: "True"
+      });
+    }
+
+    /* ---------------- Graph Renderer ---------------- */
+    function renderGraph(state) {
+      const p = presets[currentPreset];
+      const container = document.getElementById('graph-container');
+
+      container.querySelectorAll('.node').forEach(n => n.remove());
+      const svg = document.getElementById('edges-svg');
+      svg.querySelectorAll('.edge-line').forEach(l => l.remove());
+
+      // Render Edges
+      p.edges.forEach(([u, v]) => {
+        const fromPos = p.positions[u];
+        const toPos = p.positions[v];
+        
+        let isActive = state.activeEdge && ((state.activeEdge.from === u && state.activeEdge.to === v) || (state.activeEdge.from === v && state.activeEdge.to === u));
+        let isVisited = state.visit && state.visit.includes(u) && state.visit.includes(v);
+
+        createSvgLine(svg, fromPos, toPos, isActive, state.isCycle, state.isUnion, isVisited);
+      });
+
+      // Render Nodes
+      for (let i = 0; i < p.n; i++) {
+        const node = document.createElement('div');
+        let cls = "node";
+
+        if (currentAlgo === 'dfs') {
+          if (state.isCycle && state.pos === i) cls += " cycle";
+          else if (state.pos === i) cls += " visiting";
+          else if (state.visit && state.visit.includes(i)) cls += " visited";
+          else cls += " unvisited";
+
+          node.innerHTML = `<span>${i}</span>`;
+        } else {
+          let parentVal = state.parent ? state.parent[i] : i;
+          let isRoot = (parentVal === i);
+
+          if (state.isCycle && state.edge && (state.edge[0] === i || state.edge[1] === i)) cls += " cycle";
+          else if (isRoot) cls += " uf-root";
+          else cls += " visited";
+
+          node.innerHTML = `
+            <span>${i}</span>
+            <span class="parent-badge">p:${parentVal}</span>
+          `;
+        }
+
+        node.className = cls;
+        node.style.left = `${p.positions[i].x - 24}px`;
+        node.style.top = `${p.positions[i].y - 24}px`;
+        container.appendChild(node);
+      }
+    }
+
+    function createSvgLine(svg, fromPos, toPos, isActive, isCycle, isUnion, isVisited) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', fromPos.x);
+      line.setAttribute('y1', fromPos.y);
+      line.setAttribute('x2', toPos.x);
+      line.setAttribute('y2', toPos.y);
+
+      let cls = "edge-line";
+      if (isActive) {
+        if (isCycle) cls += " cycle";
+        else if (isUnion) cls += " union";
+        else cls += " active";
+      } else if (isVisited) {
+        cls += " visited-edge";
+      }
+
+      line.setAttribute('class', cls);
+      svg.appendChild(line);
+    }
+
+    /* ---------------- UI State Handler ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      // Render Stack / Logs Panel
+      const stackBox = document.getElementById('stack-display');
+      if (currentAlgo === 'dfs') {
+        const stackData = state.stack || [];
+        stackBox.innerHTML = stackData.length === 0 
+          ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Stack Empty</div>`
+          : stackData.map(f => `
+              <div class="stack-frame">
+                <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.75rem;">(${f.args})</span></div>
+              </div>
+            `).join('');
+        document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+      } else {
+        const logData = state.logs || [];
+        stackBox.innerHTML = logData.length === 0 
+          ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Logs Empty</div>`
+          : logData.map(log => `<div style="font-size:0.75rem; color:#ccc;">${log}</div>`).join('');
+        document.getElementById('stackDepthHint').innerText = `Entries: ${logData.length}`;
+      }
+
+      // Dynamic Variables Panel (Right Panel)
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (currentAlgo === 'dfs') {
+        document.getElementById('pos-display').innerText = state.pos !== null && state.pos !== undefined ? `Node ${state.pos}` : "None";
+        document.getElementById('extra-display').innerText = state.visit ? `[${state.visit.join(', ')}]` : "[]";
+        
+        const auxEl = document.getElementById('aux-display');
+        auxEl.innerText = state.parentNode !== undefined && state.parentNode !== null ? state.parentNode : "-";
+
+        if (state.adj) {
+          dynPanel.innerHTML = `
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Adjacency List (adj):</span>
+              <div class="adj-table">
+                ${state.adj.map((neighbors, nodeIdx) => `
+                  <div class="table-item ${state.pos === nodeIdx ? 'active-src' : ''}">
+                    node ${nodeIdx} ➔ [${neighbors.join(', ')}]
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        document.getElementById('pos-display').innerText = state.edge ? `(${state.edge[0]}, ${state.edge[1]})` : "None";
+        document.getElementById('extra-display').innerText = state.parent ? `[${state.parent.join(', ')}]` : "[]";
+        
+        const auxEl = document.getElementById('aux-display');
+        auxEl.innerText = state.compCount !== undefined ? state.compCount : "-";
+
+        if (state.parent) {
+          dynPanel.innerHTML = `
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Parent Array (parent):</span>
+              <div class="parent-table">
+                ${state.parent.map((pVal, nodeIdx) => {
+                  let isRoot = pVal === nodeIdx;
+                  let isTarget = state.activeTarget === nodeIdx || state.activeTarget2 === nodeIdx;
+                  return `
+                    <div class="table-item ${isRoot ? 'root-item' : ''} ${isTarget ? 'active-target' : ''}">
+                      i=${nodeIdx} ➔ p:${pVal}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Rank Array (rank):</span>
+              <div class="parent-table">
+                ${state.rank ? state.rank.map((rVal, nodeIdx) => `
+                  <div class="table-item">
+                    i=${nodeIdx} ➔ r:${rVal}
+                  </div>
+                `).join('') : ''}
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // Results Panel
+      const statusEl = document.getElementById('status-display');
+      statusEl.innerText = state.result;
+      if (state.result === "True") statusEl.style.color = "var(--green)";
+      else if (state.result === "False") statusEl.style.color = "var(--hard)";
+      else statusEl.style.color = "var(--text-dim)";
+
+      const resEl = document.getElementById('result-text');
+      resEl.innerText = state.result !== "Checking..." ? `Is Valid Tree = ${state.result}` : "Checking Tree Validity...";
+      resEl.style.color = state.result === "True" ? "var(--green)" : (state.result === "False" ? "var(--hard)" : "var(--text-dim)");
+
+      renderGraph(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

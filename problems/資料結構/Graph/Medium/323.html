@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>323. Number of Connected Components in an Undirected Graph - Dual-Method Interactive Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --green: #50fa7b;
+      --cyan: #8be9fd;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 680px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.85rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; min-height: 120px; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 6px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 5px 10px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .tree-wrapper { background: #080808; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; height: 350px; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    
+    .graph-container { position: relative; width: 100%; height: 100%; min-width: 400px; min-height: 300px; }
+    .node { position: absolute; width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--border); background: #1e1e1e; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; font-weight: bold; font-size: 0.95rem; color: var(--text); z-index: 2; transition: all 0.3s ease; }
+    .node .parent-badge { font-size: 0.6rem; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 0 4px; font-weight: normal; margin-top: -2px; }
+    
+    /* Dynamic Component Color Classes */
+    .node.unvisited { border-color: #555; background: #222; color: #888; }
+    .node.visiting { border-color: var(--orange); background: rgba(255, 161, 22, 0.2); color: var(--orange); transform: scale(1.15); box-shadow: 0 0 12px var(--orange); }
+    .node.comp-0 { border-color: #50fa7b; background: rgba(80, 250, 123, 0.15); color: #50fa7b; }
+    .node.comp-1 { border-color: #8be9fd; background: rgba(139, 233, 253, 0.15); color: #8be9fd; }
+    .node.comp-2 { border-color: #ff79c6; background: rgba(255, 121, 198, 0.15); color: #ff79c6; }
+    .node.comp-3 { border-color: #bd93f9; background: rgba(189, 147, 249, 0.15); color: #bd93f9; }
+    .node.comp-4 { border-color: #ffb86c; background: rgba(255, 184, 108, 0.15); color: #ffb86c; }
+
+    svg.edges-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+    .edge-line { stroke: #444; stroke-width: 2; transition: all 0.3s ease; }
+    .edge-line.active { stroke: var(--orange); stroke-width: 3.5; }
+    .edge-line.union { stroke: var(--green); stroke-width: 3; }
+    .edge-line.visited-edge { stroke: #666; stroke-width: 2; opacity: 0.6; }
+
+    .parent-table, .adj-table { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .table-item { background: #1e1e1e; border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.75rem; transition: all 0.2s ease; }
+    .table-item.active-target { border-color: var(--orange); color: var(--orange); font-weight: bold; transform: scale(1.08); }
+    .table-item.root-item { border-color: var(--cyan); color: var(--cyan); font-weight: bold; background: rgba(139, 233, 253, 0.1); }
+    .table-item.active-src { border-color: var(--purple); color: var(--cyan); font-weight: bold; background: rgba(139, 92, 246, 0.2); }
+
+    .var-badge { font-family: monospace; padding: 2px 6px; border-radius: 4px; background: #222; border: 1px solid var(--border); font-size: 0.78rem; }
+    .var-badge.highlight { border-color: var(--orange); color: var(--orange); font-weight: bold; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 68px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">323. Number of Connected Components in an Undirected Graph</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Algorithm:</span>
+      <button class="algo-btn active" onclick="setAlgo('dfs')">1. DFS (Traverse Components)</button>
+      <button class="algo-btn" onclick="setAlgo('unionfind')">2. Union-Find (Disjoint Set)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: 2 Components</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: 1 Component</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: Isolated Nodes</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定 <code>n</code> 個節點（編號 <code>0</code> 到 <code>n - 1</code>）與無向邊列表 <code>edges</code>。<br>
+          計算此無向圖中<b>連通分量 (Connected Components)</b> 的總數量。<br>
+          <b>核心概念：</b>每個互相連接的子圖算作 1 個連通分量；孤立點自身也算作 1 個連通分量。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(V + E)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(V + E)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="stack-title">📚 Call Stack (DFS 遞迴歷程)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card">
+        <!-- 動態替換 Idea Box 內容 -->
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 無向圖與狀態視覺化 (Undirected Graph)</span>
+          <span id="legend-text" style="font-size:0.7rem; color:var(--text-dim);">狀態圖例</span>
+        </div>
+
+        <div class="tree-wrapper">
+          <div class="graph-container" id="graph-container">
+            <svg class="edges-layer" id="edges-svg"></svg>
+          </div>
+        </div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="pos-label">Current Node: </span>
+              <span id="pos-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="extra-label">Visited Set: </span>
+              <span id="extra-display" style="font-weight: bold; color: var(--orange);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="aux-label">Components (res): </span>
+              <span id="aux-display" class="var-badge highlight">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Connected Components: </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.1rem; color: var(--cyan);">0</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- 動態渲染 Adjacency List 或 Parent Array / Rank -->
+          </div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current State / Result:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">步驟說明 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const dfsCodeLines = [
+      `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">countComponents</span>(<span class="self">self</span>, n: int, edges: List[List[int]]) -> int:`,
+      `        adj = [[] <span class="kw">for</span> _ <span class="kw">in</span> range(n)]`,
+      `        <span class="kw">for</span> u, v <span class="kw">in</span> edges:`,
+      `            adj[u].append(v); adj[v].append(u)`,
+      `        visit = set()`,
+      `        <span class="kw">def</span> <span class="fn">dfs</span>(node):`,
+      `            <span class="kw">for</span> nei <span class="kw">in</span> adj[node]:`,
+      `                <span class="kw">if</span> nei <span class="kw">not in</span> visit:`,
+      `                    visit.add(nei); dfs(nei)`,
+      `        res = <span class="cls">0</span>`,
+      `        <span class="kw">for</span> i <span class="kw">in</span> range(n):`,
+      `            <span class="kw">if</span> i <span class="kw">not in</span> visit:`,
+      `                visit.add(i); dfs(i)`,
+      `                res += <span class="cls">1</span>`,
+      `        <span class="kw">return</span> res`
+    ];
+
+    const ufCodeLines = [
+      `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">countComponents</span>(<span class="self">self</span>, n: int, edges: List[List[int]]) -> int:`,
+      `        parent = [i <span class="kw">for</span> i <span class="kw">in</span> range(n)]`,
+      `        rank = [<span class="cls">1</span>] * n`,
+      `        <span class="kw">def</span> <span class="fn">find</span>(n):`,
+      `            p = parent[n]`,
+      `            <span class="kw">while</span> p != parent[p]:`,
+      `                parent[p] = parent[parent[p]] <span class="cm"># 路徑壓縮</span>`,
+      `                p = parent[p]`,
+      `            <span class="kw">return</span> p`,
+      `        <span class="kw">def</span> <span class="fn">union</span>(n1, n2):`,
+      `            p1, p2 = find(n1), find(n2)`,
+      `            <span class="kw">if</span> p1 == p2: <span class="kw">return</span> <span class="cls">0</span>              <span class="cm"># 已在同一分量，組數不減</span>`,
+      `            <span class="kw">if</span> rank[p1] > rank[p2]: parent[p2] = p1; rank[p1] += rank[p2]`,
+      `            <span class="kw">else</span>: parent[p1] = p2; rank[p2] += rank[p1]`,
+      `            <span class="kw">return</span> <span class="cls">1</span>                      <span class="cm"># 成功合併，組數減 1</span>`,
+      `        res = n`,
+      `        <span class="kw">for</span> n1, n2 <span class="kw">in</span> edges:`,
+      `            res -= union(n1, n2)`,
+      `        <span class="kw">return</span> res`
+    ];
+
+    const presets = [
+      {
+        title: "Example 1 (2 Components)",
+        n: 5,
+        edges: [[0, 1], [1, 2], [3, 4]],
+        expected: 2,
+        explanation: "節點 0-1-2 組成第 1 個分量，節點 3-4 組成第 2 個分量，共 2 個。",
+        positions: [
+          { x: 100, y: 120 },
+          { x: 200, y: 70 },
+          { x: 300, y: 120 },
+          { x: 150, y: 250 },
+          { x: 280, y: 250 }
+        ]
+      },
+      {
+        title: "Example 2 (1 Component)",
+        n: 5,
+        edges: [[0, 1], [1, 2], [2, 3], [3, 4]],
+        expected: 1,
+        explanation: "所有 5 個節點完全連通，形成 1 個單一分量。",
+        positions: [
+          { x: 80, y: 160 },
+          { x: 160, y: 100 },
+          { x: 250, y: 160 },
+          { x: 330, y: 100 },
+          { x: 400, y: 160 }
+        ]
+      },
+      {
+        title: "Example 3 (Isolated Nodes)",
+        n: 4,
+        edges: [[0, 1]],
+        expected: 3,
+        explanation: "節點 0-1 組成 1 個分量，節點 2 與 3 各自獨立，共 3 個。",
+        positions: [
+          { x: 100, y: 100 },
+          { x: 220, y: 100 },
+          { x: 100, y: 240 },
+          { x: 220, y: 240 }
+        ]
+      }
+    ];
+
+    let currentAlgo = 'dfs'; // 'dfs' or 'unionfind'
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(algo) {
+      currentAlgo = algo;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', (i === 0 && algo === 'dfs') || (i === 1 && algo === 'unionfind')));
+      
+      document.getElementById('time-comp').innerText = algo === 'dfs' ? "O(V + E)" : "O(E · α(V))";
+      document.getElementById('space-comp').innerText = algo === 'dfs' ? "O(V + E)" : "O(V)";
+
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const container = document.getElementById('idea-card');
+      if (currentAlgo === 'dfs') {
+        container.innerHTML = `
+          <div class="idea-box">
+            <div class="idea-title">💡 解法 1：DFS 深度優先搜尋 (搜尋未訪問分量)</div>
+            <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+              <li><b>圖建立</b>：建立無向圖的鄰接表 <code>adj</code> 與全域的 <code>visit set</code>。</li>
+              <li><b>外層迴圈</b>：從 <code>0</code> 到 <code>n - 1</code> 依序檢查每個節點。</li>
+              <li><b>發現新分量</b>：若節點未被訪問，代表發現一個全新的連通分量！將計數器 <code>res += 1</code>。</li>
+              <li><b>DFS 淹沒走訪</b>：進入 DFS 將該分量內的所有相連節點一併加入 <code>visit set</code>。</li>
+            </ol>
+          </div>
+        `;
+        document.getElementById('legend-text').innerText = "⚪ 未訪問 | 🟡 走訪中 | 🟢/🟦/🌸/🟣/🟧 各連通分量染色";
+        document.getElementById('stack-title').innerText = "📚 Call Stack (DFS 遞迴歷程)";
+        document.getElementById('pos-label').innerText = "Current Node: ";
+        document.getElementById('extra-label').innerText = "Visited Set: ";
+        document.getElementById('aux-label').innerText = "Components (res): ";
+      } else {
+        container.innerHTML = `
+          <div class="idea-box" style="border-left-color: var(--blue);">
+            <div class="idea-title" style="color: var(--blue);">💡 解法 2：並查集 (Union-Find / Disjoint Set)</div>
+            <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+              <li><b>初始分量數</b>：預設 <code>res = n</code>（假設 <code>n</code> 個點各自獨立為 1 個分量）。</li>
+              <li><b>Find 與路徑壓縮</b>：尋找節點所屬集合的根節點 <code>p = find(n)</code>。</li>
+              <li><b>Union 按秩合併</b>：遍歷每條邊 <code>(u, v)</code>，若成功合併兩個原本獨立的集合，連通分量數減一 (<code>res -= 1</code>)。</li>
+              <li><b>最終解答</b>：遍歷完所有邊後，<code>res</code> 即為最終連通分量總數。</li>
+            </ol>
+          </div>
+        `;
+        document.getElementById('legend-text').innerText = "⚪ 獨立點 | 🩵 集合 Root | 🟢/🟦/🌸/🟣/🟧 同集合點";
+        document.getElementById('stack-title').innerText = "📥 Union-Find 操作日誌";
+        document.getElementById('pos-label').innerText = "Edge (n1, n2): ";
+        document.getElementById('extra-label').innerText = "Parent Table: ";
+        document.getElementById('aux-label').innerText = "Components (res): ";
+      }
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Nodes (n):</b> ${p.n} | <b>Edges:</b> ${JSON.stringify(p.edges)} | <b>Expected:</b> ${p.expected}</div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = currentAlgo === 'dfs' ? dfsCodeLines : ufCodeLines;
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function deepCopyAdj(adj) {
+      return adj.map(arr => [...arr]);
+    }
+
+    function buildSteps() {
+      history = [];
+      const p = presets[currentPreset];
+      const n = p.n;
+
+      if (currentAlgo === 'dfs') {
+        buildDfsSteps(p, n);
+      } else {
+        buildUfSteps(p, n);
+      }
+    }
+
+    /* ---------------- DFS History Builder ---------------- */
+    function buildDfsSteps(p, n) {
+      const adj = Array.from({ length: n }, () => []);
+      p.edges.forEach(([u, v]) => {
+        adj[u].push(v);
+        adj[v].push(u);
+      });
+
+      history.push({
+        line: 2, phase: "【初始化鄰接表】",
+        desc: `建立無向圖鄰接表: adj = ${JSON.stringify(adj)}`,
+        adj: deepCopyAdj(adj), stack: [], pos: null, visit: [], compMap: {}, res: 0, result: "Running..."
+      });
+
+      const visit = new Set();
+      const compMap = {}; // node -> compId
+      let currentStack = [];
+      let res = 0;
+
+      function pushFrame(node) { currentStack.push({ fnName: "dfs", args: `node=${node}` }); }
+      function popFrame() { currentStack.pop(); }
+
+      function dfs(node, compId) {
+        pushFrame(node);
+
+        history.push({
+          line: 6, phase: "⏬ 【Call DFS】擴展分量",
+          desc: `進入 dfs(node=${node})，延伸連通分量 #${compId + 1}`,
+          adj: deepCopyAdj(adj), stack: JSON.parse(JSON.stringify(currentStack)), pos: node, visit: Array.from(visit), compMap: {...compMap}, res: res, result: "Running..."
+        });
+
+        for (let nei of adj[node]) {
+          if (!visit.has(nei)) {
+            visit.add(nei);
+            compMap[nei] = compId;
+            history.push({
+              line: 9, phase: `🟢 【Discover Neighbor】發現連通點 ${nei}`,
+              desc: `鄰居 ${nei} 未訪問，加入 visit set 並歸類至分量 #${compId + 1}`,
+              adj: deepCopyAdj(adj), stack: JSON.parse(JSON.stringify(currentStack)), pos: node, activeEdge: { from: node, to: nei }, visit: Array.from(visit), compMap: {...compMap}, res: res, result: "Running..."
+            });
+
+            dfs(nei, compId);
+          } else {
+            history.push({
+              line: 8, phase: `⏭️ 【Skip Visited】鄰居 ${nei} 已訪問`,
+              desc: `鄰居 ${nei} 已在 visit 中，跳過不處理`,
+              adj: deepCopyAdj(adj), stack: JSON.parse(JSON.stringify(currentStack)), pos: node, visit: Array.from(visit), compMap: {...compMap}, res: res, result: "Running..."
+            });
+          }
+        }
+
+        history.push({
+          line: 10, phase: "↩️ 【Return DFS】節點遍歷結束",
+          desc: `dfs(${node}) 完成對周圍鄰居的搜尋`,
+          adj: deepCopyAdj(adj), stack: JSON.parse(JSON.stringify(currentStack)), pos: node, visit: Array.from(visit), compMap: {...compMap}, res: res, result: "Running..."
+        });
+
+        popFrame();
+      }
+
+      history.push({
+        line: 10, phase: "【初始化連通分量計數】",
+        desc: `設置 res = 0`,
+        adj: deepCopyAdj(adj), stack: [], pos: null, visit: [], compMap: {}, res: 0, result: "Running..."
+      });
+
+      for (let i = 0; i < n; i++) {
+        history.push({
+          line: 12, phase: `🔍 【Check Node ${i}】檢查節點 ${i}`,
+          desc: `檢查節點 ${i} 是否已在 visit 中？`,
+          adj: deepCopyAdj(adj), stack: [], pos: i, visit: Array.from(visit), compMap: {...compMap}, res: res, result: "Running..."
+        });
+
+        if (!visit.has(i)) {
+          let currentCompId = res;
+          visit.add(i);
+          compMap[i] = currentCompId;
+
+          history.push({
+            line: 13, phase: `🚀 【New Component Found】發現新分量！`,
+            desc: `節點 ${i} 未訪問！發現第 ${currentCompId + 1} 個連通分量，將 ${i} 加入 visit set`,
+            adj: deepCopyAdj(adj), stack: [], pos: i, visit: Array.from(visit), compMap: {...compMap}, res: res, result: "Running..."
+          });
+
+          dfs(i, currentCompId);
+
+          res += 1;
+          history.push({
+            line: 14, phase: `➕ 【Increment res】更新分量計數`,
+            desc: `第 ${currentCompId + 1} 個分量擴展完畢！res 增加為 ${res}`,
+            adj: deepCopyAdj(adj), stack: [], pos: i, visit: Array.from(visit), compMap: {...compMap}, res: res, result: "Running..."
+          });
+        }
+      }
+
+      history.push({
+        line: 15, phase: "🎉 【Result】計算完成！",
+        desc: `所有節點均已檢查完畢，此圖共有 ${res} 個連通分量！傳回 ${res}`,
+        adj: deepCopyAdj(adj), stack: [], pos: null, visit: Array.from(visit), compMap: {...compMap}, res: res, result: res
+      });
+    }
+
+    /* ---------------- Union-Find History Builder ---------------- */
+    function buildUfSteps(p, n) {
+      const parent = Array.from({ length: n }, (_, i) => i);
+      const rank = new Array(n).fill(1);
+      let res = n;
+      const logs = [];
+
+      history.push({
+        line: 2, phase: "【初始化 Parent 與 Rank】",
+        desc: `parent = [${parent.join(', ')}]，預設所有 ${n} 個點獨立，故 res = ${n}`,
+        parent: [...parent], rank: [...rank], res: res, logs: ["Initialized Disjoint Set"], result: "Running..."
+      });
+
+      function find(node) {
+        let curr = node;
+        while (curr !== parent[curr]) {
+          curr = parent[curr];
+        }
+        return curr;
+      }
+
+      for (let [n1, n2] of p.edges) {
+        history.push({
+          line: 17, phase: `🔨 【Union Edge】處理邊 (${n1}, ${n2})`,
+          desc: `準備呼叫 union(n1=${n1}, n2=${n2})`,
+          parent: [...parent], rank: [...rank], edge: [n1, n2], activeEdge: { from: n1, to: n2 }, res: res, logs: [...logs], result: "Running..."
+        });
+
+        const r1 = find(n1);
+        const r2 = find(n2);
+
+        history.push({
+          line: 11, phase: `🔍 【Find Roots】尋找兩端 Root`,
+          desc: `find(${n1}) ➔ root: ${r1} | find(${n2}) ➔ root: ${r2}`,
+          parent: [...parent], rank: [...rank], edge: [n1, n2], activeTarget: r1, activeTarget2: r2, res: res, logs: [...logs], result: "Running..."
+        });
+
+        if (r1 === r2) {
+          logs.unshift(`⏭️ Union(${n1}, ${n2}) Skipped: Same Set (Root ${r1})`);
+          history.push({
+            line: 12, phase: `⏭️ 【Same Component】已在同一分量`,
+            desc: `節點 ${n1} 與 ${n2} 的祖先皆為 ${r1}，代表屬於同一個分量。不需合併，傳回 0`,
+            parent: [...parent], rank: [...rank], edge: [n1, n2], activeEdge: { from: n1, to: n2 }, res: res, logs: [...logs], result: "Running..."
+          });
+        } else {
+          // Perform Union
+          let p1 = r1, p2 = r2;
+          if (rank[p1] > rank[p2]) {
+            parent[p2] = p1;
+            rank[p1] += rank[p2];
+          } else {
+            parent[p1] = p2;
+            rank[p2] += rank[p1];
+          }
+          res -= 1;
+          logs.unshift(`✅ Union(${n1}, ${n2}) Merged: New Root is ${parent[p1]}`);
+
+          history.push({
+            line: 15, phase: `🔗 【Union Merged】成功合併集合！`,
+            desc: `成功將根 ${p1} 與 ${p2} 合併！連通分量數 res 減 1 變為 ${res}`,
+            parent: [...parent], rank: [...rank], edge: [n1, n2], activeEdge: { from: n1, to: n2 }, isUnion: true, res: res, logs: [...logs], result: "Running..."
+          });
+        }
+      }
+
+      history.push({
+        line: 19, phase: "🎉 【Result】計算完成！",
+        desc: `所有邊處理完成！最終連通分量總數為 ${res}，傳回 ${res}`,
+        parent: [...parent], rank: [...rank], res: res, logs: [...logs], result: res
+      });
+    }
+
+    /* ---------------- Graph Renderer ---------------- */
+    function renderGraph(state) {
+      const p = presets[currentPreset];
+      const container = document.getElementById('graph-container');
+
+      container.querySelectorAll('.node').forEach(n => n.remove());
+      const svg = document.getElementById('edges-svg');
+      svg.querySelectorAll('.edge-line').forEach(l => l.remove());
+
+      // Render Edges
+      p.edges.forEach(([u, v]) => {
+        const fromPos = p.positions[u];
+        const toPos = p.positions[v];
+        
+        let isActive = state.activeEdge && ((state.activeEdge.from === u && state.activeEdge.to === v) || (state.activeEdge.from === v && state.activeEdge.to === u));
+        let isVisited = state.visit && state.visit.includes(u) && state.visit.includes(v);
+
+        createSvgLine(svg, fromPos, toPos, isActive, state.isUnion, isVisited);
+      });
+
+      // Helper for UF component mapping
+      const ufRoots = state.parent ? Array.from(new Set(state.parent.map((_, i) => getRoot(state.parent, i)))) : [];
+
+      // Render Nodes
+      for (let i = 0; i < p.n; i++) {
+        const node = document.createElement('div');
+        let cls = "node";
+
+        if (currentAlgo === 'dfs') {
+          if (state.pos === i) cls += " visiting";
+          else if (state.compMap && state.compMap[i] !== undefined) {
+            cls += ` comp-${state.compMap[i] % 5}`;
+          } else cls += " unvisited";
+
+          node.innerHTML = `<span>${i}</span>`;
+        } else {
+          let parentVal = state.parent ? state.parent[i] : i;
+          let rootVal = state.parent ? getRoot(state.parent, i) : i;
+          let rootIdx = ufRoots.indexOf(rootVal);
+
+          if (state.pos === i) cls += " visiting";
+          else if (rootIdx !== -1) cls += ` comp-${rootIdx % 5}`;
+          else cls += " unvisited";
+
+          node.innerHTML = `
+            <span>${i}</span>
+            <span class="parent-badge">p:${parentVal}</span>
+          `;
+        }
+
+        node.className = cls;
+        node.style.left = `${p.positions[i].x - 24}px`;
+        node.style.top = `${p.positions[i].y - 24}px`;
+        container.appendChild(node);
+      }
+    }
+
+    function getRoot(parent, i) {
+      let curr = i;
+      while (curr !== parent[curr]) curr = parent[curr];
+      return curr;
+    }
+
+    function createSvgLine(svg, fromPos, toPos, isActive, isUnion, isVisited) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', fromPos.x);
+      line.setAttribute('y1', fromPos.y);
+      line.setAttribute('x2', toPos.x);
+      line.setAttribute('y2', toPos.y);
+
+      let cls = "edge-line";
+      if (isActive) {
+        if (isUnion) cls += " union";
+        else cls += " active";
+      } else if (isVisited) {
+        cls += " visited-edge";
+      }
+
+      line.setAttribute('class', cls);
+      svg.appendChild(line);
+    }
+
+    /* ---------------- UI State Handler ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      // Render Stack / Logs Panel
+      const stackBox = document.getElementById('stack-display');
+      if (currentAlgo === 'dfs') {
+        const stackData = state.stack || [];
+        stackBox.innerHTML = stackData.length === 0 
+          ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Stack Empty</div>`
+          : stackData.map(f => `
+              <div class="stack-frame">
+                <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.75rem;">(${f.args})</span></div>
+              </div>
+            `).join('');
+        document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+      } else {
+        const logData = state.logs || [];
+        stackBox.innerHTML = logData.length === 0 
+          ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Logs Empty</div>`
+          : logData.map(log => `<div style="font-size:0.75rem; color:#ccc;">${log}</div>`).join('');
+        document.getElementById('stackDepthHint').innerText = `Entries: ${logData.length}`;
+      }
+
+      // Dynamic Variables Panel (Right Panel)
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (currentAlgo === 'dfs') {
+        document.getElementById('pos-display').innerText = state.pos !== null && state.pos !== undefined ? `Node ${state.pos}` : "None";
+        document.getElementById('extra-display').innerText = state.visit ? `[${state.visit.join(', ')}]` : "[]";
+        
+        const auxEl = document.getElementById('aux-display');
+        auxEl.innerText = state.res !== undefined ? state.res : 0;
+
+        if (state.adj) {
+          dynPanel.innerHTML = `
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Adjacency List (adj):</span>
+              <div class="adj-table">
+                ${state.adj.map((neighbors, nodeIdx) => `
+                  <div class="table-item ${state.pos === nodeIdx ? 'active-src' : ''}">
+                    node ${nodeIdx} ➔ [${neighbors.join(', ')}]
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        document.getElementById('pos-display').innerText = state.edge ? `(${state.edge[0]}, ${state.edge[1]})` : "None";
+        document.getElementById('extra-display').innerText = state.parent ? `[${state.parent.join(', ')}]` : "[]";
+        
+        const auxEl = document.getElementById('aux-display');
+        auxEl.innerText = state.res !== undefined ? state.res : 0;
+
+        if (state.parent) {
+          dynPanel.innerHTML = `
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Parent Array (parent):</span>
+              <div class="parent-table">
+                ${state.parent.map((pVal, nodeIdx) => {
+                  let isRoot = pVal === nodeIdx;
+                  let isTarget = state.activeTarget === nodeIdx || state.activeTarget2 === nodeIdx;
+                  return `
+                    <div class="table-item ${isRoot ? 'root-item' : ''} ${isTarget ? 'active-target' : ''}">
+                      i=${nodeIdx} ➔ p:${pVal}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Rank Array (rank):</span>
+              <div class="parent-table">
+                ${state.rank ? state.rank.map((rVal, nodeIdx) => `
+                  <div class="table-item">
+                    i=${nodeIdx} ➔ r:${rVal}
+                  </div>
+                `).join('') : ''}
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // Results Panel
+      const statusEl = document.getElementById('status-display');
+      statusEl.innerText = state.res !== undefined ? state.res : 0;
+      statusEl.style.color = "var(--cyan)";
+
+      const resEl = document.getElementById('result-text');
+      resEl.innerText = state.result !== "Running..." ? `Total Components = ${state.result}` : "Counting Components...";
+      resEl.style.color = state.result !== "Running..." ? "var(--green)" : "var(--text-dim)";
+
+      renderGraph(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

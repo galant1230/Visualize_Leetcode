@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 鏡像對教學面板 - Pro Instructor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #0d0d0d; font-family: 'Inter', sans-serif; color: #D4D4D4; height: 100vh; overflow: hidden; }
+        .vscode-bg { background-color: #1E1E1E; }
+        .vscode-sidebar { background-color: #252526; }
+        .vscode-active-line { background-color: #2C313C; border-left: 3px solid #61AFEF; }
+        .code-font { font-family: 'Fira Code', monospace; font-size: 13px; }
+        .console-font { font-family: 'Fira Code', monospace; font-size: 12px; }
+        .highlight-cell { animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0% { border-color: #61AFEF; background-color: rgba(97, 175, 239, 0.1); }
+            50% { border-color: #C678DD; background-color: rgba(198, 120, 221, 0.2); }
+            100% { border-color: #61AFEF; background-color: rgba(97, 175, 239, 0.1); }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #3E3E42; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <header class="vscode-sidebar h-9 flex items-center px-4 border-b border-black text-xs text-gray-500 justify-between">
+        <div class="flex items-center gap-2">
+            <span class="text-blue-400 text-lg">●</span> 
+            <span class="font-semibold text-gray-300">鏡像對演算模擬器.py</span>
+        </div>
+        <div class="flex gap-5">
+            <span>Python 3.12</span>
+            <span>UTF-8</span>
+            <span class="text-blue-500">講師模式：開啟</span>
+        </div>
+    </header>
+
+    <main class="flex flex-1 overflow-hidden">
+        
+        <section class="w-1/4 vscode-sidebar border-r border-black flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-gray-800 shrink-0">
+                <h2 class="text-lg font-bold text-white mb-2">鏡像對最小距離</h2>
+                <div class="flex gap-2 mb-3">
+                    <span class="bg-yellow-600/20 text-yellow-500 text-[10px] px-2 py-0.5 rounded border border-yellow-600/30 font-bold uppercase">Medium</span>
+                    <span class="bg-blue-600/20 text-blue-400 text-[10px] px-2 py-0.5 rounded border border-blue-600/30">雜湊表</span>
+                </div>
+                <div class="p-3 bg-[#1e1e1e] rounded text-xs text-gray-300 leading-relaxed border border-gray-700">
+                    找到 <code class="text-blue-400 font-bold">i < j</code> 使得 <code class="text-pink-400 font-bold">rev(nums[i]) == nums[j]</code>。返回所有對中最小的距離 <code class="text-white">|i - j|</code>。
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 space-y-5">
+                <div>
+                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 border-l-2 border-blue-500 pl-2">複雜度分析</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-[#1e1e1e] p-3 rounded border border-blue-900/30">
+                            <span class="block text-blue-400 font-mono text-lg font-bold">O(N)</span>
+                            <span class="text-[9px] text-gray-500">時間複雜度</span>
+                        </div>
+                        <div class="bg-[#1e1e1e] p-3 rounded border border-purple-900/30">
+                            <span class="block text-purple-400 font-mono text-lg font-bold">O(N)</span>
+                            <span class="text-[9px] text-gray-500">空間複雜度</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 border-l-2 border-green-500 pl-2">解題思路詳解</h3>
+                    <div class="text-[12px] text-gray-400 space-y-4 leading-relaxed">
+                        <div class="bg-[#2d2d2d] p-3 rounded-lg border border-gray-700">
+                            <p class="text-blue-300 font-bold mb-1">1. 逆向思考：</p>
+                            <p>當我們處於位置 <code class="text-white">j</code> 時，我們想找的是先前某個位置 <code class="text-white">i</code>，其反轉值恰好等於現在看到的數。因此，雜湊表的 Key 存的是「期待被看到的數」。</p>
+                        </div>
+                        <div class="bg-[#2d2d2d] p-3 rounded-lg border border-gray-700">
+                            <p class="text-green-300 font-bold mb-1">2. 貪婪更新距離：</p>
+                            <p>為了獲得「最小」距離，我們在更新雜湊表時，永遠只保留「最後一次出現」的索引，因為這會使 <code class="text-white">i-j</code> 盡可能小。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 bg-[#181818] border-t border-gray-800">
+                <h3 class="text-[10px] font-bold text-gray-600 uppercase mb-3">範例測資選擇</h3>
+                <div class="grid grid-cols-3 gap-2" id="test-case-tabs"></div>
+            </div>
+        </section>
+
+        <section class="flex-1 vscode-bg flex flex-col relative">
+            <div class="flex-1 p-8 overflow-y-auto">
+                <div class="mb-12">
+                    <div class="text-[11px] text-gray-500 uppercase tracking-widest mb-4 flex items-center">
+                        <span class="mr-3 font-bold">動態記憶體：nums 陣列</span> <div class="h-[1px] flex-1 bg-gray-800"></div>
+                    </div>
+                    <div id="array-container" class="flex flex-wrap gap-3"></div>
+                </div>
+
+                <div>
+                    <div class="text-[11px] text-gray-500 uppercase tracking-widest mb-4 flex items-center">
+                        <span class="mr-3 font-bold">狀態記錄：target_map (雜湊表)</span> <div class="h-[1px] flex-1 bg-gray-800"></div>
+                    </div>
+                    <div id="hash-table-container" class="grid grid-cols-2 gap-3 max-w-lg"></div>
+                </div>
+            </div>
+
+            <div class="h-16 border-t border-gray-800 flex items-center justify-between px-10 bg-[#181818]">
+                <div class="text-xs font-mono text-gray-500">目前步數: <span id="current-step" class="text-blue-400 font-bold">0</span></div>
+                <div class="flex gap-8 items-center">
+                    <button onclick="prevStep()" class="hover:text-blue-400 text-gray-500 transition scale-125"><svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M11.5 14l-8-6 8-6v12z"/></svg></button>
+                    <button id="play-btn" onclick="togglePlay()" class="text-blue-500 hover:scale-110 transition"><svg width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M4 2.696v10.608l10-5.304L4 2.696z"/></svg></button>
+                    <button onclick="nextStep()" class="hover:text-blue-400 text-gray-500 transition scale-125"><svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 2l8 6-8 6V2z"/></svg></button>
+                </div>
+                <button onclick="reset()" class="text-gray-500 hover:text-white transition"><svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/></svg></button>
+            </div>
+        </section>
+
+        <section class="w-[30%] vscode-sidebar border-l border-black flex flex-col overflow-hidden">
+            <div class="h-[40%] flex flex-col border-b border-gray-800 overflow-hidden">
+                <div class="px-4 py-2 text-[10px] text-gray-500 bg-[#2d2d2d] flex justify-between uppercase">
+                    <span>解決方案代碼</span>
+                    <span class="text-blue-500">Python 3</span>
+                </div>
+                <div class="flex-1 code-font p-3 overflow-y-auto leading-relaxed" id="code-area"></div>
+            </div>
+            
+            <div class="h-[25%] p-4 border-b border-gray-800 bg-[#1e1e1e]">
+                <h3 class="text-[10px] font-bold text-gray-500 uppercase mb-3 flex items-center">
+                    <span class="mr-1 inline-block w-2 h-2 bg-yellow-500 rounded-full"></span> 變數監視 (Watch)
+                </h3>
+                <div id="watcher-container" class="space-y-1"></div>
+            </div>
+
+            <div class="h-[35%] flex flex-col bg-[#0f0f0f]">
+                <div class="px-4 py-2 text-[10px] text-gray-500 bg-[#2d2d2d] flex justify-between uppercase">
+                    <span>偵錯主控台 (Log)</span>
+                    <button onclick="clearLogs()" class="hover:text-white text-[9px] font-bold">清除</button>
+                </div>
+                <div id="debug-console" class="flex-1 p-4 console-font overflow-y-auto text-gray-400 leading-normal">
+                    <div class="text-green-500 font-bold mb-2">系統 >> 偵錯器已就緒，等待點擊播放...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const testCases = [
+            { nums: [12, 21, 45, 33, 54], title: "範例 1" },
+            { nums: [120, 21], title: "範例 2" },
+            { nums: [21, 120], title: "範例 3" }
+        ];
+
+        let currentCaseIdx = 0, stepIndex = 0, steps = [], isPlaying = false, playInterval = null;
+
+        const pythonCode = [
+            "class Solution:",
+            "  def minDistance(self, nums):",
+            "    target_map = {} # 記錄反轉值及其索引",
+            "    min_dist = float('inf')",
+            "    for i, x in enumerate(nums):",
+            "      if x in target_map:",
+            "        min_dist = min(min_dist, i - target_map[x])",
+            "      rev = int(str(x)[::-1])",
+            "      target_map[rev] = i",
+            "    return min_dist if min_dist != float('inf') else -1"
+        ];
+
+        function init() { renderTabs(); generateSteps(); renderCode(); updateUI(); }
+
+        function renderTabs() {
+            document.getElementById('test-case-tabs').innerHTML = testCases.map((tc, idx) => `
+                <button onclick="changeCase(${idx})" class="py-2 px-1 rounded text-[10px] font-bold transition ${currentCaseIdx === idx ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40' : 'bg-[#2d2d2d] text-gray-500 hover:bg-[#3d3d3d]'}">
+                    ${tc.title}
+                </button>
+            `).join('');
+        }
+
+        function renderCode() {
+            document.getElementById('code-area').innerHTML = pythonCode.map((line, idx) => `
+                <div id="line-${idx}" class="whitespace-pre px-2 rounded flex items-center min-h-[22px]">
+                    <span class="w-5 text-gray-600 mr-3 text-right select-none text-[10px]">${idx + 1}</span>
+                    <span class="flex-1">${highlight(line)}</span>
+                </div>
+            `).join('');
+        }
+
+        function highlight(l) {
+            return l.replace(/\b(class|def|if|for|in|return|enumerate)\b/g, '<span class="text-purple-400 font-bold">$1</span>')
+                    .replace(/\b(self|nums|target_map|min_dist|i|x|rev)\b/g, '<span class="text-blue-300">$1</span>')
+                    .replace(/\b(int|str|float|min)\b/g, '<span class="text-yellow-200">$1</span>')
+                    .replace(/(#.*)/g, '<span class="text-gray-500 italic">$1</span>');
+        }
+
+        function generateSteps() {
+            const nums = testCases[currentCaseIdx].nums;
+            steps = []; let map = {}; let d = Infinity;
+            steps.push({ line: 2, map: {}, d: 'inf', i: '-', x: '-', log: "初始化 target_map。這個字典將用來追蹤後續數字『期待』匹配的對象。" });
+            steps.push({ line: 3, map: {}, d: 'inf', i: '-', x: '-', log: "將最小距離設為無限大 (inf)。" });
+            for (let i = 0; i < nums.length; i++) {
+                const x = nums[i];
+                steps.push({ line: 4, map: {...map}, d, i, x, log: `進入迴圈 i=${i}: 正在處理數值 ${x}` });
+                steps.push({ line: 5, map: {...map}, d, i, x, log: `檢查 ${x} 是否在雜湊表中？` });
+                if (map[x] !== undefined) {
+                    const dist = i - map[x];
+                    d = Math.min(d, dist);
+                    steps.push({ line: 6, map: {...map}, d, i, x, log: `✨ 匹配成功！數值 ${x} 剛好是索引 ${map[x]} 反轉後的結果。更新最小距離為 ${d}` });
+                } else {
+                    steps.push({ line: 5, map: {...map}, d, i, x, log: `目前的 ${x} 沒有匹配到任何先前的數字。` });
+                }
+                const rev = parseInt(String(x).split('').reverse().join(''));
+                steps.push({ line: 7, map: {...map}, d, i, x, rev, log: `計算反轉：${x} 的反轉值為 ${rev}` });
+                map[rev] = i;
+                steps.push({ line: 8, map: {...map}, d, i, x, rev, log: `在 map 中標記：若未來出現 ${rev}，它將會與目前索引 ${i} 組成一對。` });
+            }
+            steps.push({ line: 9, map: {...map}, d, i: '-', x: '-', log: `演算法結束。回傳最終最小距離：${d === Infinity ? -1 : d}` });
+        }
+
+        function updateUI() {
+            const s = steps[stepIndex];
+            document.querySelectorAll('[id^="line-"]').forEach(el => el.classList.remove('vscode-active-line'));
+            document.getElementById(`line-${s.line}`).classList.add('vscode-active-line');
+
+            // 放大中間 nums 方塊
+            document.getElementById('array-container').innerHTML = testCases[currentCaseIdx].nums.map((n, idx) => `
+                <div class="w-14 h-14 flex flex-col items-center justify-center rounded-lg border-2 transition-all duration-300 
+                    ${s.i === idx ? 'border-blue-500 bg-blue-500/20 font-bold scale-110 shadow-lg' : 'border-gray-800 bg-gray-900 text-gray-500'}">
+                    <span class="text-lg text-white">${n}</span>
+                    <span class="text-[8px] opacity-40 font-mono">idx:${idx}</span>
+                </div>
+            `).join('');
+
+            // 放大 Hash Table
+            document.getElementById('hash-table-container').innerHTML = Object.entries(s.map).map(([k, v]) => `
+                <div class="flex justify-between px-3 py-2 rounded-lg bg-[#252526] border border-gray-700 ${s.line === 8 && s.map[k] === s.i ? 'highlight-cell border-blue-400' : ''}">
+                    <span class="text-orange-400 font-bold text-sm">${k}</span>
+                    <span class="text-gray-500 text-xs">來自索引 <span class="text-green-400 font-bold">${v}</span></span>
+                </div>
+            `).join('') || '<div class="text-gray-600 italic text-sm">{} 目前為空</div>';
+
+            const vars = { 'i (目前索引)': s.i, 'num (當前數值)': s.x, 'rev (期待配對)': s.rev || '-', 'ans (最小距離)': s.d === Infinity ? 'inf' : s.d };
+            document.getElementById('watcher-container').innerHTML = Object.entries(vars).map(([k, v]) => `
+                <div class="flex justify-between text-xs font-mono border-b border-gray-800/30 py-1">
+                    <span class="text-gray-500">${k}:</span>
+                    <span class="text-orange-300 font-bold">${v}</span>
+                </div>
+            `).join('');
+
+            // 日誌
+            const consoleBox = document.getElementById('debug-console');
+            const logLine = document.createElement('div');
+            logLine.className = 'py-1 border-b border-gray-900/50 flex gap-2';
+            logLine.innerHTML = `<span class="text-blue-500 font-bold">INFO</span><span class="text-gray-300">${s.log}</span>`;
+            consoleBox.appendChild(logLine);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+            document.getElementById('current-step').innerText = stepIndex;
+        }
+
+        function clearLogs() { document.getElementById('debug-console').innerHTML = '<div class="text-gray-600 italic">> 日誌已清空。</div>'; }
+        function nextStep() { if (stepIndex < steps.length - 1) { stepIndex++; updateUI(); } else pause(); }
+        function prevStep() { if (stepIndex > 0) { stepIndex--; updateUI(); } }
+        function togglePlay() { isPlaying ? pause() : play(); }
+        function play() { isPlaying = true; document.getElementById('play-btn').innerHTML = '<svg width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 3.5A.5.5 0 0 1 6 4v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5z"/></svg>'; playInterval = setInterval(nextStep, 800); }
+        function pause() { isPlaying = false; document.getElementById('play-btn').innerHTML = '<svg width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M4 2.696v10.608l10-5.304L4 2.696z"/></svg>'; clearInterval(playInterval); }
+        function changeCase(idx) { currentCaseIdx = idx; stepIndex = 0; clearLogs(); init(); }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

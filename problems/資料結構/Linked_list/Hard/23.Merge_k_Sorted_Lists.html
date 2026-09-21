@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>23. Merge k Sorted Lists - Visualizer</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --red: #ff2d55;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 45, 85, 0.15); color: var(--red); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .tag { background: #383838; color: var(--text-dim); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
+
+    .approach-tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 6px; flex-wrap: wrap; background: #222; padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
+    .app-tab-btn { background: transparent; border: none; color: var(--text-dim); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: 0.2s; }
+    .app-tab-btn:hover { background: #333; color: #fff; }
+    .app-tab-btn.active { background: var(--orange); color: #000; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+    
+    .problem-desc { font-size: 0.82rem; color: #ccc; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+    
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .approach-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.8rem; color: #ddd; }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.75rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 0 12px; white-space: pre; border-left: 3px solid transparent; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .comment { color: var(--green); font-style: italic; } .cls { color: #50fa7b; }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 14px; min-height: 380px; display: flex; flex-direction: column; gap: 12px; overflow-x: auto; }
+    
+    .lists-container { display: flex; flex-direction: column; gap: 8px; }
+    .list-row { display: flex; align-items: center; gap: 6px; }
+    .list-label { font-size: 0.75rem; font-family: monospace; color: var(--text-dim); width: 85px; }
+    
+    .list { display: flex; align-items: center; gap: 4px; }
+    .node-box { display: flex; align-items: center; position: relative; }
+    .node { width: 32px; height: 32px; border-radius: 50%; background: #333; border: 2px solid var(--border); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-family: monospace; position: relative; font-size: 0.78rem; }
+    .node.dummy { background: #2b2638; border-color: var(--purple); color: var(--purple); }
+    .node.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.25); }
+    .node.min-target { border-color: var(--green); background: rgba(80, 250, 123, 0.25); }
+    .node.consumed { opacity: 0.3; text-decoration: line-through; }
+
+    .arrow { width: 14px; height: 2px; background: var(--text-dim); position: relative; margin: 0 2px; }
+    .arrow::after { content: ''; position: absolute; right: 0; top: -3px; border-width: 3px 0 3px 5px; border-style: solid; border-color: transparent transparent transparent var(--text-dim); }
+
+    .ptr-tag { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; padding: 1px 4px; border-radius: 2px; background: var(--orange); color: #000; font-family: monospace; font-weight: bold; white-space: nowrap; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.8rem; font-family: monospace; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .heap-item { background: rgba(168, 85, 247, 0.2); border: 1px solid var(--purple); color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; display: inline-block; margin-right: 4px; }
+    
+    .array-display { background: #141414; border: 1px solid var(--border); padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 0.85rem; color: var(--orange); margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">23. Merge k Sorted Lists</span>
+    <span class="badge">Hard</span>
+    <span class="tag">Linked List</span>
+    <span class="tag">Divide & Conquer</span>
+    <span class="tag">Heap</span>
+  </div>
+
+  <div class="approach-tabs" id="app-tabs">
+    <button class="app-tab-btn active" onclick="switchApproach(0)">1. Brute Force (Array Sort)</button>
+    <button class="app-tab-btn" onclick="switchApproach(1)">2. Iteration (Min Selection)</button>
+    <button class="app-tab-btn" onclick="switchApproach(2)">3. Merge One By One</button>
+    <button class="app-tab-btn" onclick="switchApproach(3)">4. Min-Heap (Priority Queue)</button>
+    <button class="app-tab-btn" onclick="switchApproach(4)">5. Divide & Conquer (Recursion)</button>
+    <button class="app-tab-btn" onclick="switchApproach(5)">6. Divide & Conquer (Iteration)</button>
+    <button class="app-tab-btn" onclick="switchApproach(6)">7. Range Divide (_mergeRange)</button>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: [[1,4,5], [1,3,4], [2,6]]</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: Empty Lists []</button>
+    <button class="tab-btn" onclick="setPreset(2)">Ex 3: [[1], [0]]</button>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個包含 <code>k</code> 個升序鏈表的陣列 <code>lists</code>，請將所有鏈表合併為一個升序鏈表並返回。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">-</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">
+          <span>🐍 Python 完整程式碼</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">💡 解題思路說明</div>
+        <div class="approach-box" id="approach-desc"></div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 完整執行步驟視覺化 (Step Visualizer)</div>
+        
+        <div class="stage" id="stage-box"></div>
+
+        <div class="info">
+          <div class="info-row">
+            <span style="color: var(--text-dim);">當前階段 (Phase):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const approaches = [
+      {
+        name: "1. Brute Force (Array Sort)",
+        time: "O(N log N)", space: "O(N)",
+        desc: "<b>暴力法：</b>無視鏈表結構，先遍歷所有鏈表將所有節點數值收集到陣列中，將陣列排序後，再重新創建一條新的鏈表。",
+        code: [
+          `<span class="comment"># Definition for singly-linked list.</span>`,
+          `<span class="kw">class</span> <span class="cls">ListNode</span>:`,
+          `    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="self">self</span>, val=<span class="kw">0</span>, next=<span class="kw">None</span>):`,
+          `        <span class="self">self</span>.val = val`,
+          `        <span class="self">self</span>.next = next`,
+          ``,
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">mergeKLists</span>(<span class="self">self</span>, lists: List[Optional[ListNode]]) -&gt; Optional[ListNode]:`,
+          `        nodes = []`,
+          `        <span class="kw">for</span> lst <span class="kw">in</span> lists:`,
+          `            <span class="kw">while</span> lst:`,
+          `                nodes.append(lst.val)`,
+          `                lst = lst.next`,
+          `        nodes.sort()`,
+          `        res = ListNode(<span class="kw">0</span>)`,
+          `        cur = res`,
+          `        <span class="kw">for</span> node <span class="kw">in</span> nodes:`,
+          `            cur.next = ListNode(node)`,
+          `            cur = cur.next`,
+          `        <span class="kw">return</span> res.next`
+        ]
+      },
+      {
+        name: "2. Iteration (Min Selection)",
+        time: "O(N * k)", space: "O(1)",
+        desc: "<b>迭代最小值挑選：</b>每一輪遍歷所有鏈表的當前頭節點，尋找數值最小的節點。將其串接至結果鏈表後，移動該鏈表的指標。重複此過程直到所有鏈表均為空。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">mergeKLists</span>(<span class="self">self</span>, lists: List[Optional[ListNode]]) -&gt; Optional[ListNode]:`,
+          `        res = ListNode(<span class="kw">0</span>)`,
+          `        cur = res`,
+          `        <span class="kw">while</span> <span class="kw">True</span>:`,
+          `            minNode = -<span class="kw">1</span>`,
+          `            <span class="kw">for</span> i <span class="kw">in</span> range(len(lists)):`,
+          `                <span class="kw">if</span> <span class="kw">not</span> lists[i]:`,
+          `                    <span class="kw">continue</span>`,
+          `                <span class="kw">if</span> minNode == -<span class="kw">1</span> <span class="kw">or</span> lists[minNode].val &gt; lists[i].val:`,
+          `                    minNode = i`,
+          `            <span class="kw">if</span> minNode == -<span class="kw">1</span>:`,
+          `                <span class="kw">break</span>`,
+          `            cur.next = lists[minNode]`,
+          `            lists[minNode] = lists[minNode].next`,
+          `            cur = cur.next`,
+          `        <span class="kw">return</span> res.next`
+        ]
+      },
+      {
+        name: "3. Merge Lists One By One",
+        time: "O(N * k)", space: "O(1)",
+        desc: "<b>逐一合併鏈表：</b>依序合併鏈表，先合併 List 0 和 List 1，再將獲得的結果與 List 2 合併，直到合併完所有 $k$ 個鏈表。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">mergeKLists</span>(<span class="self">self</span>, lists: List[Optional[ListNode]]) -&gt; Optional[ListNode]:`,
+          `        <span class="kw">if</span> len(lists) == <span class="kw">0</span>:`,
+          `            <span class="kw">return</span> <span class="kw">None</span>`,
+          `        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="kw">1</span>, len(lists)):`,
+          `            lists[i] = <span class="self">self</span>.mergeList(lists[i - <span class="kw">1</span>], lists[i])`,
+          `        <span class="kw">return</span> lists[-<span class="kw">1</span>]`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">mergeList</span>(<span class="self">self</span>, l1, l2):`,
+          `        dummy = ListNode()`,
+          `        tail = dummy`,
+          `        <span class="kw">while</span> l1 <span class="kw">and</span> l2:`,
+          `            <span class="kw">if</span> l1.val &lt; l2.val:`,
+          `                tail.next = l1`,
+          `                l1 = l1.next`,
+          `            <span class="kw">else</span>:`,
+          `                tail.next = l2`,
+          `                l2 = l2.next`,
+          `            tail = tail.next`,
+          `        <span class="kw">if</span> l1: tail.next = l1`,
+          `        <span class="kw">if</span> l2: tail.next = l2`,
+          `        <span class="kw">return</span> dummy.next`
+        ]
+      },
+      {
+        name: "4. Min-Heap (Priority Queue)",
+        time: "O(N log k)", space: "O(k)",
+        desc: "<b>優先隊列 (Min-Heap)：</b>維護一個容量為 $k$ 的最小堆。將 $k$ 個鏈表的頭節點放進 Heap 中，每次彈出最小值節點串接到結果鏈表，若被彈出的節點有下一個節點，則將其推入 Heap。",
+        code: [
+          `<span class="kw">import</span> heapq`,
+          ``,
+          `<span class="kw">class</span> <span class="cls">NodeWrapper</span>:`,
+          `    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="self">self</span>, node):`,
+          `        <span class="self">self</span>.node = node`,
+          `    <span class="kw">def</span> <span class="fn">__lt__</span>(<span class="self">self</span>, other):`,
+          `        <span class="kw">return</span> <span class="self">self</span>.node.val &lt; other.node.val`,
+          ``,
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">mergeKLists</span>(<span class="self">self</span>, lists: List[Optional[ListNode]]) -&gt; Optional[ListNode]:`,
+          `        <span class="kw">if</span> len(lists) == <span class="kw">0</span>: <span class="kw">return</span> <span class="kw">None</span>`,
+          `        res = ListNode(<span class="kw">0</span>)`,
+          `        cur = res`,
+          `        minHeap = []`,
+          `        <span class="kw">for</span> lst <span class="kw">in</span> lists:`,
+          `            <span class="kw">if</span> lst <span class="kw">is not None</span>:`,
+          `                heapq.heappush(minHeap, NodeWrapper(lst))`,
+          `        <span class="kw">while</span> minHeap:`,
+          `            node_wrapper = heapq.heappop(minHeap)`,
+          `            cur.next = node_wrapper.node`,
+          `            cur = cur.next`,
+          `            <span class="kw">if</span> node_wrapper.node.next:`,
+          `                heapq.heappush(minHeap, NodeWrapper(node_wrapper.node.next))`,
+          `        <span class="kw">return</span> res.next`
+        ]
+      },
+      {
+        name: "5. Divide And Conquer (Recursion)",
+        time: "O(N log k)", space: "O(log k)",
+        desc: "<b>遞迴分治法：</b>類似 Merge Sort，將鏈表陣列持續二分對半拆解 (Divide)，直到觸發 Base Case (只剩 1 個鏈表)，再遞迴回溯進行兩兩鏈表合併 (Conquer)。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">mergeKLists</span>(<span class="self">self</span>, lists: List[Optional[ListNode]]) -&gt; Optional[ListNode]:`,
+          `        <span class="kw">if</span> <span class="kw">not</span> lists <span class="kw">or</span> len(lists) == <span class="kw">0</span>: <span class="kw">return</span> <span class="kw">None</span>`,
+          `        <span class="kw">return</span> <span class="self">self</span>.divide(lists, <span class="kw">0</span>, len(lists) - <span class="kw">1</span>)`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">divide</span>(<span class="self">self</span>, lists, l, r):`,
+          `        <span class="kw">if</span> l &gt; r: <span class="kw">return</span> <span class="kw">None</span>`,
+          `        <span class="kw">if</span> l == r: <span class="kw">return</span> lists[l]`,
+          `        mid = l + (r - l) // <span class="kw">2</span>`,
+          `        left = <span class="self">self</span>.divide(lists, l, mid)`,
+          `        right = <span class="self">self</span>.divide(lists, mid + <span class="kw">1</span>, r)`,
+          `        <span class="kw">return</span> <span class="self">self</span>.conquer(left, right)`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">conquer</span>(<span class="self">self</span>, l1, l2):`,
+          `        dummy = ListNode(<span class="kw">0</span>); curr = dummy`,
+          `        <span class="kw">while</span> l1 <span class="kw">and</span> l2:`,
+          `            <span class="kw">if</span> l1.val &lt;= l2.val: curr.next = l1; l1 = l1.next`,
+          `            <span class="kw">else</span>: curr.next = l2; l2 = l2.next`,
+          `            curr = curr.next`,
+          `        curr.next = l1 <span class="kw">if</span> l1 <span class="kw">else</span> l2`,
+          `        <span class="kw">return</span> dummy.next`
+        ]
+      },
+      {
+        name: "6. Divide And Conquer (Iteration)",
+        time: "O(N log k)", space: "O(k)",
+        desc: "<b>迭代分治法：</b>不使用 Call Stack 遞迴，改用兩重迴圈。每一輪將當前陣列中的鏈表兩兩分組（i 與 i+1）進行兩兩合併 (Conquer)，每輪合併後鏈表數量減半 (Divide)，直到只剩最後 1 條鏈表。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">mergeKLists</span>(<span class="self">self</span>, lists: List[Optional[ListNode]]) -&gt; Optional[ListNode]:`,
+          `        <span class="kw">if</span> <span class="kw">not</span> lists <span class="kw">or</span> len(lists) == <span class="kw">0</span>: <span class="kw">return</span> <span class="kw">None</span>`,
+          `        <span class="kw">while</span> len(lists) &gt; <span class="kw">1</span>:`,
+          `            mergedLists = []`,
+          `            <span class="kw">for</span> i <span class="kw">in</span> range(<span class="kw">0</span>, len(lists), <span class="kw">2</span>):`,
+          `                l1 = lists[i]`,
+          `                l2 = lists[i + <span class="kw">1</span>] <span class="kw">if</span> (i + <span class="kw">1</span>) &lt; len(lists) <span class="kw">else</span> <span class="kw">None</span>`,
+          `                mergedLists.append(<span class="self">self</span>.mergeList(l1, l2))`,
+          `            lists = mergedLists`,
+          `        <span class="kw">return</span> lists[<span class="kw">0</span>]`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">mergeList</span>(<span class="self">self</span>, l1, l2):`,
+          `        dummy = tail = ListNode(<span class="kw">0</span>)`,
+          `        <span class="kw">while</span> l1 <span class="kw">and</span> l2:`,
+          `            <span class="kw">if</span> l1.val &lt; l2.val: tail.next = l1; l1 = l1.next`,
+          `            <span class="kw">else</span>: tail.next = l2; l2 = l2.next`,
+          `            tail = tail.next`,
+          `        tail.next = l1 <span class="kw">if</span> l1 <span class="kw">else</span> l2`,
+          `        <span class="kw">return</span> dummy.next`
+        ]
+      },
+      {
+        name: "7. Range Divide (_mergeRange)",
+        time: "O(N log k)", space: "O(log k)",
+        desc: "<b>自訂範圍分治法 (_mergeRange)：</b>利用 <code>_mergeRange(lists, left, right)</code> 明確定義分割範圍，當 <code>left == right</code> 時觸發 Base Case，回溯時呼叫 <code>_mergeTwoLists</code>。",
+        code: [
+          `<span class="comment"># Definition for singly-linked list.</span>`,
+          `<span class="kw">class</span> <span class="cls">ListNode</span>(object):`,
+          `    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="self">self</span>, val=<span class="kw">0</span>, next=<span class="kw">None</span>):`,
+          `        <span class="self">self</span>.val = val`,
+          `        <span class="self">self</span>.next = next`,
+          ``,
+          `<span class="kw">class</span> <span class="cls">Solution</span>(object):`,
+          `    <span class="kw">def</span> <span class="fn">mergeKLists</span>(<span class="self">self</span>, lists):`,
+          `        <span class="kw">if</span> <span class="kw">not</span> lists:`,
+          `            <span class="kw">return</span> <span class="kw">None</span>`,
+          `        <span class="kw">return</span> <span class="self">self</span>._mergeRange(lists, <span class="kw">0</span>, len(lists) - <span class="kw">1</span>)`,
+          ``,
+          `    <span class="comment"># 合併 lists[left..right]</span>`,
+          `    <span class="kw">def</span> <span class="fn">_mergeRange</span>(<span class="self">self</span>, lists, left, right):`,
+          `        <span class="kw">if</span> left == right:`,
+          `            <span class="kw">return</span> lists[left]`,
+          `        mid = left + (right - left) // <span class="kw">2</span>`,
+          `        l1 = <span class="self">self</span>._mergeRange(lists, left, mid)`,
+          `        l2 = <span class="self">self</span>._mergeRange(lists, mid + <span class="kw">1</span>, right)`,
+          `        <span class="kw">return</span> <span class="self">self</span>._mergeTwoLists(l1, l2)`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">_mergeTwoLists</span>(<span class="self">self</span>, l1, l2):`,
+          `        dummy = ListNode(<span class="kw">0</span>)`,
+          `        cur = dummy`,
+          `        <span class="kw">while</span> l1 <span class="kw">and</span> l2:`,
+          `            <span class="kw">if</span> l1.val &lt; l2.val:`,
+          `                cur.next = l1`,
+          `                l1 = l1.next`,
+          `            <span class="kw">else</span>:`,
+          `                cur.next = l2`,
+          `                l2 = l2.next`,
+          `            cur = cur.next`,
+          `        cur.next = l1 <span class="kw">if</span> l1 <span class="kw">else</span> l2`,
+          `        <span class="kw">return</span> dummy.next`
+        ]
+      }
+    ];
+
+    const presets = [
+      { input: [[1, 4, 5], [1, 3, 4], [2, 6]], output: [1, 1, 2, 3, 4, 4, 5, 6], name: "Example 1" },
+      { input: [], output: [], name: "Example 2" },
+      { input: [[1], [0]], output: [0, 1], name: "Example 3" }
+    ];
+
+    let currentApproach = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function switchApproach(idx) {
+      currentApproach = idx;
+      document.querySelectorAll('.app-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderApproachDetails();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderApproachDetails() {
+      const app = approaches[currentApproach];
+      document.getElementById('time-comp').innerText = app.time;
+      document.getElementById('space-comp').innerText = app.space;
+      document.getElementById('approach-desc').innerHTML = app.desc;
+      document.getElementById('code-box').innerHTML = app.code.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      const listsStr = p.input.map(arr => `[${arr.join('→')}]`).join(', ');
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>Input: lists = [${listsStr || '[]'}]</div>
+        <div>Output: [${p.output.join('→')}]</div>
+      `;
+    }
+
+    function renderInputLists(input, currentLIdx = -1, currentNIdx = -1) {
+      let html = '<div class="lists-container">';
+      html += `<div style="font-size:0.75rem; color:var(--text-dim); font-weight:bold; margin-bottom:4px;">INPUT LISTS (lists):</div>`;
+      input.forEach((arr, lIdx) => {
+        html += `<div class="list-row"><div class="list-label">lists[${lIdx}]:</div><div class="list">`;
+        arr.forEach((val, nIdx) => {
+          let isHighlighted = (lIdx === currentLIdx && nIdx === currentNIdx);
+          let nodeClass = 'node' + (isHighlighted ? ' active' : '');
+          html += `<div class="node-box"><div class="${nodeClass}">${val}`;
+          if (isHighlighted) html += `<div class="ptr-tag">lst</div>`;
+          html += `</div>`;
+          if (nIdx < arr.length - 1) html += `<div class="arrow"></div>`;
+          html += `</div>`;
+        });
+        html += `</div></div>`;
+      });
+      html += '</div>';
+      return html;
+    }
+
+    // 渲染通用雙鏈表兩兩比對與串接過程 (Conquer 過程)
+    function renderTwoListsMergeStep(l1Name, l1, p1, l2Name, l2, p2, merged, statusMsg) {
+      let html = `<div style="font-size:0.75rem; color:var(--orange); font-weight:bold; margin-bottom:6px;">CONQUER: MERGING TWO LISTS (${statusMsg})</div>`;
+      
+      // L1
+      html += `<div class="list-row"><div class="list-label">${l1Name}:</div><div class="list">`;
+      l1.forEach((val, idx) => {
+        let isCurrent = (idx === p1);
+        let isConsumed = (idx < p1);
+        let nodeClass = 'node' + (isConsumed ? ' consumed' : '') + (isCurrent ? ' active' : '');
+        html += `<div class="node-box"><div class="${nodeClass}">${val}${isCurrent ? '<div class="ptr-tag">l1</div>' : ''}</div>`;
+        if (idx < l1.length - 1) html += `<div class="arrow"></div>`;
+        html += `</div>`;
+      });
+      html += `</div></div>`;
+
+      // L2
+      html += `<div class="list-row" style="margin-top:6px;"><div class="list-label">${l2Name}:</div><div class="list">`;
+      l2.forEach((val, idx) => {
+        let isCurrent = (idx === p2);
+        let isConsumed = (idx < p2);
+        let nodeClass = 'node' + (isConsumed ? ' consumed' : '') + (isCurrent ? ' active' : '');
+        html += `<div class="node-box"><div class="${nodeClass}">${val}${isCurrent ? '<div class="ptr-tag">l2</div>' : ''}</div>`;
+        if (idx < l2.length - 1) html += `<div class="arrow"></div>`;
+        html += `</div>`;
+      });
+      html += `</div></div>`;
+
+      // Merged Result (dummy & tail)
+      html += `<div style="margin-top:14px; font-size:0.75rem; color:var(--purple); font-weight:bold;">RESULT TAIL:</div>`;
+      html += `<div class="list"><div class="node-box"><div class="node dummy">0<div class="ptr-tag">dummy</div></div></div>`;
+      if (merged.length > 0) html += `<div class="arrow"></div>`;
+      
+      merged.forEach((val, idx) => {
+        let isLast = (idx === merged.length - 1);
+        html += `<div class="node-box"><div class="node active">${val}${isLast ? '<div class="ptr-tag">curr</div>' : ''}</div>`;
+        if (idx < merged.length - 1) html += `<div class="arrow"></div>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+
+      return html;
+    }
+
+    // 渲染 Divide 階段區域劃分
+    function renderDivideState(groups, title, activeGroupIdx = -1) {
+      let html = `<div style="font-size:0.8rem; color:var(--blue); font-weight:bold; margin-bottom:8px;">${title}</div>`;
+      html += `<div class="lists-container">`;
+      groups.forEach((grp, gIdx) => {
+        let isAct = (gIdx === activeGroupIdx);
+        let borderStyle = isAct ? 'border:1px solid var(--orange); background:rgba(255,161,22,0.1);' : 'border:1px dashed var(--border);';
+        html += `<div style="padding:6px 10px; border-radius:6px; ${borderStyle} margin-bottom:4px;">`;
+        html += `<div style="font-size:0.75rem; color:var(--text-dim); margin-bottom:4px; font-family:monospace;">${grp.label}:</div>`;
+        html += `<div class="list">`;
+        if (grp.list.length === 0) {
+          html += `<span style="font-size:0.75rem; color:#666; font-family:monospace;">None</span>`;
+        } else {
+          grp.list.forEach((val, idx) => {
+            html += `<div class="node-box"><div class="node ${isAct ? 'active' : ''}">${val}</div>`;
+            if (idx < grp.list.length - 1) html += `<div class="arrow"></div>`;
+            html += `</div>`;
+          });
+        }
+        html += `</div></div>`;
+      });
+      html += `</div>`;
+      return html;
+    }
+
+    function buildSteps() {
+      history = [];
+      const input = presets[currentPreset].input;
+
+      if (!input || input.length === 0) {
+        history.push({
+          line: 2, phase: "檢查邊界條件", desc: "輸入陣列為空 (lists is empty)，直接返回 None。",
+          html: `<div style="font-family:monospace; color:var(--text-dim);">Return None</div>`
+        });
+        return;
+      }
+
+      // ----------------------------------------------------
+      // Approach 0: Brute Force (Array Sort)
+      // ----------------------------------------------------
+      if (currentApproach === 0) {
+        let nodes = [];
+        
+        history.push({
+          line: 8, phase: "初始化 nodes 陣列",
+          desc: "建立空的 nodes 陣列以收集所有節點的值。",
+          html: renderInputLists(input) + `<div class="array-display">nodes = []</div>`
+        });
+
+        input.forEach((arr, lIdx) => {
+          arr.forEach((val, nIdx) => {
+            nodes.push(val);
+            history.push({
+              line: 11, phase: `收集節點值 (lists[${lIdx}])`,
+              desc: `遍歷至 lists[${lIdx}] 節點 [${val}]，推入 nodes 陣列。`,
+              html: renderInputLists(input, lIdx, nIdx) + `<div class="array-display">nodes = [${nodes.join(', ')}]</div>`
+            });
+          });
+        });
+
+        let sortedNodes = [...nodes].sort((a, b) => a - b);
+        history.push({
+          line: 13, phase: "陣列排序 (nodes.sort())",
+          desc: "將收集完畢的 nodes 陣列進行升序排序。",
+          html: renderInputLists(input) + `<div class="array-display">nodes (Sorted) = [${sortedNodes.join(', ')}]</div>`
+        });
+
+        let curResult = [];
+        history.push({
+          line: 14, phase: "創建 Dummy Head",
+          desc: "創建 Dummy Head 節點 (res = ListNode(0)) 作為全新升序鏈表的起點。",
+          html: renderInputLists(input) + `
+            <div style="margin-top:10px; font-size:0.75rem; color:var(--purple); font-weight:bold;">NEW LINKED LIST:</div>
+            <div class="list"><div class="node-box"><div class="node dummy">0<div class="ptr-tag">res/cur</div></div></div></div>
+          `
+        });
+
+        sortedNodes.forEach((val, idx) => {
+          curResult.push(val);
+          history.push({
+            line: 17, phase: "建立與串接新節點",
+            desc: `依序走訪排序好的數值 [${val}]，創建新節點並串接至 cur.next。`,
+            html: renderInputLists(input) + `
+              <div style="margin-top:10px; font-size:0.75rem; color:var(--purple); font-weight:bold;">NEW LINKED LIST:</div>
+              <div class="list">
+                <div class="node-box"><div class="node dummy">0<div class="ptr-tag">res</div></div><div class="arrow"></div></div>
+                ${curResult.map((v, i) => `
+                  <div class="node-box">
+                    <div class="node active">${v}${i === curResult.length - 1 ? '<div class="ptr-tag">cur</div>' : ''}</div>
+                    ${i < curResult.length - 1 ? '<div class="arrow"></div>' : ''}
+                  </div>
+                `).join('')}
+              </div>
+            `
+          });
+        });
+
+        history.push({
+          line: 19, phase: "返回 res.next",
+          desc: "完成新鏈表構建，返回 res.next。",
+          html: renderInputLists(input) + `
+            <div style="margin-top:10px; font-size:0.75rem; color:var(--green); font-weight:bold;">FINAL MERGED LINKED LIST:</div>
+            <div class="list">
+              ${curResult.map((v, i) => `
+                <div class="node-box">
+                  <div class="node min-target">${v}</div>
+                  ${i < curResult.length - 1 ? '<div class="arrow"></div>' : ''}
+                </div>
+              `).join('')}
+            </div>
+          `
+        });
+      }
+
+      // ----------------------------------------------------
+      // Approach 1: Iteration (Min Selection)
+      // ----------------------------------------------------
+      else if (currentApproach === 1) {
+        let ptrs = input.map(() => 0);
+        let result = [];
+        history.push({ line: 2, phase: "初始化", desc: "建立 Dummy Head (res = ListNode(0)) 並將 cur 指向它。", html: renderListsAndResult(input, ptrs, result, -1) });
+
+        while (true) {
+          let minNode = -1;
+          history.push({ line: 5, phase: "開始比對最小值", desc: "重置 minNode = -1，準備搜尋各鏈表當前頭節點的最小值。", html: renderListsAndResult(input, ptrs, result, -1) });
+
+          for (let i = 0; i < input.length; i++) {
+            if (ptrs[i] >= input[i].length) continue;
+            
+            let val = input[i][ptrs[i]];
+            if (minNode === -1 || val < input[minNode][ptrs[minNode]]) {
+              minNode = i;
+              history.push({
+                line: 10, phase: "更新最小值",
+                desc: `比對 List ${i+1} 節點 [${val}]，目前更新最小值為來自 List ${i+1} 的 [${val}]。`,
+                html: renderListsAndResult(input, ptrs, result, minNode)
+              });
+            }
+          }
+
+          if (minNode === -1) {
+            history.push({ line: 12, phase: "結束條件", desc: "所有鏈表節點已走訪完畢 (minNode == -1)，跳出迴圈。", html: renderListsAndResult(input, ptrs, result, -1) });
+            break;
+          }
+
+          let minVal = input[minNode][ptrs[minNode]];
+          result.push(minVal);
+          ptrs[minNode]++;
+
+          history.push({
+            line: 15, phase: "串接最小值節點",
+            desc: `將來自 List ${minNode+1} 的最小值 [${minVal}] 串接到結果鏈表，並將 List ${minNode+1} 指標前移。`,
+            html: renderListsAndResult(input, ptrs, result, -1)
+          });
+        }
+      }
+
+      // ----------------------------------------------------
+      // Approach 2: Merge One By One
+      // ----------------------------------------------------
+      else if (currentApproach === 2) {
+        let accumulatedList = [...input[0]];
+        
+        history.push({
+          line: 4, phase: "開始逐一合併 (Merge One By One)",
+          desc: `初始狀態：以 List 0 [${accumulatedList.join('→')}] 作為起始的合併結果。`,
+          html: renderDivideState([{ label: "Accumulated List", list: accumulatedList }], "初始狀態，準備與下一個鏈表合併")
+        });
+
+        for (let i = 1; i < input.length; i++) {
+          let l1 = [...accumulatedList];
+          let l2 = [...input[i]];
+          let p1 = 0, p2 = 0;
+          let merged = [];
+
+          history.push({
+            line: 5, phase: `準備合併第 ${i} 條鏈表 (List ${i})`,
+            desc: `呼叫 mergeList，準備將累積鏈表 [${l1.join('→')}] 與 List ${i} [${l2.join('→')}] 進行合併。`,
+            html: renderTwoListsMergeStep("L1 (Accum)", l1, p1, `L2 (List ${i})`, l2, p2, merged, `開始合併`)
+          });
+
+          while (p1 < l1.length && p2 < l2.length) {
+            let val1 = l1[p1];
+            let val2 = l2[p2];
+
+            if (val1 <= val2) {
+              history.push({
+                line: 13, phase: `比對節點 (l1.val < l2.val)`,
+                desc: `比對 L1 的 [${val1}] 與 L2 的 [${val2}]：[${val1}] <= [${val2}]，將 L1 節點 [${val1}] 串接至 tail.next，l1 前移。`,
+                html: renderTwoListsMergeStep("L1 (Accum)", l1, p1, `L2 (List ${i})`, l2, p2, merged, `選擇 L1 的 [${val1}]`)
+              });
+              merged.push(val1);
+              p1++;
+            } else {
+              history.push({
+                line: 16, phase: `比對節點 (l1.val >= l2.val)`,
+                desc: `比對 L1 的 [${val1}] 與 L2 的 [${val2}]：[${val1}] > [${val2}]，將 L2 節點 [${val2}] 串接至 tail.next，l2 前移。`,
+                html: renderTwoListsMergeStep("L1 (Accum)", l1, p1, `L2 (List ${i})`, l2, p2, merged, `選擇 L2 的 [${val2}]`)
+              });
+              merged.push(val2);
+              p2++;
+            }
+          }
+
+          if (p1 < l1.length) {
+            let remain = l1.slice(p1);
+            merged.push(...remain);
+            history.push({
+              line: 19, phase: "串接 L1 剩餘節點",
+              desc: `L2 已走訪完畢，將 L1 剩餘節點 [${remain.join('→')}] 直接串接至 tail.next。`,
+              html: renderTwoListsMergeStep("L1 (Accum)", l1, l1.length, `L2 (List ${i})`, l2, p2, merged, "串接 L1 剩餘節點")
+            });
+          } else if (p2 < l2.length) {
+            let remain = l2.slice(p2);
+            merged.push(...remain);
+            history.push({
+              line: 20, phase: "串接 L2 剩餘節點",
+              desc: `L1 已走訪完畢，將 L2 剩餘節點 [${remain.join('→')}] 直接串接至 tail.next。`,
+              html: renderTwoListsMergeStep("L1 (Accum)", l1, p1, `L2 (List ${i})`, l2, l2.length, merged, "串接 L2 剩餘節點")
+            });
+          }
+
+          accumulatedList = merged;
+          history.push({
+            line: 5, phase: `第 ${i} 輪合併完成`,
+            desc: `完成與 List ${i} 的合併！目前累積鏈表更新為：[${accumulatedList.join('→')}]`,
+            html: renderDivideState([{ label: "Accumulated List", list: accumulatedList }], `第 ${i} 輪合併完成`)
+          });
+        }
+
+        history.push({
+          line: 6, phase: "全部鏈表合併完成",
+          desc: `已完成所有 ${input.length} 個鏈表的逐一合併，返回最終結果 lists[-1]。`,
+          html: renderDivideState([{ label: "Final Merged Result", list: accumulatedList }], "最終合併結果")
+        });
+      }
+
+      // ----------------------------------------------------
+      // Approach 3: Min-Heap
+      // ----------------------------------------------------
+      else if (currentApproach === 3) {
+        let heap = [];
+        let ptrs = input.map(() => 0);
+        let result = [];
+
+        history.push({ line: 11, phase: "初始化 Heap", desc: "建立空的 minHeap 陣列與 Dummy Head 節點。", html: renderHeapState(heap, input, ptrs, result) });
+
+        input.forEach((arr, i) => {
+          if (arr.length > 0) {
+            heap.push({ val: arr[0], listIdx: i, nodeIdx: 0 });
+            heap.sort((a,b) => a.val - b.val);
+            history.push({
+              line: 16, phase: "推入頭節點至 Heap",
+              desc: `將 List ${i+1} 的頭節點 [${arr[0]}] 封裝後推入 minHeap。`,
+              html: renderHeapState(heap, input, ptrs, result)
+            });
+          }
+        });
+
+        while (heap.length > 0) {
+          let min = heap.shift();
+          result.push(min.val);
+          ptrs[min.listIdx] = min.nodeIdx + 1;
+
+          history.push({
+            line: 19, phase: "heappop 取出最小值",
+            desc: `從 Heap 中彈出最小值節點 [${min.val}] (來自 List ${min.listIdx+1})，並串接到 cur.next。`,
+            html: renderHeapState(heap, input, ptrs, result)
+          });
+
+          if (min.nodeIdx + 1 < input[min.listIdx].length) {
+            let nextVal = input[min.listIdx][min.nodeIdx + 1];
+            heap.push({ val: nextVal, listIdx: min.listIdx, nodeIdx: min.nodeIdx + 1 });
+            heap.sort((a,b) => a.val - b.val);
+            history.push({
+              line: 22, phase: "heappush 推入下一節點",
+              desc: `將 List ${min.listIdx+1} 的下一個節點 [${nextVal}] 推入 minHeap。`,
+              html: renderHeapState(heap, input, ptrs, result)
+            });
+          }
+        }
+      }
+
+      // ----------------------------------------------------
+      // Approach 4 & 6: Divide And Conquer (Recursion / Range)
+      // 詳細拆解 DIVIDE (二分劃分) 與 CONQUER (兩兩比對合併)
+      // ----------------------------------------------------
+      else if (currentApproach === 4 || currentApproach === 6) {
+        // 輔助函式：模擬 Conquer (兩兩合併) 裡面的細節步驟
+        function simulateConquer(l1, l2, label1, label2) {
+          let p1 = 0, p2 = 0;
+          let merged = [];
+
+          history.push({
+            line: 13, phase: `CONQUER: 準備合併 (${label1} vs ${label2})`,
+            desc: `呼叫 conquer(${label1}, ${label2})，準備將 [${l1.join('→')}] 與 [${l2.join('→')}] 進行升序合併。`,
+            html: renderTwoListsMergeStep(label1, l1, p1, label2, l2, p2, merged, "開始比對")
+          });
+
+          while (p1 < l1.length && p2 < l2.length) {
+            let v1 = l1[p1];
+            let v2 = l2[p2];
+
+            if (v1 <= v2) {
+              history.push({
+                line: 15, phase: `CONQUER: 比對節點 (l1.val <= l2.val)`,
+                desc: `比對 ${label1} 的 [${v1}] 與 ${label2} 的 [${v2}]：[${v1}] <= [${v2}]，將 [${v1}] 接至 curr.next，l1 前移。`,
+                html: renderTwoListsMergeStep(label1, l1, p1, label2, l2, p2, merged, `選擇 ${label1} 的 [${v1}]`)
+              });
+              merged.push(v1);
+              p1++;
+            } else {
+              history.push({
+                line: 16, phase: `CONQUER: 比對節點 (l1.val > l2.val)`,
+                desc: `比對 ${label1} 的 [${v1}] 與 ${label2} 的 [${v2}]：[${v1}] > [${v2}]，將 [${v2}] 接至 curr.next，l2 前移。`,
+                html: renderTwoListsMergeStep(label1, l1, p1, label2, l2, p2, merged, `選擇 ${label2} 的 [${v2}]`)
+              });
+              merged.push(v2);
+              p2++;
+            }
+          }
+
+          if (p1 < l1.length) {
+            let remain = l1.slice(p1);
+            merged.push(...remain);
+            history.push({
+              line: 18, phase: `CONQUER: 串接 ${label1} 剩餘節點`,
+              desc: `${label2} 已空，將 ${label1} 剩餘節點 [${remain.join('→')}] 直接串接至 curr.next。`,
+              html: renderTwoListsMergeStep(label1, l1, l1.length, label2, l2, p2, merged, "串接剩餘節點")
+            });
+          } else if (p2 < l2.length) {
+            let remain = l2.slice(p2);
+            merged.push(...remain);
+            history.push({
+              line: 18, phase: `CONQUER: 串接 ${label2} 剩餘節點`,
+              desc: `${label1} 已空，將 ${label2} 剩餘節點 [${remain.join('→')}] 直接串接至 curr.next。`,
+              html: renderTwoListsMergeStep(label1, l1, p1, label2, l2, l2.length, merged, "串接剩餘節點")
+            });
+          }
+
+          return merged;
+        }
+
+        // 遞迴 Divide & Conquer 模擬
+        function runRecursiveDC(l, r) {
+          if (l > r) return [];
+          if (l === r) {
+            history.push({
+              line: 8, phase: `DIVIDE: Base Case (l == r == ${l})`,
+              desc: `當前區間只包含一個鏈表 lists[${l}] = [${input[l].join('→')}]，直接觸發 Base Case 返回。`,
+              html: renderDivideState([{ label: `lists[${l}]`, list: input[l] }], `DIVIDE 觸發 Base Case (index ${l})`, 0)
+            });
+            return [...input[l]];
+          }
+
+          let mid = Math.floor(l + (r - l) / 2);
+
+          let currentGroups = [];
+          for (let i = l; i <= r; i++) {
+            currentGroups.push({ label: `lists[${i}]`, list: input[i] });
+          }
+
+          history.push({
+            line: 9, phase: `DIVIDE: 計算中間點 (l=${l}, r=${r})`,
+            desc: `計算 mid = ${l} + (${r} - ${l}) // 2 = ${mid}。準備將區間 [${l}..${r}] 二分成 [${l}..${mid}] 與 [${mid+1}..${r}]。`,
+            html: renderDivideState(currentGroups, `DIVIDE 二分切割中 (mid = ${mid})`)
+          });
+
+          // 遞迴左半部
+          history.push({
+            line: 10, phase: `DIVIDE: 深入左半部 divide(lists, ${l}, ${mid})`,
+            desc: `遞迴呼叫 divide(lists, ${l}, ${mid}) 處理左半部。`,
+            html: renderDivideState(currentGroups, `DIVIDE 準備處理左半部 [${l}..${mid}]`)
+          });
+          let leftRes = runRecursiveDC(l, mid);
+
+          // 遞迴右半部
+          history.push({
+            line: 11, phase: `DIVIDE: 深入右半部 divide(lists, ${mid + 1}, ${r})`,
+            desc: `遞迴呼叫 divide(lists, ${mid + 1}, ${r}) 處理右半部。`,
+            html: renderDivideState(currentGroups, `DIVIDE 準備處理右半部 [${mid + 1}..${r}]`)
+          });
+          let rightRes = runRecursiveDC(mid + 1, r);
+
+          // 回溯進入 Conquer 兩兩合併
+          let mergedRes = simulateConquer(leftRes, rightRes, `Left [${l}..${mid}]`, `Right [${mid+1}..${r}]`);
+
+          history.push({
+            line: 12, phase: `CONQUER 完成: [${l}..${r}]`,
+            desc: `完成區間 [${l}..${r}] 的合併！結果為：[${mergedRes.join('→')}]`,
+            html: renderDivideState([{ label: `Merged Range [${l}..${r}]`, list: mergedRes }], `區間 [${l}..${r}] 合併完成`, 0)
+          });
+
+          return mergedRes;
+        }
+
+        history.push({
+          line: 4, phase: "DIVIDE: 開始遞迴分治",
+          desc: `傳入全區間 l = 0, r = ${input.length - 1}，開始二分拆解鏈表陣列。`,
+          html: renderDivideState(input.map((arr, i) => ({ label: `lists[${i}]`, list: arr })), "DIVIDE: 初始所有鏈表區間")
+        });
+
+        let finalResult = runRecursiveDC(0, input.length - 1);
+
+        history.push({
+          line: 4, phase: "遞迴分治全部完成",
+          desc: `所有遞迴 Call Stack 已回溯完畢，成功將 $k$ 個鏈表合併為最終升序鏈表！`,
+          html: renderDivideState([{ label: "Final Merged Linked List", list: finalResult }], "最終合併結果", 0)
+        });
+      }
+
+      // ----------------------------------------------------
+      // Approach 5: Divide And Conquer (Iteration)
+      // 詳細拆解 迭代式分治（Round 兩兩一組減半）與 CONQUER 比對
+      // ----------------------------------------------------
+      else if (currentApproach === 5) {
+        let currentLists = input.map(arr => [...arr]);
+        let round = 1;
+
+        history.push({
+          line: 4, phase: "DIVIDE (Iteration): 初始狀態",
+          desc: `初始共有 ${currentLists.length} 個鏈表。準備進入 while len(lists) > 1 迭代兩兩合併。`,
+          html: renderDivideState(currentLists.map((arr, i) => ({ label: `lists[${i}]`, list: arr })), `Round ${round} 初始狀態`)
+        });
+
+        while (currentLists.length > 1) {
+          let mergedLists = [];
+
+          history.push({
+            line: 5, phase: `Round ${round}: 開始本輪兩兩分組`,
+            desc: `當前共有 ${currentLists.length} 個鏈表，以 step = 2 進行兩兩一組併購 (i 與 i+1)。`,
+            html: renderDivideState(currentLists.map((arr, i) => ({ label: `lists[${i}]`, list: arr })), `Round ${round} 兩兩一組分組中`)
+          });
+
+          for (let i = 0; i < currentLists.length; i += 2) {
+            let l1 = currentLists[i];
+            let l2 = (i + 1 < currentLists.length) ? currentLists[i + 1] : null;
+
+            if (l2 === null) {
+              history.push({
+                line: 8, phase: `Round ${round}: 鏈表落單 (lists[${i}])`,
+                desc: `lists[${i}] 在本輪沒有成對的鏈表可比對，直接保留原樣推入下一輪 mergedLists。`,
+                html: renderDivideState([{ label: `lists[${i}] (孤立保留)`, list: l1 }], `lists[${i}] 直接跳過合併`, 0)
+              });
+              mergedLists.push(l1);
+            } else {
+              // 進行 Conquer 合併
+              let p1 = 0, p2 = 0;
+              let merged = [];
+              let label1 = `lists[${i}]`;
+              let label2 = `lists[${i+1}]`;
+
+              history.push({
+                line: 9, phase: `CONQUER: 開始合併 lists[${i}] 與 lists[${i+1}]`,
+                desc: `呼叫 mergeList，開始比對 [${l1.join('→')}] 與 [${l2.join('→')}]。`,
+                html: renderTwoListsMergeStep(label1, l1, p1, label2, l2, p2, merged, "開始比對")
+              });
+
+              while (p1 < l1.length && p2 < l2.length) {
+                let v1 = l1[p1];
+                let v2 = l2[p2];
+
+                if (v1 <= v2) {
+                  history.push({
+                    line: 15, phase: `CONQUER: 比對節點 (l1.val <= l2.val)`,
+                    desc: `比對 ${label1} 的 [${v1}] 與 ${label2} 的 [${v2}]：[${v1}] <= [${v2}]，將 [${v1}] 接至 tail.next，l1 前移。`,
+                    html: renderTwoListsMergeStep(label1, l1, p1, label2, l2, p2, merged, `選擇 ${label1} 的 [${v1}]`)
+                  });
+                  merged.push(v1);
+                  p1++;
+                } else {
+                  history.push({
+                    line: 16, phase: `CONQUER: 比對節點 (l1.val > l2.val)`,
+                    desc: `比對 ${label1} 的 [${v1}] 與 ${label2} 的 [${v2}]：[${v1}] > [${v2}]，將 [${v2}] 接至 tail.next，l2 前移。`,
+                    html: renderTwoListsMergeStep(label1, l1, p1, label2, l2, p2, merged, `選擇 ${label2} 的 [${v2}]`)
+                  });
+                  merged.push(v2);
+                  p2++;
+                }
+              }
+
+              if (p1 < l1.length) {
+                let remain = l1.slice(p1);
+                merged.push(...remain);
+                history.push({
+                  line: 18, phase: `CONQUER: 串接 ${label1} 剩餘節點`,
+                  desc: `${label2} 已空，將 ${label1} 剩餘節點 [${remain.join('→')}] 直接串接至 tail.next。`,
+                  html: renderTwoListsMergeStep(label1, l1, l1.length, label2, l2, p2, merged, "串接剩餘節點")
+                });
+              } else if (p2 < l2.length) {
+                let remain = l2.slice(p2);
+                merged.push(...remain);
+                history.push({
+                  line: 18, phase: `CONQUER: 串接 ${label2} 剩餘節點`,
+                  desc: `${label1} 已空，將 ${label2} 剩餘節點 [${remain.join('→')}] 直接串接至 tail.next。`,
+                  html: renderTwoListsMergeStep(label1, l1, p1, label2, l2, l2.length, merged, "串接剩餘節點")
+                });
+              }
+
+              mergedLists.push(merged);
+            }
+          }
+
+          currentLists = mergedLists;
+          history.push({
+            line: 10, phase: `Round ${round} 結束 (鏈表數量減半)`,
+            desc: `本輪合併完畢！鏈表總數量從原本的減半為 ${currentLists.length} 個。`,
+            html: renderDivideState(currentLists.map((arr, i) => ({ label: `New lists[${i}]`, list: arr })), `Round ${round} 完成後的新鏈表集合`)
+          });
+
+          round++;
+        }
+
+        history.push({
+          line: 11, phase: "迭代分治全部完成",
+          desc: `lists 陣列中只剩最後 1 個鏈表 (len(lists) == 1)，返回 lists[0] 作為最終結果！`,
+          html: renderDivideState([{ label: "Final Merged Result", list: currentLists[0] }], "最終合併結果", 0)
+        });
+      }
+    }
+
+    function renderListsAndResult(input, ptrs, result, minNodeIdx) {
+      let html = '<div class="lists-container">';
+      input.forEach((arr, lIdx) => {
+        html += `<div class="list-row"><div class="list-label">List ${lIdx+1}:</div><div class="list">`;
+        arr.forEach((val, nIdx) => {
+          let isCurrent = (ptrs[lIdx] === nIdx);
+          let isMin = (minNodeIdx === lIdx && isCurrent);
+          let isConsumed = (nIdx < ptrs[lIdx]);
+          
+          let nodeClass = 'node';
+          if (isConsumed) nodeClass += ' consumed';
+          if (isCurrent) nodeClass += ' active';
+          if (isMin) nodeClass += ' min-target';
+
+          html += `<div class="node-box"><div class="${nodeClass}">${val}`;
+          if (isCurrent) html += `<div class="ptr-tag">cur</div>`;
+          html += `</div>`;
+          if (nIdx < arr.length - 1) html += `<div class="arrow"></div>`;
+          html += `</div>`;
+        });
+        html += `</div></div>`;
+      });
+      html += '</div>';
+
+      html += `<div style="margin-top:12px; font-size:0.75rem; color:var(--green); font-weight:bold;">MERGED RESULT:</div>`;
+      html += `<div class="list"><div class="node-box"><div class="node dummy">0<div class="ptr-tag">res</div></div><div class="arrow"></div></div>`;
+      result.forEach((val, idx) => {
+        html += `<div class="node-box"><div class="node active">${val}</div>`;
+        if (idx < result.length - 1) html += `<div class="arrow"></div>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+      return html;
+    }
+
+    function renderHeapState(heap, input, ptrs, result) {
+      let html = `<div style="background:#222; padding:8px; border-radius:4px; border:1px solid var(--border);">`;
+      html += `<span style="font-size:0.75rem; color:var(--purple); font-weight:bold; font-family:monospace;">MIN-HEAP CONTENTS: </span>`;
+      if (heap.length === 0) html += `<span style="font-size:0.75rem; color:#666;">(Empty)</span>`;
+      else {
+        heap.forEach(h => {
+          html += `<div class="heap-item">val:${h.val} (List${h.listIdx+1})</div>`;
+        });
+      }
+      html += `</div><div style="margin-top:10px;"></div>`;
+      html += renderListsAndResult(input, ptrs, result, -1);
+      return html;
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stageBox = document.getElementById('stage-box');
+      stageBox.innerHTML = state.html || `<div style="font-size:0.85rem; font-family:monospace; color:#fff;">${state.desc}</div>`;
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderApproachDetails();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>217. Contains Duplicate - Visualizer</title>
+  <style>
+    :root {
+      --lc-bg: #1a1a1a;
+      --lc-card: #282828;
+      --lc-card-header: #323232;
+      --lc-border: #3e3e3e;
+      --lc-text: #eff1f6;
+      --lc-text-dim: #8a8a8a;
+      --lc-orange: #ffa116;
+      --lc-easy: #00b8a3;
+      --lc-blue: #007aff;
+      --lc-green: #2cbb5d;
+      --lc-red: #ff2d55;
+      --lc-code-bg: #1e1e1e;
+      --lc-active-line: rgba(255, 161, 22, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--lc-bg);
+      color: var(--lc-text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .lc-header {
+      max-width: 1400px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lc-logo { font-weight: bold; font-size: 1.2rem; color: var(--lc-orange); }
+    .lc-badge {
+      background: rgba(0, 184, 163, 0.15);
+      color: var(--lc-easy);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-tag {
+      background: #383838;
+      color: var(--lc-text-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .config-tabs {
+      max-width: 1400px;
+      margin: 0 auto 16px auto;
+      display: flex;
+      gap: 20px;
+      border-bottom: 2px solid var(--lc-border);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-group {
+      display: flex;
+      gap: 6px;
+      background: #202020;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--lc-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--lc-text-dim);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--lc-text); }
+    .tab-btn.active { background: var(--lc-orange); color: #000; }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1050px) {
+      .dashboard { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--lc-card);
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      background: var(--lc-card-header);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--lc-border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--lc-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-body { padding: 16px; }
+    .problem-desc { font-size: 0.88rem; color: #ccc; margin-bottom: 12px; }
+    
+    .example-block {
+      background: #202020;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-orange);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+      color: var(--lc-text);
+      margin-bottom: 8px;
+    }
+    .example-title { font-weight: bold; color: var(--lc-orange); margin-bottom: 2px; }
+
+    .complexity-container { display: flex; gap: 10px; margin-top: 10px; }
+    .complexity-box {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .complexity-title { color: var(--lc-text-dim); display: block; margin-bottom: 2px; }
+    .complexity-val { font-family: monospace; font-size: 0.95rem; font-weight: bold; color: var(--lc-easy); }
+
+    .approach-box {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-left: 3px solid var(--lc-blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 16px;
+    }
+    .approach-title { font-weight: bold; color: var(--lc-blue); margin-bottom: 4px; }
+
+    .code-container {
+      background: var(--lc-code-bg);
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 12px 0;
+      font-family: 'Consolas', Monaco, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 480px;
+    }
+    .code-line {
+      padding: 0 16px;
+      white-space: pre;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .code-line.active-line {
+      background: var(--lc-active-line);
+      border-left-color: var(--lc-orange);
+    }
+
+    .stage {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      border-radius: 8px;
+      height: 200px;
+      position: relative;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+
+    .array-container {
+      display: flex;
+      gap: 12px;
+      position: absolute;
+      left: 20px;
+      top: 60px;
+    }
+
+    .node {
+      width: 50px;
+      height: 50px;
+      background: #333;
+      border: 2px solid var(--lc-border);
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 1.1rem;
+      position: relative;
+      transition: all 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    
+    .node.active-i {
+      border-color: var(--lc-orange);
+      background: rgba(255, 161, 22, 0.2);
+    }
+    .node.active-i1 {
+      border-color: var(--lc-blue);
+      background: rgba(0, 122, 255, 0.2);
+    }
+    .node.duplicate-found {
+      background: var(--lc-red);
+      border-color: var(--lc-red);
+      color: white;
+    }
+
+    .ptr-container {
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .ptr-label {
+      font-size: 0.65rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: white;
+      white-space: nowrap;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .p-i { background: var(--lc-orange); }
+    .p-i1 { background: var(--lc-blue); }
+
+    .idx-label {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      color: var(--lc-text-dim);
+      font-family: monospace;
+    }
+
+    .set-view {
+      background: #141414;
+      border: 1px solid var(--lc-border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+    .set-title { color: var(--lc-text-dim); margin-bottom: 6px; font-weight: bold; }
+    .set-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .set-item {
+      background: #2a2a2a;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      color: var(--lc-easy);
+      font-weight: bold;
+    }
+
+    .control-panel {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      background: #3e3e3e;
+      color: var(--lc-text);
+      border: none;
+      padding: 7px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4e4e4e; }
+    .btn-primary { background: var(--lc-easy); color: #fff; }
+    .btn-primary:hover { background: #009684; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .status-card {
+      background: #1e1e1e;
+      border: 1px solid var(--lc-border);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .status-title { font-size: 0.9rem; font-weight: bold; color: var(--lc-orange); margin-bottom: 4px; }
+    .status-desc { font-size: 0.85rem; color: #ccc; }
+
+    .kw { color: #ff79c6; font-weight: bold; }
+    .fn { color: #50fa7b; }
+    .self { color: #bd93f9; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <div class="lc-header">
+    <span class="lc-logo">LeetCode</span>
+    <span style="font-size: 1.1rem; font-weight: bold;">217. Contains Duplicate</span>
+    <span class="lc-badge">Easy</span>
+    <span class="lc-tag">Array</span>
+    <span class="lc-tag">Hash Table</span>
+    <span class="lc-tag">Sorting</span>
+  </div>
+
+  <div class="config-tabs">
+    <div class="tab-group">
+      <button class="tab-btn active" id="algo-set" onclick="setAlgo('set')">集合法 (HashSet)</button>
+      <button class="tab-btn" id="algo-sort" onclick="setAlgo('sort')">排序法 (Sorting)</button>
+    </div>
+    <div class="tab-group">
+      <button class="tab-btn active" id="lang-py" onclick="setLang('py')">Python3</button>
+      <button class="tab-btn" id="lang-c" onclick="setLang('c')">C++</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- 左欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📝 題目描述與範例 (Examples)</div>
+        <div class="card-body">
+          <div class="problem-desc">
+            給定一個整數陣列 <code>nums</code>，如果陣列中任何數值至少出現兩次，則回傳 <code>true</code>；如果所有元素都是唯一的，則回傳 <code>false</code>。
+          </div>
+
+          <div class="example-block">
+            <div class="example-title">Example 1:</div>
+            <div><strong>Input:</strong> nums = [1, 2, 3, 1]</div>
+            <div><strong>Output:</strong> true</div>
+          </div>
+
+          <div class="complexity-container">
+            <div class="complexity-box">
+              <span class="complexity-title">Time Complexity</span>
+              <span class="complexity-val" id="tc-val">O(n)</span>
+            </div>
+            <div class="complexity-box">
+              <span class="complexity-title">Space Complexity</span>
+              <span class="complexity-val" id="sc-val">O(n)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-header">
+          <span id="codeTitle">🐍 程式碼實作</span>
+          <span id="stepHint" style="font-size: 0.75rem; color: var(--lc-orange);">READY</span>
+        </div>
+        <div class="card-body" style="padding: 10px 0;">
+          <div class="code-container" id="code-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右欄 -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">📊 執行狀態與視覺化 (State & Visualizer)</div>
+        <div class="card-body">
+          
+          <div class="approach-box">
+            <div class="approach-title" id="approach-title">💡 解題思路</div>
+            <div id="approach-desc">利用 HashSet 儲存已走訪過的數字。遍歷時若發現數字已存在集合中，代表有重複，回傳 true；若無則加入集合。</div>
+          </div>
+
+          <div class="status-card">
+            <div id="step-title" class="status-title">初始化</div>
+            <div id="step-desc" class="status-desc">準備開始模擬...</div>
+          </div>
+
+          <div class="stage" id="main-stage">
+            <div class="array-container" id="array-nodes"></div>
+          </div>
+
+          <div class="set-view" id="set-view">
+            <div class="set-title">HashSet (seen)</div>
+            <div class="set-grid" id="set-grid">
+              <span style="color: var(--lc-text-dim);">{ }</span>
+            </div>
+          </div>
+
+          <div class="control-panel" style="margin-top: 16px;">
+            <button class="btn" onclick="resetSim()">Reset</button>
+            <button id="prev-btn" class="btn" onclick="runPrevStep()">← Prev</button>
+            <button id="step-btn" class="btn btn-primary" onclick="runNextStep()">Step →</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleSetNums = [1, 2, 3, 1];
+    const sampleSortNums = [1, 2, 3, 1];
+    let currentAlgo = 'set'; // 'set' | 'sort'
+    let lang = 'py';
+    let currentStep = 0;
+    let history = [];
+
+    const codes = {
+      set: {
+        py: [
+          `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">containsDuplicate</span>(<span class="self">self</span>, nums: List[int]) -&gt; bool:`,
+          `        seen = set()`,
+          `        <span class="kw">for</span> num <span class="kw">in</span> nums:`,
+          `            <span class="kw">if</span> num <span class="kw">in</span> seen:`,
+          `                <span class="kw">return</span> True`,
+          `            seen.add(num)`,
+          `        <span class="kw">return</span> False`
+        ],
+        c: [
+          `<span class="kw">class</span> <span class="fn">Solution</span> {`,
+          `<span class="kw">public</span>:`,
+          `    bool <span class="fn">containsDuplicate</span>(vector&lt;int&gt;& nums) {`,
+          `        unordered_set&lt;int&gt; seen;`,
+          `        <span class="kw">for</span> (int num : nums) {`,
+          `            <span class="kw">if</span> (seen.count(num)) {`,
+          `                <span class="kw">return</span> true;`,
+          `            }`,
+          `            seen.insert(num);`,
+          `        }`,
+          `        <span class="kw">return</span> false;`,
+          `    }`,
+          `};`
+        ]
+      },
+      sort: {
+        py: [
+          `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">containsDuplicate</span>(<span class="self">self</span>, nums: List[int]) -&gt; bool:`,
+          `        nums.sort()`,
+          `        <span class="kw">for</span> i <span class="kw">in</span> range(len(nums) - 1):`,
+          `            <span class="kw">if</span> nums[i] == nums[i + 1]:`,
+          `                <span class="kw">return</span> True`,
+          `        <span class="kw">return</span> False`
+        ],
+        c: [
+          `<span class="kw">class</span> <span class="fn">Solution</span> {`,
+          `<span class="kw">public</span>:`,
+          `    bool <span class="fn">containsDuplicate</span>(vector&lt;int&gt;& nums) {`,
+          `        sort(nums.begin(), nums.end());`,
+          `        <span class="kw">for</span> (int i = 0; i &lt; (int)nums.size() - 1; ++i) {`,
+          `            <span class="kw">if</span> (nums[i] == nums[i + 1]) {`,
+          `                <span class="kw">return</span> true;`,
+          `            }`,
+          `        }`,
+          `        <span class="kw">return</span> false;`,
+          `    }`,
+          `};`
+        ]
+      }
+    };
+
+    function setAlgo(a) { currentAlgo = a; resetSim(); }
+    function setLang(l) { lang = l; resetSim(); }
+
+    function buildHistorySet() {
+      history = [];
+      let seen = new Set();
+      let arr = [...sampleSetNums];
+
+      // 0: 初始化
+      history.push({
+        line: lang === 'py' ? 2 : 3,
+        title: "初始化 HashSet",
+        desc: "建立空的集合 seen 用於記錄走訪過的元素。",
+        arr: [...arr], i: -1, seen: new Set(seen), found: false
+      });
+
+      for (let i = 0; i < arr.length; i++) {
+        let num = arr[i];
+
+        // 檢查元素
+        history.push({
+          line: lang === 'py' ? 4 : 5,
+          title: `檢查元素 (num = ${num})`,
+          desc: `檢查 ${num} 是否已在 HashSet 中...`,
+          arr: [...arr], i: i, seen: new Set(seen), found: false
+        });
+
+        if (seen.has(num)) {
+          history.push({
+            line: lang === 'py' ? 5 : 6,
+            title: "發現重複元素！",
+            desc: `數字 ${num} 已經存在於 HashSet 中，找到重複！回傳 True。`,
+            arr: [...arr], i: i, seen: new Set(seen), found: true
+          });
+          return;
+        } else {
+          seen.add(num);
+          history.push({
+            line: lang === 'py' ? 6 : 8,
+            title: "加入 HashSet",
+            desc: `數字 ${num} 未出現過，將其加入 HashSet。`,
+            arr: [...arr], i: i, seen: new Set(seen), found: false
+          });
+        }
+      }
+
+      history.push({
+        line: lang === 'py' ? 7 : 10,
+        title: "結束走訪",
+        desc: "所有元素皆為唯一，回傳 False。",
+        arr: [...arr], i: -1, seen: new Set(seen), found: false
+      });
+    }
+
+    function buildHistorySort() {
+      history = [];
+      let arr = [...sampleSortNums];
+
+      // 0: 原始陣列
+      history.push({
+        line: lang === 'py' ? 2 : 3,
+        title: "準備進行排序",
+        desc: "將陣列進行遞增排序，使相同的數字相鄰。",
+        arr: [...arr], i: -1, found: false
+      });
+
+      // 1: 排序後
+      arr.sort((a, b) => a - b);
+      history.push({
+        line: lang === 'py' ? 2 : 3,
+        title: "排序完成",
+        desc: `陣列排序後結果為 [${arr.join(', ')}]。`,
+        arr: [...arr], i: -1, found: false
+      });
+
+      for (let i = 0; i < arr.length - 1; i++) {
+        history.push({
+          line: lang === 'py' ? 4 : 5,
+          title: `比較相鄰元素 (i = ${i})`,
+          desc: `檢查 nums[${i}] (${arr[i]}) 與 nums[${i+1}] (${arr[i+1]}) 是否相等...`,
+          arr: [...arr], i: i, found: false
+        });
+
+        if (arr[i] === arr[i + 1]) {
+          history.push({
+            line: lang === 'py' ? 5 : 6,
+            title: "發現相等相鄰元素！",
+            desc: `nums[${i}] 與 nums[${i+1}] 均為 ${arr[i]}，回傳 True。`,
+            arr: [...arr], i: i, found: true
+          });
+          return;
+        }
+      }
+
+      history.push({
+        line: lang === 'py' ? 6 : 9,
+        title: "無相鄰重複元素",
+        desc: "檢查完畢，無重複元素，回傳 False。",
+        arr: [...arr], i: -1, found: false
+      });
+    }
+
+    function resetSim() {
+      if (currentAlgo === 'set') buildHistorySet();
+      else buildHistorySort();
+
+      currentStep = 0;
+      updateUIElements();
+      renderCode();
+      applyState();
+    }
+
+    function runNextStep() {
+      if (currentStep < history.length - 1) {
+        currentStep++;
+        applyState();
+      }
+    }
+
+    function runPrevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        applyState();
+      }
+    }
+
+    function applyState() {
+      const state = history[currentStep];
+
+      document.getElementById('prev-btn').disabled = (currentStep === 0);
+      document.getElementById('step-btn').disabled = (currentStep === history.length - 1);
+
+      updateLineHighlight(state.line);
+      document.getElementById('step-title').innerText = state.title;
+      document.getElementById('step-desc').innerText = state.desc;
+      document.getElementById('stepHint').innerText = state.title.toUpperCase();
+
+      renderStage(state);
+      renderSetGrid(state);
+    }
+
+    function updateUIElements() {
+      document.getElementById('algo-set').className = 'tab-btn ' + (currentAlgo === 'set' ? 'active' : '');
+      document.getElementById('algo-sort').className = 'tab-btn ' + (currentAlgo === 'sort' ? 'active' : '');
+      document.getElementById('lang-py').className = 'tab-btn ' + (lang === 'py' ? 'active' : '');
+      document.getElementById('lang-c').className = 'tab-btn ' + (lang === 'c' ? 'active' : '');
+
+      if (currentAlgo === 'set') {
+        document.getElementById('tc-val').innerText = 'O(n)';
+        document.getElementById('sc-val').innerText = 'O(n)';
+        document.getElementById('approach-title').innerText = '💡 解題思路 (HashSet)';
+        document.getElementById('approach-desc').innerText = '維護一個 HashSet。每走訪一個數字，檢查其是否在 Set 中；若已存在則代表發現重複，否則將其加入 Set。空間換取時間的最佳解法。';
+        document.getElementById('set-view').style.display = 'block';
+      } else {
+        document.getElementById('tc-val').innerText = 'O(n log n)';
+        document.getElementById('sc-val').innerText = 'O(1)';
+        document.getElementById('approach-title').innerText = '💡 解題思路 (Sorting)';
+        document.getElementById('approach-desc').innerText = '先對陣列進行排序，將相同的數字集中在相鄰位置，再線性檢查是否有 `nums[i] == nums[i+1]`。空間複雜度較低。';
+        document.getElementById('set-view').style.display = 'none';
+      }
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codes[currentAlgo][lang]
+        .map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`)
+        .join('');
+    }
+
+    function updateLineHighlight(line) {
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active-line'));
+      if (document.getElementById('l' + line)) {
+        document.getElementById('l' + line).classList.add('active-line');
+      }
+    }
+
+    function renderStage(state) {
+      const container = document.getElementById('array-nodes');
+      container.innerHTML = '';
+
+      state.arr.forEach((val, idx) => {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.innerText = val;
+
+        let ptrs = '';
+        if (currentAlgo === 'set') {
+          if (idx === state.i) {
+            node.classList.add('active-i');
+            ptrs += `<div class="ptr-label p-i">num</div>`;
+          }
+          if (state.found && idx === state.i) {
+            node.className = 'node duplicate-found';
+          }
+        } else {
+          if (idx === state.i) {
+            node.classList.add('active-i');
+            ptrs += `<div class="ptr-label p-i">i</div>`;
+          }
+          if (idx === state.i + 1) {
+            node.classList.add('active-i1');
+            ptrs += `<div class="ptr-label p-i1">i+1</div>`;
+          }
+          if (state.found && (idx === state.i || idx === state.i + 1)) {
+            node.className = 'node duplicate-found';
+          }
+        }
+
+        if (ptrs) {
+          node.innerHTML += `<div class="ptr-container">${ptrs}</div>`;
+        }
+
+        node.innerHTML += `<div class="idx-label">[${idx}]</div>`;
+        container.appendChild(node);
+      });
+    }
+
+    function renderSetGrid(state) {
+      if (currentAlgo !== 'set') return;
+      const grid = document.getElementById('set-grid');
+
+      if (!state.seen || state.seen.size === 0) {
+        grid.innerHTML = `<span style="color: var(--lc-text-dim);">{ }</span>`;
+        return;
+      }
+
+      grid.innerHTML = Array.from(state.seen).map(v => `
+        <div class="set-item">${v}</div>
+      `).join('');
+    }
+
+    window.onload = resetSim;
+  </script>
+</body>
+</html>

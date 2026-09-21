@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Robot Collisions - Physical Order Debugger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #1E1E1E; --sidebar: #252526; --border: #333; --blue: #007ACC; --text: #D4D4D4; --kw: #C586C0; --cmt: #6A9955; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; font-size: 11px; line-height: 1.6; }
+        .active-line { background: #37373D; border-left: 3px solid var(--blue); }
+        .robot-r { background: linear-gradient(180deg, #4D7E3E, #2D4F24); border: 1px solid #669656; }
+        .robot-l { background: linear-gradient(180deg, #9A4949, #5A2929); border: 1px solid #B55D5D; }
+        .scroll-dark::-webkit-scrollbar { width: 5px; height: 5px; }
+        .scroll-dark::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        .case-card { background: #2D2D30; border: 1px solid #3F3F46; cursor: pointer; transition: 0.2s; }
+        .case-card.active { border-color: var(--blue); background: #37373D; }
+        .arena-container { perspective: 1000px; }
+        .robot-item { transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <div class="h-9 flex items-center px-4 text-xs border-b border-black bg-[#333]">
+        <div class="flex items-center space-x-2 mr-6"><span class="text-yellow-500 font-bold">PY</span> <span>solution.py</span></div>
+        <div class="flex-1 text-center text-gray-500 italic text-[9px] tracking-widest uppercase">2751. Robot Collisions - Sorting & Trace Logic</div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden p-3 gap-3">
+        
+        <aside class="w-[30%] flex flex-col gap-3 overflow-y-auto scroll-dark pr-1">
+            <div class="bg-[#252526] p-4 rounded border border-[#333]">
+                <h2 class="text-blue-400 font-bold text-sm mb-1">2751. Robot Collisions</h2>
+                <p class="text-[10px] text-gray-400">觀察機器人如何從「輸入順序」經由「位置排序」後開始碰撞。</p>
+            </div>
+
+            <div class="space-y-3" id="case-menu">
+                <div onclick="loadCase(0)" id="c0" class="case-card p-3 rounded active">
+                    <b class="text-blue-400 text-[11px] block mb-2">Example 1: Input [5,4,3,2,1]</b>
+                    <div class="space-y-1 font-mono text-[9px]">
+                        <div><span class="text-gray-500">POS:</span> [5, 4, 3, 2, 1]</div>
+                        <div><span class="text-gray-500">HP:</span> [2, 17, 9, 15, 10]</div>
+                        <div><span class="text-gray-500">DIR:</span> "RRRRR"</div>
+                    </div>
+                </div>
+                <div onclick="loadCase(1)" id="c1" class="case-card p-3 rounded">
+                    <b class="text-blue-400 text-[11px] block mb-2">Example 2: Input [3,5,2,6]</b>
+                    <div class="space-y-1 font-mono text-[9px]">
+                        <div><span class="text-gray-500">POS:</span> [3, 5, 2, 6]</div>
+                        <div><span class="text-gray-500">HP:</span> [10, 10, 15, 12]</div>
+                        <div><span class="text-gray-500">DIR:</span> "RLRL"</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="w-[40%] flex flex-col gap-3">
+            <div class="bg-[#252526] rounded border border-[#333] flex-[1.4] p-4 flex flex-col overflow-hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <span id="arena-title" class="text-[10px] text-yellow-500 font-bold uppercase tracking-tighter">Status: Original Input Order</span>
+                </div>
+                
+                <div id="visual-arena" class="flex-1 flex items-end justify-around pb-12 border-b border-[#333] relative arena-container">
+                    </div>
+                
+                <div class="mt-4 flex items-center justify-between">
+                    <div class="flex gap-2">
+                        <button onclick="reset()" class="bg-[#333] text-[10px] px-3 py-1 rounded">Reset</button>
+                        <button onclick="prevStep()" class="bg-[#333] text-[10px] px-3 py-1 rounded">Back</button>
+                        <button onclick="nextStep()" class="bg-blue-600 text-[10px] px-4 py-1 rounded font-bold text-white shadow-lg">Next Step</button>
+                    </div>
+                    <div class="text-[10px] text-gray-500 font-mono">STEP: <span id="step-id" class="text-white">0</span></div>
+                </div>
+            </div>
+
+            <div class="bg-[#1E1E1E] rounded border border-[#333] flex-1 flex flex-col overflow-hidden">
+                <div class="px-3 py-1 bg-[#252526] text-[9px] font-bold border-b border-[#333]">EXECUTION LOG</div>
+                <div id="log-box" class="flex-1 p-3 overflow-y-auto scroll-dark code-font text-[10px] space-y-1"></div>
+            </div>
+        </main>
+
+        <section class="w-[30%] flex flex-col gap-3">
+            <div class="bg-[#1E1E1E] rounded border border-[#333] flex-[2.5] overflow-hidden flex flex-col">
+                <div class="p-2 bg-[#252526] border-b border-[#333] text-[10px] text-gray-500 font-mono">solution.py</div>
+                <div id="code-display" class="code-font overflow-y-auto scroll-dark flex-1"></div>
+            </div>
+
+            <div class="bg-[#252526] p-4 rounded border border-[#333] flex-1">
+                <span class="text-[10px] text-gray-500 font-bold block mb-2 uppercase italic text-center">Stack</span>
+                <div id="stack-display" class="flex flex-wrap gap-2 justify-center"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const codeText = [
+            "class Solution:",
+            "    def survivedRobotsHealths(self, positions, healths, directions):",
+            "        n = len(positions)",
+            "        robots = []",
+            "        for i in range(n):",
+            "            # [位置, 生命值, 方向, 原始ID]",
+            "            robots.append([positions[i], healths[i], directions[i], positions[i]])",
+            "        ",
+            "        # --- 核心排序步驟 ---",
+            "        robots.sort() ",
+            "        stack = []",
+            "        ",
+            "        for i in range(n):",
+            "            curr = robots[i]",
+            "            if curr[2] == 'R':",
+            "                stack.append(curr)",
+            "                continue",
+            "            ",
+            "            while stack and curr[1] > 0:",
+            "                top = stack[-1]",
+            "                if curr[1] > top[1]:",
+            "                    stack.pop(); curr[1] -= 1; top[1] = 0",
+            "                elif curr[1] < top[1]:",
+            "                    top[1] -= 1; curr[1] = 0",
+            "                else:",
+            "                    stack.pop(); curr[1] = 0; top[1] = 0",
+            "        return [r[1] for r in sorted(robots, key=lambda x: x[0]) if r[1] > 0]"
+        ];
+
+        let history = [], step = 0;
+
+        function initCode() {
+            const container = document.getElementById('code-display');
+            container.innerHTML = codeText.map((l, i) => {
+                let s = l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const keywords = ['class','def','for','in','if','elif','else','while','continue','return','lambda'];
+                keywords.forEach(k => s = s.replace(new RegExp(`\\b${k}\\b`,'g'), `<span style="color:var(--kw)">${k}</span>`));
+                s = s.replace(/#.*/g, `<span style="color:var(--cmt)">$&</span>`);
+                return `<div id="l-${i}" class="px-4 py-0.5 whitespace-pre"><span class="inline-block w-6 text-gray-600 text-right mr-4 select-none">${i+1}</span>${s}</div>`;
+            }).join('');
+        }
+
+        function loadCase(idx) {
+            reset();
+            const cases = [
+                { p:[5,4,3,2,1], h:[2,17,9,15,10], d:"RRRRR" },
+                { p:[3,5,2,6], h:[10,10,15,12], d:"RLRL" }
+            ];
+            document.querySelectorAll('.case-card').forEach((c,i)=>c.className=`case-card p-3 rounded ${i===idx?'active':''}`);
+            generateHistory(cases[idx]);
+            updateUI();
+        }
+
+        function generateHistory(data) {
+            history = [];
+            let robots = data.p.map((p, i) => ({ p, h: data.h[i], d: data.d[i], id: p, active: true }));
+            let stack = [];
+            let currentI = -1;
+            let isSorted = false;
+
+            const record = (ln, msg, status) => {
+                history.push({ 
+                    ln, msg, 
+                    robots: JSON.parse(JSON.stringify(robots)), 
+                    stack: JSON.parse(JSON.stringify(stack)), 
+                    curr: currentI !== -1 ? robots[currentI] : null,
+                    isSorted,
+                    status: status || (isSorted ? "Physical Order (Sorted)" : "Input Order")
+                });
+            };
+
+            record(2, "初始化資料，按輸入順序排列...");
+            record(6, "封裝機器人資料：[Pos, Health, Dir, ID]");
+            
+            // 執行排序
+            isSorted = true;
+            robots.sort((a,b) => a.p - b.p);
+            record(9, "!!! 執行 robots.sort()：按位置重新排列機器人 !!!", "Sorting Applied!");
+
+            record(10, "初始化 Stack");
+
+            for(let i=0; i<robots.length; i++) {
+                currentI = i;
+                let curr = robots[i];
+                record(13, `處理機器人 ID:${curr.id} (P:${curr.p})`);
+                if(curr.d === 'R') {
+                    stack.push(curr);
+                    record(15, `向右機器人 ID:${curr.id} 入棧`);
+                } else {
+                    record(18, `向左機器人 ID:${curr.id} 開始碰撞檢查`);
+                    while(stack.length > 0 && curr.h > 0) {
+                        let top = stack[stack.length-1];
+                        if(curr.h > top.h) {
+                            curr.h--; top.h = 0; top.active = false; stack.pop();
+                            record(21, `戰鬥：ID:${curr.id} 勝出，棧頂移除`);
+                        } else if(curr.h < top.h) {
+                            top.h--; curr.h = 0; curr.active = false;
+                            record(23, `戰鬥：棧頂勝出，ID:${curr.id} 移除`);
+                        } else {
+                            curr.h = 0; top.h = 0; curr.active = false; top.active = false; stack.pop();
+                            record(25, `戰鬥：平手，兩者移除`);
+                        }
+                    }
+                }
+            }
+            currentI = -1;
+            record(26, "回傳最終存活結果。");
+        }
+
+        function updateUI() {
+            const s = history[step];
+            if(!s) return;
+
+            document.querySelectorAll('.active-line').forEach(el => el.classList.remove('active-line'));
+            const line = document.getElementById(`l-${s.ln}`);
+            if(line) line.classList.add('active-line');
+
+            if(s.msg) {
+                const log = document.getElementById('log-box');
+                log.innerHTML += `<div><span class="text-blue-500 font-bold">[Step ${step}]</span> ${s.msg}</div>`;
+                log.scrollTop = log.scrollHeight;
+            }
+
+            document.getElementById('arena-title').innerText = `Status: ${s.status}`;
+            document.getElementById('step-id').innerText = step;
+
+            const arena = document.getElementById('visual-arena');
+            arena.innerHTML = s.robots.map((r, i) => `
+                <div class="robot-item flex flex-col items-center" style="opacity:${r.active?1:0.1}">
+                    <span class="text-[10px] font-bold mb-1 ${s.curr?.id===r.id?'text-blue-400':''}">${r.h||'X'}</span>
+                    <div class="w-9 rounded-t ${r.d==='R'?'robot-r':'robot-l'} flex items-center justify-center text-[10px] text-white ${s.curr?.id===r.id?'ring-2 ring-white':''}" 
+                         style="height:${Math.max(15, r.h*2)}px">
+                        ${r.d==='R'?'→':'←'}
+                    </div>
+                    <span class="text-[9px] mt-2 font-mono text-gray-500">ID:${r.id}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('stack-display').innerHTML = s.stack.map(x => `
+                <div class="bg-green-900/40 border border-green-700 px-2 py-1 rounded text-[9px] animate-pulse">ID:${x.id}</div>
+            `).join('') || '<span class="text-gray-700 text-[9px]">Empty</span>';
+        }
+
+        function nextStep() { if(step < history.length - 1) { step++; updateUI(); } }
+        function prevStep() { if(step > 0) { step--; document.getElementById('log-box').innerHTML = ""; updateUI(); } }
+        function reset() { step = 0; document.getElementById('log-box').innerHTML = ""; updateUI(); }
+
+        initCode();
+        loadCase(0);
+    </script>
+</body>
+</html>

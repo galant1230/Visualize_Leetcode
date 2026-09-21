@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LeetCode 138. Copy List - 專業縮排修正版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1a1a1b; color: #d4d4d4; font-family: 'Consolas', 'Monaco', monospace; height: 100vh; overflow: hidden; }
+        .col-left { width: 30%; background-color: #252526; border-right: 1px solid #333; overflow-y: auto; }
+        .col-main { width: 40%; background-color: #1e1e1e; }
+        .col-right { width: 30%; background-color: #252526; border-left: 1px solid #333; }
+        
+        /* 嚴格控制縮排的程式碼框 */
+        .code-box { 
+            background-color: #1e1e1e; 
+            font-family: 'Fira Code', 'Cascadia Code', monospace; 
+            font-size: 13px; 
+            line-height: 1.6;
+            white-space: pre; /* 確保空格被完整渲染 */
+        }
+        .active-line { background-color: #264f78 !important; border-left: 4px solid #007acc !important; }
+        
+        /* 語法高亮 */
+        .kw { color: #569cd6; } 
+        .tp { color: #4ec9b0; } 
+        .fn { color: #dcdcaa; } 
+        .cm { color: #6a9955; } 
+        .st { color: #ce9178; } 
+
+        .official-node {
+            width: 80px; height: 60px;
+            background: #ffffff; border: 1px solid #c8c8c8;
+            color: #333; font-weight: bold;
+            display: flex; flex-direction: column;
+            border-radius: 2px;
+        }
+        .node-val { height: 60%; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #eee; font-size: 15px; }
+        .node-ptr { height: 40%; display: flex; font-size: 9px; background: #fdfdfd; }
+        .ptr-s { flex: 1; border-right: 1px solid #eee; display: flex; align-items: center; justify-content: center; color: #888; }
+        
+        .highlight-old { outline: 3px solid #10b981; outline-offset: 2px; }
+        .highlight-new { outline: 3px solid #3b82f6; outline-offset: 2px; }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <header class="h-14 border-b border-zinc-800 flex items-center px-6 justify-between bg-[#252526] shrink-0">
+        <div class="flex items-center gap-4">
+            <span class="font-bold text-white tracking-tighter">LC #138 DEEP COPY VISUALIZER</span>
+            <div class="flex bg-zinc-900 rounded p-1 gap-1 border border-zinc-700 ml-4">
+                <button onclick="setLang('c')" id="l-c" class="px-4 py-1 text-[11px] rounded bg-blue-600">C Code</button>
+                <button onclick="setLang('py')" id="l-py" class="px-4 py-1 text-[11px] rounded hover:bg-zinc-800">Python</button>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="setTestCase(0)" id="t-0" class="px-3 py-1 text-[10px] rounded bg-blue-600">Ex 1</button>
+            <button onclick="setTestCase(1)" id="t-1" class="px-3 py-1 text-[10px] rounded bg-zinc-800">Ex 2</button>
+            <button onclick="setTestCase(2)" id="t-2" class="px-3 py-1 text-[10px] rounded bg-zinc-800">Ex 3</button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        <section class="col-left p-6 space-y-6">
+            <div>
+                <h3 class="text-blue-400 font-bold text-[10px] uppercase tracking-widest mb-3">Problem Specification</h3>
+                <p class="text-[12px] text-zinc-300 leading-relaxed italic">
+                    "Construct a <strong>Deep Copy</strong> of a linked list where each node contains an additional random pointer..."
+                </p>
+            </div>
+
+            <div class="bg-zinc-800/50 border-l-4 border-blue-500 p-4 rounded-r shadow-lg">
+                <h4 class="text-white text-xs font-bold mb-2">Deep Copy 技術定義</h4>
+                <p class="text-[11px] text-zinc-400 leading-normal">
+                    深拷貝要求在記憶體中開闢 <span class="text-blue-400 font-bold">全新空間</span>。
+                </p>
+                <ul class="list-disc ml-4 mt-2 text-[10px] text-zinc-400 space-y-2">
+                    <li><b class="text-zinc-200">獨立性：</b> 新舊節點位址絕對不可重疊。</li>
+                    <li><b class="text-zinc-200">對稱性：</b> 若原節點 A 指向 B，則新節點 A' 必須指向 B'。</li>
+                    <li><b class="text-zinc-200">指針重建：</b> 必須透過映射表或雜湊表，將原始指針地址轉換為新分配的地址。</li>
+                </ul>
+            </div>
+
+            <div class="pt-4 border-t border-zinc-800">
+                <h3 class="text-blue-400 font-bold text-[10px] uppercase tracking-widest mb-3">Current Input (Head)</h3>
+                <div id="test-info" class="font-mono text-[11px] p-3 bg-black/40 rounded border border-zinc-700 text-yellow-500"></div>
+            </div>
+        </section>
+
+        <section class="col-main p-6 flex flex-col gap-6">
+            <div class="flex-1 flex flex-col items-center justify-center bg-[#252526] rounded-xl border border-zinc-800 relative shadow-inner">
+                <div id="step-comment" class="absolute top-10 text-xs font-mono text-blue-400 bg-blue-900/20 px-4 py-2 rounded-full border border-blue-500/30"></div>
+                
+                <div class="w-full space-y-20 px-8">
+                    <div>
+                        <span class="text-[9px] text-zinc-500 font-bold mb-4 block uppercase">Original List (Heap A)</span>
+                        <div class="flex items-center gap-2" id="viz-old"></div>
+                    </div>
+                    <div>
+                        <span class="text-[9px] text-zinc-500 font-bold mb-4 block uppercase">New Deep Copy (Heap B)</span>
+                        <div class="flex items-center gap-2" id="viz-new"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="h-24 bg-[#252526] rounded-xl border border-zinc-800 flex items-center justify-between px-10">
+                <div class="flex gap-3">
+                    <button onclick="step(-1)" class="px-6 py-2 bg-zinc-800 rounded border border-zinc-600 text-xs font-bold hover:bg-zinc-700">PREV</button>
+                    <button onclick="step(1)" class="px-10 py-2 bg-blue-600 text-white rounded shadow-lg shadow-blue-900/20 font-bold text-xs hover:bg-blue-500">NEXT STEP</button>
+                    <button onclick="reset()" class="px-6 py-2 bg-zinc-800 text-red-400 border border-zinc-700 rounded text-xs font-bold hover:bg-zinc-700">RESET</button>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] text-zinc-500 font-bold">PROGRESS</div>
+                    <div class="text-xl font-bold text-white font-mono"><span id="cur-s">0</span> / <span id="tot-s">0</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="col-right p-4 flex flex-col gap-4">
+            <div class="flex-[3] overflow-hidden bg-[#1e1e1e] rounded-xl border border-zinc-800 flex flex-col">
+                <div class="bg-[#323233] px-4 py-2 text-[10px] text-zinc-400 font-bold flex justify-between">
+                    <span id="lang-header">SOURCE CODE</span>
+                    <span class="text-blue-500">4-Space Indent</span>
+                </div>
+                <div id="code-display" class="p-5 code-box overflow-auto flex-1 text-sm"></div>
+            </div>
+            <div class="flex-1 bg-[#252526] rounded-xl border border-zinc-800 p-5 overflow-y-auto">
+                <h3 class="text-blue-400 font-bold text-[9px] uppercase mb-3 tracking-widest">Stack / Register Watch</h3>
+                <div id="watcher" class="text-[11px] font-mono space-y-2"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const TEST_CASES = [
+            { data: [[7,null],[13,0],[11,4],[10,2],[1,0]], label: "Ex 1" },
+            { data: [[1,1],[2,1]], label: "Ex 2" },
+            { data: [[3,null],[3,0],[3,null]], label: "Ex 3" }
+        ];
+
+        let curLang = 'c', curCase = 0, stepIdx = 0, timeline = [];
+
+        // 這裡保證絕對的縮排排版
+        const CODES = {
+            c: [
+                "<span class='kw'>struct</span> Node* <span class='fn'>copyRandomList</span>(<span class='kw'>struct</span> Node* head) {",
+                "    <span class='kw'>if</span> (!head) <span class='kw'>return</span> NULL;",
+                "    Node* oldNodes[<span class='tp'>MAX_NODES</span>];",
+                "    Node* newNodes[<span class='tp'>MAX_NODES</span>];",
+                "    <span class='tp'>int</span> idx = 0; Node* curr = head;",
+                "    Node* dummy = <span class='fn'>createNode</span>(0);",
+                "    Node* copyCurr = dummy;",
+                "    <span class='cm'>// 第一遍遍歷：建立新節點並記錄映射</span>",
+                "    <span class='kw'>while</span> (curr) {",
+                "        Node* copy = <span class='fn'>createNode</span>(curr->val);",
+                "        copyCurr->next = copy;",
+                "        oldNodes[idx] = curr;",
+                "        newNodes[idx] = copy;",
+                "        idx++;",
+                "        curr = curr->next;",
+                "        copyCurr = copyCurr->next;",
+                "    }",
+                "    <span class='cm'>// 第二遍遍歷：處理 Random 指針</span>",
+                "    curr = head;",
+                "    copyCurr = dummy->next;",
+                "    <span class='kw'>for</span> (<span class='tp'>int</span> i = 0; i < idx; i++) {",
+                "        <span class='kw'>if</span> (curr->random != NULL) {",
+                "            <span class='kw'>for</span> (<span class='tp'>int</span> j = 0; j < idx; j++) {",
+                "                <span class='kw'>if</span> (oldNodes[j] == curr->random) {",
+                "                    copyCurr->random = newNodes[j];",
+                "                    <span class='kw'>break</span>;",
+                "                }",
+                "            }",
+                "        }",
+                "        curr = curr->next;",
+                "        copyCurr = copyCurr->next;",
+                "    }",
+                "    <span class='kw'>return</span> dummy->next;",
+                "}"
+            ],
+            py: [
+                "<span class='kw'>def</span> <span class='fn'>copyRandomList</span>(self, head: <span class='st'>'Node'</span>):",
+                "    <span class='kw'>if</span> <span class='kw'>not</span> head: <span class='kw'>return</span> <span class='kw'>None</span>",
+                "    <span class='cm'># 使用雜湊表存儲 (舊地址 -> 新地址)</span>",
+                "    old_to_new = {}",
+                "    curr = head",
+                "    <span class='cm'># 第一遍遍歷：複製節點</span>",
+                "    <span class='kw'>while</span> curr:",
+                "        old_to_new[curr] = Node(curr.val)",
+                "        curr = curr.next",
+                "    curr = head",
+                "    <span class='cm'># 第二遍遍歷：對應 next 與 random</span>",
+                "    <span class='kw'>while</span> curr:",
+                "        node = old_to_new[curr]",
+                "        node.next = old_to_new.get(curr.next)",
+                "        node.random = old_to_new.get(curr.random)",
+                "        curr = curr.next",
+                "    <span class='kw'>return</span> old_to_new[head]"
+            ]
+        };
+
+        function setLang(l) { curLang = l; reset(); }
+        function setTestCase(i) { curCase = i; reset(); }
+        function reset() { stepIdx = 0; buildTimeline(); renderCode(); updateUI(); }
+
+        function buildTimeline() {
+            timeline = [];
+            const data = TEST_CASES[curCase].data;
+            const n = data.length;
+
+            if(curLang === 'c') {
+                timeline.push({ line: 2, v: { head: "valid" }, msg: "Start: Verify head" });
+                timeline.push({ line: 6, v: { dummy: "0x99", idx: 0 }, msg: "Initial: Setup dummy pointer" });
+                for(let i=0; i<n; i++) {
+                    timeline.push({ line: 9, v: { idx: i, val: data[i][0] }, msg: `Pass 1: Node(${data[i][0]}) Created` });
+                    timeline.push({ line: 12, v: { mapping: `[${i}] → NewNode` }, msg: "Saving mapping in Array" });
+                }
+                for(let i=0; i<n; i++) {
+                    timeline.push({ line: 17, v: { i: i, target: data[i][1] }, msg: `Pass 2: Re-linking Random` });
+                    if(data[i][1] !== null) {
+                        timeline.push({ line: 24, v: { from: i, to: data[i][1] }, msg: `Random Found! Assigning...` });
+                    }
+                }
+            } else {
+                timeline.push({ line: 4, v: { hashmap: "{}" }, msg: "Python: Initialize Dictionary" });
+                for(let i=0; i<n; i++) timeline.push({ line: 8, v: { curr: `Old_${i}` }, msg: `Pass 1: Map Node ${i}` });
+                for(let i=0; i<n; i++) timeline.push({ line: 13, v: { curr: `Old_${i}`, random: data[i][1] }, msg: `Pass 2: Setting Links ${i}` });
+            }
+        }
+
+        function renderCode() {
+            document.getElementById('code-display').innerHTML = CODES[curLang].map((l, i) => `<div id="ln-${i+1}">${l}</div>`).join('');
+            document.getElementById('lang-header').textContent = curLang === 'c' ? 'C SOURCE (ARRAY METHOD)' : 'PYTHON SOURCE (HASHMAP METHOD)';
+        }
+
+        function updateUI() {
+            const step = timeline[stepIdx];
+            document.querySelectorAll('#code-display div').forEach(d => d.classList.remove('active-line'));
+            document.getElementById(`ln-${step.line}`)?.classList.add('active-line');
+            
+            document.getElementById('cur-s').textContent = stepIdx + 1;
+            document.getElementById('tot-s').textContent = timeline.length;
+            document.getElementById('step-comment').textContent = step.msg;
+            document.getElementById('test-info').textContent = "head = " + JSON.stringify(TEST_CASES[curCase].data);
+
+            document.getElementById('watcher').innerHTML = Object.entries(step.v).map(([k,v]) => `
+                <div class="flex justify-between border-b border-zinc-800 pb-1">
+                    <span class="text-zinc-500">${k}</span><span class="text-blue-400 font-bold">${v}</span>
+                </div>
+            `).join('');
+
+            renderNodes('viz-old', TEST_CASES[curCase].data, step, 'old');
+            renderNodes('viz-new', TEST_CASES[curCase].data, step, 'new');
+
+            // Button highlights
+            document.getElementById('t-0').classList.toggle('bg-blue-600', curCase === 0);
+            document.getElementById('t-1').classList.toggle('bg-blue-600', curCase === 1);
+            document.getElementById('t-2').classList.toggle('bg-blue-600', curCase === 2);
+            document.getElementById('l-c').classList.toggle('bg-blue-600', curLang === 'c');
+            document.getElementById('l-py').classList.toggle('bg-blue-600', curLang === 'py');
+        }
+
+        function renderNodes(id, data, step, type) {
+            const el = document.getElementById(id);
+            const activeIdx = step.v.idx !== undefined ? step.v.idx : (step.v.i !== undefined ? step.v.i : (step.v.curr ? parseInt(step.v.curr.split('_')[1]) : -1));
+            
+            el.innerHTML = data.map((d, i) => {
+                const isHighlight = (activeIdx === i);
+                const isCreated = (type === 'old') || (stepIdx > i * 2);
+                const showRnd = (type === 'new' && step.line >= 18) || type === 'old';
+
+                return `
+                    <div class="flex items-center">
+                        <div class="official-node ${isHighlight ? (type==='old'?'highlight-old':'highlight-new') : ''} ${(!isCreated && type==='new')?'opacity-5':'opacity-100'}">
+                            <div class="node-val">${d[0]}</div>
+                            <div class="node-ptr">
+                                <div class="ptr-s">next</div>
+                                <div class="ptr-s ${showRnd && d[1]!==null ? 'bg-yellow-100 text-yellow-700 font-bold' : ''}">rnd:${d[1]===null?'ø':d[1]}</div>
+                            </div>
+                        </div>
+                        ${i < data.length - 1 ? '<div class="mx-1 text-zinc-700">→</div>' : '<div class="mx-1 text-zinc-700">→ ø</div>'}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function step(dir) {
+            stepIdx = Math.max(0, Math.min(timeline.length - 1, stepIdx + dir));
+            updateUI();
+        }
+
+        reset();
+    </script>
+</body>
+</html>

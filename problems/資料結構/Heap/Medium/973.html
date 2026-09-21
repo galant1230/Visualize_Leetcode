@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 973 - K Closest Points Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #1E1E1E; color: #D4D4D4; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+        .vscode-sidebar { background-color: #252526; }
+        .vscode-active-line { background-color: #2C313C; border-left: 3px solid #61AFEF; }
+        .code-font { font-family: 'Fira Code', monospace; font-size: 11px; }
+        .keyword { color: #C678DD; }
+        .function { color: #61AFEF; }
+        .class-name { color: #E5C07B; }
+        .comment { color: #5C6370; font-style: italic; }
+        .method-btn { transition: all 0.2s; border: 1px solid #333; margin-bottom: 4px; }
+        .method-btn.active { border-color: #61AFEF; background: #2C313C; color: #61AFEF; }
+        .case-btn { border: 1px solid #444; transition: 0.2s; }
+        .case-btn.active { background: #3E4451; border-color: #98C379; }
+        
+        .axis { stroke: #555; stroke-width: 1.5; }
+        .grid-line { stroke: #333; stroke-width: 0.5; }
+        .radius-circle { stroke: #E06C75; stroke-width: 1.5; stroke-dasharray: 4; fill: rgba(224, 108, 117, 0.05); transition: all 0.5s ease; }
+        .point-dot { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="flex flex-col">
+
+<div class="flex flex-1 overflow-hidden">
+    <aside class="w-1/3 vscode-sidebar p-5 flex flex-col gap-4 border-r border-[#333] overflow-y-auto">
+        <section>
+            <h2 class="text-[#61AFEF] text-lg font-bold mb-1">973. K Closest Points to Origin</h2>
+            <p class="text-[11px] opacity-70 leading-relaxed mb-4">
+                給定一個陣列 <code class="bg-black px-1 rounded">points</code>，找出距離原點 <code class="bg-black px-1 rounded">(0,0)</code> 最近的 <code class="bg-black px-1 rounded">k</code> 個點。
+                距離公式為：sqrt{x^2 + y^2}。
+            </p>
+        </section>
+
+        <section class="space-y-2">
+            <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Select Example</h3>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="loadCase(1)" id="case1-btn" class="case-btn active p-2 rounded text-left">
+                    <div class="text-[9px] text-gray-400">Example 1 (k=1)</div>
+                    <div class="text-[10px] font-mono">[[1,3], [-2,2]]</div>
+                </button>
+                <button onclick="loadCase(2)" id="case2-btn" class="case-btn p-2 rounded text-left">
+                    <div class="text-[9px] text-gray-400">Example 2 (k=2)</div>
+                    <div class="text-[10px] font-mono">[[3,3], [5,-1], [-2,4]]</div>
+                </button>
+            </div>
+        </section>
+
+        <section class="space-y-2">
+            <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Select Method & Complexity</h3>
+            <div class="flex flex-col" id="method-selector">
+                <button onclick="switchMethod('sorting')" id="btn-sorting" class="method-btn active p-2 text-left rounded text-[11px] flex justify-between items-center">
+                    <span>1. Sorting</span> <span class="text-[9px] opacity-50">O(N log N)</span>
+                </button>
+                <button onclick="switchMethod('minheap')" id="btn-minheap" class="method-btn p-2 text-left rounded text-[11px] flex justify-between items-center">
+                    <span>2. Min-Heap</span> <span class="text-[9px] opacity-50">O(N + K log N)</span>
+                </button>
+                <button onclick="switchMethod('maxheap')" id="btn-maxheap" class="method-btn p-2 text-left rounded text-[11px] flex justify-between items-center">
+                    <span>3. Max-Heap</span> <span class="text-[9px] opacity-50">O(N log K)</span>
+                </button>
+                <button onclick="switchMethod('quickselect')" id="btn-quickselect" class="method-btn p-2 text-left rounded text-[11px] flex justify-between items-center">
+                    <span>4. Quick Select</span> <span class="text-[9px] opacity-50">O(N) Avg</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="mt-auto">
+            <h3 class="text-[10px] font-bold text-gray-500 uppercase mb-2">Points Order Status</h3>
+            <div id="points-list" class="bg-[#151515] p-3 rounded font-mono text-[10px] space-y-1 border border-[#333]">
+                </div>
+        </section>
+    </aside>
+
+    <main class="flex-1 flex flex-col p-4 gap-4">
+        <div class="flex-1 bg-[#151515] rounded border border-[#333] relative flex flex-col items-center justify-center">
+            <div class="absolute top-4 left-4 text-[10px] text-gray-500 tracking-widest">COORDINATE SYSTEM</div>
+            <svg id="canvas" width="280" height="280" viewBox="-110 -110 220 220">
+                <g id="grid"></g>
+                <line x1="-100" y1="0" x2="100" y2="0" class="axis" />
+                <line x1="0" y1="-100" x2="0" y2="100" class="axis" />
+                <circle id="radius-viz" cx="0" cy="0" r="0" class="radius-circle" />
+                <g id="points-layer"></g>
+            </svg>
+            <div id="method-label" class="absolute bottom-4 text-[10px] font-mono text-[#61AFEF] uppercase"></div>
+        </div>
+
+        <div class="h-14 bg-[#252526] rounded flex items-center justify-between px-6 border border-[#333]">
+            <div class="flex gap-4">
+                <button onclick="prevStep()" class="hover:text-[#61AFEF] text-sm font-medium">Prev</button>
+                <button id="playBtn" onclick="togglePlay()" class="bg-[#61AFEF] text-[#1E1E1E] px-5 py-1 rounded text-sm font-bold hover:bg-[#4fa3e0]">Play</button>
+                <button onclick="nextStep()" class="hover:text-[#61AFEF] text-sm font-medium">Next</button>
+                <button onclick="reset()" class="text-gray-500 text-sm">Reset</button>
+            </div>
+            <div class="text-xs font-mono text-gray-400">Step: <span id="step-counter" class="text-[#D19A66]">0</span></div>
+        </div>
+    </main>
+
+    <aside class="w-[30%] vscode-sidebar border-l border-[#333] flex flex-col">
+        <div class="p-4 border-b border-[#333] text-[11px] text-gray-400 flex justify-between items-center">
+            <span>Solution.py</span>
+            <div class="flex gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-[#ff5f56]"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-[#27c93f]"></div>
+            </div>
+        </div>
+        <div class="p-4 code-font leading-relaxed flex-1 overflow-y-auto" id="code-display"></div>
+        <div class="h-1/3 bg-[#1E1E1E] border-t border-[#333] p-4 flex flex-col">
+            <div class="text-[10px] text-gray-500 uppercase font-bold mb-2">Live Execution Log</div>
+            <div id="status-msg" class="text-[#98C379] text-[11px] font-mono flex-1 overflow-y-auto"></div>
+        </div>
+    </aside>
+</div>
+
+<script>
+    const cases = {
+        1: { points: [[1,3], [-2,2]], k: 1 },
+        2: { points: [[3,3], [5,-1], [-2,4]], k: 2 }
+    };
+
+    const methodData = {
+        sorting: {
+            code: `<pre><span class="keyword">class</span> <span class="class-name">Solution</span>(object):
+  <span class="keyword">def</span> <span class="function">kClosest</span>(self, points, k):
+<span id="L1" class="block">    points.sort(key=<span class="keyword">lambda</span> p: p[0]**2 + p[1]**2)</span>
+<span id="L2" class="block">    <span class="keyword">return</span> points[:k]</span></pre>`,
+            getSteps: (c) => [
+                { l: 0, p: c.points, msg: "Initial set", rad: 0 },
+                { l: 1, p: [...c.points].sort((a,b) => (a[0]**2+a[1]**2)-(b[0]**2+b[1]**2)), msg: "Sorted by dist^2", rad: 5.5 },
+                { l: 2, p: [...c.points].sort((a,b) => (a[0]**2+a[1]**2)-(b[0]**2+b[1]**2)).slice(0, c.k), msg: `Result: first ${c.k} elements`, rad: 4 }
+            ]
+        },
+        minheap: {
+            code: `<pre><span class="keyword">class</span> <span class="class-name">Solution</span>(object):
+  <span class="keyword">def</span> <span class="function">kClosest</span>(self, points, k):
+<span id="L1" class="block">    minHeap = [[x**2+y**2, x, y] <span class="keyword">for</span> x,y <span class="keyword">in</span> points]</span>
+<span id="L2" class="block">    heapq.heapify(minHeap)</span>
+<span id="L3" class="block">    res = []</span>
+<span id="L4" class="block">    <span class="keyword">while</span> k > 0:</span>
+<span id="L5" class="block">      dist, x, y = heapq.heappop(minHeap)</span>
+<span id="L6" class="block">      res.append([x, y])</span></pre>`,
+            getSteps: (c) => {
+                let h = c.points.map(p => [p[0]**2+p[1]**2, p[0], p[1]]).sort((a,b) => a[0]-b[0]);
+                let steps = [{ l: 2, p: c.points, msg: "Build Heap", rad: 0 }];
+                let res = [];
+                for(let i=0; i<c.k; i++) {
+                    let cur = h.shift();
+                    res.push([cur[1], cur[2]]);
+                    steps.push({ l: 5, p: res, msg: `Pop closest: [${cur[1]},${cur[2]}]`, rad: Math.sqrt(cur[0]) });
+                }
+                return steps;
+            }
+        },
+        maxheap: {
+            code: `<pre><span class="keyword">class</span> <span class="class-name">Solution</span>(object):
+  <span class="keyword">def</span> <span class="function">kClosest</span>(self, points, k):
+<span id="L1" class="block">    maxHeap = []</span>
+<span id="L2" class="block">    <span class="keyword">for</span> x, y <span class="keyword">in</span> points:</span>
+<span id="L3" class="block">      dist = -(x**2 + y**2)</span>
+<span id="L4" class="block">      heapq.heappush(maxHeap, [dist, x, y])</span>
+<span id="L5" class="block">      <span class="keyword">if</span> len(maxHeap) > k:</span>
+<span id="L6" class="block">        heapq.heappop(maxHeap)</span></pre>`,
+            getSteps: (c) => {
+                let steps = [];
+                let heap = [];
+                c.points.forEach(p => {
+                    let d = p[0]**2+p[1]**2;
+                    heap.push({d: d, p: p});
+                    heap.sort((a,b) => b.d - a.d);
+                    steps.push({ l: 4, p: heap.map(x=>x.p), msg: `Push [${p}]`, rad: Math.sqrt(heap[0].d) });
+                    if(heap.length > c.k) {
+                        let out = heap.shift();
+                        steps.push({ l: 6, p: heap.map(x=>x.p), msg: `Pop max: [${out.p}]`, rad: Math.sqrt(heap[0].d) });
+                    }
+                });
+                return steps;
+            }
+        },
+        quickselect: {
+            code: `<pre><span class="keyword">class</span> <span class="class-name">Solution</span>(object):
+  <span class="keyword">def</span> <span class="function">kClosest</span>(self, points, k):
+<span id="L1" class="block">    pivot = partition(L, R)</span>
+<span id="L2" class="block">    <span class="keyword">if</span> pivot < k: L = pivot + 1</span>
+<span id="L3" class="block">    <span class="keyword">else</span>: R = pivot - 1</span></pre>`,
+            getSteps: (c) => [
+                { l: 1, p: c.points, msg: "Partitioning...", rad: 0 },
+                { l: 3, p: [...c.points].sort((a,b) => (a[0]**2+a[1]**2)-(b[0]**2+b[1]**2)).slice(0, c.k), msg: "Partition boundary found", rad: 4.5 }
+            ]
+        }
+    };
+
+    let activeCase = cases[1];
+    let currentMethod = 'sorting';
+    let currentStep = 0;
+    let timer = null;
+    let currentSteps = [];
+
+    function loadCase(id) {
+        activeCase = cases[id];
+        document.getElementById('case1-btn').classList.toggle('active', id === 1);
+        document.getElementById('case2-btn').classList.toggle('active', id === 2);
+        reset();
+    }
+
+    function switchMethod(m) {
+        currentMethod = m;
+        document.querySelectorAll('.method-btn').forEach(b => b.classList.toggle('active', b.id === `btn-${m}`));
+        document.getElementById('code-display').innerHTML = methodData[m].code;
+        document.getElementById('method-label').innerText = m;
+        reset();
+    }
+
+    function render() {
+        const data = currentSteps[currentStep];
+        document.getElementById('step-counter').innerText = currentStep;
+        document.getElementById('status-msg').innerHTML = `<div class="mb-1 text-gray-500">> Step ${currentStep}</div><div>${data.msg}</div>`;
+        
+        // Code
+        document.querySelectorAll('.block').forEach(el => el.classList.remove('vscode-active-line'));
+        if(document.getElementById(`L${data.l}`)) document.getElementById(`L${data.l}`).classList.add('vscode-active-line');
+
+        // SVG
+        const layer = document.getElementById('points-layer');
+        layer.innerHTML = '';
+        data.p.forEach(([x, y]) => {
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", x * 18);
+            circle.setAttribute("cy", -y * 18);
+            circle.setAttribute("r", 5);
+            circle.setAttribute("fill", "#98C379");
+            circle.setAttribute("class", "point-dot");
+            layer.appendChild(circle);
+        });
+
+        document.getElementById('radius-viz').setAttribute("r", (data.rad || 0) * 18);
+
+        // List
+        const list = document.getElementById('points-list');
+        list.innerHTML = data.p.map(p => `<div>[${p[0]}, ${p[1]}] <span class="opacity-30 text-[9px]">d²=${p[0]**2+p[1]**2}</span></div>`).join('');
+    }
+
+    function nextStep() { if (currentStep < currentSteps.length - 1) { currentStep++; render(); } else pause(); }
+    function prevStep() { if (currentStep > 0) { currentStep--; render(); } }
+    function reset() { 
+        currentStep = 0; 
+        currentSteps = methodData[currentMethod].getSteps(activeCase);
+        render(); 
+    }
+    function togglePlay() { timer ? pause() : play(); }
+    function play() { document.getElementById('playBtn').innerText = "Pause"; timer = setInterval(nextStep, 1000); }
+    function pause() { document.getElementById('playBtn').innerText = "Play"; clearInterval(timer); timer = null; }
+
+    // Init Grid
+    const g = document.getElementById('grid');
+    for(let i=-100; i<=100; i+=20) {
+        g.innerHTML += `<line x1="${i}" y1="-100" x2="${i}" y2="100" class="grid-line" />`;
+        g.innerHTML += `<line x1="-100" y1="${i}" x2="100" y2="${i}" class="grid-line" />`;
+    }
+
+    switchMethod('sorting');
+</script>
+</body>
+</html>

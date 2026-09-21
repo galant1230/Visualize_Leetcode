@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>212. Word Search II</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 45, 85, 0.15); color: var(--hard); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--hard); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--hard); margin-bottom: 4px; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--hard); display: block; font-size: 0.85rem; }
+
+    .sol-tab-btn { background: #1a1a1a; border: 1px solid var(--border); color: var(--text-dim); padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; }
+    .sol-tab-btn.active { background: var(--orange); color: #000; font-weight: bold; border-color: var(--orange); }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.76rem; overflow-x: auto; max-height: 380px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.75rem; min-height: 110px; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+    .stack-frame.returning { border-color: var(--green); border-left-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+    
+    /* 2D Board 與 Trie 的並排區域 */
+    .visual-split { display: grid; grid-template-columns: 140px 1fr; gap: 10px; }
+    
+    .board-container { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px; }
+    .board-grid { display: grid; gap: 4px; }
+    .board-cell { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: monospace; font-weight: bold; font-size: 0.85rem; background: #222; }
+    .board-cell.active { background: rgba(255, 161, 22, 0.35); border-color: var(--orange); color: var(--orange); transform: scale(1.08); }
+    .board-cell.visited { background: rgba(168, 85, 247, 0.25); border-color: var(--purple); }
+    .board-cell.found { background: rgba(80, 250, 123, 0.25); border-color: var(--green); color: var(--green); }
+
+    .trie-pane { width: 100%; height: 280px; background: #141414; border: 1px solid var(--border); border-radius: 4px; position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 4px; overflow: auto; }
+    .trie-pane-title { font-size: 0.72rem; font-weight: bold; font-family: monospace; color: var(--orange); position: sticky; top: 0; background: rgba(20, 20, 20, 0.85); width: 100%; text-align: center; padding: 2px 0; z-index: 10; }
+    
+    svg.trie-svg { width: 100%; min-height: 240px; }
+    .trie-node-circle { fill: #333; stroke: var(--border); stroke-width: 2px; transition: all 0.2s; }
+    .trie-node-circle.active { fill: rgba(255, 161, 22, 0.35); stroke: var(--orange); stroke-width: 3px; }
+    .trie-node-circle.is-word { fill: rgba(80, 250, 123, 0.25); stroke: var(--green); stroke-width: 2px; }
+    .trie-node-circle.is-word.active { stroke: var(--orange); stroke-width: 3px; }
+    .trie-text { fill: #fff; font-family: monospace; font-weight: bold; font-size: 10px; text-anchor: middle; dominant-baseline: middle; }
+    .trie-edge { stroke: #555; stroke-width: 2px; }
+
+    /* 搜尋到的結果集 */
+    .results-tracker { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; font-family: monospace; }
+    .tracker-label { font-size: 0.75rem; color: var(--text-dim); font-weight: bold; }
+    .result-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { background: rgba(80, 250, 123, 0.15); border: 1px solid var(--green); color: var(--green); padding: 1px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 75px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">212. Word Search II</span>
+    <span class="badge">Hard</span>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: board=["oaan","etae","ihgl","iflv"], words=["oath","pea","eat","rain"]</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: board=["ab","cd"], words=["abcb"]</button>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄：題目、程式碼、Call Stack -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與複雜度</div>
+        <div class="problem-desc">
+          給定一個 <code>m x n</code> 的字元網格 <code>board</code> 和一個單字列表 <code>words</code>，找出所有同時存在於網格中的單字。
+          <br>單字必須由<b>相鄰（上下左右）</b>的字母組成，同一個單格字母在同一個單字中<b>不能重複使用</b>。
+        </div>
+
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(M × N × 4^L)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(W × L)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 程式碼區塊（支援 3 種寫法切換） -->
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼解法選擇</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 4px;">
+          <button class="sol-tab-btn active" onclick="setSolution(0)">解法一：Trie + DFS 剪枝 (最佳化)</button>
+          <button class="sol-tab-btn" onclick="setSolution(1)">解法二：Trie + DFS (無剪枝)</button>
+          <button class="sol-tab-btn" onclick="setSolution(2)">解法三：TrieNode 類別結構</button>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (DFS 網格地圖搜尋歷程)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄：解題思路、實時計算與雙向動態展示 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="idea-box">
+          <div class="idea-title">💡 Trie (前綴樹) + DFS 核心最佳化技巧</div>
+          <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 4px;">
+            <li><b>將 Words 建為 Trie</b>：不必對每個 Word 都做一次網格 DFS，而是以網格點為起點，順著 Trie 的分支往下找。</li>
+            <li><b>直接將單字存於末端節點 (<code>word</code>)</b>：當找到單字時直接加入結果，不用再拼接字串。</li>
+            <li><b>強效剪枝 (Pruning)</b>：找到單字後將該節點的單字標記清除；若某節點無任何子節點，直接從父節點將其刪除，避免重複無用的搜尋！</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 網格 DFS 與 Trie 樹雙向視覺化</div>
+        
+        <div class="stage">
+          <div class="visual-split">
+            <!-- 左側 2D Board 網格 -->
+            <div class="board-container">
+              <span style="font-size: 0.72rem; font-weight: bold; color: var(--text-dim); margin-bottom: 6px;">2D Board Grid</span>
+              <div class="board-grid" id="board-grid"></div>
+            </div>
+
+            <!-- 右側 Trie 樹狀圖 -->
+            <div class="trie-pane">
+              <span class="trie-pane-title">Trie Structure</span>
+              <div id="trie-svg-container" style="width: 100%; display: flex; justify-content: center;"></div>
+            </div>
+          </div>
+
+          <div class="results-tracker">
+            <span class="tracker-label">Found Words:</span>
+            <div class="result-tags" id="result-tags-box"></div>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">當前步驟計算 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const solutions = [
+      {
+        name: "Trie + DFS 剪枝 (最佳化)",
+        timeComp: "O(M × N × 4^L)",
+        spaceComp: "O(W × L)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">findWords</span>(<span class="self">self</span>, board: List[List[str]], words: List[str]) -> List[str]:`,
+          `        trie = {}`,
+          `        <span class="kw">for</span> word <span class="kw">in</span> words:`,
+          `            node = trie`,
+          `            <span class="kw">for</span> ch <span class="kw">in</span> word:`,
+          `                node = node.setdefault(ch, {})`,
+          `            node[<span class="cm">'#'</span>] = word  <span class="cm"># 存入完整單字</span>`,
+          ``,
+          `        res = []`,
+          `        ROWS, COLS = len(board), len(board[0])`,
+          ``,
+          `        <span class="kw">def</span> <span class="fn">dfs</span>(r, c, parent, key):`,
+          `            ch = board[r][c]`,
+          `            currNode = parent[key]`,
+          `            <span class="cm"># 1. 檢查是否找到完整單字</span>`,
+          `            <span class="kw">if</span> <span class="cm">'#'</span> <span class="kw">in</span> currNode:`,
+          `                res.append(currNode[<span class="cm">'#'</span>])`,
+          `                <span class="kw">del</span> currNode[<span class="cm">'#'</span>]  <span class="cm"># 避免重複收集</span>`,
+          ``,
+          `            board[r][c] = <span class="cm">'#'</span>  <span class="cm"># 標記已訪問</span>`,
+          `            <span class="kw">for</span> dr, dc <span class="kw">in</span> [(-1,0), (1,0), (0,-1), (0,1)]`,
+          `                nr, nc = r + dr, c + dc`,
+          `                <span class="kw">if</span> 0 <= nr < ROWS <span class="kw">and</span> 0 <= nc < COLS <span class="kw">and</span> board[nr][nc] <span class="kw">in</span> currNode:`,
+          `                    dfs(nr, nc, currNode, board[nr][nc])`,
+          `            board[r][c] = ch  <span class="cm"># 回溯還原</span>`,
+          ``,
+          `            <span class="cm"># 2. 強效剪枝：若該節點已空，從父節點刪除</span>`,
+          `            <span class="kw">if not</span> currNode:`,
+          `                parent.pop(key)`,
+          ``,
+          `        <span class="kw">for</span> r <span class="kw">in</span> range(ROWS):`,
+          `            <span class="kw">for</span> c <span class="kw">in</span> range(COLS):`,
+          `                <span class="kw">if</span> board[r][c] <span class="kw">in</span> trie:`,
+          `                    dfs(r, c, trie, board[r][c])`,
+          `        <span class="kw">return</span> res`
+        ]
+      },
+      {
+        name: "Trie + DFS (無剪枝)",
+        timeComp: "O(M × N × 4^L)",
+        spaceComp: "O(W × L)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">findWords</span>(<span class="self">self</span>, board: List[List[str]], words: List[str]) -> List[str]:`,
+          `        <span class="cm"># 標準 Trie + DFS 遍歷 (不帶節點 Pop 剪枝)</span>`,
+          `        <span class="cm"># 當包含大量重複前綴時，耗時較長</span>`,
+          `        ...`
+        ]
+      },
+      {
+        name: "TrieNode 類別結構",
+        timeComp: "O(M × N × 4^L)",
+        spaceComp: "O(W × L)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">TrieNode</span>:`,
+          `    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="self">self</span>):`,
+          `        <span class="self">self</span>.children = {}`,
+          `        <span class="self">self</span>.word = <span class="kw">None</span>`,
+          ``,
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">findWords</span>(<span class="self">self</span>, board: List[List[str]], words: List[str]) -> List[str]:`,
+          `        <span class="cm"># 使用物件封裝 TrieNode 進行 DFS 搜尋</span>`,
+          `        ...`
+        ]
+      }
+    ];
+
+    const presets = [
+      {
+        name: "Ex 1: Standard Search & Pruning",
+        board: [
+          ['o','a','a','n'],
+          ['e','t','a','e'],
+          ['i','h','g','l'],
+          ['i','f','l','v']
+        ],
+        words: ["oath", "pea", "eat", "rain"]
+      },
+      {
+        name: "Ex 2: Simple Dead End",
+        board: [
+          ['a','b'],
+          ['c','d']
+        ],
+        words: ["abcb"]
+      }
+    ];
+
+    let currentSolution = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setSolution(idx) {
+      currentSolution = idx;
+      document.querySelectorAll('.sol-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      document.getElementById('time-comp').innerText = solutions[idx].timeComp;
+      document.getElementById('space-comp').innerText = solutions[idx].spaceComp;
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>Words:</b> [${p.words.map(w => `"${w}"`).join(', ')}]</div>
+        <div><b>Board:</b> ${p.board.length}x${p.board[0].length} Grid</div>
+      `;
+    }
+
+    function renderCode() {
+      const codeArr = solutions[currentSolution].code;
+      document.getElementById('code-box').innerHTML = codeArr.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderBoardHTML(board, activePos = null, visitedPos = []) {
+      const rows = board.length;
+      const cols = board[0].length;
+      const gridEl = document.getElementById('board-grid');
+      gridEl.style.gridTemplateColumns = `repeat(${cols}, 28px)`;
+
+      let html = '';
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          let cls = 'board-cell';
+          let isAct = activePos && activePos[0] === r && activePos[1] === c;
+          let isVis = visitedPos.some(p => p[0] === r && p[1] === c);
+
+          if (isAct) cls += ' active';
+          else if (isVis) cls += ' visited';
+
+          html += `<div class="${cls}">${board[r][c]}</div>`;
+        }
+      }
+      gridEl.innerHTML = html;
+    }
+
+    function renderTrieSVG(treeData, activeNodeId = 0) {
+      if (!treeData) return '';
+
+      let maxDepth = 0;
+      let posMap = {};
+
+      function calcPos(node, depth = 0, leftBound = 0, rightBound = 260) {
+        if (depth > maxDepth) maxDepth = depth;
+        let x = (leftBound + rightBound) / 2;
+        let y = depth * 40 + 25;
+        posMap[node.id] = { id: node.id, x, y, char: node.char, isWord: !!node.word, children: node.children };
+        
+        let keys = Object.keys(node.children);
+        if (keys.length > 0) {
+          let step = (rightBound - leftBound) / keys.length;
+          keys.forEach((k, idx) => {
+            calcPos(node.children[k], depth + 1, leftBound + idx * step, leftBound + (idx + 1) * step);
+          });
+        }
+      }
+      calcPos(treeData);
+
+      const svgWidth = 270;
+      const svgHeight = Math.max(240, (maxDepth + 1) * 40 + 30);
+
+      let edgesHTML = '', nodesHTML = '';
+      Object.keys(posMap).forEach(idStr => {
+        let p = posMap[idStr];
+        Object.keys(p.children).forEach(k => {
+          let child = p.children[k];
+          let cp = posMap[child.id];
+          edgesHTML += `<line x1="${p.x}" y1="${p.y}" x2="${cp.x}" y2="${cp.y}" class="trie-edge" />`;
+        });
+
+        let circleClass = 'trie-node-circle';
+        if (p.isWord) circleClass += ' is-word';
+        if (p.id === activeNodeId) circleClass += ' active';
+
+        nodesHTML += `<g><circle cx="${p.x}" cy="${p.y}" r="11" class="${circleClass}" /><text x="${p.x}" y="${p.y}" class="trie-text">${p.char}</text></g>`;
+      });
+
+      return `<svg class="trie-svg" viewBox="0 0 ${svgWidth} ${svgHeight}" style="height: ${svgHeight}px;">${edgesHTML}${nodesHTML}</svg>`;
+    }
+
+    function renderStackHTML(stackFrames) {
+      if (!stackFrames || stackFrames.length === 0) return `<div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>`;
+      return stackFrames.map(f => `
+        <div class="stack-frame ${f.returning ? 'returning' : ''}">
+          <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.7rem;">(${f.args})</span></div>
+          <div style="font-size:0.75rem; font-weight:bold; color:${f.returning ? 'var(--green)' : 'var(--orange)'};">${f.returning ? `➔ ${f.retVal}` : 'Active'}</div>
+        </div>
+      `).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const presetData = presets[currentPreset];
+      const board = JSON.parse(JSON.stringify(presetData.board));
+      const words = presetData.words;
+      const ROWS = board.length;
+      const COLS = board[0].length;
+
+      let nodeIdCounter = 0;
+      let rootNode = { id: nodeIdCounter++, char: 'ROOT', word: null, children: {} };
+
+      // 1. 建 Trie 樹步驟
+      words.forEach(w => {
+        let curr = rootNode;
+        for (let ch of w) {
+          if (!curr.children[ch]) {
+            curr.children[ch] = { id: nodeIdCounter++, char: ch, word: null, children: {} };
+          }
+          curr = curr.children[ch];
+        }
+        curr.word = w;
+      });
+
+      function cloneTree(node) {
+        let copy = { id: node.id, char: node.char, word: node.word, children: {} };
+        Object.keys(node.children).forEach(k => {
+          copy.children[k] = cloneTree(node.children[k]);
+        });
+        return copy;
+      }
+
+      let currentStack = [];
+      let foundWords = [];
+
+      pushFrame("init", "Build Trie");
+      history.push({
+        line: 3, phase: "【初始化】將 words 建立為 Trie 字典樹",
+        desc: `已成功將單字列表 [${words.join(', ')}] 建立為 Trie 樹結構`,
+        stack: JSON.parse(JSON.stringify(currentStack)), activeNodeId: rootNode.id,
+        tree: cloneTree(rootNode), board: JSON.parse(JSON.stringify(board)),
+        activePos: null, visitedPos: [], foundWords: []
+      });
+      popFrame();
+
+      function pushFrame(fnName, args) { currentStack.push({ fnName, args, returning: false, retVal: null }); }
+      function popFrame() { currentStack.pop(); }
+
+      // 2. 模擬網格 DFS 搜尋
+      let visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+
+      function dfs(r, c, parentNode, charKey, pathPos = []) {
+        let currNode = parentNode.children[charKey];
+        if (!currNode) return;
+
+        visited[r][c] = true;
+        pathPos.push([r, c]);
+        pushFrame("dfs", `r=${r}, c=${c}, char='${board[r][c]}'`);
+
+        // 檢查是否找到完整單字
+        if (currNode.word) {
+          let wordFound = currNode.word;
+          foundWords.push(wordFound);
+          currNode.word = null; // 避免重複收集
+
+          history.push({
+            line: 18, phase: `🎉 成功找到單字 "${wordFound}"！`,
+            desc: `在網格座標 (${r},${c}) 匹配到 Trie 的單字結尾！將 "${wordFound}" 加入結果集並清除 word 標記`,
+            stack: JSON.parse(JSON.stringify(currentStack)), activeNodeId: currNode.id,
+            tree: cloneTree(rootNode), board: JSON.parse(JSON.stringify(board)),
+            activePos: [r, c], visitedPos: JSON.parse(JSON.stringify(pathPos)), foundWords: [...foundWords]
+          });
+        } else {
+          history.push({
+            line: 14, phase: `【DFS】探測座標 (${r}, ${c}) ['${board[r][c]}']`,
+            desc: `對應 Trie 節點 '${currNode.char}' 存在，繼續向四周上下左右搜尋`,
+            stack: JSON.parse(JSON.stringify(currentStack)), activeNodeId: currNode.id,
+            tree: cloneTree(rootNode), board: JSON.parse(JSON.stringify(board)),
+            activePos: [r, c], visitedPos: JSON.parse(JSON.stringify(pathPos)), foundWords: [...foundWords]
+          });
+        }
+
+        const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
+        for (let [dr, dc] of dirs) {
+          let nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !visited[nr][nc]) {
+            let nextChar = board[nr][nc];
+            if (nextChar in currNode.children) {
+              dfs(nr, nc, currNode, nextChar, pathPos);
+            }
+          }
+        }
+
+        // 回溯
+        visited[r][c] = false;
+        pathPos.pop();
+
+        // 剪枝 Pruning
+        if (Object.keys(currNode.children).length === 0 && !currNode.word) {
+          delete parentNode.children[charKey];
+          history.push({
+            line: 28, phase: `✂️ 【強效剪枝 Pruning】刪除空分支 '${charKey}'`,
+            desc: `節點 '${charKey}' 已無任何子節點且非單字末端，直接從 Trie 移除`,
+            stack: JSON.parse(JSON.stringify(currentStack)), activeNodeId: parentNode.id,
+            tree: cloneTree(rootNode), board: JSON.parse(JSON.stringify(board)),
+            activePos: [r, c], visitedPos: JSON.parse(JSON.stringify(pathPos)), foundWords: [...foundWords]
+          });
+        }
+
+        popFrame();
+      }
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          let startCh = board[r][c];
+          if (startCh in rootNode.children) {
+            dfs(r, c, rootNode, startCh, []);
+          }
+        }
+      }
+
+      history.push({
+        line: 33, phase: "🎉 網格搜尋與 Trie 比對完成！",
+        desc: `最終找到的所有單字結果: [${foundWords.map(w => `"${w}"`).join(', ')}]`,
+        stack: [], activeNodeId: rootNode.id,
+        tree: cloneTree(rootNode), board: JSON.parse(JSON.stringify(board)),
+        activePos: null, visitedPos: [], foundWords: [...foundWords]
+      });
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = renderStackHTML(stackData);
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      if (state.board) {
+        renderBoardHTML(state.board, state.activePos, state.visitedPos || []);
+      }
+
+      document.getElementById('trie-svg-container').innerHTML = renderTrieSVG(state.tree, state.activeNodeId);
+
+      const tagsBox = document.getElementById('result-tags-box');
+      if (state.foundWords && state.foundWords.length > 0) {
+        tagsBox.innerHTML = state.foundWords.map(w => `<span class="tag">${w}</span>`).join('');
+      } else {
+        tagsBox.innerHTML = `<span style="color:var(--text-dim); font-size:0.75rem;">None</span>`;
+      }
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

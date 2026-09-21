@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 155 Min Stack: Multi-Algo Laboratory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --vs-bg: #1E1E1E; --vs-sidebar: #252526; --vs-border: #3E3E42; --vs-blue: #007ACC; --vs-active: #264F78; }
+        body { background: var(--vs-bg); color: #D4D4D4; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        .sidebar { background: var(--vs-sidebar); border: 1px solid var(--vs-border); }
+        .highlight-line { background: var(--vs-active); border-left: 3px solid var(--vs-blue); transition: all 0.1s; }
+        .py-k { color: #C586C0; } .py-f { color: #DCDCAA; } .py-n { color: #B5CEA8; }
+        .step-active { background: #37373D; border-left: 3px solid var(--vs-blue); color: white; }
+        .cell-flash { animation: flash 0.5s ease; }
+        @keyframes flash { 0% { background: var(--vs-blue); transform: scale(1.05); } 100% { background: transparent; transform: scale(1); } }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        .algo-btn-active { border-color: var(--vs-blue); background: rgba(0, 122, 204, 0.2); color: white; }
+    </style>
+</head>
+<body class="p-4 flex flex-col h-screen gap-4">
+
+    <header class="flex items-center justify-between bg-black/20 p-2 rounded border border-gray-800">
+        <div class="flex gap-2">
+            <button onclick="switchAlgo(0)" id="ab-0" class="algo-btn px-4 py-1.5 rounded border border-gray-700 bg-gray-800 text-[10px] font-bold transition">1. BRUTE FORCE</button>
+            <button onclick="switchAlgo(1)" id="ab-1" class="algo-btn px-4 py-1.5 rounded border border-gray-700 bg-gray-800 text-[10px] font-bold transition algo-btn-active">2. TWO STACKS (DEFAULT)</button>
+            <button onclick="switchAlgo(2)" id="ab-2" class="algo-btn px-4 py-1.5 rounded border border-gray-700 bg-gray-800 text-[10px] font-bold transition">3. ONE STACK (OFFSET)</button>
+        </div>
+        <div class="flex gap-4 text-[10px] code-font">
+            <span class="text-green-500">TIME: <b id="t-comp">-</b></span>
+            <span class="text-blue-400">SPACE: <b id="s-comp">-</b></span>
+        </div>
+    </header>
+
+    <div class="flex flex-1 gap-4 overflow-hidden">
+        <aside class="w-1/4 flex flex-col gap-4">
+            <div class="sidebar rounded-md p-4 flex flex-col h-[35%] overflow-hidden">
+                <h2 class="text-blue-400 font-bold text-sm mb-2">155. Min Stack</h2>
+                <div class="flex-1 overflow-y-auto custom-scroll text-[11px] space-y-2 pr-1 text-gray-400">
+                    <p>設計一個支持 <code class="bg-black px-1 rounded text-orange-300">push</code>, <code class="bg-black px-1 rounded text-orange-300">pop</code>, <code class="bg-black px-1 rounded text-orange-300">top</code>，並能在 <b>常數時間</b> 內檢索最小元素的棧。</p>
+                    <div class="bg-black/40 p-2 rounded border border-gray-800 text-[10px]">
+                        <b class="text-gray-500 uppercase">Constraints:</b>
+                        <ul class="list-disc ml-4 mt-1 space-y-1">
+                            <li>-2³¹ <= val <= 2³¹ - 1</li>
+                            <li>Methods always called on non-empty stacks.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar rounded-md p-4 flex-1 flex flex-col overflow-hidden">
+                <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Example 1 Tracing</h3>
+                <div class="bg-black/30 p-2 rounded mb-3 text-[9px] code-font border border-gray-800">
+                    <div class="mb-1"><span class="text-blue-500">Input:</span> ["MinStack","push","push","push","getMin","pop","top","getMin"]</div>
+                    <div><span class="text-blue-500">Vals:</span> [[],[-2],[0],[-3],[],[],[],[]]</div>
+                    <div class="mt-1"><span class="text-green-500">Output:</span> [null,null,null,null,-3,null,0,-2]</div>
+                </div>
+                <div id="step-list" class="flex-1 overflow-y-auto custom-scroll space-y-1">
+                    </div>
+            </div>
+        </aside>
+
+        <section class="w-[45%] flex flex-col gap-4">
+            <div class="sidebar rounded-md flex-1 flex flex-col p-6 relative">
+                <div class="flex justify-around items-end flex-1 mb-10">
+                    <div class="w-32 flex flex-col items-center">
+                        <div id="v-main" class="w-full border-x-2 border-b-2 border-gray-600 min-h-[300px] flex flex-col-reverse p-1 gap-1 rounded-b-md"></div>
+                        <span class="mt-4 text-[10px] code-font text-gray-500 uppercase font-bold tracking-widest">Main Stack</span>
+                    </div>
+                    <div id="min-stack-container" class="w-32 flex flex-col items-center">
+                        <div id="v-min" class="w-full border-x-2 border-b-2 border-blue-900/40 min-h-[300px] flex flex-col-reverse p-1 gap-1 rounded-b-md"></div>
+                        <span class="mt-4 text-[10px] code-font text-blue-500/50 uppercase font-bold tracking-widest">Min Stack</span>
+                    </div>
+                </div>
+                <div class="absolute top-4 left-6">
+                    <div id="one-stack-min" class="hidden text-2xl font-bold text-green-400 code-font mb-2">min = -</div>
+                    <div id="op-msg" class="text-xs code-font text-blue-400 italic bg-blue-400/10 px-2 py-1 rounded">System Ready</div>
+                </div>
+            </div>
+
+            <div class="sidebar rounded-md p-4 flex items-center justify-between">
+                <div class="flex gap-2">
+                    <button onclick="changeStep(-1)" class="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-xs transition">PREV</button>
+                    <button id="playBtn" onclick="toggleAuto()" class="px-6 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs font-bold text-white transition">AUTO PLAY</button>
+                    <button onclick="changeStep(1)" class="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-xs transition">NEXT</button>
+                    <button onclick="reset()" class="px-3 py-1.5 text-red-500 hover:bg-red-500/10 rounded text-xs transition">RESET</button>
+                </div>
+                <div class="text-right">
+                    <div id="step-info" class="text-[10px] code-font text-gray-500 mb-1">PROG: 0 / 0</div>
+                    <div class="w-32 h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div id="prog-bar" class="h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <aside class="w-[30%] flex flex-col gap-4">
+            <div class="sidebar rounded-md flex-[2] overflow-hidden flex flex-col">
+                <div class="bg-[#333] px-4 py-2 text-[10px] code-font flex justify-between">
+                    <span>min_stack_impl.py</span>
+                </div>
+                <div id="code-box" class="p-4 text-[11px] leading-5 code-font flex-1 overflow-y-auto custom-scroll"></div>
+            </div>
+            
+            <div class="sidebar rounded-md p-4 flex-1 flex flex-col overflow-hidden">
+                <h3 class="text-[10px] font-bold text-orange-400 mb-2 uppercase tracking-widest border-b border-gray-800 pb-1">Execution Flow</h3>
+                <div id="debug-log" class="flex-1 overflow-y-auto custom-scroll text-[10px] code-font space-y-1 text-gray-500 italic">
+                    </div>
+                <div class="mt-2 pt-2 border-t border-gray-800 flex justify-between items-center">
+                    <span class="text-[9px] text-gray-600 font-bold">RETURN:</span>
+                    <span id="w-out" class="text-xl font-bold text-white">-</span>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const algos = [
+            {
+                name: "Brute Force",
+                time: "O(N) getMin", space: "O(N)",
+                code: [
+                    'class MinStack:',
+                    '    def __init__(self): self.stack = []',
+                    '    def push(self, val): self.stack.append(val)',
+                    '    def pop(self): self.stack.pop()',
+                    '    def top(self): return self.stack[-1]',
+                    '    def getMin(self):',
+                    '        tmp = []',
+                    '        mini = self.stack[-1]',
+                    '        while len(self.stack):',
+                    '            mini = min(mini, self.stack[-1])',
+                    '            tmp.append(self.stack.pop())',
+                    '        while len(tmp):',
+                    '            self.stack.append(tmp.pop())',
+                    '        return mini'
+                ]
+            },
+            {
+                name: "Two Stacks",
+                time: "O(1) All", space: "O(N)",
+                code: [
+                    'class MinStack:',
+                    '    def __init__(self):',
+                    '        self.stack = []',
+                    '        self.min_stack = []',
+                    '    def push(self, val):',
+                    '        self.stack.append(val)',
+                    '        if not self.min_stack:',
+                    '            self.min_stack.append(val)',
+                    '        else:',
+                    '            m = min(val, self.min_stack[-1])',
+                    '            self.min_stack.append(m)',
+                    '    def pop(self):',
+                    '        self.stack.pop()',
+                    '        self.min_stack.pop()',
+                    '    def getMin(self):',
+                    '        return self.min_stack[-1]'
+                ]
+            },
+            {
+                name: "One Stack",
+                time: "O(1) All", space: "O(1) Extra",
+                code: [
+                    'class MinStack:',
+                    '    def __init__(self):',
+                    '        self.min = float("inf")',
+                    '        self.stack = []',
+                    '    def push(self, val):',
+                    '        if not self.stack:',
+                    '            self.stack.append(0)',
+                    '            self.min = val',
+                    '        else:',
+                    '            self.stack.append(val - self.min)',
+                    '            if val < self.min: self.min = val',
+                    '    def pop(self):',
+                    '        p = self.stack.pop()',
+                    '        if p < 0: self.min = self.min - p',
+                    '    def top(self):',
+                    '        t = self.stack[-1]',
+                    '        return t + self.min if t > 0 else self.min'
+                ]
+            }
+        ];
+
+        const testSteps = [
+            { op: "MinStack", val: null, out: "null", exp: "初始化堆棧環境" },
+            { op: "push", val: -2, out: "null", exp: "壓入 -2" },
+            { op: "push", val: 0, out: "null", exp: "壓入 0" },
+            { op: "push", val: -3, out: "null", exp: "壓入 -3，更新最小值" },
+            { op: "getMin", val: null, out: "-3", exp: "檢索最小值" },
+            { op: "pop", val: null, out: "null", exp: "彈出棧頂" },
+            { op: "top", val: null, out: "0", exp: "讀取棧頂" },
+            { op: "getMin", val: null, out: "-2", exp: "檢索彈出後的最小值" }
+        ];
+
+        let curAlgo = 1, curStep = 0, timeline = [], timer = null;
+
+        function highlight(t) {
+            return t.replace(/\b(class|def|if|else|not|return|self|while|len)\b/g, '<span class="py-k">$1</span>')
+                    .replace(/\b(append|pop|min)\b/g, '<span class="py-f">$1</span>')
+                    .replace(/\b(-?\d+|float\("inf"\))\b/g, '<span class="py-n">$1</span>');
+        }
+
+        function switchAlgo(idx) {
+            pause(); curAlgo = idx;
+            document.querySelectorAll('.algo-btn').forEach((b, i) => b.className = i === idx ? 'algo-btn px-4 py-1.5 rounded border algo-btn-active text-[10px] font-bold transition' : 'algo-btn px-4 py-1.5 rounded border border-gray-700 bg-gray-800 text-[10px] font-bold transition');
+            
+            document.getElementById('t-comp').innerText = algos[idx].time;
+            document.getElementById('s-comp').innerText = algos[idx].space;
+            
+            const codeBox = document.getElementById('code-box');
+            codeBox.innerHTML = algos[idx].code.map((l, i) => `<div id="l-${i}" class="px-2 flex gap-4"><span class="w-4 text-gray-600 text-right select-none">${i+1}</span><pre>${highlight(l)}</pre></div>`).join('');
+
+            document.getElementById('min-stack-container').style.visibility = (idx === 1) ? 'visible' : 'hidden';
+            document.getElementById('one-stack-min').style.display = (idx === 2) ? 'block' : 'none';
+
+            initTimeline();
+            reset();
+        }
+
+        function initTimeline() {
+            let s = [], ms = [], mVal = Infinity;
+            let t = [{ line: 1, s: [], ms: [], m: Infinity, out: "null", exIdx: 0, msg: "Constructor call" }];
+            
+            testSteps.forEach((step, idx) => {
+                if (idx === 0) return;
+                const v = step.val;
+                if (step.op === "push") {
+                    if (curAlgo === 0) { s.push(v); t.push({ line: 2, s: [...s], ms: [], m: 0, out: "null", exIdx: idx, msg: `Push ${v}` }); }
+                    else if (curAlgo === 1) { 
+                        s.push(v); const curM = ms.length ? Math.min(v, ms[ms.length-1]) : v; ms.push(curM);
+                        t.push({ line: 5, s: [...s], ms: [...ms], m: 0, out: "null", exIdx: idx, msg: `Push ${v}, Min is ${curM}` });
+                    } else { 
+                        let diff = s.length === 0 ? 0 : v - mVal;
+                        if (s.length === 0) mVal = v; else if (v < mVal) mVal = v;
+                        s.push(diff); t.push({ line: 6, s: [...s], ms: [], m: mVal, out: "null", exIdx: idx, msg: `Push offset ${diff}` });
+                    }
+                } else if (step.op === "pop") {
+                    if (curAlgo === 0) { s.pop(); t.push({ line: 3, s: [...s], ms: [], m: 0, out: "null", exIdx: idx, msg: "Pop element" }); }
+                    else if (curAlgo === 1) { s.pop(); ms.pop(); t.push({ line: 12, s: [...s], ms: [...ms], m: 0, out: "null", exIdx: idx, msg: "Sync Pop" }); }
+                    else { const p = s.pop(); if (p < 0) mVal = mVal - p; t.push({ line: 11, s: [...s], ms: [], m: mVal, out: "null", exIdx: idx, msg: "Pop & Restore Min" }); }
+                } else if (step.op === "getMin") {
+                    t.push({ line: curAlgo===0?13:(curAlgo===1?15:15), s: [...s], ms: [...ms], m: mVal, out: step.out, exIdx: idx, msg: `Return Min: ${step.out}` });
+                } else if (step.op === "top") {
+                    t.push({ line: curAlgo===0?4:(curAlgo===1?13:14), s: [...s], ms: [...ms], m: mVal, out: step.out, exIdx: idx, msg: `Top is ${step.out}` });
+                }
+            });
+            timeline = t;
+        }
+
+        function render() {
+            const step = timeline[curStep];
+            document.querySelectorAll('[id^="l-"]').forEach(el => el.classList.remove('highlight-line'));
+            if(document.getElementById(`l-${step.line}`)) document.getElementById(`l-${step.line}`).classList.add('highlight-line');
+            
+            document.querySelectorAll('.step-row').forEach(el => el.classList.remove('step-active'));
+            const row = document.getElementById(`ex-row-${step.exIdx}`);
+            if(row) row.classList.add('step-active');
+
+            drawStack('v-main', step.s, '#444');
+            drawStack('v-min', step.ms, '#1e3a8a');
+            
+            if (curAlgo === 2) document.getElementById('one-stack-min').innerText = `min = ${step.m === Infinity ? 'inf' : step.m}`;
+            document.getElementById('op-msg').innerText = `Step ${curStep}: ${step.msg}`;
+            document.getElementById('w-out').innerText = step.out;
+            
+            const log = document.getElementById('debug-log');
+            log.innerHTML = `<div class="text-blue-400 font-bold border-b border-gray-800 pb-1 mb-1">LOG #${curStep}</div>` + 
+                            `<div class="text-white">${step.msg}</div>` + log.innerHTML;
+
+            document.getElementById('step-info').innerText = `PROG: ${curStep} / ${timeline.length-1}`;
+            document.getElementById('prog-bar').style.width = `${(curStep/(timeline.length-1))*100}%`;
+        }
+
+        function drawStack(id, data, color) {
+            const el = document.getElementById(id);
+            el.innerHTML = data.map((v, i) => `<div class="w-full h-8 flex items-center justify-center text-[10px] font-bold border border-black/10 rounded ${i === data.length-1 ? 'cell-flash' : ''}" style="background: ${color}">${v}</div>`).join('');
+        }
+
+        function reset() { pause(); curStep = 0; document.getElementById('debug-log').innerHTML = ''; render(); }
+        function changeStep(d) { if (d>0 && curStep === timeline.length-1) return; curStep = Math.max(0, curStep+d); render(); }
+        function toggleAuto() { if(timer) pause(); else { document.getElementById('playBtn').innerText = "PAUSE"; timer = setInterval(()=> { if(curStep < timeline.length-1) changeStep(1); else pause(); }, 800); } }
+        function pause() { clearInterval(timer); timer = null; document.getElementById('playBtn').innerText = "AUTO PLAY"; }
+
+        // Setup Step List
+        const list = document.getElementById('step-list');
+        testSteps.forEach((s, i) => {
+            list.innerHTML += `<div id="ex-row-${i}" class="step-row p-2 rounded text-[10px] border border-transparent transition cursor-pointer">
+                <div class="flex justify-between font-bold text-blue-400"><span>${s.op}(${s.val??''})</span><span class="text-gray-500">Out: ${s.out}</span></div>
+                <div class="text-[9px] text-gray-600 mt-0.5">${s.exp}</div>
+            </div>`;
+        });
+
+        switchAlgo(1);
+    </script>
+</body>
+</html>

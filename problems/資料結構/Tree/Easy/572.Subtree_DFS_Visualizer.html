@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>572. Subtree of Another Tree - Detailed Visualizer with Call Stack</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --red: #ff2d55;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(80, 250, 123, 0.15); color: var(--green); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .tag { background: #383838; color: var(--text-dim); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
+
+    .approach-tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 6px; flex-wrap: wrap; background: #222; padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
+    .app-tab-btn { background: transparent; border: none; color: var(--text-dim); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: 0.2s; }
+    .app-tab-btn:hover { background: #333; color: #fff; }
+    .app-tab-btn.active { background: var(--orange); color: #000; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+    
+    .problem-desc { font-size: 0.82rem; color: #ccc; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+    
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .approach-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.8rem; color: #ddd; }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.75rem; overflow-x: auto; max-height: 250px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .str { color: #f1fa8c; }
+
+    /* Call Stack 專屬 Block 樣式 */
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.75rem; min-height: 120px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.2s ease-out; }
+    .stack-frame.returning { border-color: var(--green); border-left-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+    .stack-frame-title { color: #fff; font-weight: bold; }
+    .stack-frame-args { color: var(--text-dim); font-size: 0.7rem; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* 固定 Stage Box 以及內部元素的高度 */
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; height: 390px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; overflow: hidden; }
+    
+    /* 雙樹 Layout 容器 */
+    .dual-tree-container { display: flex; width: 100%; height: 210px; gap: 10px; }
+    .tree-pane { flex: 1; background: #141414; border: 1px solid var(--border); border-radius: 4px; position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+    .tree-pane-title { font-size: 0.75rem; font-weight: bold; font-family: monospace; color: var(--orange); }
+    
+    svg.tree-svg { width: 100%; height: 185px; }
+    .tree-node-circle { fill: #333; stroke: var(--border); stroke-width: 2px; transition: all 0.2s; }
+    .tree-node-circle.active { fill: rgba(255, 161, 22, 0.3); stroke: var(--orange); stroke-width: 3px; }
+    .tree-node-circle.matching { fill: rgba(0, 122, 255, 0.35); stroke: var(--blue); stroke-width: 3px; }
+    .tree-node-circle.mismatch { fill: rgba(255, 45, 85, 0.35); stroke: var(--red); stroke-width: 3px; }
+    .tree-node-circle.visited { fill: rgba(80, 250, 123, 0.25); stroke: var(--green); stroke-width: 2px; }
+    .tree-text { fill: #fff; font-family: monospace; font-weight: bold; font-size: 13px; text-anchor: middle; dominant-baseline: middle; }
+    .tree-edge { stroke: #555; stroke-width: 2px; transition: all 0.2s; }
+
+    .ds-display { background: #141414; border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.78rem; color: var(--purple); height: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; word-break: break-all; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.8rem; font-family: monospace; height: 65px; display: flex; flex-direction: column; justify-content: center; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">572. Subtree of Another Tree</span>
+    <span class="badge">Easy</span>
+    <span class="tag">Tree</span>
+    <span class="tag">Depth-First Search</span>
+    <span class="tag">Call Stack Visualization</span>
+  </div>
+
+  <div class="approach-tabs" id="app-tabs">
+    <button class="app-tab-btn active" onclick="switchApproach(0)">1. Double DFS (Standard)</button>
+    <button class="app-tab-btn" onclick="switchApproach(1)">2. BFS + SameTree Match</button>
+    <button class="app-tab-btn" onclick="switchApproach(2)">3. Tree Serialization (String)</button>
+    <button class="app-tab-btn" onclick="switchApproach(3)">4. Tree Hash (Bottom-up Hash)</button>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: Subtree Matches [3,4,5,1,2] vs [4,1,2]</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: Extra Node [3,4,5,1,2,null,null,null,null,0] vs [4,1,2]</button>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定兩棵二元樹 <code>root</code> 與 <code>subRoot</code>，請判斷 <code>subRoot</code> 是否為 <code>root</code> 的<b>子樹</b>（Subtree）。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">-</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <!-- 新增：Call Stack 遞迴視覺化專屬區塊 -->
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (系統呼叫堆疊)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display">
+          <div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">💡 解題思路說明</div>
+        <div class="approach-box" id="approach-desc"></div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 完整執行步驟與樹狀圖 (Step Visualizer)</div>
+        
+        <div class="stage" id="stage-box"></div>
+
+        <div class="info">
+          <div class="info-row">
+            <span style="color: var(--text-dim);">當前階段 (Phase):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const approaches = [
+      {
+        name: "1. Double DFS (Standard)",
+        time: "O(N × M)", space: "O(H_root)",
+        desc: "<b>雙重遞迴 DFS：</b>對 <code>root</code> 的每一個節點，呼叫 <code>isSameTree(node, subRoot)</code> 逐節點比對兩樹是否完全相等。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isSubtree</span>(<span class="self">self</span>, root, subRoot) -&gt; bool:`,
+          `        <span class="kw">if not</span> root: <span class="kw">return False</span>`,
+          `        <span class="kw">if</span> <span class="self">self</span>.isSameTree(root, subRoot): <span class="kw">return True</span>`,
+          `        <span class="kw">return</span> <span class="self">self</span>.isSubtree(root.left, subRoot) <span class="kw">or</span> <span class="self">self</span>.isSubtree(root.right, subRoot)`,
+          ``,
+          `    <span class="kw">def</span> <span class="fn">isSameTree</span>(<span class="self">self</span>, p, q):`,
+          `        <span class="kw">if not</span> p <span class="kw">and not</span> q: <span class="kw">return True</span>`,
+          `        <span class="kw">if not</span> p <span class="kw">or not</span> q <span class="kw">or</span> p.val != q.val: <span class="kw">return False</span>`,
+          `        <span class="kw">return</span> <span class="self">self</span>.isSameTree(p.left, q.left) <span class="kw">and</span> <span class="self">self</span>.isSameTree(p.right, q.right)`
+        ]
+      },
+      {
+        name: "2. BFS + SameTree Match",
+        time: "O(N × M)", space: "O(W_root)",
+        desc: "<b>佇列 BFS 走訪：</b>使用 Queue 逐層走訪 <code>root</code> 的每個節點，當彈出節點時，進行 <code>isSameTree</code> 遞迴比對。",
+        code: [
+          `<span class="kw">from</span> collections <span class="kw">import</span> deque`,
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isSubtree</span>(<span class="self">self</span>, root, subRoot) -&gt; bool:`,
+          `        q = deque([root])`,
+          `        <span class="kw">while</span> q:`,
+          `            node = q.popleft()`,
+          `            <span class="kw">if not</span> node: <span class="kw">continue</span>`,
+          `            <span class="kw">if</span> <span class="self">self</span>.isSameTree(node, subRoot): <span class="kw">return True</span>`,
+          `            q.append(node.left)`,
+          `            q.append(node.right)`,
+          `        <span class="kw">return False</span>`
+        ]
+      },
+      {
+        name: "3. Tree Serialization (String)",
+        time: "O(N + M)", space: "O(N + M)",
+        desc: "<b>前序序列化：</b>透過遞迴 DFS 將二元樹轉化為帶有空節點標記的前序字串，進行字串匹配。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isSubtree</span>(<span class="self">self</span>, root, subRoot) -&gt; bool:`,
+          `        <span class="kw">def</span> <span class="fn">serialize</span>(node):`,
+          `            <span class="kw">if not</span> node: <span class="kw">return</span> <span class="str">",#"</span>`,
+          `            <span class="kw">return</span> <span class="str">","</span> + str(node.val) + serialize(node.left) + serialize(node.right)`,
+          `        <span class="kw">return</span> serialize(subRoot) <span class="kw">in</span> serialize(root)`
+        ]
+      },
+      {
+        name: "4. Tree Hash (Bottom-up Hash)",
+        time: "O(N + M)", space: "O(N + M)",
+        desc: "<b>樹雜湊 (Merkle Hash)：</b>Bottom-up 遞迴計算每個子樹的雜湊值，檢測 Root 中是否有相同 Hash。",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">isSubtree</span>(<span class="self">self</span>, root, subRoot) -&gt; bool:`,
+          `        <span class="kw">def</span> <span class="fn">get_hash</span>(node):`,
+          `            <span class="kw">if not</span> node: <span class="kw">return</span> <span class="str">"#"</span>`,
+          `            h = hash((node.val, get_hash(node.left), get_hash(node.right)))`,
+          `            hashes.add(h); <span class="kw">return</span> h`,
+          `        hashes = set()`,
+          `        sub_hash = get_hash(subRoot)`,
+          `        get_hash(root)`,
+          `        <span class="kw">return</span> sub_hash <span class="kw">in</span> hashes`
+        ]
+      }
+    ];
+
+    const presets = [
+      { root: [3, 4, 5, 1, 2], subRoot: [4, 1, 2], output: true, name: "Example 1 (Subtree Matches)" },
+      { root: [3, 4, 5, 1, 2, null, null, null, null, 0], subRoot: [4, 1, 2], output: false, name: "Example 2 (Extra Node Mismatch)" }
+    ];
+
+    let currentApproach = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function switchApproach(idx) {
+      currentApproach = idx;
+      document.querySelectorAll('.app-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderApproachDetails();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderApproachDetails() {
+      const app = approaches[currentApproach];
+      document.getElementById('time-comp').innerText = app.time;
+      document.getElementById('space-comp').innerText = app.space;
+      document.getElementById('approach-desc').innerHTML = app.desc;
+      document.getElementById('code-box').innerHTML = app.code.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>root = [${p.root.map(v => v === null ? 'null' : v).join(', ')}]</div>
+        <div>subRoot = [${p.subRoot.map(v => v === null ? 'null' : v).join(', ')}]</div>
+        <div>Output: <b>${p.output}</b></div>
+      `;
+    }
+
+    function createTree(arr) {
+      if (!arr || arr.length === 0) return null;
+      let nodes = arr.map(v => v !== null ? { val: v, left: null, right: null, id: Math.random().toString(36).substr(2, 5) } : null);
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i]) {
+          let leftIdx = 2 * i + 1;
+          let rightIdx = 2 * i + 2;
+          if (leftIdx < nodes.length) nodes[i].left = nodes[leftIdx];
+          if (rightIdx < nodes.length) nodes[i].right = nodes[rightIdx];
+        }
+      }
+      return nodes[0];
+    }
+
+    function renderSingleTreeSVG(root, activeId = null, matchId = null, mismatchId = null) {
+      if (!root) return `<div style="color:var(--text-dim); font-family:monospace; margin:auto; font-size:0.8rem;">Tree is empty (None)</div>`;
+      let posMap = {};
+      function calcPos(node, depth = 0, leftBound = 0, rightBound = 100) {
+        if (!node) return;
+        let x = (leftBound + rightBound) / 2;
+        let y = depth * 40 + 25;
+        posMap[node.id] = { x, y, val: node.val, left: node.left, right: node.right };
+        calcPos(node.left, depth + 1, leftBound, x);
+        calcPos(node.right, depth + 1, x, rightBound);
+      }
+      calcPos(root);
+
+      let edgesHTML = '', nodesHTML = '';
+      Object.keys(posMap).forEach(id => {
+        let p = posMap[id];
+        if (p.left && posMap[p.left.id]) edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${posMap[p.left.id].x}%" y2="${posMap[p.left.id].y}" class="tree-edge" />`;
+        if (p.right && posMap[p.right.id]) edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${posMap[p.right.id].x}%" y2="${posMap[p.right.id].y}" class="tree-edge" />`;
+
+        let circleClass = 'tree-node-circle';
+        if (id === matchId) circleClass += ' matching';
+        if (id === mismatchId) circleClass += ' mismatch';
+        if (id === activeId) circleClass += ' active';
+
+        nodesHTML += `<g><circle cx="${p.x}%" cy="${p.y}" r="13" class="${circleClass}" /><text x="${p.x}%" y="${p.y}" class="tree-text">${p.val}</text></g>`;
+      });
+      return `<svg class="tree-svg">${edgesHTML}${nodesHTML}</svg>`;
+    }
+
+    function renderDualTree(rRoot, sRoot, rActive = null, sActive = null, rMis = null, sMis = null, rMat = null, sMat = null) {
+      return `
+        <div class="dual-tree-container">
+          <div class="tree-pane"><span class="tree-pane-title">Main Root</span>${renderSingleTreeSVG(rRoot, rActive, rMat, rMis)}</div>
+          <div class="tree-pane"><span class="tree-pane-title">SubRoot</span>${renderSingleTreeSVG(sRoot, sActive, sMat, sMis)}</div>
+        </div>
+      `;
+    }
+
+    // Stack 渲染函式
+    function renderStackHTML(stackFrames) {
+      if (!stackFrames || stackFrames.length === 0) {
+        return `<div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>`;
+      }
+      return stackFrames.map(f => `
+        <div class="stack-frame ${f.returning ? 'returning' : ''}">
+          <div>
+            <span class="stack-frame-title">${f.fnName}</span>
+            <span class="stack-frame-args">(${f.args})</span>
+          </div>
+          <div style="font-size:0.75rem; font-weight:bold; color:${f.returning ? 'var(--green)' : 'var(--orange)'};">
+            ${f.returning ? `➔ ${f.retVal}` : 'Active'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const presetData = presets[currentPreset];
+      let rRoot = createTree(presetData.root);
+      let sRoot = createTree(presetData.subRoot);
+
+      let currentStack = [];
+
+      function pushFrame(fnName, args) {
+        currentStack.push({ fnName, args, returning: false, retVal: null });
+      }
+      function popFrame(retVal) {
+        if (currentStack.length > 0) {
+          let top = currentStack[currentStack.length - 1];
+          top.returning = true;
+          top.retVal = retVal;
+        }
+      }
+      function finalizePop() {
+        currentStack.pop();
+      }
+
+      // 同步 SameTree 的 Call Stack 與步驟
+      function recordSameTreeSteps(pRoot, qRoot) {
+        function sameTreeHelper(p, q) {
+          pushFrame("isSameTree", `p:${p?p.val:'None'}, q:${q?q.val:'None'}`);
+
+          if (!p && !q) {
+            popFrame("True");
+            history.push({
+              line: 7, phase: "isSameTree: 兩邊皆 None",
+              desc: "節點均為 None (空)，結構對應成功，準備 Return True。",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span>p = None, q = None → <b>True</b></span></div>`
+            });
+            finalizePop();
+            return true;
+          }
+
+          if (!p || !q) {
+            popFrame("False");
+            history.push({
+              line: 8, phase: "isSameTree: 結構不對稱",
+              desc: `不符合結構匹配！ p: ${p ? p.val : 'None'}, q: ${q ? q.val : 'None'}，準備 Return False。`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderDualTree(rRoot, sRoot, null, null, p?p.id:null, q?q.id:null) +
+                    `<div class="ds-display"><span style="color:var(--red);">結構不對稱 (One is None) → False</span></div>`
+            });
+            finalizePop();
+            return false;
+          }
+
+          if (p.val !== q.val) {
+            popFrame("False");
+            history.push({
+              line: 8, phase: "isSameTree: 數值不相等",
+              desc: `數值不相符！ p.val(${p.val}) != q.val(${q.val})，準備 Return False。`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderDualTree(rRoot, sRoot, null, null, p.id, q.id) +
+                    `<div class="ds-display"><span style="color:var(--red);">Value Mismatch: ${p.val} != ${q.val}</span></div>`
+            });
+            finalizePop();
+            return false;
+          }
+
+          history.push({
+            line: 8, phase: "isSameTree: 節點比對成功",
+            desc: `節點數值相同 (${p.val} == ${q.val})，準備遞迴 Push 檢查左、右子樹。`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderDualTree(rRoot, sRoot, null, null, null, null, p.id, q.id) +
+                  `<div class="ds-display"><span style="color:var(--blue);">Match Node (${p.val} == ${q.val}) → Continue...</span></div>`
+          });
+
+          let leftRes = sameTreeHelper(p.left, q.left);
+          if (!leftRes) {
+            popFrame("False");
+            history.push({
+              line: 9, phase: "isSameTree: 左子樹不匹配",
+              desc: "左子樹比對失敗，回傳 False。",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span style="color:var(--red);">Left Subtree Mismatch → Return False</span></div>`
+            });
+            finalizePop();
+            return false;
+          }
+
+          let rightRes = sameTreeHelper(p.right, q.right);
+          if (!rightRes) {
+            popFrame("False");
+            history.push({
+              line: 9, phase: "isSameTree: 右子樹不匹配",
+              desc: "右子樹比對失敗，回傳 False。",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span style="color:var(--red);">Right Subtree Mismatch → Return False</span></div>`
+            });
+            finalizePop();
+            return false;
+          }
+
+          popFrame("True");
+          history.push({
+            line: 9, phase: "isSameTree: 兩子樹皆比對成功",
+            desc: `以 [${p.val}] 與 [${q.val}] 為根的整棵子樹完全相等！回傳 True。`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderDualTree(rRoot, sRoot, null, null, null, null, p.id, q.id) +
+                  `<div class="ds-display"><span style="color:var(--green);">SameTree Match! → Return True</span></div>`
+          });
+          finalizePop();
+          return true;
+        }
+
+        return sameTreeHelper(pRoot, qRoot);
+      }
+
+      // ----------------------------------------------------
+      // Approach 0: Double DFS
+      // ----------------------------------------------------
+      if (currentApproach === 0) {
+        function isSubtreeDFS(node) {
+          pushFrame("isSubtree", `root:${node ? node.val : 'None'}`);
+
+          if (!node) {
+            popFrame("False");
+            history.push({
+              line: 2, phase: "isSubtree: 遇到 None 節點",
+              desc: "主樹節點為 None，無法匹配，Return False。",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span>root is None → Return False</span></div>`
+            });
+            finalizePop();
+            return false;
+          }
+
+          history.push({
+            line: 3, phase: `isSubtree: 檢查節點 [${node.val}]`,
+            desc: `以 root 節點 [${node.val}] 為起點，準備呼叫 isSameTree。`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderDualTree(rRoot, sRoot, node.id, sRoot.id) +
+                  `<div class="ds-display"><span>Checking isSameTree(Node_${node.val}, subRoot)</span></div>`
+          });
+
+          let matched = recordSameTreeSteps(node, sRoot);
+
+          if (matched) {
+            popFrame("True");
+            history.push({
+              line: 3, phase: "isSubtree: 成功找到子樹！",
+              desc: `節點 [${node.val}] 的子樹完全匹配！Return True。`,
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderDualTree(rRoot, sRoot, node.id, sRoot.id, null, null, node.id, sRoot.id) +
+                    `<div class="ds-display"><span style="color:var(--green); font-size:1.1rem;">Match Found at Node ${node.val}!</span></div>`
+            });
+            finalizePop();
+            return true;
+          }
+
+          history.push({
+            line: 4, phase: `isSubtree: 遞迴搜尋 left / right`,
+            desc: `節點 [${node.val}] 不符合，準備遞迴進入 left: ${node.left ? node.left.val : 'None'} 或 right: ${node.right ? node.right.val : 'None'}。`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderDualTree(rRoot, sRoot, node.id) + `<div class="ds-display"><span>Recursing left & right of Node ${node.val}</span></div>`
+          });
+
+          let leftMatch = isSubtreeDFS(node.left);
+          if (leftMatch) {
+            popFrame("True");
+            finalizePop();
+            return true;
+          }
+
+          let rightMatch = isSubtreeDFS(node.right);
+          popFrame(rightMatch ? "True" : "False");
+          history.push({
+            line: 4, phase: `isSubtree: 節點 [${node.val}] 結果確定`,
+            desc: `節點 [${node.val}] 及其後代搜尋完畢，Return ${rightMatch ? 'True' : 'False'}。`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span>Return ${rightMatch ? 'True' : 'False'} for Node ${node.val}</span></div>`
+          });
+          finalizePop();
+          return rightMatch;
+        }
+
+        isSubtreeDFS(rRoot);
+      }
+
+      // ----------------------------------------------------
+      // Approach 1: BFS + SameTree
+      // ----------------------------------------------------
+      else if (currentApproach === 1) {
+        pushFrame("isSubtree", "root, subRoot");
+        let q = [rRoot];
+        let found = false;
+
+        while (q.length > 0) {
+          let curr = q.shift();
+          if (!curr) continue;
+
+          history.push({
+            line: 6, phase: `BFS Pop 節點 [${curr.val}]`,
+            desc: `從 Queue 取出節點 [${curr.val}]，準備呼叫 isSameTree 比對。`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderDualTree(rRoot, sRoot, curr.id, sRoot.id) + `<div class="ds-display"><span>Queue size: ${q.length}</span></div>`
+          });
+
+          let matched = recordSameTreeSteps(curr, sRoot);
+
+          if (matched) {
+            found = true;
+            break;
+          }
+
+          if (curr.left) q.push(curr.left);
+          if (curr.right) q.push(curr.right);
+        }
+
+        popFrame(found ? "True" : "False");
+        history.push({
+          line: 11, phase: "BFS 搜尋結束",
+          desc: found ? "成功匹配！Return True。" : "遍歷結束未找到匹配，Return False。",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span style="color:${found?'var(--green)':'var(--red)'}">Final Result: ${found}</span></div>`
+        });
+        finalizePop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 2: Tree Serialization
+      // ----------------------------------------------------
+      else if (currentApproach === 2) {
+        pushFrame("isSubtree", "root, subRoot");
+        
+        let subStrArr = [];
+        function serializeSub(node) {
+          pushFrame("serialize", `node:${node ? node.val : 'None'}`);
+          if (!node) {
+            subStrArr.push(",#");
+            popFrame('",#"');
+            history.push({
+              line: 3, phase: "SubRoot 序列化 - Null",
+              desc: "遇到空節點，拼接 ',#' 並 Return。",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span>str(subRoot) = "${subStrArr.join('')}"</span></div>`
+            });
+            finalizePop();
+            return ",#";
+          }
+
+          subStrArr.push("," + node.val);
+          history.push({
+            line: 4, phase: `SubRoot 序列化 - 節點 [${node.val}]`,
+            desc: `前序走訪節點 [${node.val}]，拼接 ',${node.val}'`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderDualTree(rRoot, sRoot, null, node.id) + `<div class="ds-display"><span>str(subRoot) = "${subStrArr.join('')}"</span></div>`
+          });
+
+          serializeSub(node.left);
+          serializeSub(node.right);
+
+          popFrame(`",${node.val}..."`);
+          finalizePop();
+        }
+
+        serializeSub(sRoot);
+        let strSub = subStrArr.join('');
+
+        let rootStrArr = [];
+        function serializeRoot(node) {
+          pushFrame("serialize", `node:${node ? node.val : 'None'}`);
+          if (!node) {
+            rootStrArr.push(",#");
+            popFrame('",#"');
+            history.push({
+              line: 3, phase: "Main Root 序列化 - Null",
+              desc: "遇到空節點，拼接 ',#' 並 Return。",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span>str(root) = "${rootStrArr.join('')}"</span></div>`
+            });
+            finalizePop();
+            return ",#";
+          }
+
+          rootStrArr.push("," + node.val);
+          history.push({
+            line: 4, phase: `Main Root 序列化 - 節點 [${node.val}]`,
+            desc: `前序走訪節點 [${node.val}]，拼接 ',${node.val}'`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderDualTree(rRoot, sRoot, node.id, null) + `<div class="ds-display"><span>str(root) = "${rootStrArr.join('')}"</span></div>`
+          });
+
+          serializeRoot(node.left);
+          serializeRoot(node.right);
+
+          popFrame(`",${node.val}..."`);
+          finalizePop();
+        }
+
+        serializeRoot(rRoot);
+        let strRoot = rootStrArr.join('');
+
+        let isSub = strRoot.includes(strSub);
+        popFrame(isSub ? "True" : "False");
+        history.push({
+          line: 6, phase: "字串包含性檢查",
+          desc: isSub ? "成功匹配子字串！" : "未能匹配子字串。",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span>"${strSub}" in "${strRoot}"</span><span style="color:${isSub?'var(--green)':'var(--red)'}">Result: ${isSub}</span></div>`
+        });
+        finalizePop();
+      }
+
+      // ----------------------------------------------------
+      // Approach 3: Tree Hash
+      // ----------------------------------------------------
+      else if (currentApproach === 3) {
+        pushFrame("isSubtree", "root, subRoot");
+        let hashes = new Set();
+
+        function getHashSub(node) {
+          pushFrame("get_hash", `node:${node ? node.val : 'None'}`);
+          if (!node) {
+            popFrame('"#"');
+            history.push({
+              line: 3, phase: "SubRoot Hash - Null",
+              desc: "空節點 Hash 為 '#'",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span>Hash = "#"</span></div>`
+            });
+            finalizePop();
+            return "#";
+          }
+
+          let leftH = getHashSub(node.left);
+          let rightH = getHashSub(node.right);
+          let h = `(${node.val},${leftH},${rightH})`;
+
+          popFrame(`"${h}"`);
+          history.push({
+            line: 4, phase: `SubRoot 節點 [${node.val}] Hash 計算`,
+            desc: `節點 [${node.val}] 計算得出 Hash = "${h}"`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderDualTree(rRoot, sRoot, null, node.id) + `<div class="ds-display"><span>Node [${node.val}] Hash = "${h}"</span></div>`
+          });
+          finalizePop();
+          return h;
+        }
+
+        let subH = getHashSub(sRoot);
+
+        function getHashRoot(node) {
+          pushFrame("get_hash", `node:${node ? node.val : 'None'}`);
+          if (!node) {
+            popFrame('"#"');
+            history.push({
+              line: 3, phase: "Root Hash - Null",
+              desc: "空節點 Hash 為 '#'",
+              stack: JSON.parse(JSON.stringify(currentStack)),
+              html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span>Hash = "#"</span></div>`
+            });
+            finalizePop();
+            return "#";
+          }
+
+          let leftH = getHashRoot(node.left);
+          let rightH = getHashRoot(node.right);
+          let h = `(${node.val},${leftH},${rightH})`;
+          hashes.add(h);
+
+          popFrame(`"${h}"`);
+          history.push({
+            line: 5, phase: `Main Root 節點 [${node.val}] Hash 計算`,
+            desc: `節點 [${node.val}] Hash = "${h}"，已加入 HashSet。`,
+            stack: JSON.parse(JSON.stringify(currentStack)),
+            html: renderDualTree(rRoot, sRoot, node.id, null) + `<div class="ds-display"><span>Node [${node.val}] Hash = "${h}"</span></div>`
+          });
+          finalizePop();
+          return h;
+        }
+
+        getHashRoot(rRoot);
+        let found = hashes.has(subH);
+
+        popFrame(found ? "True" : "False");
+        history.push({
+          line: 8, phase: "Hash 集合比對",
+          desc: found ? "HashSet 包含 SubRoot Hash！" : "HashSet 不包含 SubRoot Hash。",
+          stack: JSON.parse(JSON.stringify(currentStack)),
+          html: renderDualTree(rRoot, sRoot) + `<div class="ds-display"><span>SubRoot Hash in Set: <b>${found}</b></span></div>`
+        });
+        finalizePop();
+      }
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      // 更新 Call Stack UI
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = renderStackHTML(stackData);
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      const stageBox = document.getElementById('stage-box');
+      stageBox.innerHTML = state.html || `<div style="font-size:0.85rem; font-family:monospace; color:#fff;">${state.desc}</div>`;
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderApproachDetails();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

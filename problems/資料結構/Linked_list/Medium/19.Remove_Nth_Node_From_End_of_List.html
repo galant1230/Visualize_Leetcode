@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>19. Remove Nth Node From End of List - Visualizer</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --red: #ff2d55;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1280px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .tag { background: #383838; color: var(--text-dim); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
+
+    .tabs { max-width: 1280px; margin: 0 auto 12px auto; display: flex; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+    .tab-btn.active { background: var(--orange); color: #000; border-color: var(--orange); }
+
+    .grid { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+    
+    .problem-desc { font-size: 0.82rem; color: #ccc; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+    
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .approach-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.8rem; color: #ddd; }
+    .approach-title { font-weight: bold; color: var(--blue); margin-bottom: 2px; }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.78rem; overflow-x: auto; max-height: 380px; }
+    .code-line { padding: 0 12px; white-space: pre; border-left: 3px solid transparent; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .comment { color: var(--green); font-style: italic; }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 25px 10px 15px 10px; min-height: 130px; display: flex; justify-content: center; align-items: center; }
+    .list { display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 4px; }
+    .node-box { display: flex; align-items: center; position: relative; }
+    .node { width: 38px; height: 38px; border-radius: 50%; background: #333; border: 2px solid var(--border); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-family: monospace; position: relative; font-size: 0.85rem; }
+    .node.dummy { background: #2b2638; border-color: var(--purple); color: var(--purple); }
+    .node.removed { background: rgba(255, 45, 85, 0.15); border-color: var(--red); color: var(--red); text-decoration: line-through; opacity: 0.5; }
+    .node.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.2); }
+
+    .arrow { width: 22px; height: 2px; background: var(--text-dim); position: relative; margin: 0 2px; }
+    .arrow::after { content: ''; position: absolute; right: 0; top: -3px; border-width: 3px 0 3px 5px; border-style: solid; border-color: transparent transparent transparent var(--text-dim); }
+    .arrow.skip { width: 62px; background: var(--green); border-top: 1px dashed var(--green); }
+    .arrow.skip::after { border-color: transparent transparent transparent var(--green); }
+    .arrow.broken { background: transparent; border-top: 2px dashed #444; }
+    .arrow.broken::after { display: none; }
+
+    .ptr-group { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; }
+    .ptr { font-size: 0.6rem; padding: 0 4px; border-radius: 2px; color: #fff; font-family: monospace; font-weight: bold; white-space: nowrap; }
+    .p-slow { background: var(--purple); } .p-fast { background: var(--orange); } .p-dummy { background: #6b7280; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.8rem; font-family: monospace; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">19. Remove Nth Node From End of List</span>
+    <span class="badge">Medium</span>
+    <span class="tag">Linked List</span>
+    <span class="tag">Two Pointers</span>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: [1,2,3,4,5], n=2</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: [1], n=1</button>
+    <button class="tab-btn" onclick="setPreset(2)">Ex 3: [1,2], n=1</button>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄：題目描述 + 程式碼 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定一個單向鏈表的頭節點 <code>head</code>，刪除倒數第 <code>n</code> 個節點，並返回鏈表的頭節點。<br>
+          <b>進階要求：</b>你能否嘗試用<b>一次掃描 (One-pass)</b> 解決這道題？
+        </div>
+
+        <div class="example-box" id="ex-display"></div>
+
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val">O(N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val">O(1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">
+          <span>🐍 Python 程式碼</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+    </div>
+
+    <!-- 右欄：解題思路 + 視覺化 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">💡 解題思路：雙指標 + 虛擬頭節點</div>
+        <div class="approach-box">
+          <div class="approach-title">核心步驟 (Dummy + Two Pointers)：</div>
+          <div>1. <b>建立 Dummy Node</b>：指向 head，避免邊界條件（如刪除頭節點）特判。<br>2. <b>拉開距離</b>：讓 <code>fast</code> 指標先往前走 <code>n + 1</code> 步。<br>3. <b>同步移動</b>：<code>slow</code> 與 <code>fast</code> 同時推進，當 <code>fast</code> 到達末端時，<code>slow</code> 剛好停在<b>被刪除節點的前一個</b>。<br>4. <b>修改指標</b>：<code>slow.next = slow.next.next</code> 跳過刪除節點。</div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 執行狀態與視覺化</div>
+        
+        <div class="stage">
+          <div class="list" id="list-box"></div>
+        </div>
+
+        <div class="info">
+          <div class="info-row">
+            <span style="color: var(--text-dim);">階段 (Phase):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const presets = [
+      { input: [1, 2, 3, 4, 5], n: 2, output: [1, 2, 3, 5], name: "Example 1" },
+      { input: [1], n: 1, output: [], name: "Example 2" },
+      { input: [1, 2], n: 1, output: [1], name: "Example 3" }
+    ];
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    const codeLines = [
+      `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">removeNthFromEnd</span>(<span class="self">self</span>, head: Optional[ListNode], n: int) -&gt; Optional[ListNode]:`,
+      `        dummy = ListNode(<span class="kw">0</span>, head)`,
+      `        slow = fast = dummy`,
+      `        <span class="comment"># 1. Advance fast pointer n + 1 steps</span>`,
+      `        <span class="kw">for</span> _ <span class="kw">in</span> range(n + <span class="kw">1</span>):`,
+      `            fast = fast.next`,
+      `        <span class="comment"># 2. Move fast to end, maintain gap</span>`,
+      `        <span class="kw">while</span> fast:`,
+      `            slow = slow.next`,
+      `            fast = fast.next`,
+      `        <span class="comment"># 3. Delete Nth node from end</span>`,
+      `        slow.next = slow.next.next`,
+      `        <span class="kw">return</span> dummy.next`
+    ];
+
+    function buildSteps() {
+      history = [];
+      const arr = presets[currentPreset].input;
+      const n = presets[currentPreset].n;
+
+      // 節點陣列包含 Dummy Node
+      // idx 0 = dummy(0), idx 1..length = arr[0..]
+      const nodes = [{ val: 0, isDummy: true }, ...arr.map(v => ({ val: v, isDummy: false }))];
+
+      // Initial Step
+      history.push({
+        line: 2, phase: "初始化",
+        desc: `創建 dummy 節點 (值為 0)，指向頭節點 [${arr[0]}]。`,
+        nodes: nodes.map(x => ({ ...x })),
+        arrows: Array(nodes.length - 1).fill('norm'),
+        ptrs: { slow: 0, fast: 0 }
+      });
+
+      // Step 1: Advance fast pointer n + 1 steps
+      let fast = 0;
+      let slow = 0;
+
+      for (let i = 1; i <= n + 1; i++) {
+        fast = fast + 1 <= nodes.length ? fast + 1 : null;
+        history.push({
+          line: 6, phase: "1. fast 指標先走",
+          desc: `fast 先往前走第 ${i} / ${n + 1} 步 → 移動至 ${fast !== null && fast < nodes.length ? '[' + nodes[fast].val + ']' : 'None'}`,
+          nodes: nodes.map(x => ({ ...x })),
+          arrows: Array(nodes.length - 1).fill('norm'),
+          ptrs: { slow, fast }
+        });
+      }
+
+      // Step 2: Move fast to end, maintaining gap
+      while (fast !== null && fast < nodes.length) {
+        slow++;
+        fast++;
+        history.push({
+          line: 10, phase: "2. slow & fast 同時推進",
+          desc: `保持窗口距離，slow 移至 [${nodes[slow].val}]，fast 移至 ${fast < nodes.length ? '[' + nodes[fast].val + ']' : 'None'}`,
+          nodes: nodes.map(x => ({ ...x })),
+          arrows: Array(nodes.length - 1).fill('norm'),
+          ptrs: { slow, fast }
+        });
+      }
+
+      // Step 3: Delete Target Node
+      let targetIdx = slow + 1;
+      let arrows = Array(nodes.length - 1).fill('norm');
+
+      // 標記要跳過的節點與箭頭
+      arrows[slow] = 'skip'; // 跨越箭頭
+      if (targetIdx < nodes.length - 1) {
+        arrows[targetIdx] = 'broken';
+      }
+
+      let updatedNodes = nodes.map((x, idx) => {
+        if (idx === targetIdx) return { ...x, isRemoved: true };
+        return { ...x };
+      });
+
+      history.push({
+        line: 12, phase: "3. 執行刪除",
+        desc: `執行 slow.next = slow.next.next：[${nodes[slow].val}] 的 next 直接跳過 [${nodes[targetIdx].val}]，指向 ${targetIdx + 1 < nodes.length ? '[' + nodes[targetIdx + 1].val + ']' : 'None'}。`,
+        nodes: updatedNodes,
+        arrows: arrows,
+        ptrs: { slow }
+      });
+
+      // Step 4: Return dummy.next
+      history.push({
+        line: 13, phase: "完成",
+        desc: `🎯 返回 dummy.next，成功刪除倒數第 ${n} 個節點！`,
+        nodes: updatedNodes,
+        arrows: arrows,
+        ptrs: {}
+      });
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codeLines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>Input: head = [${p.input.join(', ')}], n = ${p.n}</div>
+        <div>Output: [${p.output.join(', ')}]</div>
+      `;
+    }
+
+    function applyState() {
+      const state = history[stepIdx];
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + state.line);
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase;
+      document.getElementById('val-desc').innerText = state.desc;
+
+      const container = document.getElementById('list-box');
+      container.innerHTML = '';
+
+      state.nodes.forEach((itemNode, i) => {
+        const item = document.createElement('div');
+        item.className = 'node-box';
+
+        const node = document.createElement('div');
+        node.className = `node ${itemNode.isDummy ? 'dummy' : ''} ${itemNode.isRemoved ? 'removed' : ''}`;
+        node.innerText = itemNode.isDummy ? 'dummy' : itemNode.val;
+
+        let ptrs = [];
+        if (state.ptrs.slow === i) ptrs.push('<span class="ptr p-slow">slow</span>');
+        if (state.ptrs.fast === i) ptrs.push('<span class="ptr p-fast">fast</span>');
+
+        if (ptrs.length) node.innerHTML += `<div class="ptr-group">${ptrs.join('')}</div>`;
+        item.appendChild(node);
+
+        if (i < state.nodes.length - 1) {
+          const arrow = document.createElement('div');
+          const type = state.arrows[i] || 'norm';
+          arrow.className = `arrow ${type === 'skip' ? 'skip' : type === 'broken' ? 'broken' : ''}`;
+          item.appendChild(arrow);
+        }
+        container.appendChild(item);
+      });
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => { renderCode(); renderExample(); reset(); };
+  </script>
+</body>
+</html>

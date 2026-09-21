@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>207. Course Schedule - Interactive Dual-Method Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --hard: #ff2d55;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --green: #50fa7b;
+      --cyan: #8be9fd;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 680px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.85rem; overflow-x: auto; max-height: 480px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.8rem; min-height: 120px; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 6px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 5px 10px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .tree-wrapper { background: #080808; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; height: 350px; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    
+    .graph-container { position: relative; width: 100%; height: 100%; min-width: 400px; min-height: 300px; }
+    .node { position: absolute; width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--border); background: #1e1e1e; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; font-weight: bold; font-size: 0.95rem; color: var(--text); z-index: 2; transition: all 0.3s ease; }
+    .node .indegree-badge { font-size: 0.6rem; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 0 4px; font-weight: normal; margin-top: -2px; }
+    
+    /* DFS Node Styles */
+    .node.unvisited { border-color: #555; background: #222; color: #888; }
+    .node.visiting { border-color: var(--orange); background: rgba(255, 161, 22, 0.2); color: var(--orange); transform: scale(1.15); box-shadow: 0 0 12px var(--orange); }
+    .node.visited { border-color: var(--green); background: rgba(80, 250, 123, 0.15); color: var(--green); }
+    .node.cycle { border-color: var(--hard); background: rgba(255, 45, 85, 0.3); color: var(--hard); transform: scale(1.2); box-shadow: 0 0 15px var(--hard); }
+
+    /* BFS Node Styles */
+    .node.in-queue { border-color: var(--cyan); background: rgba(139, 233, 253, 0.2); color: var(--cyan); transform: scale(1.1); box-shadow: 0 0 10px var(--cyan); }
+    .node.popped { border-color: var(--orange); background: rgba(255, 161, 22, 0.25); color: var(--orange); transform: scale(1.15); }
+    .node.finished { border-color: var(--green); background: rgba(80, 250, 123, 0.15); color: var(--green); }
+
+    svg.edges-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+    .edge-line { stroke: #444; stroke-width: 2; marker-end: url(#arrow); transition: all 0.3s ease; }
+    .edge-line.active { stroke: var(--orange); stroke-width: 3.5; marker-end: url(#arrow-active); }
+    .edge-line.cycle { stroke: var(--hard); stroke-width: 4; marker-end: url(#arrow-cycle); }
+    .edge-line.reduced { stroke: #222; stroke-width: 1.5; opacity: 0.3; marker-end: url(#arrow); }
+
+    .indegree-table { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .indegree-item { background: #1e1e1e; border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.75rem; transition: all 0.2s ease; }
+    .indegree-item.zero { border-color: var(--green); color: var(--green); font-weight: bold; background: rgba(80, 250, 123, 0.1); }
+    .indegree-item.active-target { border-color: var(--orange); color: var(--orange); font-weight: bold; transform: scale(1.08); }
+
+    .adj-table { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .adj-item { background: #1e1e1e; border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.75rem; }
+    .adj-item.active-src { border-color: var(--purple); color: var(--cyan); font-weight: bold; background: rgba(139, 92, 246, 0.2); }
+
+    .var-badge { font-family: monospace; padding: 2px 6px; border-radius: 4px; background: #222; border: 1px solid var(--border); font-size: 0.78rem; }
+    .var-badge.highlight { border-color: var(--orange); color: var(--orange); font-weight: bold; }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 68px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">207. Course Schedule</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Algorithm:</span>
+      <button class="algo-btn active" onclick="setAlgo('dfs')">1. DFS (Backtracking)</button>
+      <button class="algo-btn" onclick="setAlgo('kahn')">2. BFS (Kahn's Algo)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">Ex 1: Linear DAG</button>
+      <button class="tab-btn" onclick="setPreset(1)">Ex 2: Simple Cycle</button>
+      <button class="tab-btn" onclick="setPreset(2)">Ex 3: Complex Graph</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          修完 <code>numCourses</code> 門課（<code>0</code> 到 <code>numCourses - 1</code>）。<br>
+          先修條件 <code>prerequisites[i] = [a, b]</code> 代表想修 <code>a</code> 必須先修完 <code>b</code>。<br>
+          請判斷是否能順利完成所有課程（即圖中是否存在<b>環/Cycle</b>）。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val">O(V + E)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val">O(V + E)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="stack-title">📚 Call Stack (DFS 遞迴歷程)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card">
+        <!-- 動態替換 Idea Box 內容 -->
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 有向圖與狀態視覺化 (Directed Graph)</span>
+          <span id="legend-text" style="font-size:0.7rem; color:var(--text-dim);">狀態圖例</span>
+        </div>
+
+        <div class="tree-wrapper">
+          <div class="graph-container" id="graph-container">
+            <svg class="edges-layer" id="edges-svg">
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="28" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/>
+                </marker>
+                <marker id="arrow-active" viewBox="0 0 10 10" refX="28" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffa116"/>
+                </marker>
+                <marker id="arrow-cycle" viewBox="0 0 10 10" refX="28" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff2d55"/>
+                </marker>
+              </defs>
+            </svg>
+          </div>
+        </div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="pos-label">Current Node: </span>
+              <span id="pos-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;" id="extra-label">Visiting Path: </span>
+              <span id="extra-display" style="font-weight: bold; color: var(--orange);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">finish: </span>
+              <span id="finish-display" class="var-badge">0</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Can Finish? </span>
+              <span id="status-display" style="font-weight: bold; font-size: 1.1rem; color: var(--text-dim);">Checking...</span>
+            </div>
+          </div>
+
+          <div id="kahn-variables-panel" style="display: none; flex-direction: column; gap: 8px;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Adjacency List (adj):</span>
+              <div class="adj-table" id="adj-list"></div>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">Indegree Table (indegree):</span>
+              <div class="indegree-table" id="indegree-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current State / Result:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.9rem; color: var(--text-dim);">Running...</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">步驟說明 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const dfsCodeLines = [
+      `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">canFinish</span>(<span class="self">self</span>, numCourses: int, prerequisites: List[List[int]]) -> bool:`,
+      `        preMap = {i: [] <span class="kw">for</span> i <span class="kw">in</span> range(numCourses)}`,
+      `        <span class="kw">for</span> crs, pre <span class="kw">in</span> prerequisites:`,
+      `            preMap[crs].append(pre)`,
+      `        visiting = set()`,
+      `        <span class="kw">def</span> <span class="fn">dfs</span>(crs):`,
+      `            <span class="kw">if</span> crs <span class="kw">in</span> visiting: <span class="kw">return False</span>  <span class="cm"># 1. 發現環 (Cycle)</span>`,
+      `            <span class="kw">if</span> preMap[crs] == []: <span class="kw">return True</span>    <span class="cm"># 2. 已確認無先修課/已走過</span>`,
+      `            visiting.add(crs)`,
+      `            <span class="kw">for</span> pre <span class="kw">in</span> preMap[crs]:`,
+      `                <span class="kw">if not</span> dfs(pre): <span class="kw">return False</span>`,
+      `            visiting.remove(crs)`,
+      `            preMap[crs] = []                     <span class="cm"># 記憶化 (標記為安全)</span>`,
+      `            <span class="kw">return True</span>`,
+      `        <span class="kw">for</span> c <span class="kw">in</span> range(numCourses):`,
+      `            <span class="kw">if not</span> dfs(c): <span class="kw">return False</span>`,
+      `        <span class="kw">return True</span>`
+    ];
+
+    const kahnCodeLines = [
+      `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">canFinish</span>(<span class="self">self</span>, numCourses: int, prerequisites: List[List[int]]) -> bool:`,
+      `        indegree = [<span class="cls">0</span>] * numCourses`,
+      `        adj = [[] <span class="kw">for</span> i <span class="kw">in</span> range(numCourses)]`,
+      `        <span class="kw">for</span> src, dst <span class="kw">in</span> prerequisites:`,
+      `            indegree[dst] += <span class="cls">1</span>; adj[src].append(dst)`,
+      `        q = deque()`,
+      `        <span class="kw">for</span> n <span class="kw">in</span> range(numCourses):`,
+      `            <span class="kw">if</span> indegree[n] == <span class="cls">0</span>: q.append(n)`,
+      `        finish = <span class="cls">0</span>`,
+      `        <span class="kw">while</span> q:`,
+      `            node = q.popleft()`,
+      `            finish += <span class="cls">1</span>`,
+      `            <span class="kw">for</span> nei <span class="kw">in</span> adj[node]:`,
+      `                indegree[nei] -= <span class="cls">1</span>`,
+      `                <span class="kw">if</span> indegree[nei] == <span class="cls">0</span>: q.append(nei)`,
+      `        <span class="kw">return</span> finish == numCourses`
+    ];
+
+    const presets = [
+      {
+        title: "Example 1 (Linear DAG)",
+        numCourses: 2,
+        prerequisites: [[1, 0]],
+        expected: true,
+        explanation: "修完 0 才能修 1 (0 -> 1)，無環存在，可順利完成。",
+        positions: [
+          { x: 120, y: 150 },
+          { x: 280, y: 150 }
+        ]
+      },
+      {
+        title: "Example 2 (Simple Cycle)",
+        numCourses: 2,
+        prerequisites: [[1, 0], [0, 1]],
+        expected: false,
+        explanation: "0 和 1 互相依賴 (0 <-> 1)，形成死鎖環，無法完成。",
+        positions: [
+          { x: 130, y: 150 },
+          { x: 270, y: 150 }
+        ]
+      },
+      {
+        title: "Example 3 (Complex Graph)",
+        numCourses: 4,
+        prerequisites: [[1, 0], [2, 1], [3, 2], [1, 3]],
+        expected: false,
+        explanation: "存在 1 -> 2 -> 3 -> 1 的循環依賴，無法完成所有課程。",
+        positions: [
+          { x: 80, y: 150 },
+          { x: 180, y: 70 },
+          { x: 300, y: 150 },
+          { x: 180, y: 230 }
+        ]
+      }
+    ];
+
+    let currentAlgo = 'dfs';
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(algo) {
+      currentAlgo = algo;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', (i === 0 && algo === 'dfs') || (i === 1 && algo === 'kahn')));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const container = document.getElementById('idea-card');
+      if (currentAlgo === 'dfs') {
+        container.innerHTML = `
+          <div class="idea-box">
+            <div class="idea-title">💡 解法 1：DFS 深度優先搜尋 + 回溯 (Visiting Set)</div>
+            <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+              <li><b>Visiting Set</b>：記錄當前 DFS 路徑上的課程。若遞迴中遇到已在 set 中的課程，代表<b>發現環 (Cycle)</b>！</li>
+              <li><b>Prerequisites Map</b>：對每個課程進行 DFS 依賴展開。當探測完成後將其清空 <code>preMap[crs] = []</code> 進行<b>記憶化</b>。</li>
+              <li><b>Backtracking</b>：離開 DFS 遞迴前將當前課程從 <code>visiting</code> 移除。</li>
+            </ol>
+          </div>
+        `;
+        document.getElementById('legend-text').innerText = "⚪ 未訪問 | 🟡 Visiting (當前路徑) | 🟢 Safe (無環)";
+        document.getElementById('stack-title').innerText = "📚 Call Stack (DFS 遞迴歷程)";
+        document.getElementById('kahn-variables-panel').style.display = "none";
+        document.getElementById('pos-label').innerText = "Current Node: ";
+        document.getElementById('extra-label').innerText = "Visiting Path: ";
+        document.getElementById('finish-display').parentElement.style.display = "none";
+      } else {
+        container.innerHTML = `
+          <div class="idea-box" style="border-left-color: var(--blue);">
+            <div class="idea-title" style="color: var(--blue);">💡 解法 2：拓撲排序 (Kahn's Algorithm / BFS)</div>
+            <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 2px;">
+              <li><b>Indegree (入度陣列)</b>：記錄每門課有多少先修課。入度為 0 代表「無先修限制，可直接修讀」。</li>
+              <li><b>BFS Queue</b>：將所有入度為 0 的課程加入 Queue 中，依序修讀 (Pop)。</li>
+              <li><b>減扣入度 (Edge Removal)</b>：修完課程後，將其後續課程的入度 -1。若降為 0 則加入 Queue。</li>
+              <li><b>判斷環</b>：若最終修完的總課程數 <code>finish == numCourses</code>，則代表無環成功！</li>
+            </ol>
+          </div>
+        `;
+        document.getElementById('legend-text').innerText = "⚪ Indegree>0 | 🩵 在 Queue 中 | 🟡 處理中 | 🟢 已修完";
+        document.getElementById('stack-title').innerText = "📥 BFS Queue (待修讀佇列 q)";
+        document.getElementById('kahn-variables-panel').style.display = "flex";
+        document.getElementById('pos-label').innerText = "Popped Node: ";
+        document.getElementById('extra-label').innerText = "Queue State: ";
+        document.getElementById('finish-display').parentElement.style.display = "inline-block";
+      }
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Courses:</b> ${p.numCourses} | <b>Prereqs:</b> ${JSON.stringify(p.prerequisites)} | <b>Expected:</b> ${p.expected}</div>
+        <div style="margin-top:4px; color:#aaa; font-size:0.75rem;"><b>Explanation:</b> ${p.explanation}</div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = currentAlgo === 'dfs' ? dfsCodeLines : kahnCodeLines;
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const p = presets[currentPreset];
+      const numCourses = p.numCourses;
+
+      if (currentAlgo === 'dfs') {
+        buildDfsSteps(p, numCourses);
+      } else {
+        buildKahnSteps(p, numCourses);
+      }
+    }
+
+    /* ---------------- DFS History Builder ---------------- */
+    function buildDfsSteps(p, numCourses) {
+      const preMap = Array.from({ length: numCourses }, () => []);
+      p.prerequisites.forEach(([crs, pre]) => preMap[crs].push(pre));
+
+      const visiting = new Set();
+      const safe = new Set();
+      let currentStack = [];
+
+      function pushFrame(crs) { currentStack.push({ fnName: "dfs", args: `crs=${crs}` }); }
+      function popFrame() { currentStack.pop(); }
+
+      history.push({
+        line: 5, phase: "【初始化】",
+        desc: `建立先修關係地圖 preMap 與 visiting set`,
+        stack: [], pos: null, visiting: Array.from(visiting), safe: Array.from(safe), result: "Checking..."
+      });
+
+      function dfs(crs) {
+        pushFrame(crs);
+
+        history.push({
+          line: 7, phase: "⏬ 【Call DFS】進入節點",
+          desc: `呼叫 dfs(crs=${crs})，檢查是否在 visiting 中或已走過`,
+          stack: JSON.parse(JSON.stringify(currentStack)), pos: crs, visiting: Array.from(visiting), safe: Array.from(safe), result: "Checking..."
+        });
+
+        if (visiting.has(crs)) {
+          history.push({
+            line: 8, phase: "🔴 【Cycle Detected】發現環！",
+            desc: `課程 ${crs} 已在 visiting set 中，形成循環依賴！回傳 False`,
+            stack: JSON.parse(JSON.stringify(currentStack)), pos: crs, visiting: Array.from(visiting), safe: Array.from(safe), isCycle: true, result: "False"
+          });
+          popFrame();
+          return false;
+        }
+
+        if (preMap[crs].length === 0) {
+          history.push({
+            line: 9, phase: "🟢 【No Prerequisites / Safe】安全",
+            desc: `課程 ${crs} 無需先修課 (或已探測過安全)，直接回傳 True`,
+            stack: JSON.parse(JSON.stringify(currentStack)), pos: crs, visiting: Array.from(visiting), safe: Array.from(safe), result: "Checking..."
+          });
+          popFrame();
+          return true;
+        }
+
+        visiting.add(crs);
+        history.push({
+          line: 10, phase: "🟡 【Add Visiting】加入當前路徑",
+          desc: `將課程 ${crs} 加入 visiting set，開始依序探測其先修課`,
+          stack: JSON.parse(JSON.stringify(currentStack)), pos: crs, visiting: Array.from(visiting), safe: Array.from(safe), result: "Checking..."
+        });
+
+        for (let pre of preMap[crs]) {
+          history.push({
+            line: 11, phase: `🧭 【Explore Pre】探測先修課 ${crs} -> ${pre}`,
+            desc: `想修課程 ${crs}，先遞迴檢查先修課 ${pre}`,
+            stack: JSON.parse(JSON.stringify(currentStack)), pos: crs, visiting: Array.from(visiting), safe: Array.from(safe), activeEdge: { from: crs, to: pre }, result: "Checking..."
+          });
+
+          if (!dfs(pre)) {
+            popFrame();
+            return false;
+          }
+        }
+
+        visiting.delete(crs);
+        preMap[crs] = [];
+        safe.add(crs);
+
+        history.push({
+          line: 13, phase: "🟢 【Backtrack & Memo】探測完成 (安全)",
+          desc: `課程 ${crs} 所有先修課皆安全！從 visiting 移除，並標記 preMap[${crs}] = []`,
+          stack: JSON.parse(JSON.stringify(currentStack)), pos: crs, visiting: Array.from(visiting), safe: Array.from(safe), result: "Checking..."
+        });
+
+        history.push({
+          line: 15, phase: "↩️ 【Return True】返回上一層",
+          desc: `dfs(${crs}) 成功完成，回傳 True`,
+          stack: JSON.parse(JSON.stringify(currentStack)), pos: crs, visiting: Array.from(visiting), safe: Array.from(safe), result: "Checking..."
+        });
+
+        popFrame();
+        return true;
+      }
+
+      for (let c = 0; c < numCourses; c++) {
+        history.push({
+          line: 16, phase: `🔍 【Outer Loop】檢查課程 ${c}`,
+          desc: `外層迴圈遍歷檢查課程 ${c}`,
+          stack: [], pos: c, visiting: Array.from(visiting), safe: Array.from(safe), result: "Checking..."
+        });
+
+        if (!dfs(c)) {
+          history.push({
+            line: 17, phase: "❌ 【Result】無法完成所有課程！",
+            desc: `發現環，回傳 False`,
+            stack: [], pos: null, visiting: Array.from(visiting), safe: Array.from(safe), result: "False"
+          });
+          return;
+        }
+      }
+
+      history.push({
+        line: 18, phase: "🎉 【Result】成功修完所有課程！",
+        desc: `無任何循環依賴，回傳 True`,
+        stack: [], pos: null, visiting: Array.from(visiting), safe: Array.from(safe), result: "True"
+      });
+    }
+
+    /* ---------------- Kahn's Algorithm Step-by-Step Builder ---------------- */
+    function buildKahnSteps(p, numCourses) {
+      const indegree = new Array(numCourses).fill(0);
+      const adj = Array.from({ length: numCourses }, () => []);
+
+      history.push({
+        line: 2, phase: "【初始化】宣告 indegree 陣列",
+        desc: `建立長度為 ${numCourses} 的入度陣列 indegree = [0, ..., 0]`,
+        indegree: [...indegree], adj: deepCopyAdj(adj), queue: [], finish: 0, result: "Checking..."
+      });
+
+      history.push({
+        line: 3, phase: "【初始化】宣告鄰接表 adj",
+        desc: `建立長度為 ${numCourses} 的鄰接表 adj = [[], ..., []]`,
+        indegree: [...indegree], adj: deepCopyAdj(adj), queue: [], finish: 0, result: "Checking..."
+      });
+
+      // 逐步建構圖 (For loop 逐筆寫入 src -> dst)
+      p.prerequisites.forEach(([src, dst], idx) => {
+        indegree[dst]++;
+        adj[src].push(dst);
+
+        history.push({
+          line: 5, phase: `🔨 【Build Graph】處理邊 [src=${src}, dst=${dst}]`,
+          desc: `讀取先修關係 ${src} -> ${dst}。將 indegree[${dst}] += 1 (變成 ${indegree[dst]})，且 adj[${src}].append(${dst})`,
+          indegree: [...indegree], adj: deepCopyAdj(adj), activeSrc: src, activeDst: dst, activeEdge: { from: src, to: dst }, queue: [], finish: 0, result: "Checking..."
+        });
+      });
+
+      history.push({
+        line: 6, phase: "📥 【Create Queue】建立佇列 q",
+        desc: `建立空的 BFS 佇列 q = deque()`,
+        indegree: [...indegree], adj: deepCopyAdj(adj), queue: [], finish: 0, result: "Checking..."
+      });
+
+      // 檢查入度歸零者
+      const q = [];
+      for (let n = 0; n < numCourses; n++) {
+        let isZero = (indegree[n] === 0);
+        if (isZero) q.push(n);
+
+        history.push({
+          line: 8, phase: `🔍 【Check Indegree】檢查課程 ${n} 入度`,
+          desc: `檢查 indegree[${n}] == ${indegree[n]}。` + (isZero ? `為 0！將課程 ${n} 加入 Queue (q.append(${n}))` : `大於 0，不能直接修讀`),
+          indegree: [...indegree], adj: deepCopyAdj(adj), activeTarget: n, queue: [...q], finish: 0, result: "Checking..."
+        });
+      }
+
+      let finish = 0;
+      const finishedNodes = new Set();
+
+      history.push({
+        line: 9, phase: "🏁 【Init Finish】初始化完成計數器",
+        desc: `設定 finish = 0，當前佇列 q = [${q.join(', ')}]`,
+        indegree: [...indegree], adj: deepCopyAdj(adj), queue: [...q], finish: 0, result: "Checking..."
+      });
+
+      while (q.length > 0) {
+        history.push({
+          line: 10, phase: "🔄 【Loop Check】檢查 Queue 是否為空",
+          desc: `Queue 不為空 (q = [${q.join(', ')}])，繼續執行廣度搜尋`,
+          indegree: [...indegree], adj: deepCopyAdj(adj), queue: [...q], finish: finish, finishedSet: Array.from(finishedNodes), result: "Checking..."
+        });
+
+        const node = q.shift();
+        finish++;
+        finishedNodes.add(node);
+
+        history.push({
+          line: 11, phase: `🎓 【Pop Left】修讀課程 node = ${node}`,
+          desc: `執行 node = q.popleft() 取出課程 ${node}`,
+          indegree: [...indegree], adj: deepCopyAdj(adj), queue: [...q], poppedNode: node, finish: finish, finishedSet: Array.from(finishedNodes), result: "Checking..."
+        });
+
+        history.push({
+          line: 12, phase: `加總完成課程數 finish += 1`,
+          desc: `將修完課程計數器增至 finish = ${finish}`,
+          indegree: [...indegree], adj: deepCopyAdj(adj), queue: [...q], poppedNode: node, finish: finish, finishedSet: Array.from(finishedNodes), result: "Checking..."
+        });
+
+        const neighbors = adj[node] || [];
+        if (neighbors.length === 0) {
+          history.push({
+            line: 13, phase: `🔍 【Check Neighbors】課程 ${node} 無後續課程`,
+            desc: `adj[${node}] 為空，此課程修完後不會釋放其他先修限制`,
+            indegree: [...indegree], adj: deepCopyAdj(adj), queue: [...q], poppedNode: node, finish: finish, finishedSet: Array.from(finishedNodes), result: "Checking..."
+          });
+        }
+
+        for (let nei of neighbors) {
+          history.push({
+            line: 13, phase: `🧭 【Traverse Neighbor】檢查後續課程 nei = ${nei}`,
+            desc: `從 adj[${node}] 發現後續課程 ${nei}，準備扣減其先修限制`,
+            indegree: [...indegree], adj: deepCopyAdj(adj), queue: [...q], poppedNode: node, activeEdge: { from: node, to: nei }, activeTarget: nei, finish: finish, finishedSet: Array.from(finishedNodes), result: "Checking..."
+          });
+
+          indegree[nei]--;
+          let newlyZero = (indegree[nei] === 0);
+
+          history.push({
+            line: 14, phase: `✂️ 【Decrease Indegree】indegree[${nei}] -= 1`,
+            desc: `修完 ${node} 後解除對 ${nei} 的限制，indegree[${nei}] 減至 ${indegree[nei]}`,
+            indegree: [...indegree], adj: deepCopyAdj(adj), queue: [...q], poppedNode: node, activeEdge: { from: node, to: nei }, activeTarget: nei, finish: finish, finishedSet: Array.from(finishedNodes), result: "Checking..."
+          });
+
+          if (newlyZero) {
+            q.push(nei);
+            history.push({
+              line: 15, phase: `📥 【Enqueue】indegree[${nei}] == 0 🡪 入佇列`,
+              desc: `課程 ${nei} 的所有先修課皆已修畢 (入度歸零)！執行 q.append(${nei})`,
+              indegree: [...indegree], adj: deepCopyAdj(adj), queue: [...q], poppedNode: node, activeTarget: nei, finish: finish, finishedSet: Array.from(finishedNodes), result: "Checking..."
+            });
+          }
+        }
+      }
+
+      const isSuccess = finish === numCourses;
+      history.push({
+        line: 16, phase: isSuccess ? "🎉 【Result】拓撲排序成功！" : "❌ 【Result】存在無法解開的死鎖環！",
+        desc: `判斷 finish (${finish}) == numCourses (${numCourses})。傳回 ${isSuccess ? 'True' : 'False'}`,
+        indegree: [...indegree], adj: deepCopyAdj(adj), queue: [...q], finish: finish, finishedSet: Array.from(finishedNodes), result: isSuccess ? "True" : "False"
+      });
+    }
+
+    function deepCopyAdj(adj) {
+      return adj.map(arr => [...arr]);
+    }
+
+    /* ---------------- Graph Renderer ---------------- */
+    function renderGraph(state) {
+      const p = presets[currentPreset];
+      const container = document.getElementById('graph-container');
+
+      container.querySelectorAll('.node').forEach(n => n.remove());
+      const svg = document.getElementById('edges-svg');
+      svg.querySelectorAll('.edge-line').forEach(l => l.remove());
+
+      // Render Edges
+      if (currentAlgo === 'dfs') {
+        p.prerequisites.forEach(([crs, pre]) => {
+          const fromPos = p.positions[crs];
+          const toPos = p.positions[pre];
+          createSvgLine(svg, fromPos, toPos, state.activeEdge && state.activeEdge.from === crs && state.activeEdge.to === pre, state.isCycle);
+        });
+      } else {
+        p.prerequisites.forEach(([src, dst]) => {
+          const fromPos = p.positions[src];
+          const toPos = p.positions[dst];
+          let isReduced = state.finishedSet && state.finishedSet.includes(src);
+          createSvgLine(svg, fromPos, toPos, state.activeEdge && state.activeEdge.from === src && state.activeEdge.to === dst, false, isReduced);
+        });
+      }
+
+      // Render Nodes
+      for (let i = 0; i < p.numCourses; i++) {
+        const node = document.createElement('div');
+        let cls = "node";
+
+        if (currentAlgo === 'dfs') {
+          if (state.isCycle && state.pos === i) cls += " cycle";
+          else if (state.visiting && state.visiting.includes(i)) cls += " visiting";
+          else if (state.safe && state.safe.includes(i)) cls += " visited";
+          else cls += " unvisited";
+          node.innerText = i;
+        } else {
+          let deg = state.indegree ? state.indegree[i] : 0;
+          if (state.poppedNode === i) cls += " popped";
+          else if (state.finishedSet && state.finishedSet.includes(i)) cls += " finished";
+          else if (state.queue && state.queue.includes(i)) cls += " in-queue";
+          else cls += " unvisited";
+
+          node.innerHTML = `
+            <span>${i}</span>
+            <span class="indegree-badge">in:${deg}</span>
+          `;
+        }
+
+        node.className = cls;
+        node.style.left = `${p.positions[i].x - 24}px`;
+        node.style.top = `${p.positions[i].y - 24}px`;
+        container.appendChild(node);
+      }
+    }
+
+    function createSvgLine(svg, fromPos, toPos, isActive, isCycle, isReduced) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', fromPos.x);
+      line.setAttribute('y1', fromPos.y);
+      line.setAttribute('x2', toPos.x);
+      line.setAttribute('y2', toPos.y);
+
+      let cls = "edge-line";
+      if (isActive) cls += isCycle ? " cycle" : " active";
+      else if (isReduced) cls += " reduced";
+
+      line.setAttribute('class', cls);
+      svg.appendChild(line);
+    }
+
+    /* ---------------- UI State Handler ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      // Render Stack / Queue Panel
+      const stackBox = document.getElementById('stack-display');
+      if (currentAlgo === 'dfs') {
+        const stackData = state.stack || [];
+        stackBox.innerHTML = stackData.length === 0 
+          ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Stack Empty</div>`
+          : stackData.map(f => `
+              <div class="stack-frame">
+                <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.75rem;">(${f.args})</span></div>
+              </div>
+            `).join('');
+        document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+      } else {
+        const qData = state.queue || [];
+        stackBox.innerHTML = qData.length === 0 
+          ? `<div style="color:var(--text-dim); text-align:center; margin:auto;">Queue Empty</div>`
+          : `<div style="display:flex; gap:8px; align-items:center; padding:8px;">` +
+            qData.map(n => `<div style="background:rgba(139, 233, 253, 0.2); border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:4px; font-weight:bold;">Node ${n}</div>`).join(' ➔ ') +
+            `</div>`;
+        document.getElementById('stackDepthHint').innerText = `Size: ${qData.length}`;
+      }
+
+      // Main Control Labels & Variables
+      if (currentAlgo === 'dfs') {
+        document.getElementById('pos-display').innerText = state.pos !== null && state.pos !== undefined ? `Course ${state.pos}` : "None";
+        document.getElementById('extra-display').innerText = state.visiting && state.visiting.length > 0 ? `[${state.visiting.join(', ')}]` : "[]";
+      } else {
+        document.getElementById('pos-display').innerText = state.poppedNode !== undefined ? `Course ${state.poppedNode}` : "None";
+        document.getElementById('extra-display').innerText = state.queue ? `[${state.queue.join(', ')}]` : "[]";
+        
+        const finishBadge = document.getElementById('finish-display');
+        finishBadge.innerText = state.finish !== undefined ? state.finish : 0;
+        if (state.line === 12) finishBadge.classList.add('highlight');
+        else finishBadge.classList.remove('highlight');
+
+        // Render Kahn Variables Visualization: Adj List & Indegree Table
+        const adjListEl = document.getElementById('adj-list');
+        if (state.adj) {
+          adjListEl.innerHTML = state.adj.map((neighbors, srcIdx) => {
+            let isSrcActive = state.activeSrc === srcIdx || state.poppedNode === srcIdx;
+            return `
+              <div class="adj-item ${isSrcActive ? 'active-src' : ''}">
+                node ${srcIdx} ➔ [${neighbors.join(', ')}]
+              </div>
+            `;
+          }).join('');
+        }
+
+        const degListEl = document.getElementById('indegree-list');
+        if (state.indegree) {
+          degListEl.innerHTML = state.indegree.map((d, nodeIdx) => {
+            let isZero = d === 0;
+            let isTarget = state.activeTarget === nodeIdx || state.activeDst === nodeIdx;
+            return `
+              <div class="indegree-item ${isZero ? 'zero' : ''} ${isTarget ? 'active-target' : ''}">
+                indegree[${nodeIdx}] = ${d}
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // Results Panel
+      const statusEl = document.getElementById('status-display');
+      statusEl.innerText = state.result;
+      if (state.result === "True") statusEl.style.color = "var(--green)";
+      else if (state.result === "False") statusEl.style.color = "var(--hard)";
+      else statusEl.style.color = "var(--text-dim)";
+
+      const resEl = document.getElementById('result-text');
+      resEl.innerText = state.result !== "Checking..." ? `Can Finish = ${state.result}` : "Checking Cycle...";
+      resEl.style.color = state.result === "True" ? "var(--green)" : (state.result === "False" ? "var(--hard)" : "var(--text-dim)");
+
+      renderGraph(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

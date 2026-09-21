@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>73. Set Matrix Zeroes - Visualizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #333333;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #8b5cf6;
+      --cyan: #8be9fd;
+      --green: #50fa7b;
+      --red: #ff5555;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1600px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1600px; margin: 0 auto 12px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .tab-group { display: flex; gap: 6px; align-items: center; background: #181818; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--orange); font-weight: bold; }
+    
+    .algo-btn { background: #222; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+    .algo-btn.active { background: var(--blue); color: #fff; border-color: var(--cyan); }
+
+    .grid { max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: 650px 1fr; gap: 14px; }
+    @media (max-width: 1250px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--medium); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--medium); margin-bottom: 4px; }
+    
+    .example-box { background: #181818; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 8px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; line-height: 1.45; }
+    .example-title { font-weight: bold; color: var(--orange); margin-bottom: 4px; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #181818; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .code-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px 0; font-family: monospace; font-size: 0.82rem; overflow-x: auto; max-height: 520px; }
+    .code-line { padding: 2px 14px; white-space: pre; border-left: 3px solid transparent; line-height: 1.45; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); font-weight: bold; }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.8rem; min-height: 110px; max-height: 180px; overflow-y: auto; }
+
+    .path-container { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .current-path-box { background: #222; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    .array-wrapper { background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; width: 100%; min-height: 320px; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 16px; }
+    
+    .matrix-grid { display: grid; gap: 8px; background: #151821; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
+    .matrix-cell { width: 54px; height: 54px; background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: monospace; font-weight: bold; font-size: 1.1rem; color: #fff; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    
+    /* Cell States */
+    .cell-curr { background: rgba(255, 161, 22, 0.5); border-color: var(--orange); color: #fff; transform: scale(1.1); box-shadow: 0 0 12px rgba(255, 161, 22, 0.8); }
+    .cell-zero { background: rgba(255, 85, 85, 0.25); border-color: var(--red); color: var(--red); }
+    .cell-marker { border: 2px dashed var(--purple); }
+
+    .results-box { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; font-size: 0.8rem; font-family: monospace; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background 0.2s; }
+    .btn:hover:not(:disabled) { background: #4a4a4a; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: #ffd043; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">73. Set Matrix Zeroes</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Strategy:</span>
+      <button class="algo-btn active" onclick="setAlgo(0)">1. Constant Space O(1) (原矩陣標記法)</button>
+      <button class="algo-btn" onclick="setAlgo(1)">2. Extra Space O(m+n) (行列標記陣列)</button>
+    </div>
+    <div class="tab-group">
+      <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+      <button class="tab-btn active" onclick="setPreset(0)">3x3 Grid (Standard)</button>
+      <button class="tab-btn" onclick="setPreset(1)">3x4 Grid (Corner Zero)</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與限制</div>
+        <div class="problem-desc">
+          給定一個 <code>m x n</code> 的整數矩陣 <b>matrix</b>，若某個元素為 <b>0</b>，則將該元素所在的整列 (row) 與整行 (column) 均歸零。<br>
+          <b>限制條件：</b>必須直接原場修改 (In-place)。
+        </div>
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(M × N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="code-title">🐍 Python 程式碼解法</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 微步驟歷程追蹤 (Micro-Step Trace)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Step-by-step Execution</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" id="idea-card"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧩 矩陣置零歷程視覺化 (Visualizer)</span>
+        </div>
+
+        <div class="array-wrapper" id="vis-wrapper"></div>
+
+        <div class="path-container">
+          <div class="current-path-box">
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">Current Focus: </span>
+              <span id="pos-curr-display" style="font-weight: bold; color: var(--orange);">-</span>
+            </div>
+            <div>
+              <span style="color: var(--text-dim); font-size: 0.8rem;">First Col Flag (col0): </span>
+              <span id="col0-display" style="font-weight: bold; color: var(--cyan);">-</span>
+            </div>
+          </div>
+
+          <div id="dynamic-variables-panel" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div class="results-box">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.78rem; color: var(--text-dim); font-weight: bold;">Current Matrix Status:</span>
+            <span id="result-text" style="font-family: monospace; font-weight: bold; font-size: 0.85rem; color: var(--green);">[]</span>
+          </div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color: var(--text-dim); font-weight:bold;">當前微步驟說明 (Micro-step):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ddd; line-height: 1.4;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codeTemplates = [
+      // 1. O(1) Space - In-place First Row/Col Marker
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">setZeroes</span>(<span class="self">self</span>, matrix: List[List[int]]) -> <span class="kw">None</span>:`,
+       `        <span class="cm"># 原場修改 (In-place)，空間複雜度 O(1)</span>`,
+       `        m, n = len(matrix), len(matrix[0])`,
+       `        first_col_has_zero = <span class="kw">False</span>`,
+       ``,
+       `        <span class="cm"># 1. 逐行逐格走訪矩陣，用第一列和第一行做標記</span>`,
+       `        <span class="kw">for</span> r <span class="kw">in</span> range(m):`,
+       `            <span class="kw">if</span> matrix[r][0] == 0:`,
+       `                first_col_has_zero = <span class="kw">True</span>`,
+       `            <span class="kw">for</span> c <span class="kw">in</span> range(1, n):`,
+       `                <span class="kw">if</span> matrix[r][c] == 0:`,
+       `                    matrix[r][0] = 0`,
+       `                    matrix[0][c] = 0`,
+       ``,
+       `        <span class="cm"># 2. 根據第 0 列與第 0 行標記，逐格更新內部 (r >= 1, c >= 1)</span>`,
+       `        <span class="kw">for</span> r <span class="kw">in</span> range(1, m):`,
+       `            <span class="kw">for</span> c <span class="kw">in</span> range(1, n):`,
+       `                <span class="kw">if</span> matrix[r][0] == 0 <span class="kw">or</span> matrix[0][c] == 0:`,
+       `                    matrix[r][c] = 0`,
+       ``,
+       `        <span class="cm"># 3. 處理第一列 (row 0)</span>`,
+       `        <span class="kw">if</span> matrix[0][0] == 0:`,
+       `            <span class="kw">for</span> c <span class="kw">in</span> range(n):`,
+       `                matrix[0][c] = 0`,
+       ``,
+       `        <span class="cm"># 4. 處理第一行 (col 0)</span>`,
+       `        <span class="kw">if</span> first_col_has_zero:`,
+       `            <span class="kw">for</span> r <span class="kw">in</span> range(m):`,
+       `                matrix[r][0] = 0`],
+
+      // 2. O(m+n) Space - Extra Arrays
+      [`<span class="kw">class</span> <span class="cls">Solution</span>:`,
+       `    <span class="kw">def</span> <span class="fn">setZeroes</span>(<span class="self">self</span>, matrix: List[List[int]]) -> <span class="kw">None</span>:`,
+       `        <span class="cm"># 使用額外陣列記錄，空間複雜度 O(m + n)</span>`,
+       `        m, n = len(matrix), len(matrix[0])`,
+       `        zero_rows = [<span class="kw">False</span>] * m`,
+       `        zero_cols = [<span class="kw">False</span>] * n`,
+       ``,
+       `        <span class="cm"># 1. 第一遍走訪：逐格檢查並記錄哪些列/行包含 0</span>`,
+       `        <span class="kw">for</span> r <span class="kw">in</span> range(m):`,
+       `            <span class="kw">for</span> c <span class="kw">in</span> range(n):`,
+       `                <span class="kw">if</span> matrix[r][c] == 0:`,
+       `                    zero_rows[r] = <span class="kw">True</span>`,
+       `                    zero_cols[c] = <span class="kw">True</span>`,
+       ``,
+       `        <span class="cm"># 2. 第二遍走訪：逐格判斷並進行歸零</span>`,
+       `        <span class="kw">for</span> r <span class="kw">in</span> range(m):`,
+       `            <span class="kw">for</span> c <span class="kw">in</span> range(n):`,
+       `                <span class="kw">if</span> zero_rows[r] <span class="kw">or</span> zero_cols[c]:`,
+       `                    matrix[r][c] = 0`]
+    ];
+
+    const strategyInfo = [
+      {
+        title: "1. Constant Space O(1) (原矩陣第一行與第一列標記法)",
+        time: "O(M × N)", space: "O(1)",
+        idea: `<b>解法思路：</b><br>
+逐列 (Row by Row) 並且逐格檢查：<br>
+1. <b>第一階段 (掃描標記)</b>：<br>
+&nbsp;&nbsp;• 檢查第一行 (col 0)：若為 0 則設置變數 <code>first_col_has_zero = True</code>。<br>
+&nbsp;&nbsp;• 檢查內部格子 (col 1~n-1)：若發現 0，將對應的第 0 列與第 0 行改寫為 0 作為標記。<br>
+2. <b>第二階段 (內部歸零)</b>：逐格檢查內部 (row >= 1, col >= 1)，若所屬第 0 列或第 0 行為 0，則將該格歸零。<br>
+3. <b>第三階段 (邊界歸零)</b>：個別將第 0 列與第 0 行逐格完成歸零。`
+      },
+      {
+        title: "2. Extra Space O(m+n) (獨立行列標記陣列)",
+        time: "O(M × N)", space: "O(M + N)",
+        idea: `<b>解法思路：</b><br>
+建立兩個標記陣列 <code>zero_rows</code> 與 <code>zero_cols</code>。<br>
+1. <b>第一階段</b>：逐列逐格掃描，遇到 0 即將對應標記陣列更新為 True。<br>
+2. <b>第二階段</b>：再次逐列逐格掃描，若對應標記為 True 則將該格改寫為 0。`
+      }
+    ];
+
+    const presets = [
+      { 
+        title: "3x3 Grid (Standard)", 
+        matrix: [[1,1,1],[1,0,1],[1,1,1]], 
+        expected: "[[1,0,1],[0,0,0],[1,0,1]]" 
+      },
+      { 
+        title: "3x4 Grid (Corner Zero)", 
+        matrix: [[0,1,2,0],[3,4,5,2],[1,3,1,5]], 
+        expected: "[[0,0,0,0],[0,4,5,0],[0,3,1,0]]" 
+      }
+    ];
+
+    let currentAlgo = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setAlgo(idx) {
+      currentAlgo = idx;
+      document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderIdeaBox();
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderIdeaBox() {
+      const info = strategyInfo[currentAlgo];
+      document.getElementById('time-comp').innerText = info.time;
+      document.getElementById('space-comp').innerText = info.space;
+      const ideaCard = document.getElementById('idea-card');
+      ideaCard.innerHTML = `
+        <div class="idea-box">
+          <div class="idea-title">${info.title}</div>
+          <div style="font-size: 0.78rem; line-height: 1.45;">${info.idea}</div>
+        </div>
+      `;
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div class="example-title">${p.title}</div>
+        <div><b>Input Matrix:</b> ${JSON.stringify(p.matrix)}</div>
+        <div><b>Expected Output:</b> <span style="color:var(--green)">${p.expected}</span></div>
+      `;
+    }
+
+    function renderCode() {
+      const lines = codeTemplates[currentAlgo];
+      document.getElementById('code-box').innerHTML = lines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    /* ---------------- History Builders (細緻微步驟) ---------------- */
+    function buildSteps() {
+      history = [];
+      const original = presets[currentPreset].matrix;
+      const matrix = JSON.parse(JSON.stringify(original));
+
+      if (currentAlgo === 0) {
+        buildO1Steps(matrix);
+      } else {
+        buildOMNSteps(matrix);
+      }
+    }
+
+    // Algo 1: O(1) Space (逐列逐格，一行行詳細執行)
+    function buildO1Steps(mat) {
+      const m = mat.length, n = mat[0].length;
+      let firstColZero = false;
+
+      history.push({
+        line: 4, phase: "⚡ 【初始化】",
+        desc: `準備開始執行。設 <code>first_col_has_zero = False</code>`,
+        curr: null, matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+      });
+
+      // Pass 1: Scan Row by Row
+      for (let r = 0; r < m; r++) {
+        history.push({
+          line: 7, phase: `🔍 【開始掃描第 ${r} 列 (Row ${r})】`,
+          desc: `進入迴圈 r = ${r}，準備檢查第 ${r} 列的所有元素。`,
+          curr: [r, 0], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+        });
+
+        // 1. Check Col 0
+        if (mat[r][0] === 0) {
+          firstColZero = true;
+          history.push({
+            line: 9, phase: `🚩 【檢查 [${r}, 0]：發現 0】`,
+            desc: `第 ${r} 列第 0 行為 0，更新 <code>first_col_has_zero = True</code>`,
+            curr: [r, 0], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+          });
+        } else {
+          history.push({
+            line: 8, phase: `🔍 【檢查 [${r}, 0]：值為 ${mat[r][0]}】`,
+            desc: `<code>matrix[${r}][0] != 0</code>，保持 first_col_has_zero = ${firstColZero}`,
+            curr: [r, 0], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+          });
+        }
+
+        // 2. Check Col 1 to n-1
+        for (let c = 1; c < n; c++) {
+          if (mat[r][c] === 0) {
+            mat[r][0] = 0;
+            mat[0][c] = 0;
+            history.push({
+              line: 13, phase: `📝 【檢查 [${r}, ${c}]：發現 0，進行標記】`,
+              desc: `發現 <code>matrix[${r}][${c}] == 0</code>！將第一行 <code>matrix[${r}][0]</code> 與 第一列 <code>matrix[0][${c}]</code> 置為 0 作為標記。`,
+              curr: [r, c], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+            });
+          } else {
+            history.push({
+              line: 11, phase: `🔍 【檢查 [${r}, ${c}]：值為 ${mat[r][c]}】`,
+              desc: `<code>matrix[${r}][${c}] != 0</code>，無需修改標記。`,
+              curr: [r, c], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+            });
+          }
+        }
+      }
+
+      history.push({
+        line: 16, phase: "🔍 【階段一完成：標記完畢】",
+        desc: "全矩陣第一階段掃描完成，接下來將依據第 0 列與第 0 行的標記，逐格更新內部數字。",
+        curr: null, matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+      });
+
+      // Pass 2: Update Inner Cells Row by Row
+      for (let r = 1; r < m; r++) {
+        history.push({
+          line: 16, phase: `🧹 【開始更新內部第 ${r} 列 (Row ${r})】`,
+          desc: `檢查 row ${r} 的內部元素 (col 1 ~ ${n-1}) 是否需要歸零。`,
+          curr: [r, 1], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+        });
+
+        for (let c = 1; c < n; c++) {
+          if (mat[r][0] === 0 || mat[0][c] === 0) {
+            mat[r][c] = 0;
+            history.push({
+              line: 19, phase: `🧹 【更新 [${r}, ${c}] -> 0】`,
+              desc: `因 <code>matrix[${r}][0] == 0</code> 或 <code>matrix[0][${c}] == 0</code>，將 <code>matrix[${r}][${c}]</code> 置為 0。`,
+              curr: [r, c], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+            });
+          } else {
+            history.push({
+              line: 18, phase: `✔️ 【保持 [${r}, ${c}]】`,
+              desc: `對應的首行與首列標記皆不為 0，<code>matrix[${r}][${c}]</code> 保持原值 ${mat[r][c]}。`,
+              curr: [r, c], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+            });
+          }
+        }
+      }
+
+      // Pass 3: Process Row 0
+      history.push({
+        line: 21, phase: "🟥 【檢查第一列 (Row 0)】",
+        desc: `檢查首格 <code>matrix[0][0]</code> 是否為 0 (當前值: ${mat[0][0]})。`,
+        curr: [0, 0], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+      });
+
+      if (mat[0][0] === 0) {
+        for (let c = 0; c < n; c++) {
+          mat[0][c] = 0;
+          history.push({
+            line: 23, phase: `🟥 【第一列歸零：[0, ${c}] -> 0】`,
+            desc: `因 <code>matrix[0][0] == 0</code>，將 <code>matrix[0][${c}]</code> 置為 0。`,
+            curr: [0, c], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+          });
+        }
+      }
+
+      // Pass 4: Process Col 0
+      history.push({
+        line: 26, phase: "🟦 【檢查第一行 (Col 0)】",
+        desc: `檢查 <code>first_col_has_zero</code> 標記 (當前值: ${firstColZero})。`,
+        curr: [0, 0], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+      });
+
+      if (firstColZero) {
+        for (let r = 0; r < m; r++) {
+          mat[r][0] = 0;
+          history.push({
+            line: 28, phase: `🟦 【第一行歸零：[${r}, 0] -> 0】`,
+            desc: `因 <code>first_col_has_zero == True</code>，將 <code>matrix[${r}][0]</code> 置為 0。`,
+            curr: [r, 0], matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+          });
+        }
+      }
+
+      history.push({
+        line: 29, phase: "🎉 【Complete: 完成矩陣置零】",
+        desc: "所有含有 0 的列與行皆已按步驟成功歸零完成！",
+        curr: null, matrix: JSON.parse(JSON.stringify(mat)), firstColZero
+      });
+    }
+
+    // Algo 2: O(m+n) Space (逐列逐格詳細執行)
+    function buildOMNSteps(mat) {
+      const m = mat.length, n = mat[0].length;
+      let zeroRows = Array(m).fill(false);
+      let zeroCols = Array(n).fill(false);
+
+      history.push({
+        line: 5, phase: "⚡ 【初始化標記陣列】",
+        desc: `建立容量為 ${m} 的 zero_rows 與容量為 ${n} 的 zero_cols`,
+        curr: null, matrix: JSON.parse(JSON.stringify(mat)), zeroRows: [...zeroRows], zeroCols: [...zeroCols]
+      });
+
+      // Pass 1: Scan
+      for (let r = 0; r < m; r++) {
+        history.push({
+          line: 8, phase: `🔍 【開始掃描第 ${r} 列 (Row ${r})】`,
+          desc: `進入迴圈 r = ${r}，開始逐格檢查。`,
+          curr: [r, 0], matrix: JSON.parse(JSON.stringify(mat)), zeroRows: [...zeroRows], zeroCols: [...zeroCols]
+        });
+
+        for (let c = 0; c < n; c++) {
+          if (mat[r][c] === 0) {
+            zeroRows[r] = true;
+            zeroCols[c] = true;
+            history.push({
+              line: 12, phase: `📝 【檢查 [${r}, ${c}]：發現 0】`,
+              desc: `在 <code>[${r}, ${c}]</code> 發現 0，將 <code>zero_rows[${r}] = True</code> 與 <code>zero_cols[${c}] = True</code>`,
+              curr: [r, c], matrix: JSON.parse(JSON.stringify(mat)), zeroRows: [...zeroRows], zeroCols: [...zeroCols]
+            });
+          } else {
+            history.push({
+              line: 10, phase: `🔍 【檢查 [${r}, ${c}]：值為 ${mat[r][c]}】`,
+              desc: `不為 0，保持原陣列標記。`,
+              curr: [r, c], matrix: JSON.parse(JSON.stringify(mat)), zeroRows: [...zeroRows], zeroCols: [...zeroCols]
+            });
+          }
+        }
+      }
+
+      // Pass 2: Update
+      for (let r = 0; r < m; r++) {
+        history.push({
+          line: 15, phase: `🧹 【開始更新第 ${r} 列 (Row ${r})】`,
+          desc: `根據 <code>zero_rows[${r}] = ${zeroRows[r]}</code> 與 <code>zero_cols</code> 進行逐格更新。`,
+          curr: [r, 0], matrix: JSON.parse(JSON.stringify(mat)), zeroRows: [...zeroRows], zeroCols: [...zeroCols]
+        });
+
+        for (let c = 0; c < n; c++) {
+          if (zeroRows[r] || zeroCols[c]) {
+            mat[r][c] = 0;
+            history.push({
+              line: 18, phase: `🧹 【更新 [${r}, ${c}] -> 0】`,
+              desc: `因 <code>zero_rows[${r}]</code> 或 <code>zero_cols[${c}]</code> 為 True，將 <code>matrix[${r}][${c}]</code> 置為 0。`,
+              curr: [r, c], matrix: JSON.parse(JSON.stringify(mat)), zeroRows: [...zeroRows], zeroCols: [...zeroCols]
+            });
+          } else {
+            history.push({
+              line: 17, phase: `✔️ 【保持 [${r}, ${c}]】`,
+              desc: `不需要歸零，保持原值 ${mat[r][c]}。`,
+              curr: [r, c], matrix: JSON.parse(JSON.stringify(mat)), zeroRows: [...zeroRows], zeroCols: [...zeroCols]
+            });
+          }
+        }
+      }
+
+      history.push({
+        line: 18, phase: "🎉 【Complete: 完成矩陣置零】",
+        desc: "已順利利用額外標記陣列逐格完成全矩陣置零！",
+        curr: null, matrix: JSON.parse(JSON.stringify(mat)), zeroRows: [...zeroRows], zeroCols: [...zeroCols]
+      });
+    }
+
+    /* ---------------- Visualizer Renderer ---------------- */
+    function renderVisualizer(state) {
+      const wrapper = document.getElementById('vis-wrapper');
+      const mat = state.matrix || presets[currentPreset].matrix;
+      const m = mat.length, n = mat[0].length;
+
+      let html = `<div class="matrix-grid" style="grid-template-columns: repeat(${n}, 54px);">`;
+
+      for (let r = 0; r < m; r++) {
+        for (let c = 0; c < n; c++) {
+          let cellCls = "";
+
+          if (state.curr && state.curr[0] === r && state.curr[1] === c) {
+            cellCls = "cell-curr";
+          } else if (mat[r][c] === 0) {
+            cellCls = "cell-zero";
+          }
+
+          if (currentAlgo === 0 && (r === 0 || c === 0)) {
+            cellCls += " cell-marker";
+          }
+
+          html += `<div class="matrix-cell ${cellCls}">${mat[r][c]}</div>`;
+        }
+      }
+
+      html += `</div>`;
+      wrapper.innerHTML = html;
+    }
+
+    /* ---------------- UI Render Control ---------------- */
+    function applyState() {
+      const state = history[stepIdx] || {};
+
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1} / ${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerHTML = state.desc || "-";
+
+      // Stack / Trace Box
+      const stackBox = document.getElementById('stack-display');
+      stackBox.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; color:#ddd;">
+          <div><b>• 微步驟進度 (Step):</b> <span style="color:var(--orange); font-weight:bold;">${stepIdx + 1}</span> / ${history.length}</div>
+          <div><b>• 當前聚焦座標 (Focus):</b> <span style="color:var(--cyan); font-weight:bold;">${state.curr ? `Row ${state.curr[0]}, Col${state.curr[1]}` : "None"}</span></div>
+        </div>
+      `;
+
+      // Dynamic Variables
+      document.getElementById('pos-curr-display').innerText = state.curr ? `[${state.curr[0]}, ${state.curr[1]}]` : "-";
+      document.getElementById('col0-display').innerText = state.firstColZero !== undefined ? state.firstColZero : "N/A";
+
+      // Dynamic Panel
+      const dynPanel = document.getElementById('dynamic-variables-panel');
+      if (currentAlgo === 1 && state.zeroRows) {
+        dynPanel.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:4px; font-family:monospace; font-size:0.78rem; color:#ddd;">
+            <div>zero_rows: <b style="color:var(--orange)">${JSON.stringify(state.zeroRows)}</b></div>
+            <div>zero_cols: <b style="color:var(--cyan)">${JSON.stringify(state.zeroCols)}</b></div>
+          </div>
+        `;
+      } else {
+        dynPanel.innerHTML = `
+          <div style="font-size:0.8rem; color:#ddd; font-family:monospace;">
+            first_col_has_zero: <b style="color:var(--cyan)">${state.firstColZero}</b>
+          </div>
+        `;
+      }
+
+      // Result Text
+      const resEl = document.getElementById('result-text');
+      resEl.innerText = JSON.stringify(state.matrix || []);
+
+      renderVisualizer(state);
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderIdeaBox();
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

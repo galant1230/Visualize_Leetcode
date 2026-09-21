@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>242. Valid Anagram - 三版本高亮 Dashboard</title>
+  <style>
+    :root {
+      --primary: #007acc; --success: #2ecc71; --warning: #f39c12;
+      --danger: #e74c3c; --dark: #2c3e50; --bg: #f4f7f9;
+    }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--dark); }
+    .dashboard { max-width: 1200px; margin: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .full-width { grid-column: span 2; }
+    h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.25rem; }
+    
+    .info-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+    .complexity-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .complexity-table th, .complexity-table td { border: 1px solid #eee; padding: 8px; text-align: left; }
+    .complexity-table th { background: #f8f9fa; }
+
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    select, input { padding: 10px 15px; border: 2px solid #ddd; border-radius: 25px; outline: none; }
+    button { padding: 10px 25px; border: none; border-radius: 25px; cursor: pointer; background: var(--primary); color: white; font-weight: bold; transition: 0.2s; }
+    button:hover { opacity: 0.9; }
+    button:disabled { background: #ccc; }
+    
+    .box-container { display: flex; justify-content: center; gap: 6px; margin: 15px 0; min-height: 55px; }
+    .char-box { 
+      width: 40px; height: 40px; border: 2px solid #dee2e6; border-radius: 8px; 
+      line-height: 40px; font-weight: bold; font-size: 1.2rem; background: white; text-align: center; transition: 0.3s;
+    }
+    .char-box.active { border-color: var(--primary); background: #e3f2fd; transform: scale(1.1); }
+    .char-box.success { background: #e8f5e9; border-color: var(--success); }
+
+    .code-window { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 0.85rem; line-height: 1.6; min-height: 300px; }
+    .line { padding: 2px 10px; border-radius: 4px; border-left: 4px solid transparent; transition: 0.2s; white-space: pre; }
+    .line.active { background: #3e4451; border-left-color: var(--success); color: white; }
+
+    .status-msg { font-weight: bold; color: var(--primary); margin: 10px 0; text-align: center; min-height: 1.5rem; }
+    .data-row { display: flex; justify-content: space-around; gap: 15px; margin-top: 15px; }
+    .data-card { background: #f8f9fa; padding: 10px; border-radius: 8px; flex: 1; font-size: 0.85rem; border-top: 3px solid var(--primary); min-height: 60px; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <div class="card full-width">
+    <h2>242. 有效的字母異位詞 (Valid Anagram)</h2>
+    <div class="info-grid">
+      <div>
+        <p><strong>題目描述：</strong>檢查 <code>t</code> 是否為 <code>s</code> 的字母異位詞（每個字元出現次數完全相同）。</p>
+        <p><strong>範例：</strong>s = "anagram", t = "nagaram" (True) | s = "rat", t = "car" (False)</p>
+      </div>
+      <div>
+        <table class="complexity-table">
+          <tr><th>解法</th><th>時間複雜度</th><th>空間複雜度</th></tr>
+          <tr><td>Sol 1: Hash Map</td><td>O(n)</td><td>O(k)</td></tr>
+          <tr><td>Sol 2: Sorting</td><td>O(n log n)</td><td>O(n)</td></tr>
+          <tr><td>Sol 3: Counter</td><td>O(n)</td><td>O(k)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card full-width" style="background: transparent; box-shadow: none; padding: 0;">
+    <div class="controls">
+      演算法：
+      <select id="algoType" onchange="initSim()">
+        <option value="1">Sol 1: 雙字典同步 (Hash Map)</option>
+        <option value="2">Sol 2: 排序比較 (Sorting)</option>
+        <option value="3">Sol 3: 內建計數器 (Counter)</option>
+      </select>
+      s: <input type="text" id="inputS" value="anagram" style="width: 100px;">
+      t: <input type="text" id="inputT" value="nagaram" style="width: 100px;">
+      <button onclick="initSim()">重置</button>
+      <button id="nextBtn" onclick="runNextStep()">下一步 (Step)</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Python 代碼實作</h2>
+    <div class="code-window" id="codeDisplay"></div>
+  </div>
+
+  <div class="card">
+    <h2>模擬與數據狀態</h2>
+    <div class="status-msg" id="statusMsg">點擊下一步開始</div>
+    
+    <div style="color: #666; font-size: 0.8rem;">String s:</div>
+    <div class="box-container" id="containerS"></div>
+    <div style="color: #666; font-size: 0.8rem;">String t:</div>
+    <div class="box-container" id="containerT"></div>
+
+    <div class="data-row" id="dataDisplay"></div>
+  </div>
+
+</div>
+
+<script>
+const algoCodes = {
+  1: [
+    "class Solution:",
+    "    def isAnagram(self, s: str, t: str) -> bool:",
+    "        if len(s) != len(t): return False",
+    "        countS, countT = {}, {}",
+    "        for i in range(len(s)):",
+    "            countS[s[i]] = 1 + countS.get(s[i], 0)",
+    "            countT[t[i]] = 1 + countT.get(t[i], 0)",
+    "        return countS == countT"
+  ],
+  2: [
+    "class Solution:",
+    "    def isAnagram(self, s: str, t: str) -> bool:",
+    "        # 透過排序來檢查",
+    "        sorted_s = sorted(s)",
+    "        sorted_t = sorted(t)",
+    "        return sorted_s == sorted_t"
+  ],
+  3: [
+    "from collections import Counter",
+    "class Solution:",
+    "    def isAnagram(self, s: str, t: str) -> bool:",
+    "        # 直接比對 Counter 對象",
+    "        return Counter(s) == Counter(t)"
+  ]
+};
+
+let currentStep = 0, s = "", t = "", countS = {}, countT = {}, finished = false;
+
+function initSim() {
+  const algoIdx = document.getElementById('algoType').value;
+  s = document.getElementById('inputS').value;
+  t = document.getElementById('inputT').value;
+  currentStep = 0; countS = {}; countT = {}; finished = false;
+  document.getElementById('nextBtn').disabled = false;
+  
+  // 渲染程式碼
+  const codeBox = document.getElementById('codeDisplay');
+  codeBox.innerHTML = algoCodes[algoIdx].map((line, idx) => 
+    `<div class="line" id="line-${idx}">${line}</div>`
+  ).join('');
+
+  renderBoxes();
+  document.getElementById('dataDisplay').innerHTML = "";
+  document.getElementById('statusMsg').innerText = "準備就緒，請點擊下一步。";
+}
+
+function renderBoxes() {
+  const draw = (str, containerId) => {
+    document.getElementById(containerId).innerHTML = str.split('').map((char, i) => 
+      `<div class="char-box" id="${containerId}-${i}">${char}</div>`
+    ).join('');
+  };
+  draw(s, 'containerS'); draw(t, 'containerT');
+}
+
+function runNextStep() {
+  const algoIdx = document.getElementById('algoType').value;
+  const msg = document.getElementById('statusMsg');
+  clearLineHighlights();
+
+  if (algoIdx == "1") {
+    if (currentStep === 0) {
+      highlight(2);
+      if (s.length !== t.length) { msg.innerText = "長度不等，回傳 False"; finished = true; }
+      else { msg.innerText = "長度相等，初始化字典..."; currentStep++; }
+    } else if (currentStep === 1) {
+      highlight(3);
+      msg.innerText = "建立 countS, countT = {}, {}";
+      currentStep++;
+    } else if (currentStep - 2 < s.length) {
+      highlight(4); highlight(5); highlight(6);
+      const i = currentStep - 2;
+      countS[s[i]] = (countS[s[i]] || 0) + 1;
+      countT[t[i]] = (countT[t[i]] || 0) + 1;
+      
+      document.getElementById(`containerS-${i}`).classList.add('active');
+      document.getElementById(`containerT-${i}`).classList.add('active');
+      
+      document.getElementById('dataDisplay').innerHTML = `
+        <div class="data-card"><b>countS:</b> ${JSON.stringify(countS)}</div>
+        <div class="data-card"><b>countT:</b> ${JSON.stringify(countT)}</div>
+      `;
+      msg.innerText = `迴圈 i=${i}：處理 '${s[i]}' 與 '${t[i]}'`;
+      currentStep++;
+    } else {
+      highlight(7);
+      msg.innerText = "比對兩個字典結果: " + (JSON.stringify(Object.entries(countS).sort()) === JSON.stringify(Object.entries(countT).sort()));
+      finished = true;
+    }
+  } 
+  else if (algoIdx == "2") {
+    if (currentStep === 0) {
+      highlight(3);
+      msg.innerText = "執行 sorted(s)...";
+      currentStep++;
+    } else if (currentStep === 1) {
+      highlight(4);
+      s = s.split('').sort().join('');
+      t = t.split('').sort().join('');
+      renderBoxes();
+      document.querySelectorAll('.char-box').forEach(b => b.classList.add('success'));
+      msg.innerText = "執行 sorted(t) 並更新排序畫面";
+      currentStep++;
+    } else {
+      highlight(5);
+      msg.innerText = "最終比較：s == t 為 " + (s === t);
+      finished = true;
+    }
+  } 
+  else if (algoIdx == "3") {
+    highlight(4);
+    msg.innerText = "Counter(s) == Counter(t) 自動完成頻率比對。";
+    finished = true;
+  }
+
+  if (finished) document.getElementById('nextBtn').disabled = true;
+}
+
+function highlight(idx) {
+  const el = document.getElementById(`line-${idx}`);
+  if (el) el.classList.add('active');
+}
+
+function clearLineHighlights() {
+  document.querySelectorAll('.line').forEach(l => l.classList.remove('active'));
+}
+
+initSim();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 543: Diameter of Binary Tree - 繁體中文教學版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --vscode-bg: #1E1E1E;
+            --vscode-sidebar: #252526;
+            --vscode-highlight: #2C313C;
+            --vscode-border: #3E4451;
+            --vscode-text: #D4D4D4;
+            --syntax-keyword: #C678DD;
+            --syntax-func: #61AFEF;
+            --syntax-number: #D19A66;
+            --syntax-prop: #E06C75;
+            --syntax-comment: #5C6370;
+        }
+
+        body { background-color: var(--vscode-bg); color: var(--vscode-text); font-family: 'Inter', sans-serif; overflow: hidden; }
+        .code-font { font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.6; }
+        .log-font { font-size: 13px; line-height: 1.5; }
+        .vscode-active-line { background-color: var(--vscode-highlight); border-left: 4px solid #C678DD; }
+        
+        .node-circle { transition: all 0.3s ease; stroke-width: 2; }
+        .node-active { stroke: #C678DD; stroke-width: 4; filter: drop-shadow(0 0 10px rgba(198, 120, 221, 0.6)); }
+        .diameter-path { stroke: #D19A66; stroke-width: 3; stroke-dasharray: 4; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3E4451; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <div class="bg-[#323233] px-4 py-2 flex items-center justify-between border-b border-black text-sm">
+        <div class="flex items-center space-x-3">
+            <span class="text-purple-500 font-bold">解題面板</span>
+            <span class="text-gray-400">|</span>
+            <span class="text-white font-medium">543. 二元樹的直徑 (Diameter of Binary Tree)</span>
+        </div>
+        <div class="flex space-x-4 text-[12px] text-gray-500 font-mono">
+            <span>語言: Python3</span>
+            <span>主題: One Dark Pro</span>
+        </div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <aside class="w-[30%] bg-[#252526] border-r border-black p-6 flex flex-col space-y-6 overflow-y-auto custom-scrollbar">
+            <section>
+                <h2 class="text-white font-bold text-xl mb-3">題目描述</h2>
+                <div class="text-[14px] text-gray-400 leading-relaxed space-y-4">
+                    <p>給定一棵二元樹的根節點，傳回該樹的**直徑**。</p>
+                    <p>二元樹的直徑是指樹中任意兩個節點之間**最長路徑**的長度。這條路徑不一定會經過根節點。</p>
+                    <p class="text-xs italic text-gray-500">注意：兩節點間路徑的長度是以它們之間的「邊數」來計算。</p>
+                </div>
+            </section>
+
+            <section class="border-t border-[#3E4451] pt-5">
+                <h3 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">演算法複雜度</h3>
+                <div class="grid grid-cols-2 gap-3 text-center">
+                    <div class="bg-[#1E1E1E] p-3 rounded border border-[#3E4451]">
+                        <div class="text-[10px] text-gray-500 mb-1">時間複雜度</div>
+                        <div class="text-base font-mono text-purple-400">O(N)</div>
+                    </div>
+                    <div class="bg-[#1E1E1E] p-3 rounded border border-[#3E4451]">
+                        <div class="text-[10px] text-gray-500 mb-1">空間複雜度</div>
+                        <div class="text-base font-mono text-purple-400">O(H)</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="border-t border-[#3E4451] pt-5">
+                <h3 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-3">選擇測試案例</h3>
+                <div class="flex flex-col space-y-2">
+                    <button onclick="loadCase(0)" id="case-0" class="case-btn active text-left p-3 bg-[#37373D] border border-purple-500 rounded text-sm transition">
+                        <span class="text-white block font-bold">範例 1：標準形態</span>
+                        <span class="text-gray-500 font-mono text-[11px]">root = [1,2,3,4,5]</span>
+                    </button>
+                    <button onclick="loadCase(1)" id="case-1" class="case-btn text-left p-3 bg-[#2D2D2D] border border-transparent rounded text-sm transition">
+                        <span class="text-gray-300 block font-bold">範例 2：偏斜樹 (Skewed)</span>
+                        <span class="text-gray-500 font-mono text-[11px]">root = [1,2,null,3,null,4]</span>
+                    </button>
+                </div>
+            </section>
+        </aside>
+
+        <main class="w-[40%] flex flex-col p-6 space-y-4 bg-[#1E1E1E]">
+            <div class="flex-1 bg-[#252526] rounded border border-[#3E4451] p-5 flex flex-col">
+                <div class="flex justify-between text-[11px] text-gray-500 mb-6 tracking-widest uppercase font-bold">
+                    <span>二元樹結構與路徑追蹤</span>
+                    <span class="text-purple-400">Post-order DFS</span>
+                </div>
+                <div class="flex-1 flex justify-center items-center">
+                    <svg id="svg-tree" class="w-full h-full"></svg>
+                </div>
+            </div>
+
+            <div class="h-28 bg-[#252526] border border-[#3E4451] rounded p-4 flex flex-col">
+                <div class="text-[11px] text-gray-500 uppercase mb-3 font-bold tracking-widest">目前全局最大直徑 (Self.ans)</div>
+                <div class="flex items-center space-x-4">
+                    <div id="ans-display" class="text-3xl font-mono text-purple-400 bg-purple-500/10 px-4 py-1 rounded border border-purple-500/30">0</div>
+                    <div class="text-[11px] text-gray-600 italic">直徑 = 左子樹高度 + 右子樹高度</div>
+                </div>
+            </div>
+
+            <div class="bg-[#252526] p-4 rounded border border-[#3E4451] flex items-center justify-between">
+                <div class="flex space-x-8">
+                    <button onclick="step(-1)" class="text-gray-400 hover:text-white transition"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6L18 6v12z"/></svg></button>
+                    <button onclick="togglePlay()" id="play-btn" class="text-gray-400 hover:text-white transition"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                    <button onclick="step(1)" class="text-gray-400 hover:text-white transition"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                </div>
+                <div class="text-sm font-mono text-gray-500">進度: <span id="cur-step" class="text-purple-400">0</span> / <span id="total-step">0</span></div>
+            </div>
+        </main>
+
+        <aside class="w-[30%] bg-[#1E1E1E] border-l border-black flex flex-col">
+            <div class="h-[45%] overflow-y-auto custom-scrollbar p-3" id="code-area"></div>
+            
+            <div class="flex-1 border-t border-black bg-[#121212] p-5 flex flex-col overflow-hidden">
+                <h3 class="text-[11px] font-bold text-gray-500 uppercase mb-4 tracking-widest">執行追蹤 (Execution Trace)</h3>
+                <div id="detail-logs" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 log-font"></div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const algorithm = {
+            code: [
+                "class Solution:",
+                "    def diameterOfBinaryTree(self, root) -> int:",
+                "        self.ans = 0",
+                "        def depth(node):",
+                "            if not node: return 0",
+                "            left = depth(node.left)",
+                "            right = depth(node.right)",
+                "            # 更新全域最大直徑",
+                "            self.ans = max(self.ans, left + right)",
+                "            # 向父節點回傳該分支高度",
+                "            return max(left, right) + 1",
+                "        depth(root)",
+                "        return self.ans"
+            ]
+        };
+
+        const cases = [
+            {
+                tree: [1,2,3,4,5],
+                steps: [
+                    { line: 3, node: 1, ans: 0, log: "初始化：直徑 ans = 0，開始從根節點向下探測。" },
+                    { line: 5, node: 4, ans: 0, log: "抵達葉子節點 [4]。" },
+                    { line: 10, node: 4, ans: 0, log: "節點 [4]：左高 0, 右高 0。回傳高度 1 給父節點 [2]。" },
+                    { line: 5, node: 5, ans: 0, log: "抵達葉子節點 [5]。" },
+                    { line: 10, node: 5, ans: 0, log: "節點 [5]：左高 0, 右高 0。回傳高度 1 給父節點 [2]。" },
+                    { line: 8, node: 2, ans: 2, log: "計算節點 [2] 直徑：左分支(4)高 1 + 右分支(5)高 1 = 2。更新 ans = 2。" },
+                    { line: 10, node: 2, ans: 2, log: "節點 [2] 回傳最大分支高度：max(1, 1) + 1 = 2 給根節點。" },
+                    { line: 8, node: 1, ans: 3, log: "計算根節點 [1] 直徑：左側(2)高 2 + 右側(3)高 1 = 3。更新 ans = 3。" },
+                    { line: 12, node: 1, ans: 3, log: "遍歷結束，最終最長直徑為 3。" }
+                ]
+            },
+            {
+                tree: [1,2,null,3,null,4],
+                steps: [
+                    { line: 5, node: 4, ans: 0, log: "遍歷到底部節點 [4]。" },
+                    { line: 10, node: 4, ans: 0, log: "節點 [4] 回傳高度 1。" },
+                    { line: 8, node: 3, ans: 1, log: "節點 [3]：左側高度 1，右側高度 0。ans 更新為 1。" },
+                    { line: 10, node: 3, ans: 1, log: "節點 [3] 回傳高度 2。" },
+                    { line: 8, node: 2, ans: 2, log: "節點 [2]：左側高度 2，右側高度 0。ans 更新為 2。" },
+                    { line: 8, node: 1, ans: 3, log: "整棵樹為偏斜結構，最大直徑為 3。" }
+                ]
+            }
+        ];
+
+        let curStep = 0, curCase = 0, timer = null;
+
+        function renderCode() {
+            const area = document.getElementById('code-area');
+            area.innerHTML = algorithm.code.map((line, i) => {
+                let html = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/\b(if|return|not|def|class|self)\b/g, '<span style="color:var(--syntax-keyword)">$1</span>')
+                    .replace(/\b(depth|max|diameterOfBinaryTree)\b/g, '<span style="color:var(--syntax-func)">$1</span>')
+                    .replace(/\b(0|1)\b/g, '<span style="color:var(--syntax-number)">$1</span>')
+                    .replace(/(#.*)/g, '<span style="color:var(--syntax-comment)">$1</span>')
+                    .replace(/\b(ans|node|left|right|root)\b/g, '<span style="color:var(--syntax-prop)">$1</span>');
+                return `<div id="line-${i}" class="px-4 py-0.5 code-font whitespace-pre transition-all border-l-4 border-transparent"><code>${html}</code></div>`;
+            }).join('');
+        }
+
+        function drawTree(data) {
+            const svg = document.getElementById('svg-tree');
+            svg.innerHTML = '';
+            const w = svg.clientWidth || 300;
+            const h = svg.clientHeight || 300;
+            const nodes = [];
+            
+            // 建立簡易座標映射
+            if (data[0]) nodes.push({id: 1, x: w/2, y: 50, v: data[0]});
+            if (data[1]) nodes.push({id: 2, x: w/4, y: 120, v: data[1], px: w/2, py: 50});
+            if (data[2]) nodes.push({id: 3, x: w*0.75, y: 120, v: data[2], px: w/2, py: 50});
+            if (data[3]) nodes.push({id: 4, x: w/8, y: 190, v: data[3], px: w/4, py: 120});
+            if (data[4]) nodes.push({id: 5, x: w*0.37, y: 190, v: data[4], px: w/4, py: 120});
+
+            nodes.forEach(n => {
+                if(n.px) svg.innerHTML += `<line x1="${n.px}" y1="${n.py}" x2="${n.x}" y2="${n.y}" stroke="#444" stroke-width="1.5" />`;
+            });
+            nodes.forEach(n => {
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.id = `node-group-${n.v}`;
+                g.innerHTML = `<circle cx="${n.x}" cy="${n.y}" r="18" fill="#2D2D2D" stroke="#3E4451" class="node-circle" />
+                               <text x="${n.x}" y="${n.y+5}" font-size="12" text-anchor="middle" fill="#D4D4D4" class="code-font font-bold">${n.v}</text>`;
+                svg.appendChild(g);
+            });
+        }
+
+        function updateUI() {
+            const stepData = cases[curCase].steps[curStep];
+            
+            document.querySelectorAll('.vscode-active-line').forEach(l => l.classList.remove('vscode-active-line'));
+            document.getElementById(`line-${stepData.line}`)?.classList.add('vscode-active-line');
+
+            document.querySelectorAll('.node-circle').forEach(c => c.classList.remove('node-active'));
+            const targetNode = document.getElementById(`node-group-${stepData.node}`);
+            if(targetNode) targetNode.querySelector('circle').classList.add('node-active');
+
+            document.getElementById('ans-display').innerText = stepData.ans;
+
+            const logBox = document.getElementById('detail-logs');
+            const entry = document.createElement('div');
+            entry.className = "pl-3 border-l-4 border-purple-600 py-2 bg-purple-500/5 text-gray-200 animate-in fade-in";
+            entry.innerHTML = `<span class="text-purple-400 font-bold mr-2">步驟 ${curStep}:</span> ${stepData.log}`;
+            logBox.prepend(entry);
+
+            document.getElementById('cur-step').innerText = curStep;
+            document.getElementById('total-step').innerText = cases[curCase].steps.length - 1;
+        }
+
+        function loadCase(idx) {
+            curCase = idx;
+            document.querySelectorAll('.case-btn').forEach((b, i) => {
+                b.className = `case-btn text-left p-3 rounded transition ${i === idx ? 'bg-[#37373D] border border-purple-500' : 'bg-[#2D2D2D] border border-transparent'}`;
+            });
+            drawTree(cases[idx].tree);
+            reset();
+        }
+
+        function step(dir) { pause(); curStep = Math.max(0, Math.min(cases[curCase].steps.length - 1, curStep + dir)); updateUI(); }
+        function togglePlay() {
+            if(timer) pause();
+            else {
+                document.getElementById('play-btn').innerHTML = `<svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+                timer = setInterval(() => {
+                    if(curStep < cases[curCase].steps.length - 1) { curStep++; updateUI(); } else pause();
+                }, 1300);
+            }
+        }
+        function pause() { clearInterval(timer); timer = null; document.getElementById('play-btn').innerHTML = `<svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`; }
+        function reset() { pause(); curStep = 0; document.getElementById('detail-logs').innerHTML = ''; updateUI(); }
+
+        window.onload = () => { renderCode(); loadCase(0); };
+    </script>
+</body>
+</html>

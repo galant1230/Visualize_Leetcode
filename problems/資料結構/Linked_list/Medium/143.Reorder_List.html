@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>143. Reorder List - Granular Visualizer</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --red: #ff2d55;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1280px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .tag { background: #383838; color: var(--text-dim); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
+
+    .tabs { max-width: 1280px; margin: 0 auto 12px auto; display: flex; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+    .tab-btn.active { background: var(--orange); color: #000; border-color: var(--orange); }
+
+    .grid { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+    
+    .problem-desc { font-size: 0.82rem; color: #ccc; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+    
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .approach-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.8rem; color: #ddd; }
+    .approach-title { font-weight: bold; color: var(--blue); margin-bottom: 2px; }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.78rem; overflow-x: auto; max-height: 380px; }
+    .code-line { padding: 0 12px; white-space: pre; border-left: 3px solid transparent; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .comment { color: var(--green); font-style: italic; }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 25px 10px 15px 10px; min-height: 130px; display: flex; justify-content: center; align-items: center; }
+    .list { display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 4px; }
+    .node-box { display: flex; align-items: center; position: relative; }
+    .node { width: 36px; height: 36px; border-radius: 50%; background: #333; border: 2px solid var(--border); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-family: monospace; position: relative; }
+    .node.active { border-color: var(--orange); background: rgba(255, 161, 22, 0.2); }
+
+    .arrow { width: 22px; height: 2px; background: var(--text-dim); position: relative; margin: 0 2px; }
+    .arrow::after { content: ''; position: absolute; right: 0; top: -3px; border-width: 3px 0 3px 5px; border-style: solid; border-color: transparent transparent transparent var(--text-dim); }
+    .arrow.rev { background: var(--red); }
+    .arrow.rev::after { left: 0; right: auto; border-width: 3px 5px 3px 0; border-color: transparent var(--red) transparent transparent; }
+    .arrow.cut { background: transparent; border-top: 2px dashed #555; }
+    .arrow.cut::after { display: none; }
+
+    .ptr-group { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; }
+    .ptr { font-size: 0.6rem; padding: 0 4px; border-radius: 2px; color: #fff; font-family: monospace; font-weight: bold; white-space: nowrap; }
+    .p-slow { background: var(--purple); } .p-fast { background: var(--orange); } .p-prev { background: #6b7280; } .p-curr { background: var(--blue); } .p-tmp { background: var(--red); }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.8rem; font-family: monospace; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">143. Reorder List</span>
+    <span class="badge">Medium</span>
+    <span class="tag">Linked List</span>
+    <span class="tag">Two Pointers</span>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: [1,2,3,4]</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: [1,2,3,4,5]</button>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄：題目描述 + 程式碼 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">📝 題目描述與範例</div>
+        <div class="problem-desc">
+          給定單向鏈表 <code>head</code>，重新排列為：<code>L0 → Ln → L1 → Ln-1 → L2 → Ln-2 → ...</code><br>
+          <b>限制：</b>必須原地 (In-place) 修改節點指標方向。
+        </div>
+
+        <div class="example-box" id="ex-display"></div>
+
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val">O(N)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val">O(1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">
+          <span>🐍 Python 程式碼</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+    </div>
+
+    <!-- 右欄：解題思路 + 視覺化 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <div class="card-title">💡 解題思路：三分法 (3 Steps)</div>
+        <div class="approach-box">
+          <div class="approach-title">核心步驟：</div>
+          <div>1. <b>尋找中點</b>：用快慢指標定位中點。<br>2. <b>反轉後半段</b>：<b>極詳細示範</b>指標暫存、改向、移動過程。<br>3. <b>交錯合併</b>：從兩端交叉串接節點。</div>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 執行狀態與視覺化</div>
+        
+        <div class="stage">
+          <div class="list" id="list-box"></div>
+        </div>
+
+        <div class="info">
+          <div class="info-row">
+            <span style="color: var(--text-dim);">階段 (Phase):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const presets = [
+      { input: [1, 2, 3, 4], output: [1, 4, 2, 3], name: "Example 1" },
+      { input: [1, 2, 3, 4, 5], output: [1, 5, 2, 4, 3], name: "Example 2" }
+    ];
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    const codeLines = [
+      `<span class="kw">class</span> <span class="fn">Solution</span>:`,
+      `    <span class="kw">def</span> <span class="fn">reorderList</span>(<span class="self">self</span>, head: Optional[ListNode]) -&gt; <span class="kw">None</span>:`,
+      `        <span class="kw">if</span> <span class="kw">not</span> head <span class="kw">or</span> <span class="kw">not</span> head.next: <span class="kw">return</span>`,
+      `        <span class="comment"># 1. Find Middle</span>`,
+      `        slow, fast = head, head.next`,
+      `        <span class="kw">while</span> fast <span class="kw">and</span> fast.next:`,
+      `            slow = slow.next`,
+      `            fast = fast.next.next`,
+      `        <span class="comment"># 2. Reverse Second Half</span>`,
+      `        second = slow.next`,
+      `        slow.next = None`,
+      `        prev = None`,
+      `        <span class="kw">while</span> second:`,
+      `            tmp = second.next`,
+      `            second.next = prev`,
+      `            prev = second`,
+      `            second = tmp`,
+      `        <span class="comment"># 3. Merge Two Halves</span>`,
+      `        first, second = head, prev`,
+      `        <span class="kw">while</span> second:`,
+      `            tmp1, tmp2 = first.next, second.next`,
+      `            first.next = second`,
+      `            second.next = tmp1`,
+      `            first, second = tmp1, tmp2`
+    ];
+
+    function buildSteps() {
+      history = [];
+      const arr = presets[currentPreset].input;
+      
+      // Step 0: Check
+      history.push({ line: 2, phase: "Start", desc: "檢查 head 節點，長度大於 1，開始執行。", nodes: [...arr], arrows: Array(arr.length-1).fill('norm'), ptrs: {} });
+
+      // Phase 1: Find Middle
+      let slow = 0, fast = 1;
+      history.push({ line: 4, phase: "1. 找中點", desc: "初始化 slow = head [1], fast = head.next [2]", nodes: [...arr], arrows: Array(arr.length-1).fill('norm'), ptrs: { slow, fast } });
+
+      while (fast !== null && fast < arr.length && fast + 1 < arr.length) {
+        slow += 1; fast += 2;
+        history.push({ line: 6, phase: "1. 找中點 (移動)", desc: `slow 移 1 步至 [${arr[slow]}], fast 移 2 步至 ${fast < arr.length ? '['+arr[fast]+']' : 'None'}`, nodes: [...arr], arrows: Array(arr.length-1).fill('norm'), ptrs: { slow, fast } });
+      }
+
+      // Phase 2: Reverse (Ultra Detailed Steps)
+      let arrows = Array(arr.length-1).fill('norm');
+      let second = slow + 1;
+      
+      history.push({ line: 9, phase: "2. 切割前半與後半", desc: `設定 second 指向後半段起點 [${arr[second]}]`, nodes: [...arr], arrows: [...arrows], ptrs: { slow, curr: second } });
+
+      arrows[slow] = 'cut';
+      history.push({ line: 10, phase: "2. 斷開中點連結", desc: `執行 slow.next = None，切斷 [${arr[slow]}] 與 [${arr[second]}]`, nodes: [...arr], arrows: [...arrows], ptrs: { slow, curr: second } });
+
+      let prev = null, curr = second;
+      history.push({ line: 11, phase: "2. 初始化 prev", desc: "設定 prev = None，準備反轉後半段", nodes: [...arr], arrows: [...arrows], ptrs: { prev: null, curr, slow } });
+
+      while (curr !== null && curr < arr.length) {
+        let tmp = (curr + 1 < arr.length) ? curr + 1 : null;
+        
+        // 13: tmp = second.next
+        history.push({ 
+          line: 13, phase: "2.1 暫存 next 節點", 
+          desc: `執行 tmp = second.next：把 [${tmp !== null ? arr[tmp] : 'None'}] 存入 tmp，防止掉針。`, 
+          nodes: [...arr], arrows: [...arrows], ptrs: { prev, curr, tmp } 
+        });
+
+        // 14: second.next = prev
+        if (curr < arr.length - 1) arrows[curr] = 'rev';
+        history.push({ 
+          line: 14, phase: "2.2 反轉指標方向", 
+          desc: `執行 second.next = prev：將 [${arr[curr]}] 的指標轉向指至 ${prev !== null ? '['+arr[prev]+']' : 'None'}`, 
+          nodes: [...arr], arrows: [...arrows], ptrs: { prev, curr, tmp } 
+        });
+
+        // 15: prev = second
+        prev = curr;
+        history.push({ 
+          line: 15, phase: "2.3 前移 prev 指標", 
+          desc: `執行 prev = second：prev 推進到 [${arr[prev]}]`, 
+          nodes: [...arr], arrows: [...arrows], ptrs: { prev, curr, tmp } 
+        });
+
+        // 16: second = tmp
+        curr = tmp;
+        history.push({ 
+          line: 16, phase: "2.4 前移 second 指標", 
+          desc: `執行 second = tmp：second 推進到 ${curr !== null ? '['+arr[curr]+']' : 'None'}`, 
+          nodes: [...arr], arrows: [...arrows], ptrs: { prev, curr } 
+        });
+      }
+
+      // Phase 3: Merge
+      history.push({ line: 18, phase: "3. 準備交錯合併", desc: "設定 first = head [1]，second = prev (後半段新頭)", nodes: [...arr], arrows: [...arrows], ptrs: { first: 0, second: arr.length - 1 } });
+
+      let firstHalf = arr.slice(0, slow + 1);
+      let secondHalf = arr.slice(slow + 1).reverse();
+      let m1 = 0, m2 = 0, merged = [];
+
+      while (m2 < secondHalf.length) {
+        let node1 = firstHalf[m1];
+        let node2 = secondHalf[m2];
+        
+        history.push({ 
+          line: 20, phase: "3.1 記錄 tmp1, tmp2", 
+          desc: `記錄下一個要接的節點：first.next 與 second.next`, 
+          nodes: [...merged, ...firstHalf.slice(m1), ...secondHalf.slice(m2)], 
+          arrows: Array(arr.length-1).fill('norm'), 
+          ptrs: { first: merged.length, second: merged.length + (firstHalf.length - m1) } 
+        });
+
+        merged.push(node1);
+        merged.push(node2);
+        m1++; m2++;
+
+        history.push({ 
+          line: 22, phase: "3.2 鏈接節點", 
+          desc: `將 [${node1}] 指向 [${node2}]，組成目前長度 ${merged.length} 的鏈表`, 
+          nodes: [...merged, ...firstHalf.slice(m1), ...secondHalf.slice(m2)], 
+          arrows: Array(arr.length-1).fill('norm'), 
+          ptrs: { first: merged.length - 2, second: merged.length - 1 } 
+        });
+      }
+      if (m1 < firstHalf.length) merged.push(firstHalf[m1]);
+
+      history.push({ line: 22, phase: "完成", desc: `🎯 重新排列完成！結果: [${merged.join(' → ')}]`, nodes: merged, arrows: Array(merged.length-1).fill('norm'), ptrs: {} });
+    }
+
+    function renderCode() {
+      document.getElementById('code-box').innerHTML = codeLines.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>Input: head = [${p.input.join(', ')}]</div>
+        <div>Output: [${p.output.join(', ')}]</div>
+      `;
+    }
+
+    function applyState() {
+      const state = history[stepIdx];
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + state.line);
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase;
+      document.getElementById('val-desc').innerText = state.desc;
+
+      const container = document.getElementById('list-box');
+      container.innerHTML = '';
+
+      state.nodes.forEach((val, i) => {
+        const item = document.createElement('div');
+        item.className = 'node-box';
+
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.innerText = val;
+
+        let ptrs = [];
+        if (state.ptrs.slow === i) ptrs.push('<span class="ptr p-slow">slow</span>');
+        if (state.ptrs.fast === i) ptrs.push('<span class="ptr p-fast">fast</span>');
+        if (state.ptrs.prev === i) ptrs.push('<span class="ptr p-prev">prev</span>');
+        if (state.ptrs.curr === i) ptrs.push('<span class="ptr p-curr">second</span>');
+        if (state.ptrs.tmp === i) ptrs.push('<span class="ptr p-tmp">tmp</span>');
+        if (state.ptrs.first === i) { node.classList.add('active'); ptrs.push('<span class="ptr p-slow">first</span>'); }
+        if (state.ptrs.second === i) { node.classList.add('active'); ptrs.push('<span class="ptr p-fast">second</span>'); }
+
+        if (ptrs.length) node.innerHTML += `<div class="ptr-group">${ptrs.join('')}</div>`;
+        item.appendChild(node);
+
+        if (i < state.nodes.length - 1) {
+          const arrow = document.createElement('div');
+          const type = state.arrows[i] || 'norm';
+          arrow.className = `arrow ${type === 'rev' ? 'rev' : type === 'cut' ? 'cut' : ''}`;
+          item.appendChild(arrow);
+        }
+        container.appendChild(item);
+      });
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => { renderCode(); renderExample(); reset(); };
+  </script>
+</body>
+</html>

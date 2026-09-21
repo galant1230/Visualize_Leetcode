@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<title>Copy List with Random Pointer - Hash Map 視覺化</title>
+<style>
+  body { font-family: sans-serif; padding: 2rem; background: #f0f2f5; }
+  .list { display: flex; flex-wrap: wrap; justify-content: center; /* ✅ 加這行置中 */ margin: 1rem; }
+  .node { background: #3498db; color: #fff; margin: 8px; padding: 10px 20px; border-radius: 10px; position: relative; }
+  .random-label { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 12px; background: #e67e22; padding: 2px 6px; border-radius: 6px; }
+  .map-pair { margin: 5px; padding: 5px 10px; background: #2ecc71; color: #fff; border-radius: 6px; }
+  button { margin: 5px; padding: 10px 16px; background: #007acc; color: white; border: none; border-radius: 6px; cursor: pointer; }
+  #codeBox { background: #272822; color: #f8f8f2; font-family: monospace; padding: 1rem; margin: 1rem 0; border-radius: 8px; }
+  .code-line { padding: 2px 0; }
+  .active-code { background: #444; }
+  #status { font-weight: bold; margin-top: 1rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Copy List with Random Pointer - Hash Map 視覺化</h1>
+
+<div class="button-box">
+  <button onclick="startSimulation()">開始模擬</button>
+  <button onclick="stepSimulation()">下一步</button>
+</div>
+
+<h2>原串列 (oldNodes)</h2>
+<div id="oldList" class="list"></div>
+
+<h2>新串列 (newNodes)</h2>
+<div id="newList" class="list"></div>
+
+<h2>Hash Map 狀態</h2>
+<div id="mapStatus" class="list"></div>
+
+<h2>C++ 代碼</h2>
+<div id="codeBox">
+  <div class="code-line" id="c1">if (!head) return nullptr;</div>
+  <div class="code-line" id="c2">unordered_map&lt;Node*, Node*&gt; map;</div>
+  <div class="code-line" id="c3">Node* curr = head;</div>
+  <div class="code-line" id="c4">while (curr) {</div>
+  <div class="code-line" id="c5">&nbsp;&nbsp;map[curr] = new Node(curr->val);</div>
+  <div class="code-line" id="c6">&nbsp;&nbsp;curr = curr->next;</div>
+  <div class="code-line" id="c7">}</div>
+  <div class="code-line" id="c8">curr = head;</div>
+  <div class="code-line" id="c9">while (curr) {</div>
+  <div class="code-line" id="c10">&nbsp;&nbsp;if (curr->next) map[curr]->next = map[curr->next];</div>
+  <div class="code-line" id="c11">&nbsp;&nbsp;if (curr->random) map[curr]->random = map[curr->random];</div>
+  <div class="code-line" id="c12">&nbsp;&nbsp;curr = curr->next;</div>
+  <div class="code-line" id="c13">}</div>
+  <div class="code-line" id="c14">return map[head];</div>
+</div>
+
+<div id="status"></div>
+
+<script>
+let oldNodes = [];
+let newNodes = [];
+let hashmap = {}; // Hash Map存 oldNode->newNode
+let idx = 0;
+let phase = 0; // 0: 建節點 1: 設next/random
+let codeStep = 1;
+
+const input = [
+  { val: 7, random: null },
+  { val: 13, random: 0 },
+  { val: 11, random: 4 },
+  { val: 10, random: 2 },
+  { val: 1, random: 0 },
+];
+
+function startSimulation() {
+  oldNodes = input.map(node => ({ val: node.val, random: node.random }));
+  newNodes = Array(oldNodes.length).fill(null);
+  hashmap = {};
+  idx = 0;
+  phase = 0;
+  codeStep = 1;
+  highlightCode("c1");
+  updateStatus("初始化完成！");
+  renderAll();
+}
+
+function stepSimulation() {
+  highlightCode("c" + codeStep);
+
+  if (phase === 0) { // 建立新節點 map[curr] = new Node(curr->val)
+    if (idx < oldNodes.length) {
+      newNodes[idx] = { val: oldNodes[idx].val, next: null, random: null };
+      hashmap[idx] = idx; // 用index模擬指標對應
+      updateStatus(`建立節點：old[${idx}] → new[${idx}]`);
+      idx++;
+      codeStep = (codeStep === 5) ? 6 : codeStep+1;
+      renderAll();
+    } else {
+      phase = 1;
+      idx = 0;
+      codeStep = 8;
+      updateStatus("節點建立完畢，開始設定next/random！");
+    }
+  } else if (phase === 1) { // 補 next 和 random
+    if (idx < oldNodes.length) {
+      updateStatus(`設定節點 new[${idx}] 的 next / random`);
+      idx++;
+      codeStep = (codeStep === 11) ? 12 : codeStep+1;
+      renderAll();
+    } else {
+      updateStatus("模擬完成！");
+    }
+  }
+}
+
+function highlightCode(id) {
+  document.querySelectorAll(".code-line").forEach(l => l.classList.remove("active-code"));
+  const el = document.getElementById(id);
+  if (el) el.classList.add("active-code");
+}
+
+function updateStatus(msg) {
+  document.getElementById("status").innerText = msg;
+}
+
+function renderAll() {
+  const oldArea = document.getElementById("oldList");
+  const newArea = document.getElementById("newList");
+  const mapArea = document.getElementById("mapStatus");
+
+  oldArea.innerHTML = "";
+  newArea.innerHTML = "";
+  mapArea.innerHTML = "";
+
+  oldNodes.forEach((node, idx) => {
+    const el = document.createElement("div");
+    el.className = "node";
+    el.innerText = node.val;
+    if (node.random !== null) {
+      const label = document.createElement("div");
+      label.className = "random-label";
+      label.innerText = `rand→${node.random}`;
+      el.appendChild(label);
+    }
+    oldArea.appendChild(el);
+  });
+
+  newNodes.forEach((node, idx) => {
+    if (node) {
+      const el = document.createElement("div");
+      el.className = "node";
+      el.innerText = node.val;
+      newArea.appendChild(el);
+    }
+  });
+
+  Object.keys(hashmap).forEach(key => {
+    const el = document.createElement("div");
+    el.className = "map-pair";
+    el.innerText = `old[${key}] → new[${hashmap[key]}]`;
+    mapArea.appendChild(el);
+  });
+}
+</script>
+
+</body>
+</html>

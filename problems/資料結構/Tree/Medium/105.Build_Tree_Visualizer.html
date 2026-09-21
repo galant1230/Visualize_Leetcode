@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>105. Construct Binary Tree from Preorder and Inorder Traversal</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --card: #282828;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text-dim: #8a8a8a;
+      --orange: #ffa116;
+      --medium: #ffc01e;
+      --blue: #007aff;
+      --purple: #a855f7;
+      --green: #50fa7b;
+      --active-line: rgba(255, 161, 22, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }
+    
+    .header { max-width: 1440px; margin: 0 auto 12px auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--orange); }
+    .badge { background: rgba(255, 192, 30, 0.15); color: var(--medium); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+
+    .tabs { max-width: 1440px; margin: 0 auto 12px auto; display: flex; gap: 8px; align-items: center; }
+    .tab-btn { background: #202020; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+    .tab-btn.active { background: #383838; color: #fff; border-color: var(--text-dim); }
+
+    .grid { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .card-title { font-size: 0.85rem; font-weight: bold; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; }
+
+    .problem-desc { font-size: 0.82rem; color: #ccc; line-height: 1.4; }
+    .idea-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--blue); padding: 8px 10px; border-radius: 4px; font-size: 0.78rem; color: #ddd; line-height: 1.45; }
+    .idea-title { font-weight: bold; color: var(--blue); margin-bottom: 4px; }
+    .example-box { background: #1e1e1e; border: 1px solid var(--border); border-left: 3px solid var(--orange); padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.78rem; }
+
+    .complexity-container { display: flex; gap: 8px; }
+    .complexity-box { flex: 1; background: #1e1e1e; border: 1px solid var(--border); padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .complexity-val { font-family: monospace; font-weight: bold; color: var(--medium); display: block; font-size: 0.85rem; }
+
+    .sol-tab-btn { background: #1a1a1a; border: 1px solid var(--border); color: var(--text-dim); padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; }
+    .sol-tab-btn.active { background: var(--orange); color: #000; font-weight: bold; border-color: var(--orange); }
+
+    .code-box { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 0; font-family: monospace; font-size: 0.76rem; overflow-x: auto; max-height: 380px; }
+    .code-line { padding: 2px 12px; white-space: pre; border-left: 3px solid transparent; line-height: 1.4; }
+    .code-line.active { background: var(--active-line); border-left-color: var(--orange); }
+    .kw { color: #ff79c6; } .fn { color: #8be9fd; } .cls { color: #50fa7b; } .self { color: #bd93f9; } .cm { color: #6272a4; font-style: italic; }
+
+    .stack-box { background: #181818; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 0.75rem; min-height: 110px; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 4px; }
+    .stack-frame { background: #2a2a2a; border: 1px solid var(--blue); border-left: 4px solid var(--blue); padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+    .stack-frame.returning { border-color: var(--green); border-left-color: var(--green); background: rgba(80, 250, 123, 0.1); }
+
+    .stage { background: #1e1e1e; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+    
+    .tree-pane { width: 100%; height: 180px; background: #141414; border: 1px solid var(--border); border-radius: 4px; position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+    .tree-pane-title { font-size: 0.75rem; font-weight: bold; font-family: monospace; color: var(--orange); }
+    
+    svg.tree-svg { width: 100%; height: 155px; }
+    .tree-node-circle { fill: #333; stroke: var(--border); stroke-width: 2px; transition: all 0.2s; }
+    .tree-node-circle.active { fill: rgba(255, 161, 22, 0.35); stroke: var(--orange); stroke-width: 3px; }
+    .tree-node-circle.visited { fill: rgba(80, 250, 123, 0.25); stroke: var(--green); stroke-width: 2px; }
+    .tree-text { fill: #fff; font-family: monospace; font-weight: bold; font-size: 13px; text-anchor: middle; dominant-baseline: middle; }
+    .tree-edge { stroke: #555; stroke-width: 2px; }
+
+    /* 陣列動態切割視覺化 */
+    .array-vis-container { background: #141414; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+    .array-row { display: flex; align-items: center; gap: 10px; }
+    .array-label { width: 75px; font-weight: bold; font-size: 0.75rem; font-family: monospace; color: var(--text-dim); text-align: right; }
+    .array-cells { display: flex; gap: 4px; flex: 1; overflow-x: auto; padding-bottom: 2px; }
+    .cell-wrapper { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .cell-idx { font-size: 0.65rem; color: var(--text-dim); font-family: monospace; }
+    .cell { width: 34px; height: 34px; border-radius: 4px; border: 1px solid var(--border); background: #222; display: flex; align-items: center; justify-content: center; font-family: monospace; font-weight: bold; font-size: 0.85rem; }
+    
+    .cell.root { background: rgba(255, 161, 22, 0.35); border-color: var(--orange); color: var(--orange); transform: scale(1.08); }
+    .cell.left-subtree { background: rgba(0, 122, 255, 0.25); border-color: var(--blue); color: #60a5fa; }
+    .cell.right-subtree { background: rgba(168, 85, 247, 0.25); border-color: var(--purple); color: #c084fc; }
+    .cell.disabled { opacity: 0.25; background: #1a1a1a; border-color: #2a2a2a; }
+
+    .info { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; font-family: monospace; height: 75px; display: flex; flex-direction: column; justify-content: center; }
+    .controls { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { background: #383838; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+    .btn-primary { background: var(--medium); color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">LeetCode</span>
+    <span style="font-weight: bold;">105. Construct Binary Tree from Preorder and Inorder Traversal</span>
+    <span class="badge">Medium</span>
+  </div>
+
+  <div class="tabs">
+    <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: bold;">Presets:</span>
+    <button class="tab-btn active" onclick="setPreset(0)">Ex 1: preorder = [3,9,20,15,7], inorder = [9,3,15,20,7]</button>
+    <button class="tab-btn" onclick="setPreset(1)">Ex 2: preorder = [-1], inorder = [-1]</button>
+  </div>
+
+  <div class="grid">
+    <!-- 左欄：題目、程式碼、Call Stack -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- 題目敘述與範例區塊 -->
+      <div class="card">
+        <div class="card-title">📝 題目描述與複雜度</div>
+        <div class="problem-desc">
+          給定兩個整數陣列 <code>preorder</code> 與 <code>inorder</code>，其中 <code>preorder</code> 是二元樹的<b>前序走訪</b>，<code>inorder</code> 是同一棵樹的<b>中序走訪</b>，請構造並返回該二元樹。
+        </div>
+
+        <div class="example-box" id="ex-display"></div>
+        <div class="complexity-container">
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Time Complexity</span>
+            <span class="complexity-val" id="time-comp">O(N²)</span>
+          </div>
+          <div class="complexity-box">
+            <span style="color: var(--text-dim);">Space Complexity</span>
+            <span class="complexity-val" id="space-comp">O(N²)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 程式碼區塊（支援 3 種解法切換） -->
+      <div class="card">
+        <div class="card-title">
+          <span>🐍 Python 程式碼解法選擇</span>
+          <span id="stepHint" style="color: var(--orange);">READY</span>
+        </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 4px;">
+          <button class="sol-tab-btn active" onclick="setSolution(0)">解法一：原生陣列切片 (Slice)</button>
+          <button class="sol-tab-btn" onclick="setSolution(1)">解法二：哈希表 + 指針 (Optimized)</button>
+          <button class="sol-tab-btn" onclick="setSolution(2)">解法三：迭代法 (Stack Iterative)</button>
+        </div>
+        <div class="code-box" id="code-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📚 Call Stack (系統呼叫堆疊)</span>
+          <span id="stackDepthHint" style="color: var(--blue); font-size: 0.75rem;">Depth: 0</span>
+        </div>
+        <div class="stack-box" id="stack-display"></div>
+      </div>
+    </div>
+
+    <!-- 右欄：解題思路、實時計算與樹重構 -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- 解題思路與公式推導區塊 (移至右邊頂部) -->
+      <div class="card">
+        <div class="idea-box">
+          <div class="idea-title">💡 如何推導出陣列切片公式？</div>
+          <ol style="margin-left: 16px; display: flex; flex-direction: column; gap: 4px;">
+            <li><b>找根節點 (Root)</b>：前序遍歷的規律是 <code>[根節點, 左子樹..., 右子樹...]</code>，因此 <code>preorder[0]</code> 一定是當前的根節點。</li>
+            <li><b>分割中序陣列 (Inorder)</b>：中序遍歷的規律是 <code>[左子樹..., 根節點, 右子樹...]</code>。找出根節點在中序中的索引 <code>divide_index = inorder.index(preorder[0])</code>：
+              <br>• 左子樹中序範圍：<code>inorder[:divide_index]</code>（共 <code>divide_index</code> 個節點）
+              <br>• 右子樹中序範圍：<code>inorder[divide_index + 1:]</code>
+            </li>
+            <li><b>推導前序陣列 (Preorder) 切片</b>：因為<b>左右子樹的節點總數量在前後序中必須完全一致</b>：
+              <br>• 左子樹前序範圍：長度等於 <code>divide_index</code>，排除索引 0 的根節點後，即為 <code>preorder[1 : divide_index + 1]</code>。
+              <br>• 右子樹前序範圍：剩餘部分即為 <code>preorder[divide_index + 1 :]</code>。
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1;">
+        <div class="card-title">📊 陣列切片實時計算與樹重構</div>
+        
+        <div class="stage">
+          <div class="tree-pane">
+            <span class="tree-pane-title">二元樹動態建構 (Reconstructed Tree)</span>
+            <div id="tree-svg-container" style="width: 100%; height: 100%;"></div>
+          </div>
+
+          <div class="array-vis-container" id="array-vis-box"></div>
+        </div>
+
+        <div class="info">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color: var(--text-dim);">當前步驟計算 (Step Trace):</span>
+            <span id="val-phase" style="color: var(--orange); font-weight: bold;">-</span>
+          </div>
+          <div id="val-desc" style="color: #ccc; line-height: 1.35;">-</div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="reset()">Reset</button>
+          <button class="btn" id="prev-btn" onclick="step(-1)">← Prev Step</button>
+          <button class="btn btn-primary" id="next-btn" onclick="step(1)">Next Step →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 3 種 Python 解法程式碼與複雜度設定
+    const solutions = [
+      {
+        name: "Slice API (原汁原味切片)",
+        timeComp: "O(N²)",
+        spaceComp: "O(N²)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">buildTree</span>(<span class="self">self</span>, preorder: List[int], inorder: List[int]) -> Optional[TreeNode]:`,
+          `        <span class="kw">if not</span> preorder <span class="kw">or not</span> inorder:  <span class="cm"># not [] ➜ True</span>`,
+          `            <span class="kw">return None</span>  <span class="cm"># 代表這裡是空節點</span>`,
+          ``,
+          `        root = TreeNode(preorder[0])`,
+          `        <span class="cm"># 找到前序遍歷的切點，在中序中，代表切點左邊是左子樹 ; 切點右邊是右子樹</span>`,
+          `        divide_index = inorder.index(preorder[0])`,
+          `        root.left = <span class="self">self</span>.buildTree(preorder[1: divide_index + 1], inorder[:divide_index])`,
+          `        root.right = <span class="self">self</span>.buildTree(preorder[divide_index + 1:], inorder[divide_index + 1:])`,
+          ``,
+          `        <span class="kw">return</span> root`
+        ]
+      },
+      {
+        name: "HashMap + 指針優化",
+        timeComp: "O(N)",
+        spaceComp: "O(N)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">buildTree</span>(<span class="self">self</span>, preorder: List[int], inorder: List[int]) -> Optional[TreeNode]:`,
+          `        <span class="cm"># 用字典建立中序值對應索引，省去 inorder.index() 的 O(N) 尋找</span>`,
+          `        memo = {val: idx <span class="kw">for</span> idx, val <span class="kw">in</span> enumerate(inorder)}`,
+          `        self.pre_idx = 0`,
+          ``,
+          `        <span class="kw">def</span> <span class="fn">helper</span>(in_left, in_right):`,
+          `            <span class="kw">if</span> in_left > in_right: <span class="kw">return None</span>`,
+          `            root_val = preorder[self.pre_idx]`,
+          `            root = TreeNode(root_val)`,
+          `            self.pre_idx += 1`,
+          `            idx = memo[root_val]`,
+          `            root.left = helper(in_left, idx - 1)`,
+          `            root.right = helper(idx + 1, in_right)`,
+          `            <span class="kw">return</span> root`,
+          ``,
+          `        <span class="kw">return</span> helper(0, len(inorder) - 1)`
+        ]
+      },
+      {
+        name: "Stack 迭代法",
+        timeComp: "O(N)",
+        spaceComp: "O(N)",
+        code: [
+          `<span class="kw">class</span> <span class="cls">Solution</span>:`,
+          `    <span class="kw">def</span> <span class="fn">buildTree</span>(<span class="self">self</span>, preorder: List[int], inorder: List[int]) -> Optional[TreeNode]:`,
+          `        <span class="kw">if not</span> preorder: <span class="kw">return None</span>`,
+          `        root = TreeNode(preorder[0])`,
+          `        stack = [root]`,
+          `        inorder_idx = 0`,
+          `        <span class="kw">for</span> i <span class="kw">in</span> range(1, len(preorder)):`,
+          `            val = preorder[i]`,
+          `            node = stack[-1]`,
+          `            <span class="kw">if</span> node.val != inorder[inorder_idx]:`,
+          `                node.left = TreeNode(val)`,
+          `                stack.append(node.left)`,
+          `            <span class="kw">else</span>:`,
+          `                <span class="kw">while</span> stack <span class="kw">and</span> stack[-1].val == inorder[inorder_idx]:`,
+          `                    node = stack.pop()`,
+          `                    inorder_idx += 1`,
+          `                node.right = TreeNode(val)`,
+          `                stack.append(node.right)`,
+          `        <span class="kw">return</span> root`
+        ]
+      }
+    ];
+
+    const presets = [
+      { preorder: [3, 9, 20, 15, 7], inorder: [9, 3, 15, 20, 7], name: "Ex 1: Standard Tree" },
+      { preorder: [-1], inorder: [-1], name: "Ex 2: Single Node" }
+    ];
+
+    let currentSolution = 0;
+    let currentPreset = 0;
+    let stepIdx = 0;
+    let history = [];
+
+    function setSolution(idx) {
+      currentSolution = idx;
+      document.querySelectorAll('.sol-tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      document.getElementById('time-comp').innerText = solutions[idx].timeComp;
+      document.getElementById('space-comp').innerText = solutions[idx].spaceComp;
+      renderCode();
+      reset();
+    }
+
+    function setPreset(idx) {
+      currentPreset = idx;
+      document.querySelectorAll('.tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      renderExample();
+      reset();
+    }
+
+    function renderExample() {
+      const p = presets[currentPreset];
+      document.getElementById('ex-display').innerHTML = `
+        <div><b>${p.name}:</b></div>
+        <div>preorder = [${p.preorder.join(', ')}]</div>
+        <div>inorder = [${p.inorder.join(', ')}]</div>
+      `;
+    }
+
+    function renderCode() {
+      const codeArr = solutions[currentSolution].code;
+      document.getElementById('code-box').innerHTML = codeArr.map((l, i) => `<div class="code-line" id="l${i}">${l}</div>`).join('');
+    }
+
+    function renderTreeSVG(treeState, activeVal = null, visitedVals = []) {
+      if (!treeState || Object.keys(treeState).length === 0) {
+        return `<div style="color:var(--text-dim); font-family:monospace; margin:auto; font-size:0.8rem; text-align:center; padding-top:60px;">( Tree is empty, waiting to build... )</div>`;
+      }
+      let allChildren = new Set();
+      Object.values(treeState).forEach(n => {
+        if (n.left !== null) allChildren.add(n.left);
+        if (n.right !== null) allChildren.add(n.right);
+      });
+      let rootVal = Object.keys(treeState).map(Number).find(v => !allChildren.has(v));
+      if (rootVal === undefined) rootVal = Object.keys(treeState)[0];
+
+      let posMap = {};
+      function calcPos(val, depth = 0, leftBound = 0, rightBound = 100) {
+        if (val === null || !treeState[val]) return;
+        let x = (leftBound + rightBound) / 2;
+        let y = depth * 36 + 22;
+        posMap[val] = { x, y, left: treeState[val].left, right: treeState[val].right };
+        calcPos(treeState[val].left, depth + 1, leftBound, x);
+        calcPos(treeState[val].right, depth + 1, x, rightBound);
+      }
+      calcPos(rootVal);
+
+      let edgesHTML = '', nodesHTML = '';
+      Object.keys(posMap).forEach(vStr => {
+        let val = Number(vStr);
+        let p = posMap[val];
+        if (p.left !== null && posMap[p.left]) {
+          let lp = posMap[p.left];
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${lp.x}%" y2="${lp.y}" class="tree-edge" />`;
+        }
+        if (p.right !== null && posMap[p.right]) {
+          let rp = posMap[p.right];
+          edgesHTML += `<line x1="${p.x}%" y1="${p.y}" x2="${rp.x}%" y2="${rp.y}" class="tree-edge" />`;
+        }
+        let circleClass = 'tree-node-circle';
+        if (visitedVals.includes(val)) circleClass += ' visited';
+        if (val === activeVal) circleClass += ' active';
+        nodesHTML += `<g><circle cx="${p.x}%" cy="${p.y}" r="12" class="${circleClass}" /><text x="${p.x}%" y="${p.y}" class="tree-text">${val}</text></g>`;
+      });
+
+      return `<svg class="tree-svg">${edgesHTML}${nodesHTML}</svg>`;
+    }
+
+    function renderArrayCutHTML(pState, iState) {
+      function buildRow(label, arr, state) {
+        let cellsHTML = arr.map((val, idx) => {
+          let cellClass = "cell";
+          if (idx === state.rootIdx) cellClass += " root";
+          else if (state.leftRange && idx >= state.leftRange[0] && idx <= state.leftRange[1]) cellClass += " left-subtree";
+          else if (state.rightRange && idx >= state.rightRange[0] && idx <= state.rightRange[1]) cellClass += " right-subtree";
+          else cellClass += " disabled";
+
+          return `<div class="cell-wrapper"><span class="cell-idx">${idx}</span><div class="${cellClass}">${val}</div></div>`;
+        }).join('');
+
+        return `<div class="array-row"><div class="array-label">${label}:</div><div class="array-cells">${cellsHTML}</div></div>`;
+      }
+
+      return `
+        ${buildRow('preorder', pState.arr, pState)}
+        ${buildRow('inorder', iState.arr, iState)}
+        <div style="display:flex; justify-content:center; gap:16px; font-size:0.7rem; font-family:monospace; margin-top:2px;">
+          <span style="color:var(--orange); font-weight:bold;">● Root</span>
+          <span style="color:#60a5fa; font-weight:bold;">■ Left Subtree</span>
+          <span style="color:#c084fc; font-weight:bold;">■ Right Subtree</span>
+        </div>
+      `;
+    }
+
+    function renderStackHTML(stackFrames) {
+      if (!stackFrames || stackFrames.length === 0) return `<div style="color: var(--text-dim); text-align: center; margin: auto; font-size: 0.75rem;">Call Stack is Empty</div>`;
+      return stackFrames.map(f => `
+        <div class="stack-frame ${f.returning ? 'returning' : ''}">
+          <div><span style="color:#fff; font-weight:bold;">${f.fnName}</span> <span style="color:var(--text-dim); font-size:0.7rem;">(${f.args})</span></div>
+          <div style="font-size:0.75rem; font-weight:bold; color:${f.returning ? 'var(--green)' : 'var(--orange)'};">${f.returning ? `➔ return ${f.retVal}` : 'Active'}</div>
+        </div>
+      `).join('');
+    }
+
+    function buildSteps() {
+      history = [];
+      const presetData = presets[currentPreset];
+      const origPre = presetData.preorder;
+      const origIn = presetData.inorder;
+      let currentStack = [];
+
+      function pushFrame(fnName, args) { currentStack.push({ fnName, args, returning: false, retVal: null }); }
+      function updateTopFrame(retVal) {
+        if (currentStack.length > 0) {
+          let top = currentStack[currentStack.length - 1];
+          top.returning = true;
+          top.retVal = retVal;
+        }
+      }
+      function popFrame() { currentStack.pop(); }
+
+      let treeState = {};
+      let visitedNodes = [];
+
+      function buildTreeSlicing(pList, iList) {
+        pushFrame("buildTree", `pre:[${pList}], in:[${iList}]`);
+
+        // Line 2: if not preorder or not inorder:
+        history.push({
+          line: 2, phase: `Line 2: if not preorder or not inorder:`,
+          desc: `判斷空陣列：not [${pList}] ➔ ${pList.length === 0}，not [${iList}] ➔ ${iList.length === 0}`,
+          stack: JSON.parse(JSON.stringify(currentStack)), tree: JSON.parse(JSON.stringify(treeState)), activeVal: null, visitedVals: [...visitedNodes],
+          pCut: { arr: origPre, rootIdx: -1 }, iCut: { arr: origIn, rootIdx: -1 }
+        });
+
+        if (pList.length === 0 || iList.length === 0) {
+          updateTopFrame("None");
+          // Line 3: return None
+          history.push({
+            line: 3, phase: "Line 3: return None",
+            desc: "陣列為空，觸發 Base Case，代表此處為空節點",
+            stack: JSON.parse(JSON.stringify(currentStack)), tree: JSON.parse(JSON.stringify(treeState)), activeVal: null, visitedVals: [...visitedNodes],
+            pCut: { arr: origPre, rootIdx: -1 }, iCut: { arr: origIn, rootIdx: -1 }
+          });
+          popFrame();
+          return null;
+        }
+
+        // Line 5: root = TreeNode(preorder[0])
+        let root_val = pList[0];
+        treeState[root_val] = { left: null, right: null };
+        visitedNodes.push(root_val);
+
+        let gRootP = origPre.indexOf(root_val);
+
+        history.push({
+          line: 5, phase: `Line 5: root = TreeNode(preorder[0])`,
+          desc: `計算：preorder[0] = ${root_val} ➔ 建立根節點 TreeNode(${root_val})`,
+          stack: JSON.parse(JSON.stringify(currentStack)), tree: JSON.parse(JSON.stringify(treeState)), activeVal: root_val, visitedVals: [...visitedNodes],
+          pCut: { arr: origPre, rootIdx: gRootP }, iCut: { arr: origIn, rootIdx: -1 }
+        });
+
+        // Line 7: divide_index = inorder.index(preorder[0])
+        let divide_index = iList.indexOf(root_val);
+        let gRootI = origIn.indexOf(root_val);
+
+        history.push({
+          line: 7, phase: `Line 7: divide_index = inorder.index(${root_val})`,
+          desc: `在中序 [${iList}] 尋找 ${root_val} ➔ 計算得 divide_index = ${divide_index}`,
+          stack: JSON.parse(JSON.stringify(currentStack)), tree: JSON.parse(JSON.stringify(treeState)), activeVal: root_val, visitedVals: [...visitedNodes],
+          pCut: { arr: origPre, rootIdx: gRootP }, iCut: { arr: origIn, rootIdx: gRootI }
+        });
+
+        // Line 8: root.left = self.buildTree(preorder[1: divide_index + 1], inorder[:divide_index])
+        let left_pre = pList.slice(1, divide_index + 1);
+        let left_in = iList.slice(0, divide_index);
+
+        history.push({
+          line: 8, phase: `Line 8: 計算左子樹切片並準備遞迴`,
+          desc: `計算切片：preorder[1:${divide_index + 1}] ➔ [${left_pre}], inorder[:${divide_index}] ➔ [${left_in}]`,
+          stack: JSON.parse(JSON.stringify(currentStack)), tree: JSON.parse(JSON.stringify(treeState)), activeVal: root_val, visitedVals: [...visitedNodes],
+          pCut: { arr: origPre, rootIdx: gRootP, leftRange: [gRootP + 1, gRootP + divide_index] },
+          iCut: { arr: origIn, rootIdx: gRootI, leftRange: [gRootI - divide_index, gRootI - 1] }
+        });
+
+        let left_child = buildTreeSlicing(left_pre, left_in);
+        if (left_child !== null) treeState[root_val].left = left_child;
+
+        history.push({
+          line: 8, phase: `Line 8: 完成左子樹賦值 root.left`,
+          desc: `得到左子樹結果: ${left_child} ➔ 掛載至 root.left`,
+          stack: JSON.parse(JSON.stringify(currentStack)), tree: JSON.parse(JSON.stringify(treeState)), activeVal: root_val, visitedVals: [...visitedNodes],
+          pCut: { arr: origPre, rootIdx: gRootP }, iCut: { arr: origIn, rootIdx: gRootI }
+        });
+
+        // Line 9: root.right = self.buildTree(preorder[divide_index + 1:], inorder[divide_index + 1:])
+        let right_pre = pList.slice(divide_index + 1);
+        let right_in = iList.slice(divide_index + 1);
+
+        history.push({
+          line: 9, phase: `Line 9: 計算右子樹切片並準備遞迴`,
+          desc: `計算切片：preorder[${divide_index + 1}:] ➔ [${right_pre}], inorder[${divide_index + 1}:] ➔ [${right_in}]`,
+          stack: JSON.parse(JSON.stringify(currentStack)), tree: JSON.parse(JSON.stringify(treeState)), activeVal: root_val, visitedVals: [...visitedNodes],
+          pCut: { arr: origPre, rootIdx: gRootP, rightRange: [gRootP + 1 + divide_index, gRootP + pList.length - 1] },
+          iCut: { arr: origIn, rootIdx: gRootI, rightRange: [gRootI + 1, gRootI + iList.length - 1 - divide_index] }
+        });
+
+        let right_child = buildTreeSlicing(right_pre, right_in);
+        if (right_child !== null) treeState[root_val].right = right_child;
+
+        history.push({
+          line: 9, phase: `Line 9: 完成右子樹賦值 root.right`,
+          desc: `得到右子樹結果: ${right_child} ➔ 掛載至 root.right`,
+          stack: JSON.parse(JSON.stringify(currentStack)), tree: JSON.parse(JSON.stringify(treeState)), activeVal: root_val, visitedVals: [...visitedNodes],
+          pCut: { arr: origPre, rootIdx: gRootP }, iCut: { arr: origIn, rootIdx: gRootI }
+        });
+
+        // Line 11: return root
+        updateTopFrame(`TreeNode(${root_val})`);
+        history.push({
+          line: 11, phase: `Line 11: return root`,
+          desc: `節點 TreeNode(${root_val}) 左右子樹皆建立完畢，回傳 root`,
+          stack: JSON.parse(JSON.stringify(currentStack)), tree: JSON.parse(JSON.stringify(treeState)), activeVal: root_val, visitedVals: [...visitedNodes],
+          pCut: { arr: origPre, rootIdx: gRootP }, iCut: { arr: origIn, rootIdx: gRootI }
+        });
+
+        popFrame();
+        return root_val;
+      }
+
+      let finalRoot = buildTreeSlicing(origPre, origIn);
+      history.push({
+        line: 11, phase: "🎉 二元樹重構完成！",
+        desc: `建構成功，根節點為 ${finalRoot}`,
+        stack: [], tree: JSON.parse(JSON.stringify(treeState)), activeVal: finalRoot, visitedVals: [...visitedNodes],
+        pCut: { arr: origPre, rootIdx: 0 }, iCut: { arr: origIn, rootIdx: origIn.indexOf(finalRoot) }
+      });
+    }
+
+    function applyState() {
+      const state = history[stepIdx] || {};
+      document.getElementById('prev-btn').disabled = (stepIdx === 0);
+      document.getElementById('next-btn').disabled = (stepIdx === history.length - 1);
+
+      document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+      const activeEl = document.getElementById('l' + (state.line || 0));
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('stepHint').innerText = `STEP ${stepIdx + 1}/${history.length}`;
+      document.getElementById('val-phase').innerText = state.phase || "-";
+      document.getElementById('val-desc').innerText = state.desc || "-";
+
+      const stackBox = document.getElementById('stack-display');
+      const stackData = state.stack || [];
+      stackBox.innerHTML = renderStackHTML(stackData);
+      document.getElementById('stackDepthHint').innerText = `Depth: ${stackData.length}`;
+
+      document.getElementById('tree-svg-container').innerHTML = renderTreeSVG(state.tree, state.activeVal, state.visitedVals);
+
+      if (state.pCut && state.iCut) {
+        document.getElementById('array-vis-box').innerHTML = renderArrayCutHTML(state.pCut, state.iCut);
+      }
+    }
+
+    function reset() {
+      stepIdx = 0;
+      buildSteps();
+      applyState();
+    }
+
+    function step(dir) {
+      if (stepIdx + dir >= 0 && stepIdx + dir < history.length) {
+        stepIdx += dir;
+        applyState();
+      }
+    }
+
+    window.onload = () => {
+      renderCode();
+      renderExample();
+      reset();
+    };
+  </script>
+</body>
+</html>

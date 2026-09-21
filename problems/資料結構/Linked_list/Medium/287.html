@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>LC#287 極致模擬器 Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { --bg: #282c34; --panel: #21252b; --text: #abb2bf; --kw: #c678dd; --fn: #61afef; --tp: #e5c07b; --num: #d19a66; --str: #98c379; --cm: #5c6370; }
+        body { background-color: #1e2227; color: var(--text); font-family: 'Fira Code', monospace; height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding: 12px; }
+        .panel { background-color: var(--panel); border: 1px solid #181a1f; border-radius: 8px; }
+        .code-box { font-size: 12px; line-height: 1.6; background-color: var(--bg); padding: 20px; flex: 1; white-space: pre; border-radius: 0 0 8px 8px; overflow-y: auto; }
+        .kw { color: var(--kw); } .fn { color: var(--fn); } .tp { color: var(--tp); } .num { color: var(--num); } .str { color: var(--str); } .cm { color: var(--cm); }
+        .slot { width: 52px; height: 72px; border: 2px solid #3e4451; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .active-s { border-color: #c678dd; background: rgba(198, 120, 221, 0.2); transform: translateY(-6px); box-shadow: 0 8px 15px rgba(0,0,0,0.3); }
+        .active-f { border-color: #61afef; background: rgba(97, 175, 239, 0.2); transform: translateY(-6px); box-shadow: 0 8px 15px rgba(0,0,0,0.3); }
+        .ptr-tag { position: absolute; top: -30px; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 4px; pointer-events: none; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #3e4451; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<header class="flex justify-between items-center px-8 py-3 panel mb-3 border-b-2 border-[#61afef]">
+    <div class="flex items-center gap-4">
+        <div class="bg-[#61afef] text-[#1e2227] px-2 py-0.5 rounded text-[10px] font-black uppercase">LeetCode #287</div>
+        <h1 class="text-white font-black text-xl tracking-tight">Find the Duplicate Number</h1>
+    </div>
+    <div id="phase-tag" class="text-[11px] font-black text-[#98c379] tracking-widest uppercase bg-[#1e2227] px-4 py-1.5 rounded-full border border-[#3e4451]">
+        Status: Ready
+    </div>
+</header>
+
+<div class="flex-1 flex gap-3 overflow-hidden">
+    <aside class="w-1/4 flex flex-col gap-3">
+        <div class="panel p-5 border-l-4 border-[#e5c07b]">
+            <h2 class="text-[#e5c07b] text-[11px] font-black uppercase mb-1">Problem Description</h2>
+            <p class="text-[12px] text-gray-300 leading-relaxed mb-3">找出包含 n+1 個整數陣列中唯一的重複數字。數字範圍 [1, n]。</p>
+            <div class="flex flex-wrap gap-2">
+                <span class="bg-[#282c34] text-[9px] px-2 py-1 rounded border border-[#3e4451]">Immutable Array</span>
+                <span class="bg-[#282c34] text-[9px] px-2 py-1 rounded border border-[#3e4451]">O(1) Space</span>
+            </div>
+        </div>
+
+        <div class="panel p-5 flex-1 flex flex-col">
+            <h2 class="text-[#c678dd] text-[11px] font-black uppercase mb-3">Complexity Analysis</h2>
+            <div class="flex gap-2 mb-4">
+                <div class="bg-[#c678dd]/10 border border-[#c678dd] text-[#c678dd] px-3 py-0.5 rounded font-bold text-[10px]">Time: O(n)</div>
+                <div class="bg-[#98c379]/10 border border-[#98c379] text-[#98c379] px-3 py-0.5 rounded font-bold text-[10px]">Space: O(1)</div>
+            </div>
+            <p class="text-[11px] text-gray-400 mb-4 leading-relaxed">利用 Floyd's 判圈演算法。將陣列索引視為鏈結節點，值視為 Next 指針，重複值即為環的入口。</p>
+            
+            <div class="mt-auto">
+                <h2 class="text-[#61afef] text-[10px] font-black uppercase mb-2 text-center">Test Cases</h2>
+                <div class="space-y-2">
+                    <button onclick="setCase(0)" id="tc-0" class="w-full py-2 text-[10px] font-bold rounded border border-[#61afef] text-[#61afef] bg-[#61afef]/5">EX 1: [1, 3, 4, 2, 2]</button>
+                    <button onclick="setCase(1)" id="tc-1" class="w-full py-2 text-[10px] font-bold rounded border border-[#3e4451] text-gray-500">EX 2: [3, 1, 3, 4, 2]</button>
+                    <button onclick="setCase(2)" id="tc-2" class="w-full py-2 text-[10px] font-bold rounded border border-[#3e4451] text-gray-500">EX 3: [3, 3, 3, 3, 3]</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 panel p-8 flex flex-col justify-between bg-[#1e2227]">
+        <div class="flex-1 flex flex-col justify-center items-center gap-16">
+            <div id="array-viz" class="flex gap-2 p-5 bg-[#21252b] rounded-xl shadow-lg border border-[#181a1f]"></div>
+            <div class="flex gap-10">
+                <div class="text-center p-4 panel w-40 border-b-4 border-[#c678dd]">
+                    <div class="text-[9px] text-[#c678dd] font-black uppercase mb-1">Slow (s)</div>
+                    <div id="val-s" class="text-4xl font-black text-white">-</div>
+                </div>
+                <div class="text-center p-4 panel w-40 border-b-4 border-[#61afef]">
+                    <div id="label-f" class="text-[9px] text-[#61afef] font-black uppercase mb-1">Fast (f)</div>
+                    <div id="val-f" class="text-4xl font-black text-white">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-center gap-3 pt-6 border-t border-[#3e4451]">
+            <button onclick="reset()" class="px-5 py-2.5 bg-[#3e4451] text-white text-[10px] font-black rounded hover:bg-red-500 transition-all">RESET</button>
+            <div class="h-6 w-[1px] bg-[#3e4451] mx-2"></div>
+            <button onclick="stepBack()" id="btn-back" class="px-5 py-2.5 bg-[#3e4451] text-white text-[10px] font-black rounded hover:bg-gray-500 opacity-50 cursor-not-allowed transition-all">PREV STEP</button>
+            <button onclick="toggleAuto()" id="btn-auto" class="px-12 py-2.5 bg-[#61afef] text-[#1c2128] text-[11px] font-black rounded shadow-lg">START AUTO</button>
+            <button onclick="step()" id="btn-next" class="px-5 py-2.5 bg-[#3e4451] text-white text-[10px] font-black rounded hover:bg-[#61afef] hover:text-[#1c2128] transition-all">NEXT STEP</button>
+        </div>
+    </main>
+
+    <aside class="w-[35%] flex flex-col gap-3">
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <div class="bg-[#1c2128] px-4 py-2 text-[10px] font-black rounded-t-lg border-b border-[#181a1f] flex justify-between items-center">
+                <span class="text-[#61afef] tracking-widest uppercase">Kernel Source</span>
+                <div class="flex gap-1 bg-[#282c34] p-1 rounded border border-[#3e4451]">
+                    <button id="lang-py" onclick="switchLang('py')" class="px-3 py-0.5 rounded bg-[#61afef] text-[#1e2227] text-[10px] font-bold">Python</button>
+                    <button id="lang-c" onclick="switchLang('c')" class="px-3 py-0.5 rounded text-gray-400 text-[10px] font-bold">C</button>
+                </div>
+            </div>
+            <div id="code-display" class="code-box font-mono panel"></div>
+        </div>
+        <div class="h-1/3 flex flex-col overflow-hidden panel">
+            <div class="bg-[#1c2128] px-4 py-2 text-[10px] font-black text-[#abb2bf] border-b border-[#181a1f]">EXECUTION LOG</div>
+            <div id="log-display" class="flex-1 p-4 text-[10px] font-mono space-y-1 overflow-y-auto bg-[#1e2227]"></div>
+        </div>
+    </aside>
+</div>
+
+<script>
+const CASES = [[1,3,4,2,2], [3,1,3,4,2], [3,3,3,3,3]];
+const CODES = {
+    py: `<span class="kw">def</span> <span class="fn">findDuplicate</span>(nums):
+    slow, fast = nums[<span class="num">0</span>], nums[nums[<span class="num">0</span>]]
+    <span class="kw">while</span> slow != fast:
+        slow = nums[slow]
+        fast = nums[nums[fast]]
+    
+    slow2 = <span class="num">0</span>
+    <span class="kw">while</span> slow2 != slow:
+        slow = nums[slow]
+        slow2 = nums[slow2]
+    <span class="kw">return</span> slow`,
+    c: `<span class="kw">int</span> <span class="fn">findDuplicate</span>(<span class="kw">int</span>* nums) {
+    <span class="kw">int</span> slow = nums[<span class="num">0</span>], fast = nums[nums[<span class="num">0</span>]];
+    <span class="kw">while</span> (slow != fast) {
+        slow = nums[slow];
+        fast = nums[nums[fast]];
+    }
+    <span class="kw">int</span> slow2 = <span class="num">0</span>;
+    <span class="kw">while</span> (slow2 != slow) {
+        slow = nums[slow];
+        slow2 = nums[slow2];
+    }
+    <span class="kw">return</span> slow;
+}`
+};
+
+let state = { 
+    case: 0, lang: 'py', s: 0, f: 0, s2: 0, phase: 1, finished: false, 
+    timer: null, running: false, history: [] 
+};
+
+function switchLang(l) {
+    state.lang = l;
+    document.getElementById('lang-py').className = l === 'py' ? "px-3 py-0.5 rounded bg-[#61afef] text-[#1e2227] text-[10px] font-bold" : "px-3 py-0.5 rounded text-gray-400 text-[10px] font-bold";
+    document.getElementById('lang-c').className = l === 'c' ? "px-3 py-0.5 rounded bg-[#61afef] text-[#1e2227] text-[10px] font-bold" : "px-3 py-0.5 rounded text-gray-400 text-[10px] font-bold";
+    document.getElementById('code-display').innerHTML = CODES[l];
+}
+
+function reset() {
+    clearInterval(state.timer);
+    state.running = false; state.finished = false; state.phase = 1; state.history = [];
+    const nums = CASES[state.case];
+    state.s = nums[0]; state.f = nums[nums[0]]; state.s2 = 0;
+    
+    document.getElementById('btn-auto').innerText = "START AUTO";
+    document.getElementById('phase-tag').innerText = "Status: Phase 1 (Detecting)";
+    document.getElementById('phase-tag').style.color = "#98c379";
+    document.getElementById('log-display').innerHTML = "";
+    renderViz(); updateUI();
+    log("Simulation reset for case " + (state.case + 1));
+}
+
+function saveState() {
+    state.history.push({
+        s: state.s, f: state.f, s2: state.s2, 
+        phase: state.phase, finished: state.finished,
+        logHTML: document.getElementById('log-display').innerHTML
+    });
+}
+
+function stepBack() {
+    if (state.history.length === 0 || state.running) return;
+    const prev = state.history.pop();
+    state.s = prev.s; state.f = prev.f; state.s2 = prev.s2;
+    state.phase = prev.phase; state.finished = prev.finished;
+    document.getElementById('log-display').innerHTML = prev.logHTML;
+    
+    document.getElementById('phase-tag').innerText = state.phase === 1 ? "Status: Phase 1 (Detecting)" : "Status: Phase 2 (Seeking)";
+    document.getElementById('phase-tag').style.color = "#98c379";
+    document.getElementById('btn-auto').innerText = "RESUME AUTO";
+    
+    updateUI();
+}
+
+function step() {
+    if (state.finished) return;
+    saveState();
+    const nums = CASES[state.case];
+
+    if (state.phase === 1) {
+        if (state.s === state.f) {
+            state.phase = 2; state.s2 = 0;
+            log("Collision found! Transitioning to Phase 2...");
+            document.getElementById('phase-tag').innerText = "Status: Phase 2 (Seeking)";
+        } else {
+            state.s = nums[state.s];
+            state.f = nums[nums[state.f]];
+            log(`P1: Slow -> idx ${state.s}, Fast -> idx ${state.f}`);
+        }
+    } else {
+        if (state.s === state.s2) {
+            state.finished = true;
+            log("SUCCESS! Duplicate found at index " + state.s);
+            document.getElementById('phase-tag').innerText = "Finished: " + state.s;
+            document.getElementById('phase-tag').style.color = "#e06c75";
+            clearInterval(state.timer);
+            document.getElementById('btn-auto').innerText = "DONE";
+        } else {
+            state.s = nums[state.s];
+            state.s2 = nums[state.s2];
+            log(`P2: Slow -> idx ${state.s}, Slow2 -> idx ${state.s2}`);
+        }
+    }
+    updateUI();
+}
+
+function updateUI() {
+    document.querySelectorAll('.ptr-tag').forEach(t => t.classList.add('opacity-0'));
+    document.querySelectorAll('.slot').forEach(s => s.classList.remove('active-s', 'active-f'));
+
+    const tagF = document.getElementById(`tag-f-${state.phase === 1 ? state.f : state.s2}`);
+    tagF.innerText = state.phase === 1 ? "FAST" : "S2";
+    tagF.classList.remove('opacity-0');
+    
+    document.getElementById(`tag-s-${state.s}`).classList.remove('opacity-0');
+    document.getElementById(`slot-${state.s}`).classList.add('active-s');
+    document.getElementById(`slot-${state.phase === 1 ? state.f : state.s2}`).classList.add('active-f');
+    
+    document.getElementById('val-s').innerText = state.s;
+    document.getElementById('val-f').innerText = state.phase === 1 ? state.f : state.s2;
+    document.getElementById('label-f').innerText = state.phase === 1 ? "Fast (f)" : "Slow 2 (s2)";
+
+    // 按鈕狀態
+    const backBtn = document.getElementById('btn-back');
+    if (state.history.length > 0 && !state.running) {
+        backBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    } else {
+        backBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+function toggleAuto() {
+    if(state.finished) return;
+    state.running = !state.running;
+    document.getElementById('btn-auto').innerText = state.running ? "STOP" : "RESUME AUTO";
+    if(state.running) state.timer = setInterval(step, 800);
+    else clearInterval(state.timer);
+    updateUI();
+}
+
+function renderViz() {
+    const nums = CASES[state.case];
+    document.getElementById('array-viz').innerHTML = nums.map((n, i) => `
+        <div class="slot" id="slot-${i}">
+            <div id="tag-s-${i}" class="ptr-tag bg-[#c678dd] text-white opacity-0">SLOW</div>
+            <div id="tag-f-${i}" class="ptr-tag bg-[#61afef] text-white opacity-0" style="top:-52px">FAST</div>
+            <span class="text-[8px] text-[#5c6370] absolute bottom-1 font-black">IDX ${i}</span>
+            <span class="text-white font-black text-xl">${n}</span>
+        </div>
+    `).join('');
+}
+
+function setCase(idx) {
+    state.case = idx;
+    [0, 1, 2].forEach(i => {
+        document.getElementById(`tc-${i}`).className = `w-full py-2 text-[10px] font-bold rounded border transition-all ${idx===i?'border-[#61afef] text-[#61afef] bg-[#61afef]/5':'border-[#3e4451] text-gray-500'}`;
+    });
+    reset();
+}
+
+function log(m) {
+    const entry = document.createElement('div');
+    entry.innerHTML = `<span class="text-[#61afef] font-black">></span> ${m}`;
+    const l = document.getElementById('log-display');
+    l.appendChild(entry); l.scrollTop = l.scrollHeight;
+}
+
+switchLang('py');
+reset();
+</script>
+</body>
+</html>
